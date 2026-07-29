@@ -3,6 +3,7 @@ import {
   saveProgress,
   getCourseProgress,
   markLectureCompleted,
+  getLectureProgress,
 } from "../controllers/progress.controller.js";
 import {
   isAuthenticated,
@@ -30,6 +31,13 @@ router.patch(
     isAuthenticated,
     authorizeRoles("student"),
     markLectureCompleted
+);
+
+router.get(
+  "/lecture/:lectureId",
+  isAuthenticated,
+  authorizeRoles("student"),
+  getLectureProgress
 );
 
 export default router;

@@ -199,3 +199,55 @@ export const markLectureCompleted = async (req, res) => {
     });
   }
 };
+
+export const getLectureProgress = async (req, res) => {
+  try {
+    const { lectureId } = req.params;
+
+    const lecture = await Lecture.findById(lectureId);
+
+    if (!lecture) {
+      return res.status(404).json({
+        success: false,
+        message: "Lecture not found",
+      });
+    }
+
+    const progress = await CourseProgress.findOne({
+      student: req.user._id,
+      course: lecture.course,
+    });
+
+    if (!progress) {
+      return res.status(200).json({
+        success: true,
+        watchedSeconds: 0,
+        completed: false,
+      });
+    }
+
+    const lectureProgress = progress.lectures.find(
+      (item) => item.lecture.toString() === lectureId
+    );
+
+    if (!lectureProgress) {
+      return res.status(200).json({
+        success: true,
+        watchedSeconds: 0,
+        completed: false,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      watchedSeconds: lectureProgress.watchedSeconds,
+      completed: lectureProgress.completed,
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
