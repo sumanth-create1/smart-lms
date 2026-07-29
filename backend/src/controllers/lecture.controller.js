@@ -224,6 +224,8 @@ export const uploadLectureVideo = async (req, res) => {
 
   lecture.publicId = result.public_id;
 
+  lecture.videoDuration = Math.floor(result.duration);
+
   await lecture.save();
 
   res.status(200).json({

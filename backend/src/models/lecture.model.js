@@ -23,6 +23,11 @@ const lectureSchema = new mongoose.Schema(
       default: "",
     },
 
+    videoDuration: {
+      type: Number,
+      default: 0,
+    },
+
     isPreviewFree: {
       type: Boolean,
       default: false,

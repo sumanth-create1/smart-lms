@@ -38,11 +38,36 @@ export const saveProgress = async (req, res) => {
     );
 
     if (lectureProgress) {
+      const previousWatchTime = lectureProgress.watchedSeconds;
+      const MAX_ALLOWED_JUMP = 15;
+
+      console.log("----------------");
+      console.log("Previous:", previousWatchTime);
+      console.log("Incoming:", watchedSeconds);
+      console.log("Allowed:", previousWatchTime + MAX_ALLOWED_JUMP);
+      console.log("----------------");
+
+      if (watchedSeconds > previousWatchTime + MAX_ALLOWED_JUMP) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid watch progress detected.",
+        });
+      }
+
       lectureProgress.watchedSeconds = Math.max(
-        lectureProgress.watchedSeconds,
+        previousWatchTime,
         watchedSeconds,
       );
     } else {
+      const MAX_ALLOWED_JUMP = 15;
+
+      if (watchedSeconds > MAX_ALLOWED_JUMP) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid watch progress detected.",
+        });
+      }
+
       progress.lectures.push({
         lecture: lectureId,
         watchedSeconds,
@@ -51,6 +76,12 @@ export const saveProgress = async (req, res) => {
     }
 
     await progress.save();
+
+    const totalLectures = await Lecture.countDocuments({
+      course: lecture.course,
+    });
+
+    const completionPercentage = calculateProgress(progress, totalLectures);
 
     return res.status(200).json({
       success: true,
@@ -84,6 +115,8 @@ export const getCourseProgress = async (req, res) => {
       });
     }
 
+    const completionPercentage = calculateProgress(progress, totalLectures);
+
     return res.status(200).json({
       success: true,
       progress,
@@ -93,7 +126,7 @@ export const getCourseProgress = async (req, res) => {
       course: courseId,
     });
 
-    const completionPercentage = calculateProgress(progress, totalLectures);
+    
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -138,6 +171,15 @@ export const markLectureCompleted = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Lecture progress not found",
+      });
+    }
+
+    const minimumWatchTime = lecture.videoDuration * 0.95;
+
+    if (lectureProgress.watchedSeconds < minimumWatchTime) {
+      return res.status(400).json({
+        success: false,
+        message: "Watch at least 95% of the lecture before completing it.",
       });
     }
 
