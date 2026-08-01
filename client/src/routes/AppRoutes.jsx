@@ -1,12 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Login from "../pages/auth/Login";
 
 function Home() {
   return <h1>Home</h1>;
 }
 
-function Login() {
-  return <h1>Login</h1>;
-}
+
 
 function Register() {
   return <h1>Register</h1>;
