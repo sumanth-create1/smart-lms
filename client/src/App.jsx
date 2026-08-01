@@ -1,11 +1,7 @@
-import React from 'react'
+import AppRoutes from "./routes/AppRoutes";
 
-const App = () => {
-  return (
-    <div>
-      <h1>Smart LMS</h1>
-    </div>
-  )
+function App() {
+  return <AppRoutes />;
 }
 
-export default App
+export default App;
