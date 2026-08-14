@@ -1,27 +1,70 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+} from "react-router-dom";
 
 import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
-import Courses from "../components/common/Courses";
 import Register from "../pages/auth/Registration";
+import Courses from "../components/common/Courses";
 
+import UserDashboard from "../pages/student/UserDashboard";
+
+import ProtectedRoute from "./ProtectedRoute";
+import DashboardLayout from "../components/layout/DashBoardLayout";
 
 function AppRoutes() {
   return (
     <BrowserRouter>
+
       <Routes>
 
+        {/* ================================
+            PUBLIC ROUTES
+        ================================= */}
 
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/register"
+          element={<Register />}
+        />
 
-        <Route path="/login" element={<Login />} />
+        {/* ================================
+            PROTECTED ROUTES
+        ================================= */}
 
-        <Route path="/courses" element={<Courses />} />
+        <Route
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+
+          <Route
+            path="/dashboard"
+            element={<UserDashboard />}
+          />
+
+          <Route
+            path="/courses"
+            element={<Courses />}
+          />
+
+        </Route>
 
       </Routes>
+
     </BrowserRouter>
   );
 }
