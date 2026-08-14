@@ -5,10 +5,13 @@ import Login from "../pages/auth/Login";
 import Courses from "../components/common/Courses";
 import Register from "../pages/auth/Registration";
 
+
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+
+
 
         <Route path="/" element={<Home />} />
 
