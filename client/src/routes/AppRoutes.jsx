@@ -1,29 +1,22 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
+import Courses from "../components/common/Courses";
+import Register from "../pages/auth/Registration";
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* Redirect / to /login */}
-        <Route
-          path="/"
-          element={<Navigate to="/login" replace />}
-        />
+        <Route path="/" element={<Home />} />
 
-        {/* Login Page */}
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+        <Route path="/register" element={<Register />} />
 
-        {/* Any unknown URL → Login */}
-        <Route
-          path="*"
-          element={<Navigate to="/login" replace />}
-        />
+        <Route path="/login" element={<Login />} />
+
+        <Route path="/courses" element={<Courses />} />
 
       </Routes>
     </BrowserRouter>
@@ -31,4 +24,3 @@ function AppRoutes() {
 }
 
 export default AppRoutes;
-
