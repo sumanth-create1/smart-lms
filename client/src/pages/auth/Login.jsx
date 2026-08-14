@@ -1,214 +1,231 @@
 import { useState } from "react";
-import {
-  FiMail,
-  FiLock,
-  FiEye,
-  FiEyeOff,
-} from "react-icons/fi";
-import { FcGoogle } from "react-icons/fc";
 
 function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    console.log("Email:", email);
+    console.log("Password:", password);
+
+    // Backend API will be connected here later
+  };
+
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center px-5">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
 
-      <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl p-10">
+      {/* Login Container */}
+      <div className="w-full max-w-md">
 
-        {/* Logo */}
-
-        <div className="text-center">
-
-          <div className="text-5xl font-extrabold text-blue-600">
+        {/* Logo / Brand */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold tracking-tight text-blue-600">
             Smart LMS
-          </div>
+          </h1>
 
-          <p className="text-gray-500 mt-3 text-lg">
-            Welcome back! Continue your learning journey.
+          <p className="mt-2 text-sm text-slate-500">
+            Learn. Grow. Achieve.
           </p>
-
         </div>
 
-        {/* Form */}
+        {/* Card */}
+        <div className="bg-white border border-slate-200 shadow-xl rounded-2xl p-8">
 
-        <form className="mt-10 space-y-6">
+          {/* Heading */}
+          <div className="mb-7">
+            <h2 className="text-2xl font-semibold text-slate-900">
+              Welcome back
+            </h2>
 
-          {/* Email */}
-
-          <div>
-
-            <label className="block mb-2 font-semibold text-gray-700">
-              Email
-            </label>
-
-            <div className="relative">
-
-              <FiMail
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                size={20}
-              />
-
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="
-                  w-full
-                  h-14
-                  pl-12
-                  pr-4
-                  rounded-xl
-                  border
-                  border-gray-300
-                  focus:outline-none
-                  focus:border-blue-500
-                  focus:ring-4
-                  focus:ring-blue-100
-                  transition
-                "
-              />
-
-            </div>
-
+            <p className="mt-1 text-sm text-slate-500">
+              Sign in to continue your learning journey.
+            </p>
           </div>
 
-          {/* Password */}
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
 
-          <div>
-
-            <label className="block mb-2 font-semibold text-gray-700">
-              Password
-            </label>
-
-            <div className="relative">
-
-              <FiLock
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                size={20}
-              />
-
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                className="
-                  w-full
-                  h-14
-                  pl-12
-                  pr-12
-                  rounded-xl
-                  border
-                  border-gray-300
-                  focus:outline-none
-                  focus:border-blue-500
-                  focus:ring-4
-                  focus:ring-blue-100
-                  transition
-                "
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+            {/* Email */}
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-slate-700 mb-2"
               >
-                {showPassword ? (
-                  <FiEyeOff size={20} />
-                ) : (
-                  <FiEye size={20} />
-                )}
-              </button>
+                Email address
+              </label>
 
+              <input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="
+                  w-full
+                  h-12
+                  px-4
+                  rounded-lg
+                  border
+                  border-slate-300
+                  bg-white
+                  text-slate-900
+                  placeholder-slate-400
+                  outline-none
+                  transition
+                  focus:border-blue-500
+                  focus:ring-2
+                  focus:ring-blue-100
+                "
+              />
             </div>
 
-          </div>
+            {/* Password */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="password"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Password
+                </label>
 
-          {/* Forgot */}
+                <button
+                  type="button"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Forgot password?
+                </button>
+              </div>
 
-          <div className="flex justify-end">
+              <div className="relative">
 
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="
+                    w-full
+                    h-12
+                    px-4
+                    pr-12
+                    rounded-lg
+                    border
+                    border-slate-300
+                    bg-white
+                    text-slate-900
+                    placeholder-slate-400
+                    outline-none
+                    transition
+                    focus:border-blue-500
+                    focus:ring-2
+                    focus:ring-blue-100
+                  "
+                />
+
+                {/* Show / Hide Password */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="
+                    absolute
+                    right-3
+                    top-1/2
+                    -translate-y-1/2
+                    text-slate-400
+                    hover:text-slate-600
+                  "
+                >
+                  {showPassword ? "🙈" : "👁"}
+                </button>
+
+              </div>
+            </div>
+
+            {/* Login Button */}
             <button
-              type="button"
-              className="text-blue-600 font-medium hover:underline"
+              type="submit"
+              className="
+                w-full
+                h-12
+                rounded-lg
+                bg-blue-600
+                text-white
+                font-semibold
+                transition
+                hover:bg-blue-700
+                active:bg-blue-800
+                shadow-sm
+              "
             >
-              Forgot Password?
+              Sign in
             </button>
 
-          </div>
-
-          {/* Login */}
-
-          <button
-            className="
-              w-full
-              h-14
-              rounded-xl
-              bg-blue-600
-              hover:bg-blue-700
-              text-white
-              font-semibold
-              text-lg
-              transition
-            "
-          >
-            Login
-          </button>
+          </form>
 
           {/* Divider */}
+          <div className="flex items-center gap-4 my-7">
+            <div className="flex-1 h-px bg-slate-200"></div>
 
-          <div className="flex items-center">
-
-            <div className="flex-1 h-px bg-gray-300"></div>
-
-            <span className="mx-4 text-gray-500">
+            <span className="text-sm text-slate-400">
               OR
             </span>
 
-            <div className="flex-1 h-px bg-gray-300"></div>
-
+            <div className="flex-1 h-px bg-slate-200"></div>
           </div>
 
-          {/* Google */}
-
+          {/* Google Button */}
           <button
             type="button"
             className="
               w-full
-              h-14
+              h-12
+              rounded-lg
               border
-              border-gray-300
-              rounded-xl
+              border-slate-300
+              bg-white
+              text-slate-700
+              font-medium
               flex
               items-center
               justify-center
               gap-3
-              hover:bg-gray-50
+              hover:bg-slate-50
               transition
             "
           >
-
-            <FcGoogle size={24} />
-
-            <span className="font-medium">
-              Continue with Google
+            <span className="text-lg font-bold">
+              G
             </span>
 
+            Continue with Google
           </button>
 
           {/* Register */}
-
-          <p className="text-center text-gray-600">
-
-            Don't have an account?
-
-            <span className="ml-2 text-blue-600 font-semibold cursor-pointer hover:underline">
-              Register
-            </span>
-
+          <p className="text-center text-sm text-slate-500 mt-7">
+            Don't have an account?{" "}
+            <button
+              type="button"
+              className="font-semibold text-blue-600 hover:text-blue-700"
+            >
+              Create account
+            </button>
           </p>
 
-        </form>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-slate-400 mt-6">
+          © 2026 Smart LMS. All rights reserved.
+        </p>
 
       </div>
-
     </div>
   );
 }
