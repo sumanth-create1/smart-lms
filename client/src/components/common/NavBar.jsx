@@ -1,251 +1,492 @@
-import { Link } from "react-router-dom";
-
-const font = {
-  display: "'Sora', sans-serif",
-  mono: "'Fira Code', monospace",
-};
+import { useState } from "react";
+import { Link, NavLink } from "react-router-dom";
+import { BookOpen, Menu, X } from "lucide-react";
 
 const C = {
   bg: "#FBFAF7",
+  white: "#FFFFFF",
   ink: "#15121F",
   muted: "#655D72",
   indigo: "#4F46E5",
   amber: "#F2A93B",
   teal: "#0EA5A4",
   coral: "#FF5A36",
+  border: "rgba(21, 18, 31, 0.10)",
 };
 
-const NAV_ITEMS = [
+const navItems = [
   {
-    to: "/",
     label: "Home",
+    to: "/",
     color: C.indigo,
-    isRoute: true,
+    route: true,
   },
   {
-    to: "/courses",
     label: "Courses",
+    to: "/courses",
     color: C.amber,
-    isRoute: true,
+    route: true,
   },
   {
-    to: "#features",
     label: "Features",
+    to: "#features",
     color: C.teal,
-    isRoute: false,
+    route: false,
   },
   {
-    to: "#about",
     label: "About",
+    to: "#about",
     color: C.coral,
-    isRoute: false,
+    route: false,
   },
 ];
 
 function Navbar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const closeMobileMenu = () => {
+    setMobileOpen(false);
+  };
+
   return (
     <nav
       className="sticky top-0 z-50 w-full"
       style={{
-        backgroundColor: `${C.bg}F2`,
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        backgroundColor: "rgba(251, 250, 247, 0.96)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      {/* ================= TOP GRADIENT LINE ================= */}
+      {/* =====================================================
+          TOP GRADIENT
+      ===================================================== */}
+
       <div
-        className="h-[3px] w-full"
         style={{
-          background: `linear-gradient(
-            90deg,
-            ${C.indigo},
-            ${C.teal},
-            ${C.amber},
-            ${C.coral}
-          )`,
+          width: "100%",
+          height: "3px",
+          background:
+            "linear-gradient(90deg, #4F46E5 0%, #0EA5A4 35%, #F2A93B 68%, #FF5A36 100%)",
         }}
       />
 
-      {/* ================= NAVBAR CONTENT ================= */}
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between border-b border-black/[0.07] px-5 sm:px-6 lg:px-8">
+      {/* =====================================================
+          NAVBAR
+      ===================================================== */}
 
-        {/* ================= LOGO ================= */}
-        <Link
-          to="/"
-          className="group flex shrink-0 items-center gap-3"
+      <div
+        className="w-full border-b"
+        style={{
+          borderColor: C.border,
+        }}
+      >
+        <div
+          className="mx-auto flex w-full max-w-[1400px] items-center justify-between"
+          style={{
+            height: "72px",
+            paddingLeft: "28px",
+            paddingRight: "28px",
+          }}
         >
-          {/* Logo icon */}
-          <div className="relative flex h-10 w-10 items-center justify-center">
+          {/* =================================================
+              LOGO
+          ================================================= */}
 
-            {/* Dashed outer ring */}
-            <span
-              className="absolute inset-0 rounded-xl transition-transform duration-300 group-hover:rotate-6"
-              style={{
-                border: `1.5px dashed ${C.indigo}55`,
-              }}
-            />
-
-            {/* S icon */}
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-[9px] text-sm font-bold text-white shadow-sm"
-              style={{
-                backgroundColor: C.indigo,
-                fontFamily: font.display,
-              }}
-            >
-              S
-            </div>
-          </div>
-
-          {/* Logo text */}
-          <span
-            className="text-[20px] font-bold tracking-[-0.02em]"
+          <Link
+            to="/"
+            onClick={closeMobileMenu}
+            className="group flex shrink-0 items-center"
             style={{
-              fontFamily: font.display,
-              color: C.ink,
+              gap: "12px",
             }}
           >
-            Smart
-            <span style={{ color: C.coral }}>LMS</span>
-          </span>
-        </Link>
+            {/* Logo Icon */}
 
-        {/* ================= DESKTOP NAVIGATION ================= */}
-        <div className="hidden lg:flex items-center">
-
-          {/* Roadmap container */}
-          <div className="relative">
-
-            {/* Connecting line */}
             <div
-              className="absolute left-5 right-5 top-1/2 h-px -translate-y-1/2"
+              className="relative flex shrink-0 items-center justify-center"
               style={{
-                backgroundColor: "rgba(21,18,31,0.10)",
+                width: "42px",
+                height: "42px",
               }}
-            />
+            >
+              <div
+                className="absolute inset-0 rounded-[13px] border border-dashed transition-transform duration-300 group-hover:rotate-6"
+                style={{
+                  borderColor: `${C.indigo}55`,
+                }}
+              />
 
-            {/* Navigation items */}
-            <div className="relative flex items-center gap-2">
+              <div
+                className="relative flex items-center justify-center rounded-[10px] text-white shadow-sm"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  backgroundColor: C.indigo,
+                }}
+              >
+                <BookOpen
+                  size={17}
+                  strokeWidth={2.2}
+                />
+              </div>
+            </div>
 
-              {NAV_ITEMS.map((item) => {
+            {/* Logo Text */}
 
-                const commonClasses =
-                  "group relative flex h-10 items-center gap-2 rounded-lg px-4 transition-all duration-200";
+            <div
+              className="leading-none"
+              style={{
+                fontFamily: "'Sora', sans-serif",
+              }}
+            >
+              <div
+                style={{
+                  color: C.ink,
+                  fontSize: "20px",
+                  fontWeight: 800,
+                  letterSpacing: "-0.04em",
+                }}
+              >
+                Smart
+                <span
+                  style={{
+                    color: C.coral,
+                  }}
+                >
+                  LMS
+                </span>
+              </div>
 
-                const content = (
-                  <>
-                    {/* Waypoint */}
+              <div
+                style={{
+                  marginTop: "5px",
+                  color: "#94A3B8",
+                  fontSize: "8px",
+                  fontWeight: 600,
+                  letterSpacing: "0.18em",
+                }}
+              >
+                LEARNING PLATFORM
+              </div>
+            </div>
+          </Link>
+
+          {/* =================================================
+              DESKTOP NAVIGATION
+          ================================================= */}
+
+          <div className="hidden lg:flex items-center">
+            <div
+              className="flex items-center rounded-2xl border bg-white/50"
+              style={{
+                gap: "2px",
+                padding: "5px",
+                borderColor: C.border,
+              }}
+            >
+              {navItems.map((item) => {
+                if (item.route) {
+                  return (
+                    <NavLink
+                      key={item.label}
+                      to={item.to}
+                      className={({ isActive }) =>
+                        `
+                        group
+                        flex
+                        items-center
+                        rounded-xl
+                        text-[13px]
+                        font-medium
+                        transition-all
+                        duration-200
+                        ${
+                          isActive
+                            ? "bg-white shadow-sm"
+                            : "hover:bg-white/70"
+                        }
+                      `
+                      }
+                      style={({ isActive }) => ({
+                        height: "40px",
+                        paddingLeft: "14px",
+                        paddingRight: "14px",
+                        gap: "8px",
+                        color: isActive
+                          ? C.ink
+                          : C.muted,
+                      })}
+                    >
+                      <span
+                        className="shrink-0 rounded-full transition-transform duration-200 group-hover:scale-150"
+                        style={{
+                          width: "6px",
+                          height: "6px",
+                          backgroundColor: item.color,
+                        }}
+                      />
+
+                      {item.label}
+                    </NavLink>
+                  );
+                }
+
+                return (
+                  <a
+                    key={item.label}
+                    href={item.to}
+                    className="group flex items-center rounded-xl text-[13px] font-medium transition-all duration-200 hover:bg-white/70"
+                    style={{
+                      height: "40px",
+                      paddingLeft: "14px",
+                      paddingRight: "14px",
+                      gap: "8px",
+                      color: C.muted,
+                    }}
+                  >
                     <span
-                      className="h-[7px] w-[7px] shrink-0 rounded-full transition-transform duration-200 group-hover:scale-150"
+                      className="shrink-0 rounded-full transition-transform duration-200 group-hover:scale-150"
                       style={{
+                        width: "6px",
+                        height: "6px",
                         backgroundColor: item.color,
                       }}
                     />
 
-                    {/* Label */}
-                    <span
-                      className="text-[13px] font-medium"
-                      style={{
-                        color: C.muted,
-                        fontFamily: font.mono,
-                      }}
-                    >
-                      {item.label}
-                    </span>
-                  </>
-                );
-
-                return item.isRoute ? (
-                  <Link
-                    key={item.label}
-                    to={item.to}
-                    className={commonClasses}
-                    style={{
-                      backgroundColor: C.bg,
-                    }}
-                  >
-                    {content}
-                  </Link>
-                ) : (
-                  <a
-                    key={item.label}
-                    href={item.to}
-                    className={commonClasses}
-                    style={{
-                      backgroundColor: C.bg,
-                    }}
-                  >
-                    {content}
+                    {item.label}
                   </a>
                 );
               })}
+            </div>
+          </div>
 
+          {/* =================================================
+              DESKTOP ACTION BUTTONS
+          ================================================= */}
+
+          <div
+            className="hidden items-center sm:flex"
+            style={{
+              gap: "14px",
+            }}
+          >
+            {/* LOGIN */}
+
+            <Link
+              to="/login"
+              className="flex items-center justify-center rounded-xl border text-[13px] font-semibold transition-all duration-200 hover:-translate-y-[1px] hover:bg-white hover:shadow-sm"
+              style={{
+                height: "46px",
+                minWidth: "96px",
+                paddingLeft: "28px",
+                paddingRight: "28px",
+                borderColor: C.border,
+                backgroundColor:
+                  "rgba(255,255,255,0.65)",
+                color: C.ink,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Log in
+            </Link>
+
+            {/* GET STARTED */}
+
+            <Link
+              to="/register"
+              className="group flex items-center justify-center rounded-xl text-[13px] font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:shadow-md active:translate-y-0"
+              style={{
+                height: "46px",
+                minWidth: "154px",
+                paddingLeft: "30px",
+                paddingRight: "30px",
+                gap: "10px",
+                backgroundColor: C.indigo,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span>Get Started</span>
+
+              <span className="transition-transform duration-200 group-hover:translate-x-1">
+                →
+              </span>
+            </Link>
+          </div>
+
+          {/* =================================================
+              MOBILE MENU BUTTON
+          ================================================= */}
+
+          <button
+            type="button"
+            onClick={() =>
+              setMobileOpen((prev) => !prev)
+            }
+            className="flex items-center justify-center rounded-xl border lg:hidden"
+            style={{
+              width: "42px",
+              height: "42px",
+              borderColor: C.border,
+              backgroundColor: C.white,
+              color: C.ink,
+            }}
+            aria-label={
+              mobileOpen
+                ? "Close navigation"
+                : "Open navigation"
+            }
+          >
+            {mobileOpen ? (
+              <X size={20} />
+            ) : (
+              <Menu size={20} />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* =====================================================
+          MOBILE MENU
+      ===================================================== */}
+
+      {mobileOpen && (
+        <div
+          className="border-b bg-white lg:hidden"
+          style={{
+            borderColor: C.border,
+          }}
+        >
+          <div
+            className="mx-auto w-full max-w-[1400px]"
+            style={{
+              padding: "16px 20px 22px",
+            }}
+          >
+            {/* Mobile Navigation */}
+
+            <div
+              className="flex flex-col"
+              style={{
+                gap: "4px",
+              }}
+            >
+              {navItems.map((item) => {
+                if (item.route) {
+                  return (
+                    <NavLink
+                      key={item.label}
+                      to={item.to}
+                      onClick={closeMobileMenu}
+                      className={({ isActive }) =>
+                        `
+                        flex
+                        items-center
+                        rounded-xl
+                        text-sm
+                        font-semibold
+                        ${
+                          isActive
+                            ? "bg-indigo-50"
+                            : "hover:bg-slate-50"
+                        }
+                      `
+                      }
+                      style={{
+                        height: "48px",
+                        paddingLeft: "16px",
+                        paddingRight: "16px",
+                        gap: "12px",
+                        color: C.ink,
+                      }}
+                    >
+                      <span
+                        className="rounded-full"
+                        style={{
+                          width: "7px",
+                          height: "7px",
+                          backgroundColor:
+                            item.color,
+                        }}
+                      />
+
+                      {item.label}
+                    </NavLink>
+                  );
+                }
+
+                return (
+                  <a
+                    key={item.label}
+                    href={item.to}
+                    onClick={closeMobileMenu}
+                    className="flex items-center rounded-xl text-sm font-semibold hover:bg-slate-50"
+                    style={{
+                      height: "48px",
+                      paddingLeft: "16px",
+                      paddingRight: "16px",
+                      gap: "12px",
+                      color: C.ink,
+                    }}
+                  >
+                    <span
+                      className="rounded-full"
+                      style={{
+                        width: "7px",
+                        height: "7px",
+                        backgroundColor:
+                          item.color,
+                      }}
+                    />
+
+                    {item.label}
+                  </a>
+                );
+              })}
+            </div>
+
+            {/* Mobile Buttons */}
+
+            <div
+              className="grid grid-cols-2 border-t"
+              style={{
+                marginTop: "16px",
+                paddingTop: "16px",
+                gap: "12px",
+                borderColor: C.border,
+              }}
+            >
+              <Link
+                to="/login"
+                onClick={closeMobileMenu}
+                className="flex items-center justify-center rounded-xl border text-sm font-semibold"
+                style={{
+                  height: "46px",
+                  paddingLeft: "20px",
+                  paddingRight: "20px",
+                  borderColor: C.border,
+                  color: C.ink,
+                }}
+              >
+                Log in
+              </Link>
+
+              <Link
+                to="/register"
+                onClick={closeMobileMenu}
+                className="flex items-center justify-center rounded-xl text-sm font-semibold text-white"
+                style={{
+                  height: "46px",
+                  paddingLeft: "20px",
+                  paddingRight: "20px",
+                  backgroundColor: C.indigo,
+                }}
+              >
+                Get Started
+              </Link>
             </div>
           </div>
         </div>
-
-        {/* ================= AUTH BUTTONS ================= */}
-        <div className="flex shrink-0 items-center gap-2.5">
-
-          {/* Login */}
-          <Link
-            to="/login"
-            className="
-              hidden
-              sm:flex
-              h-11
-              items-center
-              justify-center
-              rounded-xl
-              border
-              border-black/[0.09]
-              bg-white/60
-              px-5
-              text-[13px]
-              font-semibold
-              transition-all
-              duration-200
-              hover:border-black/[0.16]
-              hover:bg-white
-              hover:-translate-y-[1px]
-            "
-            style={{
-              color: C.ink,
-            }}
-          >
-            Log in
-          </Link>
-
-          {/* Get Started */}
-          <Link
-            to="/register"
-            className="
-              flex
-              h-11
-              items-center
-              justify-center
-              rounded-xl
-              px-5
-              sm:px-6
-              text-[13px]
-              font-semibold
-              text-white
-              shadow-sm
-              transition-all
-              duration-200
-              hover:-translate-y-[1px]
-              hover:shadow-md
-              active:translate-y-0
-            "
-            style={{
-              backgroundColor: C.indigo,
-            }}
-          >
-            Get Started
-          </Link>
-
-        </div>
-      </div>
+      )}
     </nav>
   );
 }

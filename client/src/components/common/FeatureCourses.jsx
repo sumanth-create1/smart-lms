@@ -9,6 +9,7 @@ const C = {
   amber: "#F2A93B",
   teal: "#0EA5A4",
   coral: "#FF5A36",
+  purple: "#7C3AED",
 };
 
 const COURSES = [
@@ -74,7 +75,7 @@ const COURSES = [
     lectures: 30,
     duration: "11h 30m",
     price: "₹899",
-    color: "#7C3AED",
+    color: C.purple,
     icon: "▣",
   },
   {
@@ -92,66 +93,84 @@ const COURSES = [
   },
 ];
 
+/* ============================================================
+   COURSE CARD
+============================================================ */
+
 function CourseCard({ course }) {
   return (
     <Link
       to={`/courses/${course.id}`}
       className="
         group
-        block
-        w-[310px]
+        flex
+        h-[470px]
+        w-[330px]
         shrink-0
+        flex-col
         overflow-hidden
-        rounded-[24px]
+        rounded-[22px]
         border
         bg-white
         transition-all
         duration-300
         hover:-translate-y-1
-        hover:shadow-[0_20px_50px_rgba(21,18,31,0.10)]
-        sm:w-[340px]
+        hover:shadow-[0_18px_45px_rgba(21,18,31,0.10)]
+        sm:w-[350px]
+        lg:w-[360px]
       "
       style={{
         borderColor: "rgba(21,18,31,0.08)",
       }}
     >
-      {/* Course visual */}
+      {/* ======================================================
+          COURSE VISUAL
+      ====================================================== */}
 
       <div
-        className="relative h-40 overflow-hidden p-6"
+        className="
+          relative
+          h-[175px]
+          shrink-0
+          overflow-hidden
+          px-6
+          py-5
+        "
         style={{
           backgroundColor: `${course.color}0D`,
         }}
       >
-        {/* Decorative circles */}
+        {/* Large decorative circle */}
 
         <div
           className="
             absolute
-            -right-12
-            -top-12
-            h-36
-            w-36
+            -right-14
+            -top-14
+            h-40
+            w-40
             rounded-full
             opacity-20
             transition-transform
             duration-500
-            group-hover:scale-125
+            group-hover:scale-110
           "
           style={{
             backgroundColor: course.color,
           }}
         />
 
+        {/* Decorative ring */}
+
         <div
           className="
             absolute
             -bottom-16
-            -left-8
-            h-32
-            w-32
+            -left-10
+            h-36
+            w-36
             rounded-full
-            border-[16px]
+            border-[15px]
             opacity-10
           "
           style={{
@@ -159,9 +178,12 @@ function CourseCard({ course }) {
           }}
         />
 
+        {/* Category */}
+
         <span
           className="
             relative
+            z-10
             font-mono
             text-[10px]
             font-semibold
@@ -175,23 +197,24 @@ function CourseCard({ course }) {
           {course.category}
         </span>
 
-        {/* Icon */}
+        {/* Course Icon */}
 
         <div
           className="
             absolute
             bottom-5
             right-6
+            z-10
             flex
-            h-12
-            w-12
+            h-14
+            w-14
             items-center
             justify-center
             rounded-2xl
             bg-white
-            text-lg
+            text-xl
             font-bold
-            shadow-sm
+            shadow-[0_6px_18px_rgba(21,18,31,0.10)]
             transition-transform
             duration-300
             group-hover:rotate-6
@@ -204,16 +227,27 @@ function CourseCard({ course }) {
         </div>
       </div>
 
-      {/* Content */}
+      {/* ======================================================
+          CONTENT
+      ====================================================== */}
 
-      <div className="p-6">
+      <div className="flex flex-1 flex-col p-6">
 
-        <div className="flex items-center justify-between gap-3">
+        {/* Level + Lectures */}
 
+        <div className="flex h-7 items-center justify-between gap-3">
           <span
-            className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+            className="
+              inline-flex
+              items-center
+              rounded-full
+              px-2.5
+              py-1
+              text-[10px]
+              font-semibold
+            "
             style={{
-              backgroundColor: `${course.color}10`,
+              backgroundColor: `${course.color}12`,
               color: course.color,
             }}
           >
@@ -228,14 +262,15 @@ function CourseCard({ course }) {
           >
             {course.lectures} lectures
           </span>
-
         </div>
+
+        {/* Title */}
 
         <h3
           className="
-            mt-5
-            line-clamp-2
-            min-h-[52px]
+            mt-4
+            h-[56px]
+            overflow-hidden
             text-lg
             font-bold
             leading-7
@@ -248,11 +283,13 @@ function CourseCard({ course }) {
           {course.title}
         </h3>
 
+        {/* Description */}
+
         <p
           className="
             mt-3
-            line-clamp-2
-            min-h-[48px]
+            h-[72px]
+            overflow-hidden
             text-sm
             leading-6
           "
@@ -263,12 +300,13 @@ function CourseCard({ course }) {
           {course.description}
         </p>
 
+        {/* ==================================================
+            FOOTER
+        ================================================== */}
+
         <div
           className="
-            mt-5
-            flex
-            items-center
-            justify-between
+            mt-auto
             border-t
             pt-5
           "
@@ -276,86 +314,144 @@ function CourseCard({ course }) {
             borderColor: "rgba(21,18,31,0.07)",
           }}
         >
+          <div className="flex items-center justify-between gap-4">
 
-          <div>
+            {/* Price */}
 
-            <p
-              className="text-lg font-bold"
+            <div className="min-w-0">
+              <p
+                className="text-lg font-bold"
+                style={{
+                  color: C.ink,
+                }}
+              >
+                {course.price}
+              </p>
+
+              <p
+                className="mt-0.5 text-[10px]"
+                style={{
+                  color: C.muted,
+                }}
+              >
+                {course.duration}
+              </p>
+            </div>
+
+            {/* Button */}
+
+            <span
+              className="
+                inline-flex
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                px-3.5
+                py-2.5
+                text-xs
+                font-semibold
+                transition-all
+                duration-200
+                group-hover:translate-x-1
+              "
               style={{
-                color: C.ink,
+                backgroundColor: `${course.color}10`,
+                color: course.color,
               }}
             >
-              {course.price}
-            </p>
-
-            <p
-              className="mt-0.5 text-[10px]"
-              style={{
-                color: C.muted,
-              }}
-            >
-              {course.duration}
-            </p>
+              View course
+              <span className="ml-1.5">→</span>
+            </span>
 
           </div>
-
-          <span
-            className="
-              text-xs
-              font-semibold
-              transition-all
-              duration-300
-              group-hover:translate-x-1
-            "
-            style={{
-              color: course.color,
-            }}
-          >
-            View course →
-          </span>
-
         </div>
-
       </div>
     </Link>
   );
 }
 
+/* ============================================================
+   COURSE SET
+   Keeping each set identical makes the infinite animation
+   seamless.
+============================================================ */
+
+function CourseSet() {
+  return (
+    <div
+      className="
+        flex
+        shrink-0
+        gap-6
+        pr-6
+      "
+    >
+      {COURSES.map((course) => (
+        <CourseCard
+          key={course.id}
+          course={course}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ============================================================
+   FEATURED COURSES
+============================================================ */
+
 function FeaturedCourses() {
-  /*
-    We duplicate the course list.
-
-    Why?
-
-    The first copy moves across the screen and the second copy
-    immediately follows it. This creates a seamless infinite loop.
-  */
-
-  const scrollingCourses = [...COURSES, ...COURSES];
-
   return (
     <section
       id="courses"
-      className="overflow-hidden border-t border-black/[0.06]"
+      className="
+        overflow-hidden
+        border-t
+        border-black/[0.06]
+      "
       style={{
         backgroundColor: C.bg,
       }}
     >
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
 
-      {/* =====================================================
-          SECTION HEADER
-      ===================================================== */}
+      <div
+        className="
+          mx-auto
+          w-full
+          max-w-[1280px]
+          px-6
+          pb-12
+          pt-20
+          sm:px-8
+          sm:pb-14
+          sm:pt-24
+          lg:px-10
+        "
+      >
+        <div
+          className="
+            flex
+            flex-col
+            gap-8
+            lg:flex-row
+            lg:items-end
+            lg:justify-between
+          "
+        >
 
-      <div className="mx-auto max-w-[1180px] px-6 pb-12 pt-24 sm:px-8 sm:pb-14 sm:pt-28 lg:px-10">
+          {/* LEFT SIDE */}
 
-        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-[720px]">
 
-          <div className="max-w-2xl">
+            {/* Section label */}
 
             <div className="flex items-center gap-3">
-
               <span
-                className="h-[2px] w-10 rounded-full"
+                className="h-[3px] w-11 rounded-full"
                 style={{
                   backgroundColor: C.indigo,
                 }}
@@ -375,24 +471,26 @@ function FeaturedCourses() {
               >
                 Available courses
               </span>
-
             </div>
+
+            {/* Heading */}
 
             <h2
               className="
-                mt-6
-                text-3xl
+                mt-5
+                text-4xl
                 font-bold
-                leading-tight
-                tracking-[-0.04em]
-                sm:text-4xl
-                lg:text-[48px]
+                leading-[1.05]
+                tracking-[-0.045em]
+                sm:text-5xl
+                lg:text-[54px]
               "
               style={{
                 color: C.ink,
               }}
             >
               Choose what you want
+
               <span
                 className="block"
                 style={{
@@ -403,10 +501,12 @@ function FeaturedCourses() {
               </span>
             </h2>
 
+            {/* Description */}
+
             <p
               className="
                 mt-5
-                max-w-xl
+                max-w-[650px]
                 text-sm
                 leading-7
                 sm:text-base
@@ -418,55 +518,64 @@ function FeaturedCourses() {
               Explore practical courses designed to help you build
               knowledge, develop real skills and keep moving forward.
             </p>
-
           </div>
 
+          {/* ==================================================
+              VIEW ALL BUTTON
+          ================================================== */}
 
-          {/* View all */}
-
-          <Link
-            to="/courses"
+          <div
             className="
-              inline-flex
-              w-fit
+              flex
               shrink-0
-              items-center
-              rounded-xl
-              border
-              bg-white
-              px-5
-              py-3
-              text-xs
-              font-semibold
-              transition-all
-              hover:-translate-y-0.5
-              hover:shadow-md
+              lg:pb-1
             "
-            style={{
-              borderColor: "rgba(21,18,31,0.09)",
-              color: C.ink,
-            }}
           >
-            View all courses
-            <span className="ml-2">→</span>
-          </Link>
+            <Link
+              to="/courses"
+              className="
+                inline-flex
+                h-12
+                items-center
+                justify-center
+                rounded-xl
+                border
+                bg-white
+                px-5
+                text-sm
+                font-semibold
+                whitespace-nowrap
+                shadow-sm
+                transition-all
+                duration-200
+                hover:-translate-y-0.5
+                hover:shadow-md
+                active:translate-y-0
+              "
+              style={{
+                borderColor: "rgba(21,18,31,0.10)",
+                color: C.ink,
+              }}
+            >
+              View all courses
+              <span className="ml-2">→</span>
+            </Link>
+          </div>
 
         </div>
-
       </div>
 
-
-      {/* =====================================================
-          AUTO SCROLLING COURSES
-      ===================================================== */}
+      {/* ======================================================
+          COURSE CAROUSEL
+      ====================================================== */}
 
       <div
         className="
           relative
           w-full
           overflow-hidden
-          pb-24
-          sm:pb-28
+          pb-20
+          sm:pb-24
         "
       >
 
@@ -476,16 +585,20 @@ function FeaturedCourses() {
           className="
             pointer-events-none
             absolute
+            inset-y-0
             left-0
-            top-0
-            z-10
-            h-full
-            w-12
-            sm:w-24
+            z-20
+            w-10
+            sm:w-20
           "
           style={{
-            background:
-              `linear-gradient(to right, ${C.bg}, transparent)`,
+            background: `
+              linear-gradient(
+                to right,
+                ${C.bg},
+                transparent
+              )
+            `,
           }}
         />
 
@@ -495,98 +608,82 @@ function FeaturedCourses() {
           className="
             pointer-events-none
             absolute
+            inset-y-0
             right-0
-            top-0
-            z-10
-            h-full
-            w-12
-            sm:w-24
+            z-20
+            w-10
+            sm:w-20
           "
           style={{
-            background:
-              `linear-gradient(to left, ${C.bg}, transparent)`,
+            background: `
+              linear-gradient(
+                to left,
+                ${C.bg},
+                transparent
+              )
+            `,
           }}
         />
 
-
-        {/* Moving track */}
+        {/* ==================================================
+            ANIMATED TRACK
+        ================================================== */}
 
         <div
           className="
+            smart-lms-course-track
             flex
             w-max
-            gap-6
-            pl-6
-            sm:gap-7
-            sm:pl-8
-            lg:pl-10
+            flex-nowrap
           "
-          style={{
-            animation: "smartLmsCourseScroll 38s linear infinite",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.animationPlayState = "paused";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.animationPlayState = "running";
-          }}
         >
+          {/* First set */}
 
-          {scrollingCourses.map((course, index) => (
-            <CourseCard
-              key={`${course.id}-${index}`}
-              course={course}
-            />
-          ))}
+          <CourseSet />
 
+          {/* Exact duplicate */}
+
+          <CourseSet />
         </div>
-
       </div>
 
-
-      {/* Animation */}
+      {/* ======================================================
+          ANIMATION
+      ====================================================== */}
 
       <style>{`
-        @keyframes smartLmsCourseScroll {
+        .smart-lms-course-track {
+          animation: smartLmsCourseScroll 45s linear infinite;
+        }
 
-          0% {
+        .smart-lms-course-track:hover {
+          animation-play-state: paused;
+        }
+
+        @keyframes smartLmsCourseScroll {
+          from {
             transform: translateX(0);
           }
 
-          100% {
-            transform: translateX(calc(-50% - 12px));
+          to {
+            transform: translateX(-50%);
           }
-
         }
 
-        @media (min-width: 640px) {
-
-          @keyframes smartLmsCourseScroll {
-
-            0% {
-              transform: translateX(0);
-            }
-
-            100% {
-              transform: translateX(calc(-50% - 14px));
-            }
-
+        @media (max-width: 639px) {
+          .smart-lms-course-track {
+            animation-duration: 38s;
           }
-
         }
 
         @media (prefers-reduced-motion: reduce) {
-
           .smart-lms-course-track {
             animation: none !important;
           }
-
         }
       `}</style>
-
     </section>
   );
 }
 
 export default FeaturedCourses;
-

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
- 
+
 const C = {
   bg: "#FBFAF7",
   ink: "#15121F",
@@ -8,514 +8,815 @@ const C = {
   amber: "#F2A93B",
   teal: "#0EA5A4",
   coral: "#FF5A36",
-  violet: "#7C3AED",
 };
- 
+
 function Hero() {
   return (
     <section
-      className="relative overflow-hidden"
-      style={{ backgroundColor: C.bg }}
+      className="relative w-full"
+      style={{
+        backgroundColor: C.bg,
+        overflow: "hidden",
+      }}
     >
-      {/* Decorative background elements — larger, softer, further apart */}
+      {/* =====================================================
+          BACKGROUND DECORATION
+      ===================================================== */}
+
       <div
-        className="absolute -left-40 top-20 h-96 w-96 rounded-full opacity-25 blur-3xl"
-        style={{ backgroundColor: `${C.indigo}25` }}
+        className="pointer-events-none absolute rounded-full blur-3xl"
+        style={{
+          width: "320px",
+          height: "320px",
+          left: "-160px",
+          top: "100px",
+          backgroundColor: `${C.indigo}10`,
+        }}
       />
- 
+
       <div
-        className="absolute -right-40 top-52 h-[26rem] w-[26rem] rounded-full opacity-20 blur-3xl"
-        style={{ backgroundColor: `${C.coral}25` }}
+        className="pointer-events-none absolute rounded-full blur-3xl"
+        style={{
+          width: "360px",
+          height: "360px",
+          right: "-180px",
+          top: "80px",
+          backgroundColor: `${C.coral}08`,
+        }}
       />
- 
-      <div className="relative mx-auto max-w-7xl px-6 pb-28 pt-28 sm:pb-36 sm:pt-36 lg:px-10 lg:pb-44 lg:pt-44">
- 
-        <div className="grid items-center gap-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-28">
- 
-          {/* ================= LEFT CONTENT ================= */}
-          <div>
- 
-            {/* Small label */}
+
+      {/* =====================================================
+          MAIN HERO CONTAINER
+      ===================================================== */}
+
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "1440px",
+          margin: "0 auto",
+          padding: "72px 48px 88px",
+          position: "relative",
+          zIndex: 1,
+          boxSizing: "border-box",
+        }}
+      >
+        <div
+          className="grid items-center"
+          style={{
+            gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+            columnGap: "70px",
+          }}
+        >
+          {/* =================================================
+              LEFT CONTENT
+          ================================================= */}
+
+          <div style={{ minWidth: 0 }}>
+            {/* Label */}
+
             <div
-              className="mb-8 inline-flex items-center gap-2.5 rounded-full border px-4 py-2.5"
+              className="inline-flex items-center rounded-full border"
               style={{
+                gap: "9px",
+                padding: "7px 14px",
+                marginBottom: "24px",
                 borderColor: `${C.indigo}25`,
                 backgroundColor: `${C.indigo}08`,
               }}
             >
               <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: C.indigo }}
+                className="rounded-full"
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  backgroundColor: C.indigo,
+                }}
               />
- 
+
               <span
-                className="text-xs font-semibold uppercase tracking-[0.16em]"
-                style={{ color: C.indigo }}
+                style={{
+                  color: C.indigo,
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                }}
               >
                 Your learning journey
               </span>
             </div>
- 
+
             {/* Heading */}
+
             <h1
-              className="max-w-3xl text-5xl font-bold leading-[1.08] tracking-[-0.04em] sm:text-6xl lg:text-[72px]"
-              style={{ color: C.ink }}
+              style={{
+                margin: 0,
+                maxWidth: "680px",
+                color: C.ink,
+                fontSize: "clamp(52px, 5vw, 72px)",
+                fontWeight: 750,
+                lineHeight: "0.98",
+                letterSpacing: "-0.055em",
+              }}
             >
               Learn skills.
- 
+
               <span
-                className="mt-3 block"
-                style={{ color: C.indigo }}
+                style={{
+                  display: "block",
+                  marginTop: "12px",
+                  color: C.indigo,
+                }}
               >
                 Build your future.
               </span>
             </h1>
- 
+
             {/* Description */}
+
             <p
-              className="mt-9 max-w-xl text-base leading-8 sm:text-lg"
-              style={{ color: C.muted }}
+              style={{
+                margin: "26px 0 0",
+                maxWidth: "610px",
+                color: C.muted,
+                fontSize: "18px",
+                lineHeight: "1.75",
+              }}
             >
               Smart LMS helps you learn practical technology skills through
               structured courses, hands-on lessons, and progress tracking —
               all in one place.
             </p>
- 
-            {/* Buttons */}
-            <div className="mt-12 flex flex-col gap-4 sm:flex-row">
- 
+
+            {/* =================================================
+                BUTTONS
+            ================================================= */}
+
+            <div
+              className="flex flex-col sm:flex-row"
+              style={{
+                gap: "12px",
+                marginTop: "30px",
+              }}
+            >
               <Link
                 to="/register"
-                className="
-                  flex
-                  h-[3.25rem]
-                  items-center
-                  justify-center
-                  rounded-xl
-                  px-8
-                  py-4
-                  text-sm
-                  font-semibold
-                  text-white
-                  shadow-sm
-                  transition-all
-                  duration-200
-                  hover:-translate-y-0.5
-                  hover:shadow-lg
-                "
+                className="group inline-flex items-center justify-center rounded-xl text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
                 style={{
+                  height: "50px",
+                  minWidth: "175px",
+                  padding: "0 25px",
                   backgroundColor: C.indigo,
+                  fontSize: "14px",
+                  fontWeight: 650,
+                  textDecoration: "none",
+                  boxShadow: "0 6px 18px rgba(79,70,229,0.18)",
                 }}
               >
                 Start learning
-                <span className="ml-2">→</span>
+
+                <span
+                  style={{
+                    marginLeft: "8px",
+                    transition: "transform 0.2s ease",
+                  }}
+                >
+                  →
+                </span>
               </Link>
- 
+
               <Link
                 to="/courses"
-                className="
-                  flex
-                  h-[3.25rem]
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border
-                  px-8
-                  py-4
-                  text-sm
-                  font-semibold
-                  transition-all
-                  duration-200
-                  hover:-translate-y-0.5
-                  hover:bg-white
-                "
+                className="inline-flex items-center justify-center rounded-xl border transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
                 style={{
-                  borderColor: "rgba(21,18,31,0.12)",
+                  height: "50px",
+                  minWidth: "175px",
+                  padding: "0 25px",
+                  borderColor: "rgba(21,18,31,0.13)",
                   color: C.ink,
+                  fontSize: "14px",
+                  fontWeight: 650,
+                  textDecoration: "none",
                 }}
               >
                 Explore courses
               </Link>
- 
             </div>
- 
-            {/* Trust / stats */}
-            <div className="mt-16 flex flex-wrap items-center gap-x-12 gap-y-7">
- 
-              <div>
-                <p
-                  className="text-3xl font-bold"
-                  style={{ color: C.ink }}
-                >
-                  50+
-                </p>
- 
-                <p
-                  className="mt-1.5 text-xs"
-                  style={{ color: C.muted }}
-                >
-                  Courses
-                </p>
-              </div>
- 
-              <div className="h-10 w-px bg-black/10" />
- 
-              <div>
-                <p
-                  className="text-3xl font-bold"
-                  style={{ color: C.ink }}
-                >
-                  1K+
-                </p>
- 
-                <p
-                  className="mt-1.5 text-xs"
-                  style={{ color: C.muted }}
-                >
-                  Learners
-                </p>
-              </div>
- 
-              <div className="h-10 w-px bg-black/10" />
- 
-              <div>
-                <p
-                  className="text-3xl font-bold"
-                  style={{ color: C.ink }}
-                >
-                  24/7
-                </p>
- 
-                <p
-                  className="mt-1.5 text-xs"
-                  style={{ color: C.muted }}
-                >
-                  Learning
-                </p>
-              </div>
- 
-            </div>
-          </div>
- 
-          {/* ================= RIGHT LEARNING PATH ================= */}
-          <div className="relative">
- 
-            {/* Main card */}
+
+            {/* =================================================
+                STATS
+            ================================================= */}
+
             <div
-              className="relative rounded-3xl border p-8 shadow-[0_30px_90px_rgba(21,18,31,0.10)] sm:p-10"
+              className="flex items-center"
               style={{
-                borderColor: "rgba(21,18,31,0.08)",
-                backgroundColor: "#FFFFFF",
+                gap: "28px",
+                marginTop: "38px",
               }}
             >
- 
-              {/* Card header */}
-              <div className="flex items-center justify-between">
- 
-                <div>
-                  <p
-                    className="text-xs font-semibold uppercase tracking-[0.14em]"
-                    style={{ color: C.muted }}
+              {/* Courses */}
+
+              <div>
+                <div
+                  style={{
+                    color: C.ink,
+                    fontSize: "30px",
+                    lineHeight: 1,
+                    fontWeight: 750,
+                  }}
+                >
+                  50+
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "6px",
+                    color: C.muted,
+                    fontSize: "12px",
+                  }}
+                >
+                  Courses
+                </div>
+              </div>
+
+              <div
+                style={{
+                  width: "1px",
+                  height: "38px",
+                  backgroundColor: "rgba(21,18,31,0.12)",
+                }}
+              />
+
+              {/* Learners */}
+
+              <div>
+                <div
+                  style={{
+                    color: C.ink,
+                    fontSize: "30px",
+                    lineHeight: 1,
+                    fontWeight: 750,
+                  }}
+                >
+                  1K+
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "6px",
+                    color: C.muted,
+                    fontSize: "12px",
+                  }}
+                >
+                  Learners
+                </div>
+              </div>
+
+              <div
+                style={{
+                  width: "1px",
+                  height: "38px",
+                  backgroundColor: "rgba(21,18,31,0.12)",
+                }}
+              />
+
+              {/* Learning */}
+
+              <div>
+                <div
+                  style={{
+                    color: C.ink,
+                    fontSize: "30px",
+                    lineHeight: 1,
+                    fontWeight: 750,
+                  }}
+                >
+                  24/7
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "6px",
+                    color: C.muted,
+                    fontSize: "12px",
+                  }}
+                >
+                  Learning
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* =================================================
+              RIGHT — LEARNING PATH CARD
+          ================================================= */}
+
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: "600px",
+              justifySelf: "end",
+              paddingBottom: "20px",
+            }}
+          >
+            {/* Main Card */}
+
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "28px",
+                borderRadius: "28px",
+                border: "1px solid rgba(21,18,31,0.08)",
+                backgroundColor: "#FFFFFF",
+                boxShadow:
+                  "0 25px 70px rgba(21,18,31,0.09)",
+              }}
+            >
+              {/* =================================================
+                  CARD HEADER
+              ================================================= */}
+
+              <div
+                className="flex items-start justify-between"
+                style={{
+                  gap: "20px",
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      color: C.muted,
+                      fontSize: "10px",
+                      fontWeight: 650,
+                      letterSpacing: "0.17em",
+                      textTransform: "uppercase",
+                    }}
                   >
                     Learning path
-                  </p>
- 
+                  </div>
+
                   <h2
-                    className="mt-2 text-2xl font-bold"
-                    style={{ color: C.ink }}
+                    style={{
+                      margin: "7px 0 0",
+                      color: C.ink,
+                      fontSize: "28px",
+                      fontWeight: 750,
+                      lineHeight: 1.15,
+                      letterSpacing: "-0.025em",
+                    }}
                   >
                     Full Stack Development
                   </h2>
                 </div>
- 
+
+                {/* Percentage */}
+
                 <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl text-sm font-bold"
+                  className="flex shrink-0 items-center justify-center"
                   style={{
-                    backgroundColor: `${C.indigo}12`,
+                    width: "54px",
+                    height: "54px",
+                    borderRadius: "17px",
+                    backgroundColor: `${C.indigo}10`,
                     color: C.indigo,
+                    fontSize: "12px",
+                    fontWeight: 750,
                   }}
                 >
                   68%
                 </div>
- 
               </div>
- 
-              {/* Progress */}
-              <div className="mt-9">
- 
-                <div className="mb-2.5 flex justify-between text-xs">
+
+              {/* =================================================
+                  PROGRESS
+              ================================================= */}
+
+              <div style={{ marginTop: "22px" }}>
+                <div
+                  className="flex justify-between"
+                  style={{
+                    marginBottom: "7px",
+                    fontSize: "12px",
+                  }}
+                >
                   <span style={{ color: C.muted }}>
                     Course progress
                   </span>
- 
+
                   <span
-                    className="font-semibold"
-                    style={{ color: C.indigo }}
+                    style={{
+                      color: C.indigo,
+                      fontWeight: 650,
+                    }}
                   >
                     68%
                   </span>
                 </div>
- 
-                <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
- 
+
+                <div
+                  style={{
+                    width: "100%",
+                    height: "8px",
+                    overflow: "hidden",
+                    borderRadius: "999px",
+                    backgroundColor: "#EEF0F5",
+                  }}
+                >
                   <div
-                    className="h-full rounded-full"
                     style={{
                       width: "68%",
-                      background: `linear-gradient(90deg, ${C.indigo}, ${C.teal})`,
+                      height: "100%",
+                      borderRadius: "999px",
+                      background:
+                        `linear-gradient(90deg, ${C.indigo}, ${C.teal})`,
                     }}
                   />
- 
                 </div>
               </div>
- 
-              {/* Learning roadmap */}
-              <div className="mt-12">
- 
-                <p
-                  className="mb-7 text-xs font-semibold uppercase tracking-[0.14em]"
-                  style={{ color: C.muted }}
+
+              {/* =================================================
+                  ROADMAP
+              ================================================= */}
+
+              <div style={{ marginTop: "24px" }}>
+                <div
+                  style={{
+                    marginBottom: "13px",
+                    color: C.muted,
+                    fontSize: "10px",
+                    fontWeight: 650,
+                    letterSpacing: "0.17em",
+                    textTransform: "uppercase",
+                  }}
                 >
                   Your roadmap
-                </p>
- 
-                <div className="relative">
- 
-                  {/* Connecting line */}
+                </div>
+
+                <div style={{ position: "relative" }}>
+                  {/* Vertical Line */}
+
                   <div
-                    className="absolute bottom-7 left-[13px] top-7 w-px"
                     style={{
-                      backgroundColor: "rgba(21,18,31,0.12)",
+                      position: "absolute",
+                      left: "12px",
+                      top: "13px",
+                      bottom: "13px",
+                      width: "1px",
+                      backgroundColor:
+                        "rgba(21,18,31,0.11)",
                     }}
                   />
- 
-                  {/* Step 1 */}
-                  <div className="relative flex gap-5 pb-9">
- 
+
+                  {/* STEP 1 */}
+
+                  <div
+                    className="flex"
+                    style={{
+                      position: "relative",
+                      gap: "14px",
+                      marginBottom: "16px",
+                    }}
+                  >
                     <div
-                      className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                      className="relative z-10 flex shrink-0 items-center justify-center rounded-full text-white"
                       style={{
+                        width: "26px",
+                        height: "26px",
                         backgroundColor: C.indigo,
+                        fontSize: "11px",
+                        fontWeight: 700,
                       }}
                     >
                       ✓
                     </div>
- 
-                    <div className="pt-0.5">
- 
-                      <p
-                        className="text-sm font-semibold"
-                        style={{ color: C.ink }}
+
+                    <div>
+                      <div
+                        style={{
+                          color: C.ink,
+                          fontSize: "14px",
+                          fontWeight: 650,
+                        }}
                       >
                         HTML & CSS
-                      </p>
- 
-                      <p
-                        className="mt-1.5 text-xs"
-                        style={{ color: C.muted }}
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: "3px",
+                          color: C.muted,
+                          fontSize: "12px",
+                        }}
                       >
                         Completed
-                      </p>
- 
+                      </div>
                     </div>
                   </div>
- 
-                  {/* Step 2 */}
-                  <div className="relative flex gap-5 pb-9">
- 
+
+                  {/* STEP 2 */}
+
+                  <div
+                    className="flex"
+                    style={{
+                      position: "relative",
+                      gap: "14px",
+                      marginBottom: "16px",
+                    }}
+                  >
                     <div
-                      className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-white text-xs font-bold"
+                      className="relative z-10 flex shrink-0 items-center justify-center rounded-full bg-white"
                       style={{
-                        borderColor: C.teal,
+                        width: "26px",
+                        height: "26px",
+                        border: `2px solid ${C.teal}`,
                         color: C.teal,
+                        fontSize: "11px",
+                        fontWeight: 700,
                       }}
                     >
                       2
                     </div>
- 
-                    <div className="pt-0.5">
- 
-                      <p
-                        className="text-sm font-semibold"
-                        style={{ color: C.ink }}
+
+                    <div>
+                      <div
+                        style={{
+                          color: C.ink,
+                          fontSize: "14px",
+                          fontWeight: 650,
+                        }}
                       >
                         JavaScript
-                      </p>
- 
-                      <p
-                        className="mt-1.5 text-xs"
-                        style={{ color: C.muted }}
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: "3px",
+                          color: C.muted,
+                          fontSize: "12px",
+                        }}
                       >
                         In progress · 72%
-                      </p>
- 
+                      </div>
                     </div>
                   </div>
- 
-                  {/* Step 3 */}
-                  <div className="relative flex gap-5 pb-9">
- 
+
+                  {/* STEP 3 */}
+
+                  <div
+                    className="flex"
+                    style={{
+                      position: "relative",
+                      gap: "14px",
+                      marginBottom: "16px",
+                    }}
+                  >
                     <div
-                      className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-white text-xs font-bold"
+                      className="relative z-10 flex shrink-0 items-center justify-center rounded-full bg-white"
                       style={{
-                        borderColor: C.amber,
+                        width: "26px",
+                        height: "26px",
+                        border: `2px solid ${C.amber}`,
                         color: C.amber,
+                        fontSize: "11px",
+                        fontWeight: 700,
                       }}
                     >
                       3
                     </div>
- 
-                    <div className="pt-0.5">
- 
-                      <p
-                        className="text-sm font-semibold"
-                        style={{ color: C.ink }}
+
+                    <div>
+                      <div
+                        style={{
+                          color: C.ink,
+                          fontSize: "14px",
+                          fontWeight: 650,
+                        }}
                       >
                         React
-                      </p>
- 
-                      <p
-                        className="mt-1.5 text-xs"
-                        style={{ color: C.muted }}
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: "3px",
+                          color: C.muted,
+                          fontSize: "12px",
+                        }}
                       >
                         Upcoming
-                      </p>
- 
+                      </div>
                     </div>
                   </div>
- 
-                  {/* Step 4 */}
-                  <div className="relative flex gap-5">
- 
+
+                  {/* STEP 4 */}
+
+                  <div
+                    className="flex"
+                    style={{
+                      position: "relative",
+                      gap: "14px",
+                    }}
+                  >
                     <div
-                      className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-white text-xs font-bold"
+                      className="relative z-10 flex shrink-0 items-center justify-center rounded-full bg-white"
                       style={{
-                        borderColor: C.coral,
+                        width: "26px",
+                        height: "26px",
+                        border: `2px solid ${C.coral}`,
                         color: C.coral,
+                        fontSize: "11px",
+                        fontWeight: 700,
                       }}
                     >
                       4
                     </div>
- 
-                    <div className="pt-0.5">
- 
-                      <p
-                        className="text-sm font-semibold"
-                        style={{ color: C.ink }}
+
+                    <div>
+                      <div
+                        style={{
+                          color: C.ink,
+                          fontSize: "14px",
+                          fontWeight: 650,
+                        }}
                       >
                         Node.js & MongoDB
-                      </p>
- 
-                      <p
-                        className="mt-1.5 text-xs"
-                        style={{ color: C.muted }}
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: "3px",
+                          color: C.muted,
+                          fontSize: "12px",
+                        }}
                       >
                         Upcoming
-                      </p>
- 
+                      </div>
                     </div>
                   </div>
- 
                 </div>
               </div>
- 
-              {/* Continue learning */}
+
+              {/* =================================================
+                  CONTINUE LEARNING
+              ================================================= */}
+
               <div
-                className="mt-12 flex items-center justify-between rounded-2xl p-5"
+                className="flex items-center justify-between"
                 style={{
+                  marginTop: "23px",
+                  minHeight: "64px",
+                  padding: "12px 13px 12px 15px",
+                  borderRadius: "17px",
                   backgroundColor: "#F7F6FB",
+                  gap: "15px",
                 }}
               >
- 
-                <div>
- 
-                  <p
-                    className="text-xs"
-                    style={{ color: C.muted }}
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      color: C.muted,
+                      fontSize: "10px",
+                    }}
                   >
                     Continue learning
-                  </p>
- 
-                  <p
-                    className="mt-1.5 text-sm font-semibold"
-                    style={{ color: C.ink }}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: "4px",
+                      color: C.ink,
+                      fontSize: "14px",
+                      fontWeight: 650,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
                   >
                     React Fundamentals
-                  </p>
- 
+                  </div>
                 </div>
- 
+
                 <button
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-white transition hover:-translate-y-0.5"
+                  type="button"
+                  aria-label="Continue learning"
+                  className="flex shrink-0 items-center justify-center rounded-xl text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                   style={{
+                    width: "42px",
+                    height: "42px",
+                    border: "none",
+                    cursor: "pointer",
                     backgroundColor: C.coral,
+                    fontSize: "16px",
                   }}
                 >
                   →
                 </button>
- 
               </div>
- 
             </div>
- 
-            {/* Floating badge */}
+
+            {/* =================================================
+                STREAK BADGE
+            ================================================= */}
+
             <div
-              className="absolute -bottom-7 -left-7 hidden rounded-2xl border p-5 shadow-lg sm:block"
+              className="hidden sm:block"
               style={{
+                position: "absolute",
+                left: "28px",
+                bottom: "-2px",
+                zIndex: 5,
+                padding: "10px 15px",
+                borderRadius: "16px",
+                border: "1px solid rgba(21,18,31,0.08)",
                 backgroundColor: "#FFFFFF",
-                borderColor: "rgba(21,18,31,0.08)",
+                boxShadow:
+                  "0 12px 30px rgba(21,18,31,0.10)",
               }}
             >
- 
-              <div className="flex items-center gap-3.5">
- 
+              <div className="flex items-center" style={{ gap: "10px" }}>
                 <div
-                  className="flex h-10 w-10 items-center justify-center rounded-lg"
+                  className="flex shrink-0 items-center justify-center rounded-xl"
                   style={{
+                    width: "34px",
+                    height: "34px",
                     backgroundColor: `${C.teal}15`,
                     color: C.teal,
+                    fontSize: "14px",
+                    fontWeight: 700,
                   }}
                 >
                   ✓
                 </div>
- 
+
                 <div>
- 
-                  <p
-                    className="text-xs"
-                    style={{ color: C.muted }}
+                  <div
+                    style={{
+                      color: C.muted,
+                      fontSize: "10px",
+                    }}
                   >
                     Weekly streak
-                  </p>
- 
-                  <p
-                    className="text-sm font-bold"
-                    style={{ color: C.ink }}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: "2px",
+                      color: C.ink,
+                      fontSize: "13px",
+                      fontWeight: 750,
+                    }}
                   >
                     7 days 🔥
-                  </p>
- 
+                  </div>
                 </div>
- 
               </div>
- 
             </div>
- 
-            {/* Decorative colored dot */}
+
+            {/* Decorative Dot */}
+
             <div
-              className="absolute -right-4 -top-4 h-7 w-7 rounded-full border-4"
               style={{
+                position: "absolute",
+                right: "-10px",
+                top: "-10px",
+                width: "20px",
+                height: "20px",
+                borderRadius: "50%",
+                border: `3px solid ${C.bg}`,
                 backgroundColor: C.amber,
-                borderColor: C.bg,
               }}
             />
- 
           </div>
         </div>
       </div>
+
+      {/* =====================================================
+          RESPONSIVE OVERRIDES
+      ===================================================== */}
+
+      <style>{`
+        @media (max-width: 1024px) {
+          .hero-main-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .hero-content-wrapper {
+            padding: 55px 24px 70px !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .hero-content-wrapper {
+            padding: 45px 18px 60px !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }
- 
+
 export default Hero;
- 

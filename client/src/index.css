@@ -3,7 +3,6 @@
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
 html,
@@ -18,8 +17,3 @@ body {
   background: #f8fafc;
 }
 
-.home-content {
-  display: flex;
-  flex-direction: column;
-  gap: 80px;
-}

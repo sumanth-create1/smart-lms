@@ -8,19 +8,37 @@ import Footer from "../components/common/Footer";
 
 function Home() {
   return (
-    <>
+    <div
+      className="min-h-screen w-full overflow-x-hidden"
+      style={{
+        backgroundColor: "#15121F",
+      }}
+    >
       <Navbar />
 
-      <main className="home-content">
+      <main className="w-full">
         <Hero />
+
         <Features />
+
         <FeaturedCourses />
+
         <HowItWorks />
+
         <FinalCTA />
       </main>
 
+      {/* Space between CTA and Footer */}
+
+      <div
+        className="h-16 sm:h-20 lg:h-24"
+        style={{
+          backgroundColor: "#FBFAF7",
+        }}
+      />
+
       <Footer />
-    </>
+    </div>
   );
 }
 

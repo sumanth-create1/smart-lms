@@ -6,7 +6,6 @@ const C = {
   indigo: "#4F46E5",
   amber: "#F2A93B",
   teal: "#0EA5A4",
-  coral: "#FF5A36",
 };
 
 const STEPS = [
@@ -39,21 +38,45 @@ const STEPS = [
 function HowItWorks() {
   return (
     <section
-      className="overflow-hidden border-t border-black/[0.06]"
+      className="w-full border-t border-black/[0.06]"
       style={{
         backgroundColor: C.bg,
       }}
     >
-      <div className="mx-auto w-full max-w-[1180px] px-6 py-24 sm:px-8 sm:py-28 lg:px-10 lg:py-32">
-
+      <div
+        className="
+          mx-auto
+          flex
+          w-full
+          max-w-[1280px]
+          flex-col
+          items-center
+          px-5
+          py-20
+          sm:px-8
+          sm:py-24
+          lg:px-10
+          lg:py-28
+        "
+      >
         {/* =====================================================
             HEADER
-        ===================================================== */}
+        ====================================================== */}
 
-        <div className="mx-auto max-w-2xl text-center">
+        <div
+          className="
+            mx-auto
+            flex
+            w-full
+            max-w-[700px]
+            flex-col
+            items-center
+            text-center
+          "
+        >
+          {/* Label */}
 
           <div className="flex items-center justify-center gap-3">
-
             <span
               className="h-[2px] w-8 rounded-full"
               style={{
@@ -63,7 +86,6 @@ function HowItWorks() {
 
             <span
               className="
-                font-mono
                 text-[10px]
                 font-semibold
                 uppercase
@@ -82,26 +104,27 @@ function HowItWorks() {
                 backgroundColor: C.indigo,
               }}
             />
-
           </div>
+
+          {/* Heading */}
 
           <h2
             className="
               mt-6
-              text-3xl
+              text-center
+              text-4xl
               font-bold
-              leading-tight
-              tracking-[-0.04em]
-              sm:text-4xl
-              lg:text-[48px]
+              leading-[1.05]
+              tracking-[-0.045em]
+              sm:text-5xl
+              lg:text-[52px]
             "
             style={{
               color: C.ink,
             }}
           >
-            Learning made
+            Learning made{" "}
             <span
-              className="block"
               style={{
                 color: C.muted,
               }}
@@ -110,11 +133,14 @@ function HowItWorks() {
             </span>
           </h2>
 
+          {/* Description */}
+
           <p
             className="
               mx-auto
               mt-5
-              max-w-xl
+              max-w-[560px]
+              text-center
               text-sm
               leading-7
               sm:text-base
@@ -123,29 +149,29 @@ function HowItWorks() {
               color: C.muted,
             }}
           >
-            Smart LMS keeps the learning experience focused, simple and
-            easy to follow.
+            Smart LMS keeps the learning experience focused, simple and easy
+            to follow.
           </p>
-
         </div>
-
 
         {/* =====================================================
             STEPS
-        ===================================================== */}
+        ====================================================== */}
 
-        <div className="relative mt-20">
+        <div className="relative mt-16 w-full sm:mt-20">
 
-          {/* Connecting line */}
+          {/* Connecting Line */}
 
           <div
             className="
+              pointer-events-none
               absolute
-              left-[16.66%]
-              right-[16.66%]
-              top-[31px]
+              left-1/2
+              top-[39px]
               hidden
               h-px
+              w-[680px]
+              -translate-x-1/2
               lg:block
             "
             style={{
@@ -153,70 +179,120 @@ function HowItWorks() {
             }}
           />
 
+          {/* ===================================================
+              CENTERED CARD GROUP
+          ==================================================== */}
 
-          <div className="grid gap-12 lg:grid-cols-3 lg:gap-10">
-
-            {STEPS.map((step, index) => (
-
+          <div
+            className="
+              mx-auto
+              flex
+              w-full
+              max-w-[1040px]
+              flex-col
+              items-center
+              justify-center
+              gap-6
+              md:flex-row
+              md:flex-wrap
+              lg:flex-nowrap
+              lg:gap-6
+            "
+          >
+            {STEPS.map((step) => (
               <div
                 key={step.number}
-                className="relative text-center"
+                className="
+                  group
+                  relative
+                  flex
+                  min-h-[350px]
+                  w-[320px]
+                  shrink-0
+                  flex-col
+                  items-center
+                  rounded-[26px]
+                  border
+                  bg-white
+                  px-7
+                  py-9
+                  text-center
+                  transition-all
+                  duration-300
+                  hover:-translate-y-1.5
+                  hover:shadow-[0_20px_50px_rgba(21,18,31,0.09)]
+                "
+                style={{
+                  borderColor: "rgba(21,18,31,0.07)",
+                }}
               >
+                {/* =================================================
+                    ICON
+                ================================================== */}
 
-                {/* Step circle */}
-
-                <div className="relative z-10 mx-auto flex w-fit">
-
-                  <div
-                    className="
-                      flex
-                      h-16
-                      w-16
-                      items-center
-                      justify-center
-                      rounded-full
-                      border-[5px]
-                      bg-white
-                      text-lg
-                      font-bold
-                      shadow-sm
-                    "
-                    style={{
-                      borderColor: `${step.color}20`,
-                      color: step.color,
-                    }}
-                  >
-                    {step.icon}
-                  </div>
-
-                </div>
-
-
-                {/* Number */}
-
-                <p
+                <div
                   className="
-                    mt-6
-                    font-mono
-                    text-[10px]
-                    font-semibold
-                    tracking-[0.2em]
+                    relative
+                    z-10
+                    flex
+                    h-[76px]
+                    w-[76px]
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-full
+                    border-[5px]
+                    bg-white
+                    text-xl
+                    font-bold
+                    shadow-[0_8px_25px_rgba(21,18,31,0.08)]
+                    transition-transform
+                    duration-300
+                    group-hover:scale-105
                   "
                   style={{
+                    borderColor: `${step.color}25`,
                     color: step.color,
                   }}
                 >
-                  STEP {step.number}
-                </p>
+                  {step.icon}
+                </div>
 
+                {/* =================================================
+                    STEP NUMBER
+                ================================================== */}
 
-                {/* Title */}
+                <div
+                  className="
+                    mt-6
+                    rounded-full
+                    px-3.5
+                    py-1.5
+                    text-[10px]
+                    font-bold
+                    uppercase
+                    tracking-[0.16em]
+                  "
+                  style={{
+                    backgroundColor: `${step.color}10`,
+                    color: step.color,
+                  }}
+                >
+                  Step {step.number}
+                </div>
+
+                {/* =================================================
+                    TITLE
+                ================================================== */}
 
                 <h3
                   className="
-                    mt-4
+                    mt-5
+                    w-full
+                    text-center
                     text-xl
                     font-bold
+                    leading-7
                     tracking-[-0.025em]
                     sm:text-2xl
                   "
@@ -227,14 +303,16 @@ function HowItWorks() {
                   {step.title}
                 </h3>
 
-
-                {/* Description */}
+                {/* =================================================
+                    DESCRIPTION
+                ================================================== */}
 
                 <p
                   className="
                     mx-auto
                     mt-4
-                    max-w-sm
+                    max-w-[270px]
+                    text-center
                     text-sm
                     leading-7
                   "
@@ -245,58 +323,61 @@ function HowItWorks() {
                   {step.description}
                 </p>
 
+                {/* =================================================
+                    ACCENT
+                ================================================== */}
 
-                {/* Small progress marker */}
-
-                {index < STEPS.length - 1 && (
-                  <div
-                    className="
-                      mx-auto
-                      mt-8
-                      h-1
-                      w-1
-                      rounded-full
-                      lg:hidden
-                    "
-                    style={{
-                      backgroundColor: step.color,
-                    }}
-                  />
-                )}
-
+                <div
+                  className="
+                    mt-auto
+                    h-1
+                    w-10
+                    rounded-full
+                    transition-all
+                    duration-300
+                    group-hover:w-16
+                  "
+                  style={{
+                    backgroundColor: step.color,
+                  }}
+                />
               </div>
-
             ))}
-
           </div>
-
         </div>
-
 
         {/* =====================================================
             BOTTOM MESSAGE
-        ===================================================== */}
+        ====================================================== */}
 
         <div
           className="
             mx-auto
-            mt-20
-            max-w-3xl
-            rounded-[24px]
+            mt-14
+            flex
+            w-full
+            max-w-[850px]
+            items-center
+            justify-center
+            rounded-[22px]
             border
             bg-white
             px-6
-            py-7
+            py-6
             text-center
+            sm:mt-16
             sm:px-10
+            sm:py-7
           "
           style={{
             borderColor: "rgba(21,18,31,0.07)",
           }}
         >
-
           <p
             className="
+              mx-auto
+              max-w-[700px]
+              text-center
               text-sm
               leading-7
               sm:text-base
@@ -312,16 +393,14 @@ function HowItWorks() {
                 color: C.ink,
               }}
             >
-              {" "}from your first lecture to your final completion.
+              {" "}
+              from your first lecture to your final completion.
             </span>
           </p>
-
         </div>
-
       </div>
     </section>
   );
 }
 
 export default HowItWorks;
-
