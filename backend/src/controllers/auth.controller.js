@@ -36,9 +36,12 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
-    // Check if email and password are provided
+    // =========================================
+    // VALIDATION
+    // =========================================
+
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -46,10 +49,29 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // Find user by email
-    const user = await User.findOne({ email });
+    if (!role) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a role",
+      });
+    }
 
-    // User not found
+    // Only allow valid roles
+    if (!["student", "instructor"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role selected",
+      });
+    }
+
+    // =========================================
+    // FIND USER
+    // =========================================
+
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+    });
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -57,7 +79,21 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // Compare password
+    // =========================================
+    // CHECK ROLE
+    // =========================================
+
+    if (user.role !== role) {
+      return res.status(403).json({
+        success: false,
+        message: `This account is registered as ${user.role}. Please select ${user.role}.`,
+      });
+    }
+
+    // =========================================
+    // CHECK PASSWORD
+    // =========================================
+
     const isPasswordMatched = await user.comparePassword(password);
 
     if (!isPasswordMatched) {
@@ -67,27 +103,46 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // Generate JWT
+    // =========================================
+    // GENERATE JWT
+    // =========================================
+
     const token = user.generateToken();
+
+    // =========================================
+    // COOKIE OPTIONS
+    // =========================================
 
     const options = {
       httpOnly: true,
-      secure: false, // Change to true in production (HTTPS)
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: false, // true in production with HTTPS
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     };
 
+    // =========================================
+    // REMOVE PASSWORD
+    // =========================================
+
     const userData = user.toObject();
+
     delete userData.password;
 
-    res.status(200).cookie("token", token, options).json({
+    // =========================================
+    // RESPONSE
+    // =========================================
+
+    return res.status(200).cookie("token", token, options).json({
       success: true,
       message: "Login successful",
       user: userData,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Login error:", error);
+
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Server error during login",
     });
   }
 };
@@ -110,30 +165,30 @@ export const getCurrentUser = async (req, res) => {
 };
 
 export const logoutUser = async (req, res) => {
-    try {
-        res
-            .status(200)
-            .cookie("token", "", {
-                httpOnly: true,
-                expires: new Date(0),
-            })
-            .json({
-                success: true,
-                message: "Logged out successfully",
-            });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
+  try {
+    res
+      .status(200)
+      .cookie("token", "", {
+        httpOnly: true,
+        expires: new Date(0),
+      })
+      .json({
+        success: true,
+        message: "Logged out successfully",
+      });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };
 
-// for testing purpose 
+// for testing purpose
 
 export const instructorDashboard = (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: `Welcome Instructor ${req.user.name}`,
-    });
+  res.status(200).json({
+    success: true,
+    message: `Welcome Instructor ${req.user.name}`,
+  });
 };

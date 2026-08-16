@@ -8,6 +8,7 @@ import lectureRoutes from "./routes/lecture.routes.js";
 import enrollmentRoutes from "./routes/enrollment.routes.js";
 import studentRoutes from "./routes/student.routes.js";
 import progressRoutes from "./routes/progress.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 const app = express();
 
@@ -42,6 +43,8 @@ app.use("/api/v1/enrollment", enrollmentRoutes);
 app.use("/api/v1/student", studentRoutes);
 
 app.use("/api/v1/progress", progressRoutes);
+
+app.use("/api/v1/dashboard", dashboardRoutes);
 
 
 export default app;

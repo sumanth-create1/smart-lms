@@ -1,5 +1,6 @@
 import Enrollment from "../models/enrollment.model.js";
 import Course from "../models/course.model.js";
+import Activity from "../models/activity.model.js";
 
 export const enrollCourse = async (req, res) => {
   try {
@@ -32,6 +33,17 @@ export const enrollCourse = async (req, res) => {
       course: courseId,
     });
 
+    // ==========================================
+    // CREATE ENROLLMENT ACTIVITY
+    // ==========================================
+
+    await Activity.create({
+      student: studentId,
+      type: "COURSE_ENROLLED",
+      course: courseId,
+      message: `Enrolled in ${course.courseTitle}`,
+    });
+
     return res.status(201).json({
       success: true,
       message: "Course enrolled successfully",
@@ -45,36 +57,31 @@ export const enrollCourse = async (req, res) => {
   }
 };
 
-
 export const getMyCourses = async (req, res) => {
-    try {
+  try {
+    const studentId = req.user._id;
 
-        const studentId = req.user._id;
+    const enrollments = await Enrollment.find({
+      student: studentId,
+    }).populate({
+      path: "course",
+      populate: {
+        path: "instructor",
+        select: "name email",
+      },
+    });
 
-        const enrollments = await Enrollment.find({
-            student: studentId,
-        }).populate({
-            path: "course",
-            populate: {
-                path: "instructor",
-                select: "name email",
-            },
-        });
+    const courses = enrollments.map((enrollment) => enrollment.course);
 
-        const courses = enrollments.map(
-            (enrollment) => enrollment.course
-        );
-
-        return res.status(200).json({
-            success: true,
-            count: courses.length,
-            courses,
-        });
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
+    return res.status(200).json({
+      success: true,
+      count: courses.length,
+      courses,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };

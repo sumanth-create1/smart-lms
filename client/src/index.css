@@ -17,3 +17,9 @@ body {
     sans-serif;
   background: #f8fafc;
 }
+
+.home-content {
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
+}

@@ -1,10 +1,10 @@
 import CourseProgress from "../models/courseProgress.model.js";
 import Lecture from "../models/lecture.model.js";
 import calculateProgress from "../utils/calculateProgress.js";
+import StudySession from "../models/studysession.model.js";
+import Activity from "../models/activity.model.js";
 
 export const saveProgress = async (req, res) => {
-  //     console.log("Content-Type:", req.headers["content-type"]);
-  // console.log("Body:", req.body);
   try {
     const { lectureId } = req.params;
     const { watchedSeconds } = req.body;
@@ -37,15 +37,11 @@ export const saveProgress = async (req, res) => {
       (item) => item.lecture.toString() === lectureId,
     );
 
+    let watchedDelta = 0;
+
     if (lectureProgress) {
       const previousWatchTime = lectureProgress.watchedSeconds;
       const MAX_ALLOWED_JUMP = 15;
-
-      console.log("----------------");
-      console.log("Previous:", previousWatchTime);
-      console.log("Incoming:", watchedSeconds);
-      console.log("Allowed:", previousWatchTime + MAX_ALLOWED_JUMP);
-      console.log("----------------");
 
       if (watchedSeconds > previousWatchTime + MAX_ALLOWED_JUMP) {
         return res.status(400).json({
@@ -53,6 +49,9 @@ export const saveProgress = async (req, res) => {
           message: "Invalid watch progress detected.",
         });
       }
+
+      // Calculate newly watched time
+      watchedDelta = Math.max(0, watchedSeconds - previousWatchTime);
 
       lectureProgress.watchedSeconds = Math.max(
         previousWatchTime,
@@ -68,14 +67,71 @@ export const saveProgress = async (req, res) => {
         });
       }
 
+      watchedDelta = watchedSeconds;
+
       progress.lectures.push({
         lecture: lectureId,
         watchedSeconds,
         completed: false,
       });
+
+      // Create lecture started activity
+      if (watchedSeconds > 0) {
+        await Activity.create({
+          student: studentId,
+          type: "LECTURE_STARTED",
+          course: lecture.course,
+          lecture: lectureId,
+          message: `Started lecture: ${lecture.lectureTitle}`,
+        });
+      }
     }
 
     await progress.save();
+
+    // ----------------------------------------
+    // SAVE STUDY SESSION
+    // ----------------------------------------
+
+    if (watchedDelta > 0) {
+      const now = new Date();
+
+      const startOfDay = new Date(now);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(now);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      let studySession = await StudySession.findOne({
+        student: studentId,
+        course: lecture.course,
+        lecture: lectureId,
+        startedAt: {
+          $gte: startOfDay,
+          $lte: endOfDay,
+        },
+      });
+
+      if (!studySession) {
+        studySession = await StudySession.create({
+          student: studentId,
+          course: lecture.course,
+          lecture: lectureId,
+          durationSeconds: watchedDelta,
+          startedAt: now,
+          endedAt: now,
+        });
+      } else {
+        studySession.durationSeconds += watchedDelta;
+        studySession.endedAt = now;
+
+        await studySession.save();
+      }
+    }
+
+    // ----------------------------------------
+    // CALCULATE COURSE PROGRESS
+    // ----------------------------------------
 
     const totalLectures = await Lecture.countDocuments({
       course: lecture.course,
@@ -115,18 +171,17 @@ export const getCourseProgress = async (req, res) => {
       });
     }
 
+    const totalLectures = await Lecture.countDocuments({
+      course: courseId,
+    });
+
     const completionPercentage = calculateProgress(progress, totalLectures);
 
     return res.status(200).json({
       success: true,
       progress,
+      completionPercentage,
     });
-
-    const totalLectures = await Lecture.countDocuments({
-      course: courseId,
-    });
-
-    
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -134,7 +189,6 @@ export const getCourseProgress = async (req, res) => {
     });
   }
 };
-
 // marking lecture completed or not.........
 
 export const markLectureCompleted = async (req, res) => {
@@ -183,9 +237,26 @@ export const markLectureCompleted = async (req, res) => {
       });
     }
 
+    // Prevent duplicate completion
+    if (lectureProgress.completed) {
+      return res.status(400).json({
+        success: false,
+        message: "Lecture is already completed",
+      });
+    }
+
     lectureProgress.completed = true;
 
     await progress.save();
+
+    // Save activity
+    await Activity.create({
+      student: studentId,
+      type: "LECTURE_COMPLETED",
+      course: lecture.course,
+      lecture: lectureId,
+      message: `Completed lecture: ${lecture.lectureTitle}`,
+    });
 
     return res.status(200).json({
       success: true,
@@ -227,7 +298,7 @@ export const getLectureProgress = async (req, res) => {
     }
 
     const lectureProgress = progress.lectures.find(
-      (item) => item.lecture.toString() === lectureId
+      (item) => item.lecture.toString() === lectureId,
     );
 
     if (!lectureProgress) {
@@ -243,7 +314,6 @@ export const getLectureProgress = async (req, res) => {
       watchedSeconds: lectureProgress.watchedSeconds,
       completed: lectureProgress.completed,
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,

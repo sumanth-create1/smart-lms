@@ -17,12 +17,11 @@ import DashboardLayout from "../components/layout/DashBoardLayout";
 function AppRoutes() {
   return (
     <BrowserRouter>
-
       <Routes>
 
-        {/* ================================
+        {/* =========================
             PUBLIC ROUTES
-        ================================= */}
+        ========================= */}
 
         <Route
           path="/"
@@ -39,32 +38,29 @@ function AppRoutes() {
           element={<Register />}
         />
 
-        {/* ================================
+        {/* =========================
             PROTECTED ROUTES
-        ================================= */}
+        ========================= */}
 
-        <Route
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
+        <Route element={<ProtectedRoute />}>
 
-          <Route
-            path="/dashboard"
-            element={<UserDashboard />}
-          />
+          <Route element={<DashboardLayout />}>
 
-          <Route
-            path="/courses"
-            element={<Courses />}
-          />
+            <Route
+              path="/dashboard"
+              element={<UserDashboard />}
+            />
+
+            <Route
+              path="/courses"
+              element={<Courses />}
+            />
+
+          </Route>
 
         </Route>
 
       </Routes>
-
     </BrowserRouter>
   );
 }

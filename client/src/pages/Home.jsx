@@ -1,6 +1,6 @@
 import Navbar from "../components/common/NavBar";
 import Hero from "../components/common/Hero";
-import Features from "../components/common/Features"
+import Features from "../components/common/Features";
 import FeaturedCourses from "../components/common/FeatureCourses";
 import HowItWorks from "../components/common/HowItWorks";
 import FinalCTA from "../components/common/FinalCTA";
@@ -11,13 +11,14 @@ function Home() {
     <>
       <Navbar />
 
-      <main>
+      <main className="home-content">
         <Hero />
         <Features />
         <FeaturedCourses />
         <HowItWorks />
         <FinalCTA />
       </main>
+
       <Footer />
     </>
   );

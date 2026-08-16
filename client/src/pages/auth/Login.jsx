@@ -1,34 +1,42 @@
 import { useState } from "react";
+import {
+  ArrowRight,
+  BookOpen,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import toast from "react-hot-toast";
 
-const C = {
-  bg: "#F7F6F2",
-  white: "#FFFFFF",
-  ink: "#15121F",
-  muted: "#6B6478",
-  indigo: "#4F46E5",
-  teal: "#0EA5A4",
-  coral: "#FF5A36",
-  amber: "#F2A93B",
-};
+import { useAuth } from "../../context/AuthContext";
 
 function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  // =========================================
+  // STATE
+  // =========================================
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    role: "student",
   });
 
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  // ==========================================
-  // HANDLE INPUT CHANGE
-  // ==========================================
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  // =========================================
+  // INPUT HANDLER
+  // =========================================
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,871 +45,575 @@ function Login() {
       ...prev,
       [name]: value,
     }));
-
-    // Clear previous error when user starts typing
-    if (error) {
-      setError("");
-    }
   };
 
-  // ==========================================
-  // HANDLE LOGIN
-  // ==========================================
+  // =========================================
+  // ROLE HANDLER
+  // =========================================
+
+  const handleRoleChange = (role) => {
+    setFormData((prev) => ({
+      ...prev,
+      role,
+    }));
+  };
+
+  // =========================================
+  // LOGIN
+  // =========================================
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setError("");
+    const email = formData.email.trim();
+    const password = formData.password.trim();
 
-    // Basic validation
-    if (!formData.email || !formData.password) {
-      setError("Please enter your email and password.");
+    // -------------------------------
+    // FRONTEND VALIDATION
+    // -------------------------------
+
+    if (!email) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+
+    if (!password) {
+      toast.error("Please enter your password.");
+      return;
+    }
+
+    if (!formData.role) {
+      toast.error("Please select your role.");
+      return;
+    }
+
+    // Basic email validation
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const result = await login(
-        formData.email,
-        formData.password
+      // IMPORTANT:
+      // AuthContext should accept:
+      // login(email, password, role)
+
+      await login(email, password, formData.role);
+
+      toast.success(
+        `Welcome back! Logged in as ${
+          formData.role === "student" ? "Student" : "Instructor"
+        }.`,
       );
 
-      console.log("Login successful:", result);
-
-      // Redirect after successful login
       navigate("/dashboard", {
         replace: true,
       });
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (err) {
+      console.error("Login failed:", err);
 
       const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
         "Login failed. Please check your email and password.";
 
-      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
+  // =========================================
+  // GOOGLE LOGIN
+  // =========================================
+
+  const handleGoogleLogin = async () => {
+    if (!formData.role) {
+      toast.error("Please select your role first.");
+      return;
+    }
+
+    setGoogleLoading(true);
+
+    try {
+      /*
+       * Connect your Google OAuth here.
+       *
+       * Example:
+       * await googleLogin(formData.role);
+       */
+
+      toast(
+        `Google sign-in for ${
+          formData.role === "student" ? "Student" : "Instructor"
+        } will be connected soon.`,
+        {
+          icon: "ℹ️",
+        },
+      );
+    } catch (err) {
+      console.error("Google login failed:", err);
+
+      toast.error(
+        err?.response?.data?.message ||
+          "Google sign-in failed. Please try again.",
+      );
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // =========================================
+  // UI
+  // =========================================
+
   return (
-    <div
-      className="relative min-h-screen overflow-hidden"
-      style={{ backgroundColor: C.bg }}
-    >
-      {/* ==========================================
-          BACKGROUND DECORATIONS
-      ========================================== */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -left-40
-          -top-40
-          h-96
-          w-96
-          rounded-full
-          blur-3xl
-        "
-        style={{
-          backgroundColor: `${C.indigo}12`,
-        }}
-      />
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -bottom-40
-          -right-40
-          h-[420px]
-          w-[420px]
-          rounded-full
-          blur-3xl
-        "
-        style={{
-          backgroundColor: `${C.teal}12`,
-        }}
-      />
-
-      {/* ==========================================
+    <div className="min-h-screen bg-[#F6F8FC] font-sans text-slate-900">
+      {/* =====================================================
           HEADER
-      ========================================== */}
+      ===================================================== */}
 
-      <header className="relative z-10">
-        <div
-          className="
-            mx-auto
-            flex
-            w-full
-            max-w-7xl
-            items-center
-            justify-between
-            px-6
-            py-7
-            sm:px-8
-            lg:px-10
-          "
-        >
-          {/* Logo */}
-
-          <Link
-            to="/"
-            className="flex items-center gap-3"
-          >
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-xl
-                text-sm
-                font-bold
-                text-white
-                shadow-sm
-              "
-              style={{
-                backgroundColor: C.indigo,
-              }}
-            >
-              S
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center px-5 sm:px-8">
+          <Link to="/" className="group flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 shadow-sm transition hover:bg-indigo-700">
+              <BookOpen size={20} strokeWidth={2.2} className="text-white" />
             </div>
 
-            <span
-              className="text-xl font-bold tracking-tight"
-              style={{
-                color: C.ink,
-              }}
-            >
-              Smart
-              <span style={{ color: C.coral }}>
-                LMS
-              </span>
-            </span>
-          </Link>
+            <div>
+              <h1 className="text-lg font-extrabold tracking-tight text-slate-900">
+                Smart
+                <span className="text-indigo-600">LMS</span>
+              </h1>
 
-          {/* Back Home */}
-
-          <Link
-            to="/"
-            className="
-              rounded-lg
-              px-3
-              py-2
-              text-sm
-              font-medium
-              transition
-              hover:bg-black/[0.04]
-            "
-            style={{
-              color: C.muted,
-            }}
-          >
-            Back to home
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Learning Platform
+              </p>
+            </div>
           </Link>
         </div>
       </header>
 
-      {/* ==========================================
+      {/* =====================================================
           MAIN
-      ========================================== */}
+      ===================================================== */}
 
-      <main
-        className="
-          relative
-          z-10
-          px-6
-          pb-20
-          pt-8
-          sm:px-8
-          lg:px-10
-          lg:pb-28
-        "
-      >
-        <div
-          className="
-            mx-auto
-            grid
-            w-full
-            max-w-6xl
-            items-center
-            gap-14
-            lg:grid-cols-[0.9fr_1.1fr]
-            lg:gap-20
-          "
-        >
+      <main className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-[#F6F8FC] px-4 py-6 sm:px-6">
+        {/* Background glow */}
+        <div className="pointer-events-none absolute left-1/2 top-10 h-72 w-72 -translate-x-1/2 rounded-full bg-indigo-200/30 blur-3xl" />
 
-          {/* ======================================
-              LEFT CONTENT
-          ====================================== */}
+        {/* =====================================================
+      MAIN CENTER WRAPPER
+  ===================================================== */}
 
-          <section className="hidden lg:block">
-            <div className="max-w-lg">
+        <div className="relative z-10 flex min-h-[calc(100vh-120px)] flex-col items-center justify-center">
+          {/* =================================================
+        LOGIN CARD
+    ================================================= */}
 
-              {/* Label */}
+          <div
+            className="w-full rounded-[26px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.09)]"
+            style={{
+              maxWidth: "580px",
+            }}
+          >
+            {/* =================================================
+          CARD CONTENT
+      ================================================= */}
 
-              <div className="flex items-center gap-3">
-                <span
-                  className="h-[2px] w-10 rounded-full"
-                  style={{
-                    backgroundColor: C.indigo,
-                  }}
-                />
-
-                <span
-                  className="
-                    font-mono
-                    text-[10px]
-                    font-semibold
-                    uppercase
-                    tracking-[0.2em]
-                  "
-                  style={{
-                    color: C.indigo,
-                  }}
-                >
-                  Welcome back
-                </span>
-              </div>
-
-              {/* Heading */}
-
-              <h1
-                className="
-                  mt-7
-                  text-5xl
-                  font-bold
-                  leading-[1.08]
-                  tracking-[-0.05em]
-                "
-                style={{
-                  color: C.ink,
-                }}
-              >
-                Continue learning.
-
-                <span
-                  className="block"
-                  style={{
-                    color: C.indigo,
-                  }}
-                >
-                  Keep building.
-                </span>
-
-                <span
-                  className="block"
-                  style={{
-                    color: C.muted,
-                  }}
-                >
-                  Keep growing.
-                </span>
-              </h1>
-
-              {/* Description */}
-
-              <p
-                className="
-                  mt-7
-                  max-w-md
-                  text-base
-                  leading-8
-                "
-                style={{
-                  color: C.muted,
-                }}
-              >
-                Sign in to continue your learning journey,
-                access your courses and pick up exactly where
-                you left off.
-              </p>
-
-              {/* Benefits */}
-
-              <div className="mt-12 space-y-7">
-
-                {/* Benefit 1 */}
-
-                <div className="flex gap-4">
-                  <div
-                    className="
-                      flex
-                      h-11
-                      w-11
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-xl
-                      font-semibold
-                    "
-                    style={{
-                      backgroundColor: `${C.indigo}12`,
-                      color: C.indigo,
-                    }}
-                  >
-                    ✓
-                  </div>
-
-                  <div>
-                    <h3
-                      className="text-sm font-bold"
-                      style={{
-                        color: C.ink,
-                      }}
-                    >
-                      Structured learning
-                    </h3>
-
-                    <p
-                      className="mt-1 text-sm leading-6"
-                      style={{
-                        color: C.muted,
-                      }}
-                    >
-                      Continue through organized courses
-                      and structured learning paths.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Benefit 2 */}
-
-                <div className="flex gap-4">
-                  <div
-                    className="
-                      flex
-                      h-11
-                      w-11
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-xl
-                      font-semibold
-                    "
-                    style={{
-                      backgroundColor: `${C.teal}12`,
-                      color: C.teal,
-                    }}
-                  >
-                    ↗
-                  </div>
-
-                  <div>
-                    <h3
-                      className="text-sm font-bold"
-                      style={{
-                        color: C.ink,
-                      }}
-                    >
-                      Track your progress
-                    </h3>
-
-                    <p
-                      className="mt-1 text-sm leading-6"
-                      style={{
-                        color: C.muted,
-                      }}
-                    >
-                      Keep track of completed lessons and
-                      your overall course progress.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Benefit 3 */}
-
-                <div className="flex gap-4">
-                  <div
-                    className="
-                      flex
-                      h-11
-                      w-11
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-xl
-                      font-semibold
-                    "
-                    style={{
-                      backgroundColor: `${C.coral}12`,
-                      color: C.coral,
-                    }}
-                  >
-                    →
-                  </div>
-
-                  <div>
-                    <h3
-                      className="text-sm font-bold"
-                      style={{
-                        color: C.ink,
-                      }}
-                    >
-                      Learn at your pace
-                    </h3>
-
-                    <p
-                      className="mt-1 text-sm leading-6"
-                      style={{
-                        color: C.muted,
-                      }}
-                    >
-                      Learn whenever you want and continue
-                      from where you stopped.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Roadmap */}
-
-              <div className="mt-14 flex max-w-sm items-center">
-                <div
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{
-                    backgroundColor: C.indigo,
-                  }}
-                />
-
-                <div className="h-px flex-1 bg-black/10" />
-
-                <div
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{
-                    backgroundColor: C.teal,
-                  }}
-                />
-
-                <div className="h-px flex-1 bg-black/10" />
-
-                <div
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{
-                    backgroundColor: C.amber,
-                  }}
-                />
-
-                <div className="h-px flex-1 bg-black/10" />
-
-                <div
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{
-                    backgroundColor: C.coral,
-                  }}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* ======================================
-              LOGIN CARD
-          ====================================== */}
-
-          <section>
             <div
-              className="
-                mx-auto
-                w-full
-                max-w-[560px]
-                rounded-[28px]
-                border
-                bg-white
-                p-7
-                shadow-[0_30px_80px_rgba(21,18,31,0.08)]
-                sm:p-10
-                lg:p-12
-              "
               style={{
-                borderColor: "rgba(21,18,31,0.07)",
+                padding: "30px 44px 26px",
               }}
             >
+              {/* =================================================
+            HEADER
+        ================================================= */}
 
-              {/* Card Header */}
-
-              <div>
-                <p
-                  className="
-                    font-mono
-                    text-[10px]
-                    font-semibold
-                    uppercase
-                    tracking-[0.18em]
-                  "
-                  style={{
-                    color: C.indigo,
-                  }}
-                >
-                  Welcome back
-                </p>
-
-                <h2
-                  className="
-                    mt-3
-                    text-3xl
-                    font-bold
-                    tracking-[-0.04em]
-                  "
-                  style={{
-                    color: C.ink,
-                  }}
-                >
-                  Sign in to Smart LMS
-                </h2>
-
-                <p
-                  className="mt-4 text-sm leading-6"
-                  style={{
-                    color: C.muted,
-                  }}
-                >
-                  Enter your account details to continue
-                  your learning journey.
-                </p>
-              </div>
-
-              {/* Divider */}
-
-              <div className="my-8 h-px bg-black/[0.07]" />
-
-              {/* Error */}
-
-              {error && (
-                <div
-                  className="
-                    mb-6
-                    rounded-xl
-                    border
-                    px-4
-                    py-3
-                    text-sm
-                    leading-5
-                  "
-                  style={{
-                    color: "#B42318",
-                    backgroundColor: "#FEF3F2",
-                    borderColor: "#FECACA",
-                  }}
-                >
-                  {error}
-                </div>
-              )}
-
-              {/* ==================================
-                  FORM
-              ================================== */}
-
-              <form
-                onSubmit={handleSubmit}
-                className="space-y-7"
-              >
-
-                {/* Email */}
-
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="
-                      mb-2.5
-                      block
-                      text-sm
-                      font-semibold
-                    "
-                    style={{
-                      color: C.ink,
-                    }}
-                  >
-                    Email address
-                  </label>
-
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="you@example.com"
-                    required
-                    autoComplete="email"
-                    className="
-                      h-14
-                      w-full
-                      rounded-xl
-                      border
-                      border-black/[0.12]
-                      bg-[#FCFCFB]
-                      px-5
-                      text-sm
-                      text-[#15121F]
-                      outline-none
-                      transition-all
-                      placeholder:text-gray-400
-                      hover:border-black/20
-                      focus:border-[#4F46E5]
-                      focus:bg-white
-                      focus:ring-4
-                      focus:ring-[#4F46E5]/10
-                    "
+              <div className="text-left">
+                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50">
+                  <Sparkles
+                    size={20}
+                    strokeWidth={2}
+                    className="text-indigo-600"
                   />
                 </div>
 
-                {/* Password */}
+                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">
+                  Welcome back
+                </p>
 
-                <div>
-                  <div className="mb-2.5 flex items-center justify-between">
-                    <label
-                      htmlFor="password"
-                      className="
-                        text-sm
-                        font-semibold
-                      "
-                      style={{
-                        color: C.ink,
-                      }}
-                    >
-                      Password
-                    </label>
+                <h2 className="text-[30px] font-extrabold leading-tight tracking-tight text-slate-900">
+                  Sign in to SmartLMS
+                </h2>
 
-                    <Link
-                      to="/forgot-password"
-                      className="
-                        text-xs
-                        font-semibold
-                        transition-opacity
-                        hover:opacity-70
-                      "
-                      style={{
-                        color: C.indigo,
-                      }}
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
-
-                  <div className="relative">
-                    <input
-                      id="password"
-                      name="password"
-                      type={
-                        showPassword
-                          ? "text"
-                          : "password"
-                      }
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Enter your password"
-                      required
-                      autoComplete="current-password"
-                      className="
-                        h-14
-                        w-full
-                        rounded-xl
-                        border
-                        border-black/[0.12]
-                        bg-[#FCFCFB]
-                        px-5
-                        pr-16
-                        text-sm
-                        text-[#15121F]
-                        outline-none
-                        transition-all
-                        placeholder:text-gray-400
-                        hover:border-black/20
-                        focus:border-[#4F46E5]
-                        focus:bg-white
-                        focus:ring-4
-                        focus:ring-[#4F46E5]/10
-                      "
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowPassword((prev) => !prev)
-                      }
-                      className="
-                        absolute
-                        right-4
-                        top-1/2
-                        -translate-y-1/2
-                        rounded-md
-                        px-1
-                        text-xs
-                        font-semibold
-                        transition-opacity
-                        hover:opacity-70
-                      "
-                      style={{
-                        color: C.indigo,
-                      }}
-                    >
-                      {showPassword ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Login Button */}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="
-                    group
-                    flex
-                    h-14
-                    w-full
-                    items-center
-                    justify-center
-                    gap-2
-                    rounded-xl
-                    text-sm
-                    font-semibold
-                    text-white
-                    shadow-[0_10px_25px_rgba(79,70,229,0.18)]
-                    transition-all
-                    duration-200
-                    hover:-translate-y-0.5
-                    hover:shadow-[0_15px_30px_rgba(79,70,229,0.25)]
-                    active:translate-y-0
-                    disabled:cursor-not-allowed
-                    disabled:opacity-60
-                  "
-                  style={{
-                    backgroundColor: C.indigo,
-                  }}
-                >
-                  {loading ? (
-                    <>
-                      <span
-                        className="
-                          h-4
-                          w-4
-                          animate-spin
-                          rounded-full
-                          border-2
-                          border-white/30
-                          border-t-white
-                        "
-                      />
-
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign in
-
-                      <span
-                        className="
-                          transition-transform
-                          group-hover:translate-x-1
-                        "
-                      >
-                        →
-                      </span>
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Divider */}
-
-              <div className="my-8 flex items-center gap-4">
-                <div className="h-px flex-1 bg-black/[0.07]" />
-
-                <span
-                  className="text-xs font-medium"
-                  style={{
-                    color: C.muted,
-                  }}
-                >
-                  OR
-                </span>
-
-                <div className="h-px flex-1 bg-black/[0.07]" />
+                <p className="mt-1.5 max-w-[440px] text-[13px] leading-5 text-slate-500">
+                  Access your courses, track your progress, and continue
+                  learning from where you left off.
+                </p>
               </div>
 
-              {/* Google */}
+              {/* =================================================
+            FORM
+        ================================================= */}
+
+              <form onSubmit={handleSubmit} className="mt-5">
+                <div className="mx-auto w-full max-w-[470px]">
+                  {/* =================================================
+                ROLE
+            ================================================= */}
+
+                  <div className="mb-4">
+                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-800">
+                      Continue as
+                    </label>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* STUDENT */}
+
+                      <button
+                        type="button"
+                        onClick={() => handleRoleChange("student")}
+                        className={`flex h-[52px] items-center gap-3 rounded-xl border px-3 text-left transition-all ${
+                          formData.role === "student"
+                            ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-500/10"
+                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                            formData.role === "student"
+                              ? "bg-indigo-600 text-white"
+                              : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          <GraduationCap size={18} />
+                        </div>
+
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">
+                            Student
+                          </p>
+
+                          <p className="text-[10px] text-slate-500">
+                            Learn & track
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* INSTRUCTOR */}
+
+                      <button
+                        type="button"
+                        onClick={() => handleRoleChange("instructor")}
+                        className={`flex h-[52px] items-center gap-3 rounded-xl border px-3 text-left transition-all ${
+                          formData.role === "instructor"
+                            ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-500/10"
+                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                            formData.role === "instructor"
+                              ? "bg-indigo-600 text-white"
+                              : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          <Users size={18} />
+                        </div>
+
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">
+                            Instructor
+                          </p>
+
+                          <p className="text-[10px] text-slate-500">
+                            Teach & manage
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* =================================================
+                EMAIL
+            ================================================= */}
+
+                  <div className="mb-4">
+                    <label
+                      htmlFor="email"
+                      className="mb-1.5 block text-[13px] font-semibold text-slate-800"
+                    >
+                      Email address
+                    </label>
+
+                    <div
+                      style={{
+                        padding: "5px",
+                        borderRadius: "13px",
+                        background: "#f8fafc",
+                      }}
+                    >
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                        className="
+                    block
+                    h-11
+                    w-full
+                    rounded-lg
+                    border
+                    border-slate-200
+                    bg-white
+                    px-4
+                    text-[13px]
+                    text-slate-900
+                    outline-none
+                    placeholder:text-slate-400
+                    focus:border-indigo-500
+                    focus:ring-2
+                    focus:ring-indigo-500/10
+                  "
+                      />
+                    </div>
+                  </div>
+
+                  {/* =================================================
+                PASSWORD
+            ================================================= */}
+
+                  <div className="mb-3">
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <label
+                        htmlFor="password"
+                        className="text-[13px] font-semibold text-slate-800"
+                      >
+                        Password
+                      </label>
+
+                      <Link
+                        to="/forgot-password"
+                        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+
+                    <div
+                      style={{
+                        padding: "5px",
+                        borderRadius: "13px",
+                        background: "#f8fafc",
+                      }}
+                    >
+                      <div className="relative">
+                        <input
+                          id="password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          value={formData.password}
+                          onChange={handleChange}
+                          placeholder="Enter your password"
+                          autoComplete="current-password"
+                          className="
+                      block
+                      h-11
+                      w-full
+                      rounded-lg
+                      border
+                      border-slate-200
+                      bg-white
+                      px-4
+                      pr-12
+                      text-[13px]
+                      text-slate-900
+                      outline-none
+                      placeholder:text-slate-400
+                      focus:border-indigo-500
+                      focus:ring-2
+                      focus:ring-indigo-500/10
+                    "
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
+                        >
+                          {showPassword ? (
+                            <EyeOff size={17} />
+                          ) : (
+                            <Eye size={17} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* =================================================
+                REMEMBER
+            ================================================= */}
+
+                  <div className="mb-4 flex items-center justify-between">
+                    <label className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+
+                      <span className="text-[11px] font-medium text-slate-500">
+                        Remember me
+                      </span>
+                    </label>
+
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <ShieldCheck size={13} />
+                      Secure login
+                    </div>
+                  </div>
+
+                  {/* =================================================
+                LOGIN BUTTON
+            ================================================= */}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="
+                group
+                flex
+                h-11
+                w-full
+                items-center
+                justify-center
+                gap-2
+                rounded-xl
+                bg-indigo-600
+                text-[13px]
+                font-bold
+                text-white
+                shadow-lg
+                shadow-indigo-600/20
+                transition-all
+                hover:-translate-y-0.5
+                hover:bg-indigo-700
+                disabled:cursor-not-allowed
+                disabled:opacity-60
+              "
+                  >
+                    {loading ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        Signing in...
+                      </>
+                    ) : (
+                      <>
+                        Sign in as{" "}
+                        {formData.role === "student" ? "Student" : "Instructor"}
+                        <ArrowRight
+                          size={16}
+                          className="transition-transform group-hover:translate-x-1"
+                        />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+
+              {/* =================================================
+            DIVIDER
+        ================================================= */}
+
+              <div className="my-4 flex items-center gap-3">
+                <div className="h-px flex-1 bg-slate-200" />
+
+                <span className="text-[10px] font-bold text-slate-400">OR</span>
+
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              {/* =================================================
+            GOOGLE
+        ================================================= */}
 
               <button
                 type="button"
+                onClick={handleGoogleLogin}
+                disabled={googleLoading}
                 className="
-                  flex
-                  h-14
-                  w-full
-                  items-center
-                  justify-center
-                  gap-3
-                  rounded-xl
-                  border
-                  border-black/[0.1]
-                  bg-white
-                  text-sm
-                  font-semibold
-                  transition-all
-                  hover:border-black/20
-                  hover:bg-[#F9F8F5]
-                "
-                style={{
-                  color: C.ink,
-                }}
+            flex
+            h-11
+            w-full
+            items-center
+            justify-center
+            gap-3
+            rounded-xl
+            border
+            border-slate-200
+            bg-white
+            text-[13px]
+            font-semibold
+            text-slate-700
+            shadow-sm
+            transition
+            hover:border-slate-300
+            hover:bg-slate-50
+            disabled:cursor-not-allowed
+            disabled:opacity-60
+          "
               >
-                <span className="text-lg font-bold">
-                  G
-                </span>
-
-                Continue with Google
+                {googleLoading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 font-bold">
+                      G
+                    </span>
+                    Continue with Google
+                  </>
+                )}
               </button>
 
-              {/* Register */}
+              {/* =================================================
+            REGISTER
+        ================================================= */}
 
-              <div className="mt-9 text-center">
-                <p
-                  className="text-sm"
-                  style={{
-                    color: C.muted,
-                  }}
+              <p className="mt-4 text-center text-[12px] text-slate-500">
+                Don't have an account?
+                <Link
+                  to="/register"
+                  className="ml-1 font-bold text-indigo-600 hover:text-indigo-700"
                 >
-                  Don't have an account?
-
-                  <Link
-                    to="/register"
-                    className="
-                      ml-1.5
-                      font-semibold
-                      transition-opacity
-                      hover:opacity-70
-                    "
-                    style={{
-                      color: C.indigo,
-                    }}
-                  >
-                    Create account
-                  </Link>
-                </p>
-              </div>
+                  Create account
+                </Link>
+              </p>
             </div>
+          </div>
 
-            {/* Bottom */}
+          {/* =====================================================
+        FOOTER
+        IMPORTANT: OUTSIDE CARD BUT BELOW IT
+    ===================================================== */}
 
-            <p
-              className="
-                mt-6
-                text-center
-                text-xs
-              "
-              style={{
-                color: C.muted,
-              }}
-            >
-              Your learning journey continues here.
-            </p>
-          </section>
+          <p className="mt-3 text-center text-[11px] text-slate-400">
+            © {new Date().getFullYear()} SmartLMS · Secure learning platform
+          </p>
         </div>
       </main>
     </div>
