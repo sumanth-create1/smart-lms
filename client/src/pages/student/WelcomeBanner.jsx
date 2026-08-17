@@ -5,46 +5,124 @@ import {
 } from "lucide-react";
 
 function WelcomeBanner({ user, stats }) {
-  const weeklyGoal = stats?.weeklyGoal || {};
+  const weeklyGoal = stats?.weeklyGoal ?? {};
 
   const enrolledCourses = stats?.enrolledCourses ?? 0;
   const completedHours = weeklyGoal?.completedHours ?? 0;
 
   return (
-    <section className="relative mb-8 w-full overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-700 shadow-lg">
+    <section
+      className="
+        relative
+        isolate
+        w-full
+        overflow-hidden
+        rounded-[28px]
+        bg-gradient-to-br
+        from-indigo-600
+        via-indigo-600
+        to-violet-700
+        shadow-lg
+        shadow-indigo-200/40
+      "
+    >
+      {/* =====================================================
+          BACKGROUND DECORATION
+      ====================================================== */}
 
-      {/* Background decoration */}
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -right-24
+          -top-24
+          h-72
+          w-72
+          rounded-full
+          bg-white/10
+          blur-3xl
+        "
+      />
 
-      <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -bottom-32
+          left-1/3
+          h-64
+          w-64
+          rounded-full
+          bg-violet-400/20
+          blur-3xl
+        "
+      />
 
-      <div className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-violet-400/20 blur-3xl" />
+      {/* =====================================================
+          CONTENT
+      ====================================================== */}
 
-      {/* =====================================
-          MAIN CONTENT
-      ===================================== */}
-
-      <div className="relative px-6 py-8 sm:px-8 sm:py-9 lg:px-10 lg:py-10">
-
-        <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
-
-          {/* =================================
+      <div
+        className="
+          relative
+          z-10
+          w-full
+          p-6
+          sm:p-8
+          lg:p-9
+          xl:p-10
+        "
+      >
+        <div
+          className="
+            grid
+            w-full
+            grid-cols-1
+            gap-8
+            xl:grid-cols-[minmax(0,1fr)_400px]
+            xl:items-center
+            xl:gap-10
+          "
+        >
+          {/* =================================================
               LEFT CONTENT
-          ================================= */}
+          ================================================== */}
 
-          <div className="min-w-0 flex-1 pr-0 xl:max-w-2xl xl:pr-10">
+          <div className="min-w-0">
 
             {/* Label */}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
 
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
+              <div
+                className="
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-white/15
+                  ring-1
+                  ring-white/10
+                "
+              >
                 <Sparkles
-                  size={15}
+                  size={16}
                   className="text-white"
                 />
               </div>
 
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-100">
+              <span
+                className="
+                  text-[11px]
+                  font-bold
+                  uppercase
+                  tracking-[0.16em]
+                  text-indigo-100
+                "
+              >
                 Welcome back
               </span>
 
@@ -52,95 +130,212 @@ function WelcomeBanner({ user, stats }) {
 
             {/* Name */}
 
-            <h1 className="mt-4 break-words text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
+            <h2
+              className="
+                mt-5
+                break-words
+                text-3xl
+                font-bold
+                leading-tight
+                tracking-tight
+                text-white
+                sm:text-4xl
+                lg:text-[40px]
+              "
+            >
               {user?.name || "Student"}
+
               <span className="ml-2 inline-block">
                 👋
               </span>
-            </h1>
+            </h2>
 
             {/* Description */}
 
-            <p className="mt-4 max-w-xl text-sm leading-6 text-indigo-100 sm:text-[15px]">
-              Keep learning, stay consistent, and make progress
-              every day. You're doing great!
+            <p
+              className="
+                mt-4
+                max-w-2xl
+                text-sm
+                font-medium
+                leading-6
+                text-indigo-100
+                sm:text-[15px]
+              "
+            >
+              Keep learning, stay consistent, and make
+              progress every day. You're doing great!
             </p>
 
           </div>
 
-          {/* =================================
-              STATS
-          ================================= */}
+          {/* =================================================
+              QUICK STATS
+          ================================================== */}
 
-          <div className="grid w-full shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:w-[340px]">
+          <div
+            className="
+              grid
+              w-full
+              grid-cols-1
+              gap-3
+              sm:grid-cols-2
+              xl:grid-cols-1
+            "
+          >
 
-            {/* Courses */}
+            {/* =================================================
+                ENROLLED COURSES
+            ================================================== */}
 
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
+            <div
+              className="
+                flex
+                min-h-[96px]
+                items-center
+                rounded-2xl
+                border
+                border-white/10
+                bg-white/10
+                p-4
+                backdrop-blur-md
+                transition
+                duration-200
+                hover:bg-white/[0.15]
+                sm:p-5
+              "
+            >
+              <div className="flex w-full items-center gap-4">
 
-              <div className="flex items-center gap-3">
-
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                <div
+                  className="
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-white/15
+                    ring-1
+                    ring-white/10
+                  "
+                >
                   <BookOpen
-                    size={19}
+                    size={21}
                     className="text-white"
                   />
                 </div>
 
                 <div className="min-w-0">
 
-                  <p className="text-2xl font-bold leading-none text-white">
+                  <p
+                    className="
+                      text-2xl
+                      font-bold
+                      leading-none
+                      text-white
+                    "
+                  >
                     {enrolledCourses}
                   </p>
 
-                  <p className="mt-1 text-xs font-medium text-indigo-100">
+                  <p
+                    className="
+                      mt-1.5
+                      text-xs
+                      font-semibold
+                      text-indigo-100
+                    "
+                  >
                     Enrolled Courses
                   </p>
 
                 </div>
 
               </div>
-
             </div>
 
-            {/* Hours */}
+            {/* =================================================
+                WEEKLY HOURS
+            ================================================== */}
 
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
+            <div
+              className="
+                flex
+                min-h-[96px]
+                items-center
+                rounded-2xl
+                border
+                border-white/10
+                bg-white/10
+                p-4
+                backdrop-blur-md
+                transition
+                duration-200
+                hover:bg-white/[0.15]
+                sm:p-5
+              "
+            >
+              <div className="flex w-full items-center gap-4">
 
-              <div className="flex items-center gap-3">
-
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                <div
+                  className="
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-white/15
+                    ring-1
+                    ring-white/10
+                  "
+                >
                   <Clock3
-                    size={19}
+                    size={21}
                     className="text-white"
                   />
                 </div>
 
                 <div className="min-w-0">
 
-                  <p className="text-2xl font-bold leading-none text-white">
+                  <p
+                    className="
+                      text-2xl
+                      font-bold
+                      leading-none
+                      text-white
+                    "
+                  >
                     {completedHours}
-                    <span className="ml-1 text-base">
+
+                    <span className="ml-1 text-base font-semibold">
                       h
                     </span>
                   </p>
 
-                  <p className="mt-1 text-xs font-medium text-indigo-100">
+                  <p
+                    className="
+                      mt-1.5
+                      text-xs
+                      font-semibold
+                      text-indigo-100
+                    "
+                  >
                     This Week
                   </p>
 
                 </div>
 
               </div>
-
             </div>
 
           </div>
 
         </div>
-
       </div>
-
     </section>
   );
 }

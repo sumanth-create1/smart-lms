@@ -8,60 +8,133 @@ import { useNavigate } from "react-router-dom";
 function ContinueLearning({ courses = [] }) {
   const navigate = useNavigate();
 
-  // ------------------------------------------
-  // EMPTY STATE
-  // ------------------------------------------
+  /* =================================================
+     EMPTY STATE
+  ================================================== */
 
   if (courses.length === 0) {
     return (
-      <section className="rounded-2xl bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
-            <BookOpen
-              size={21}
-              className="text-indigo-600"
-            />
+      <section
+        className="
+          w-full
+          overflow-hidden
+          rounded-2xl
+          border
+          border-slate-200
+          bg-white
+          p-6
+          shadow-sm
+          sm:p-7
+        "
+      >
+        <div className="m-1">
+
+          {/* Header */}
+
+          <div className="flex items-center gap-4">
+
+            <div
+              className="
+                flex
+                h-12
+                w-12
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                bg-indigo-50
+                text-indigo-600
+              "
+            >
+              <BookOpen size={22} />
+            </div>
+
+            <div className="min-w-0">
+
+              <h2 className="text-lg font-bold text-slate-900">
+                Continue Learning
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Pick up where you left off
+              </p>
+
+            </div>
+
           </div>
 
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">
-              Continue Learning
-            </h2>
+          {/* Empty state */}
 
-            <p className="text-sm text-gray-500">
-              Pick up where you left off
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 rounded-xl border border-dashed border-gray-200 p-8 text-center">
-          <BookOpen
-            size={34}
-            className="mx-auto text-gray-300"
-          />
-
-          <p className="mt-3 font-semibold text-gray-600">
-            No courses yet
-          </p>
-
-          <p className="mt-1 text-sm text-gray-400">
-            Enroll in a course to start learning.
-          </p>
-
-          <button
-            onClick={() => navigate("/courses")}
-            className="mt-5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+          <div
+            className="
+              mt-7
+              rounded-2xl
+              border
+              border-dashed
+              border-slate-200
+              bg-slate-50/60
+              px-6
+              py-10
+              text-center
+            "
           >
-            Browse Courses
-          </button>
+            <div
+              className="
+                mx-auto
+                flex
+                h-14
+                w-14
+                items-center
+                justify-center
+                rounded-2xl
+                bg-white
+                shadow-sm
+              "
+            >
+              <BookOpen
+                size={28}
+                className="text-slate-300"
+              />
+            </div>
+
+            <p className="mt-4 text-sm font-bold text-slate-700">
+              No courses yet
+            </p>
+
+            <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-slate-400">
+              Enroll in a course to start learning and track your progress.
+            </p>
+
+            <button
+              onClick={() => navigate("/courses")}
+              className="
+                mt-6
+                rounded-xl
+                bg-indigo-600
+                px-6
+                py-3
+                text-sm
+                font-bold
+                text-white
+                shadow-sm
+                transition
+                hover:bg-indigo-700
+                hover:shadow-md
+                active:scale-[0.98]
+              "
+            >
+              Browse Courses
+            </button>
+          </div>
+
         </div>
       </section>
     );
   }
 
-  // ------------------------------------------
-  // FIND COURSE TO CONTINUE
-  // ------------------------------------------
+  /* =================================================
+     FIND ACTIVE COURSE
+  ================================================== */
 
   const activeCourse =
     courses.find(
@@ -70,54 +143,133 @@ function ContinueLearning({ courses = [] }) {
         course.progress < 100
     ) ||
     courses.find(
-      (course) => course.progress < 100
+      (course) =>
+        (course.progress ?? 0) < 100
     );
 
-  // ------------------------------------------
-  // ALL COURSES COMPLETED
-  // ------------------------------------------
+  /* =================================================
+     ALL COURSES COMPLETED
+  ================================================== */
 
   if (!activeCourse) {
     return (
-      <section className="rounded-2xl bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50">
-            <BookOpen
-              size={21}
-              className="text-green-600"
-            />
+      <section
+        className="
+          w-full
+          overflow-hidden
+          rounded-2xl
+          border
+          border-slate-200
+          bg-white
+          p-6
+          shadow-sm
+          sm:p-7
+        "
+      >
+        <div className="m-1">
+
+          {/* Header */}
+
+          <div className="flex items-center gap-4">
+
+            <div
+              className="
+                flex
+                h-12
+                w-12
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                bg-emerald-50
+                text-emerald-600
+              "
+            >
+              <BookOpen size={22} />
+            </div>
+
+            <div>
+
+              <h2 className="text-lg font-bold text-slate-900">
+                Continue Learning
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Pick up where you left off
+              </p>
+
+            </div>
+
           </div>
 
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">
-              Continue Learning
-            </h2>
+          {/* Completed state */}
 
-            <p className="text-sm text-gray-500">
-              Pick up where you left off
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 rounded-xl bg-green-50 p-6 text-center">
-          <h3 className="font-bold text-green-700">
-            🎉 All courses completed!
-          </h3>
-
-          <p className="mt-1 text-sm text-green-600">
-            Great job. Keep learning something new.
-          </p>
-
-          <button
-            onClick={() => navigate("/courses")}
-            className="mt-4 rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700"
+          <div
+            className="
+              mt-7
+              rounded-2xl
+              border
+              border-emerald-100
+              bg-emerald-50/60
+              px-6
+              py-9
+              text-center
+            "
           >
-            Explore More Courses
-          </button>
+
+            <div
+              className="
+                mx-auto
+                flex
+                h-14
+                w-14
+                items-center
+                justify-center
+                rounded-full
+                bg-emerald-100
+                text-xl
+              "
+            >
+              🎉
+            </div>
+
+            <h3 className="mt-4 text-base font-bold text-emerald-700">
+              All courses completed!
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 text-emerald-600">
+              Great job. Keep learning something new.
+            </p>
+
+            <button
+              onClick={() => navigate("/courses")}
+              className="
+                mt-6
+                rounded-xl
+                bg-emerald-600
+                px-6
+                py-3
+                text-sm
+                font-bold
+                text-white
+                transition
+                hover:bg-emerald-700
+                active:scale-[0.98]
+              "
+            >
+              Explore More Courses
+            </button>
+
+          </div>
+
         </div>
       </section>
     );
   }
+
+  /* =================================================
+     COURSE DATA
+  ================================================== */
 
   const currentLesson = activeCourse.currentLesson;
 
@@ -126,171 +278,331 @@ function ContinueLearning({ courses = [] }) {
     100
   );
 
-  // ------------------------------------------
-  // NAVIGATE TO LEARNING PAGE
-  // ------------------------------------------
+  const completedLessons =
+    activeCourse.completedLessons ?? 0;
+
+  const totalLessons =
+    activeCourse.totalLessons ?? 0;
+
+  /* =================================================
+     NAVIGATION
+  ================================================== */
 
   const handleContinue = () => {
-    /*
-      Change this route later if your actual
-      learning page uses another URL.
-    */
-
     navigate(
       `/course/${activeCourse._id}/learn`
     );
   };
 
+  /* =================================================
+     MAIN COMPONENT
+  ================================================== */
+
   return (
-    <section className="rounded-2xl bg-white p-6 shadow-sm">
+    <section
+      className="
+        w-full
+        overflow-hidden
+        rounded-2xl
+        border
+        border-slate-200
+        bg-white
+        p-6
+        shadow-sm
+        transition
+        hover:shadow-md
+        sm:p-7
+      "
+    >
+      <div className="m-1">
 
-      {/* =====================================
-          HEADER
-      ===================================== */}
+        {/* =================================================
+            HEADER
+        ================================================== */}
 
-      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
 
-        <div className="flex items-center gap-3">
-
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
-            <PlayCircle
-              size={21}
-              className="text-indigo-600"
-            />
+          <div
+            className="
+              flex
+              h-12
+              w-12
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              bg-indigo-50
+              text-indigo-600
+            "
+          >
+            <PlayCircle size={22} />
           </div>
 
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">
+          <div className="min-w-0">
+
+            <h2 className="text-lg font-bold text-slate-900">
               Continue Learning
             </h2>
 
-            <p className="text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-500">
               Pick up where you left off
             </p>
+
           </div>
 
         </div>
 
-      </div>
+        {/* =================================================
+            COURSE CARD
+        ================================================== */}
 
-      {/* =====================================
-          COURSE
-      ===================================== */}
+        <div
+          className="
+            mt-7
+            overflow-hidden
+            rounded-2xl
+            border
+            border-slate-200
+            bg-slate-50
+          "
+        >
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-gray-100">
+          {/* =================================================
+              THUMBNAIL
+          ================================================== */}
 
-        {/* COURSE THUMBNAIL */}
+          <div
+            className="
+              relative
+              h-48
+              overflow-hidden
+              bg-slate-100
+              sm:h-52
+            "
+          >
 
-        <div className="relative h-44 overflow-hidden bg-gray-100">
-
-          {activeCourse.courseThumbnail ? (
-            <img
-              src={activeCourse.courseThumbnail}
-              alt={activeCourse.courseTitle}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <BookOpen
-                size={42}
-                className="text-gray-300"
+            {activeCourse.courseThumbnail ? (
+              <img
+                src={activeCourse.courseThumbnail}
+                alt={activeCourse.courseTitle}
+                className="
+                  h-full
+                  w-full
+                  object-cover
+                  transition
+                  duration-500
+                  hover:scale-[1.02]
+                "
               />
-            </div>
-          )}
+            ) : (
+              <div
+                className="
+                  flex
+                  h-full
+                  items-center
+                  justify-center
+                  bg-gradient-to-br
+                  from-indigo-50
+                  to-violet-50
+                "
+              >
+                <BookOpen
+                  size={46}
+                  className="text-indigo-200"
+                />
+              </div>
+            )}
 
-          {/* PROGRESS */}
-
-          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/10">
+            {/* Bottom progress */}
 
             <div
-              className="h-full bg-indigo-600"
-              style={{
-                width: `${progress}%`,
-              }}
-            />
-
-          </div>
-
-        </div>
-
-        {/* COURSE CONTENT */}
-
-        <div className="p-5">
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-
-            <div className="min-w-0">
-
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-                {activeCourse.category || "Course"}
-              </p>
-
-              <h3 className="mt-1 text-xl font-bold text-gray-900">
-                {activeCourse.courseTitle}
-              </h3>
-
-              {currentLesson?.lectureTitle && (
-                <p className="mt-2 text-sm text-gray-500">
-                  Next:
-                  <span className="ml-1 font-medium text-gray-700">
-                    {currentLesson.lectureTitle}
-                  </span>
-                </p>
-              )}
-
-            </div>
-
-            <span className="shrink-0 text-sm font-bold text-indigo-600">
-              {progress}%
-            </span>
-
-          </div>
-
-          {/* PROGRESS BAR */}
-
-          <div className="mt-5">
-
-            <div className="flex justify-between text-xs text-gray-400">
-
-              <span>
-                Course progress
-              </span>
-
-              <span>
-                {activeCourse.completedLessons ?? 0}/
-                {activeCourse.totalLessons ?? 0} lessons
-              </span>
-
-            </div>
-
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
-
+              className="
+                absolute
+                bottom-0
+                left-0
+                right-0
+                h-1.5
+                bg-black/10
+              "
+            >
               <div
-                className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                className="
+                  h-full
+                  bg-indigo-600
+                  transition-all
+                  duration-500
+                "
                 style={{
                   width: `${progress}%`,
                 }}
               />
-
             </div>
 
           </div>
 
-          {/* BUTTON */}
+          {/* =================================================
+              COURSE INFORMATION
+          ================================================== */}
 
-          <button
-            onClick={handleContinue}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
-          >
-            Continue Learning
+          <div className="bg-white p-6 sm:p-7">
 
-            <ArrowRight size={17} />
-          </button>
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+
+              {/* Course information */}
+
+              <div className="min-w-0">
+
+                <p
+                  className="
+                    text-[11px]
+                    font-bold
+                    uppercase
+                    tracking-[0.12em]
+                    text-indigo-600
+                  "
+                >
+                  {activeCourse.category || "Course"}
+                </p>
+
+                <h3
+                  className="
+                    mt-2
+                    break-words
+                    text-xl
+                    font-bold
+                    leading-tight
+                    text-slate-900
+                    sm:text-2xl
+                  "
+                >
+                  {activeCourse.courseTitle}
+                </h3>
+
+                {currentLesson?.lectureTitle && (
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+
+                    Next lesson:
+
+                    <span className="ml-1 font-semibold text-slate-700">
+                      {currentLesson.lectureTitle}
+                    </span>
+
+                  </p>
+                )}
+
+              </div>
+
+              {/* Percentage */}
+
+              <div
+                className="
+                  shrink-0
+                  rounded-xl
+                  bg-indigo-50
+                  px-3
+                  py-2
+                  text-sm
+                  font-bold
+                  text-indigo-600
+                "
+              >
+                {progress}%
+              </div>
+
+            </div>
+
+            {/* =================================================
+                PROGRESS
+            ================================================== */}
+
+            <div className="mt-7">
+
+              <div className="flex items-center justify-between gap-4">
+
+                <span
+                  className="
+                    text-xs
+                    font-semibold
+                    uppercase
+                    tracking-wide
+                    text-slate-400
+                  "
+                >
+                  Course Progress
+                </span>
+
+                <span className="text-xs font-semibold text-slate-500">
+                  {completedLessons}/{totalLessons} lessons
+                </span>
+
+              </div>
+
+              <div
+                className="
+                  mt-3
+                  h-2.5
+                  w-full
+                  overflow-hidden
+                  rounded-full
+                  bg-slate-100
+                "
+              >
+                <div
+                  className="
+                    h-full
+                    rounded-full
+                    bg-gradient-to-r
+                    from-indigo-500
+                    to-violet-600
+                    transition-all
+                    duration-500
+                  "
+                  style={{
+                    width: `${progress}%`,
+                  }}
+                />
+              </div>
+
+            </div>
+
+            {/* =================================================
+                BUTTON
+            ================================================== */}
+
+            <button
+              onClick={handleContinue}
+              className="
+                mt-7
+                flex
+                w-full
+                items-center
+                justify-center
+                gap-2
+                rounded-xl
+                bg-indigo-600
+                px-6
+                py-3.5
+                text-sm
+                font-bold
+                text-white
+                shadow-sm
+                transition-all
+                hover:bg-indigo-700
+                hover:shadow-md
+                active:scale-[0.99]
+              "
+            >
+              Continue Learning
+
+              <ArrowRight size={17} />
+
+            </button>
+
+          </div>
 
         </div>
 
       </div>
-
     </section>
   );
 }
