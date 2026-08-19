@@ -9,10 +9,10 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Registration";
 import Courses from "../components/common/Courses";
 
-import UserDashboard from "../pages/student/UserDashboard";
 
 import ProtectedRoute from "./ProtectedRoute";
-import DashboardLayout from "../components/layout/DashBoardLayout";
+import StudentDashboard from "../pages/student/StudentDashboard";
+import StudentDashboardLayout from "../pages/student/Layouts/StudentDashboardLayout";
 
 function AppRoutes() {
   return (
@@ -44,11 +44,11 @@ function AppRoutes() {
 
         <Route element={<ProtectedRoute />}>
 
-          <Route element={<DashboardLayout />}>
+          <Route element={<StudentDashboardLayout />}>
 
             <Route
               path="/dashboard"
-              element={<UserDashboard />}
+              element={<StudentDashboard />}
             />
 
             <Route

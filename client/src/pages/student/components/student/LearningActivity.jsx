@@ -1,0 +1,118 @@
+import { BarChart3, Clock3 } from "lucide-react";
+
+function LearningActivity() {
+  const activity = [
+    { day: "Mon", hours: 1.5 },
+    { day: "Tue", hours: 2.2 },
+    { day: "Wed", hours: 1.1 },
+    { day: "Thu", hours: 2.8 },
+    { day: "Fri", hours: 1.8 },
+    { day: "Sat", hours: 3.4 },
+    { day: "Sun", hours: 2.1 },
+  ];
+
+  const maxHours = 4;
+
+  return (
+    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+
+        <div>
+          <h2 className="text-base font-bold text-slate-900 sm:text-lg">
+            Learning Activity
+          </h2>
+
+          <p className="mt-0.5 text-xs text-slate-400 sm:text-sm">
+            Your study activity this week
+          </p>
+        </div>
+
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50">
+          <BarChart3
+            size={18}
+            className="text-indigo-600"
+          />
+        </div>
+
+      </div>
+
+      {/* Chart */}
+      <div className="p-5 sm:p-6">
+
+        {/* Summary */}
+        <div className="mb-7 flex items-end justify-between">
+
+          <div>
+            <p className="text-xs font-medium text-slate-400">
+              Total this week
+            </p>
+
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-3xl font-bold tracking-tight text-slate-900">
+                15.1
+              </span>
+
+              <span className="text-sm font-medium text-slate-400">
+                hours
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600">
+            <Clock3 size={13} />
+            This week
+          </div>
+
+        </div>
+
+        {/* Chart */}
+        <div className="flex h-56 items-end gap-2 sm:gap-4">
+
+          {activity.map((item) => {
+            const height = Math.max(
+              (item.hours / maxHours) * 100,
+              5
+            );
+
+            return (
+              <div
+                key={item.day}
+                className="flex h-full flex-1 flex-col items-center justify-end"
+              >
+
+                {/* Hours */}
+                <span className="mb-2 text-[10px] font-medium text-slate-400">
+                  {item.hours}h
+                </span>
+
+                {/* Bar area */}
+                <div className="flex h-full w-full max-w-9 items-end rounded-lg bg-slate-50">
+
+                  <div
+                    className="w-full rounded-lg bg-indigo-500 transition-all duration-300 hover:bg-indigo-600"
+                    style={{
+                      height: `${height}%`,
+                    }}
+                  />
+
+                </div>
+
+                {/* Day */}
+                <span className="mt-3 text-[11px] font-medium text-slate-400">
+                  {item.day}
+                </span>
+
+              </div>
+            );
+          })}
+
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+export default LearningActivity;
