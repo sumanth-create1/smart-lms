@@ -208,11 +208,6 @@ export const uploadLectureVideo = async (req, res) => {
     });
   }
 
-  if (lecture.publicId) {
-    await cloudinary.uploader.destroy(lecture.publicId, {
-      resource_type: "video",
-    });
-  }
 
   const result = await uploadToCloudinary(
     req.file.buffer,
@@ -276,6 +271,25 @@ export const togglePreview = async (req, res) => {
       });
     }
 
+    const course = await Course.findById(lecture.course);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    if (
+      course.instructor.toString() !==
+      req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to modify this lecture.",
+      });
+    }
+
     lecture.isPreviewFree = !lecture.isPreviewFree;
 
     await lecture.save();
@@ -286,6 +300,8 @@ export const togglePreview = async (req, res) => {
       lecture,
     });
   } catch (error) {
+    console.error("Toggle preview error:", error);
+
     return res.status(500).json({
       success: false,
       message: error.message,

@@ -7,6 +7,11 @@ import {
   LoaderCircle,
   ArrowRight,
   Plus,
+  MoreVertical,
+  Eye,
+  Pencil,
+  Video,
+  TrendingUp,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -19,6 +24,8 @@ function InstructorDashboard() {
 
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const [openCourseMenu, setOpenCourseMenu] = useState(null);
 
   const fetchDashboard = async () => {
     try {
@@ -193,18 +200,19 @@ function InstructorDashboard() {
                 <div
                   key={course._id}
                   className="
-                    flex
-                    flex-col
-                    gap-4
-                    p-6
-                    transition
-                    hover:bg-gray-50
-                    sm:flex-row
-                    sm:items-center
-                    sm:justify-between
-                  "
+      relative
+      flex
+      flex-col
+      gap-4
+      p-6
+      transition
+      hover:bg-gray-50
+      sm:flex-row
+      sm:items-center
+      sm:justify-between
+    "
                 >
-                  {/* Course info */}
+                  {/* COURSE INFO */}
                   <div className="flex min-w-0 items-center gap-4">
                     <img
                       src={
@@ -212,13 +220,13 @@ function InstructorDashboard() {
                       }
                       alt={course.courseTitle}
                       className="
-                        h-16
-                        w-24
-                        shrink-0
-                        rounded-xl
-                        object-cover
-                        bg-gray-100
-                      "
+          h-16
+          w-24
+          shrink-0
+          rounded-xl
+          bg-gray-100
+          object-cover
+        "
                     />
 
                     <div className="min-w-0">
@@ -230,14 +238,14 @@ function InstructorDashboard() {
                         {course.category && (
                           <span
                             className="
-                            rounded-full
-                            bg-gray-100
-                            px-2.5
-                            py-1
-                            text-xs
-                            font-medium
-                            text-gray-600
-                          "
+                rounded-full
+                bg-gray-100
+                px-2.5
+                py-1
+                text-xs
+                font-medium
+                text-gray-600
+              "
                           >
                             {course.category}
                           </span>
@@ -245,14 +253,14 @@ function InstructorDashboard() {
 
                         <span
                           className="
-                          rounded-full
-                          bg-indigo-50
-                          px-2.5
-                          py-1
-                          text-xs
-                          font-medium
-                          text-indigo-600
-                        "
+              rounded-full
+              bg-indigo-50
+              px-2.5
+              py-1
+              text-xs
+              font-medium
+              text-indigo-600
+            "
                         >
                           {course.courseLevel}
                         </span>
@@ -260,8 +268,8 @@ function InstructorDashboard() {
                     </div>
                   </div>
 
-                  {/* Course stats */}
-                  <div className="flex items-center gap-8">
+                  {/* COURSE STATS + MENU */}
+                  <div className="flex items-center justify-between gap-6 sm:justify-end">
                     <div>
                       <p className="text-xs text-gray-400">Students</p>
 
@@ -276,6 +284,108 @@ function InstructorDashboard() {
                       <p className="mt-1 font-semibold text-gray-900">
                         ₹{course.coursePrice || 0}
                       </p>
+                    </div>
+
+                    {/* ACTION MENU */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenCourseMenu(
+                            openCourseMenu === course._id ? null : course._id,
+                          )
+                        }
+                        className="
+            flex
+            h-9
+            w-9
+            items-center
+            justify-center
+            rounded-lg
+            text-gray-400
+            transition
+            hover:bg-gray-100
+            hover:text-gray-700
+          "
+                      >
+                        <MoreVertical size={19} />
+                      </button>
+
+                      {openCourseMenu === course._id && (
+                        <div
+                          className="
+              absolute
+              right-0
+              top-11
+              z-30
+              w-48
+              overflow-hidden
+              rounded-xl
+              border
+              border-gray-200
+              bg-white
+              py-1
+              shadow-xl
+            "
+                        >
+                          <Link
+                            to={`/courses/${course._id}`}
+                            onClick={() => setOpenCourseMenu(null)}
+                            className="
+                flex
+                items-center
+                gap-3
+                px-4
+                py-2.5
+                text-sm
+                text-gray-700
+                transition
+                hover:bg-gray-50
+              "
+                          >
+                            <Eye size={17} />
+                            View Course
+                          </Link>
+
+                          <Link
+                            to={`/instructor/courses/edit/${course._id}`}
+                            onClick={() => setOpenCourseMenu(null)}
+                            className="
+                flex
+                items-center
+                gap-3
+                px-4
+                py-2.5
+                text-sm
+                text-gray-700
+                transition
+                hover:bg-gray-50
+              "
+                          >
+                            <Pencil size={17} />
+                            Edit Course
+                          </Link>
+
+                          <Link
+                            to={`/instructor/courses/${course._id}/lectures`}
+                            onClick={() => setOpenCourseMenu(null)}
+                            className="
+                flex
+                items-center
+                gap-3
+                px-4
+                py-2.5
+                text-sm
+                text-gray-700
+                transition
+                hover:bg-gray-50
+              "
+                          >
+                            <Video size={17} />
+                            Manage Lectures
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -367,6 +477,94 @@ function InstructorDashboard() {
                   </span>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================
+    ENROLLMENT OVERVIEW
+======================================== */}
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-gray-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Enrollment Overview
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Student enrollments across your courses
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm font-medium text-emerald-600">
+            <TrendingUp size={17} />
+            Growing Courses
+          </div>
+        </div>
+
+        <div className="p-6">
+          {courses.length === 0 ? (
+            <div className="flex min-h-[180px] flex-col items-center justify-center text-center">
+              <div className="rounded-full bg-gray-100 p-4">
+                <TrendingUp size={24} className="text-gray-400" />
+              </div>
+
+              <p className="mt-4 font-medium text-gray-700">
+                No enrollment data yet
+              </p>
+
+              <p className="mt-1 text-sm text-gray-400">
+                Enrollment statistics will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {courses.slice(0, 5).map((course) => {
+                const students = course.studentCount || 0;
+
+                const maxStudents = Math.max(
+                  ...courses.map((item) => item.studentCount || 0),
+                  1,
+                );
+
+                const percentage = Math.round((students / maxStudents) * 100);
+
+                return (
+                  <div key={course._id}>
+                    <div className="mb-2 flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-gray-800">
+                          {course.courseTitle}
+                        </p>
+
+                        <p className="mt-0.5 text-xs text-gray-400">
+                          {students} {students === 1 ? "student" : "students"}
+                        </p>
+                      </div>
+
+                      <span className="shrink-0 text-sm font-semibold text-gray-900">
+                        {students}
+                      </span>
+                    </div>
+
+                    <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                      <div
+                        className="
+                    h-full
+                    rounded-full
+                    bg-indigo-600
+                    transition-all
+                    duration-700
+                  "
+                        style={{
+                          width: `${percentage}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -469,7 +667,7 @@ function EmptyCourses() {
       </p>
 
       <Link
-       to="/instructor/create-course"
+        to="/instructor/create-course"
         className="
           mt-5
           inline-flex

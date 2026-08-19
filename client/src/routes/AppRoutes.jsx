@@ -15,6 +15,8 @@ import InstructorCourses from "../pages/instructor/InstructorCourses";
 import InstructorDashboardLayout from "../pages/instructor/Layouts/InstructorDashboardLayout";
 import CreateCourse from "../pages/instructor/CreateCourse";
 import CourseManagement from "../pages/instructor/CourseManagement";
+import ManageLectures from "../pages/instructor/ManageLectures";
+import InstructorProfile from "../pages/instructor/InstructorProfile";
 
 function AppRoutes() {
   return (
@@ -60,9 +62,16 @@ function AppRoutes() {
             <Route path="/instructor/courses" element={<InstructorCourses />} />
 
             <Route
-              path="/instructor/course/:courseId"
+              path="/instructor/courses/:courseId"
               element={<CourseManagement />}
             />
+
+            <Route
+              path="/instructor/courses/:courseId/lectures"
+              element={<ManageLectures />}
+            />
+
+            <Route path="/instructor/profile" element={<InstructorProfile />} />
           </Route>
         </Route>
       </Routes>

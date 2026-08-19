@@ -30,17 +30,13 @@ function InstructorCourses() {
       if (response.data?.success) {
         setCourses(response.data.courses || []);
       } else {
-        toast.error(
-          response.data?.message ||
-            "Failed to load your courses."
-        );
+        toast.error(response.data?.message || "Failed to load your courses.");
       }
     } catch (error) {
       console.error("Instructor courses error:", error);
 
       toast.error(
-        error.response?.data?.message ||
-          "Unable to load your courses."
+        error.response?.data?.message || "Unable to load your courses.",
       );
     } finally {
       setLoading(false);
@@ -53,7 +49,7 @@ function InstructorCourses() {
 
   const handleDelete = async (courseId) => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this course?"
+      "Are you sure you want to delete this course?",
     );
 
     if (!confirmed) return;
@@ -61,29 +57,19 @@ function InstructorCourses() {
     try {
       setDeletingId(courseId);
 
-      const response = await api.delete(
-        `/course/${courseId}`
-      );
+      const response = await api.delete(`/course/${courseId}`);
 
       if (response.data?.success) {
         toast.success("Course deleted successfully.");
 
-        setCourses((prev) =>
-          prev.filter((course) => course._id !== courseId)
-        );
+        setCourses((prev) => prev.filter((course) => course._id !== courseId));
       } else {
-        toast.error(
-          response.data?.message ||
-            "Failed to delete course."
-        );
+        toast.error(response.data?.message || "Failed to delete course.");
       }
     } catch (error) {
       console.error("Delete course error:", error);
 
-      toast.error(
-        error.response?.data?.message ||
-          "Unable to delete course."
-      );
+      toast.error(error.response?.data?.message || "Unable to delete course.");
     } finally {
       setDeletingId(null);
     }
@@ -93,14 +79,9 @@ function InstructorCourses() {
     return (
       <div className="flex min-h-[500px] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <LoaderCircle
-            size={36}
-            className="animate-spin text-indigo-600"
-          />
+          <LoaderCircle size={36} className="animate-spin text-indigo-600" />
 
-          <p className="text-sm text-gray-500">
-            Loading your courses...
-          </p>
+          <p className="text-sm text-gray-500">Loading your courses...</p>
         </div>
       </div>
     );
@@ -109,13 +90,11 @@ function InstructorCourses() {
   return (
     <div className="min-h-full bg-[#F7F6F2] p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
-
         {/* =========================
             HEADER
         ========================= */}
 
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-
           <div>
             <p className="mb-1 text-sm font-medium text-indigo-600">
               Instructor
@@ -150,15 +129,10 @@ function InstructorCourses() {
 
           <div>
             <p className="text-sm font-semibold text-gray-900">
-              {courses.length}{" "}
-              {courses.length === 1
-                ? "Course"
-                : "Courses"}
+              {courses.length} {courses.length === 1 ? "Course" : "Courses"}
             </p>
 
-            <p className="text-xs text-gray-500">
-              Created by you
-            </p>
+            <p className="text-xs text-gray-500">Created by you</p>
           </div>
         </div>
 
@@ -168,7 +142,6 @@ function InstructorCourses() {
 
         {courses.length === 0 ? (
           <div className="rounded-3xl border border-gray-200 bg-white px-6 py-16 text-center shadow-sm">
-
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
               <BookOpen size={30} />
             </div>
@@ -178,9 +151,8 @@ function InstructorCourses() {
             </h2>
 
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500">
-              You haven't created any courses yet.
-              Create your first course and start
-              adding lectures for your students.
+              You haven't created any courses yet. Create your first course and
+              start adding lectures for your students.
             </p>
 
             <Link
@@ -197,18 +169,13 @@ function InstructorCourses() {
           ========================= */
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-
             {courses.map((course) => (
               <CourseCard
                 key={course._id}
                 course={course}
                 deleting={deletingId === course._id}
                 onDelete={handleDelete}
-                onManage={() =>
-                  navigate(
-                    `/instructor/course/${course._id}`
-                  )
-                }
+                onManage={() => navigate(`/instructor/courses/${course._id}`)}
               />
             ))}
           </div>
@@ -218,35 +185,24 @@ function InstructorCourses() {
   );
 }
 
-
 /* =====================================================
    COURSE CARD
 ===================================================== */
 
-function CourseCard({
-  course,
-  deleting,
-  onDelete,
-  onManage,
-}) {
-  const thumbnail =
-    course.courseThumbnail?.url ||
-    "/placeholder-course.jpg";
+function CourseCard({ course, deleting, onDelete, onManage }) {
+  const thumbnail = course.courseThumbnail?.url || "/placeholder-course.jpg";
 
   return (
     <div className="group overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg">
-
       {/* Thumbnail */}
 
       <div className="relative aspect-video overflow-hidden bg-gray-100">
-
         <img
           src={thumbnail}
           alt={course.courseTitle}
           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           onError={(e) => {
-            e.currentTarget.src =
-              "/placeholder-course.jpg";
+            e.currentTarget.src = "/placeholder-course.jpg";
           }}
         />
 
@@ -260,16 +216,13 @@ function CourseCard({
       {/* Content */}
 
       <div className="p-5">
-
         <div className="mb-4">
-
           <h2 className="line-clamp-2 min-h-[56px] text-lg font-bold text-gray-900">
             {course.courseTitle}
           </h2>
 
           <p className="mt-2 line-clamp-2 text-sm leading-5 text-gray-500">
-            {course.subTitle ||
-              "No subtitle available."}
+            {course.subTitle || "No subtitle available."}
           </p>
         </div>
 
@@ -284,14 +237,11 @@ function CourseCard({
         {/* Stats */}
 
         <div className="mt-5 grid grid-cols-2 gap-3">
-
           <div className="rounded-xl bg-gray-50 p-3">
             <div className="flex items-center gap-2 text-gray-400">
               <Users size={15} />
 
-              <span className="text-xs">
-                Students
-              </span>
+              <span className="text-xs">Students</span>
             </div>
 
             <p className="mt-1 font-semibold text-gray-900">
@@ -303,9 +253,7 @@ function CourseCard({
             <div className="flex items-center gap-2 text-gray-400">
               <IndianRupee size={15} />
 
-              <span className="text-xs">
-                Price
-              </span>
+              <span className="text-xs">Price</span>
             </div>
 
             <p className="mt-1 font-semibold text-gray-900">
@@ -317,7 +265,6 @@ function CourseCard({
         {/* Actions */}
 
         <div className="mt-5 flex gap-2">
-
           <button
             type="button"
             onClick={onManage}
@@ -335,10 +282,7 @@ function CourseCard({
             title="Delete course"
           >
             {deleting ? (
-              <LoaderCircle
-                size={17}
-                className="animate-spin"
-              />
+              <LoaderCircle size={17} className="animate-spin" />
             ) : (
               <Trash2 size={17} />
             )}

@@ -10,6 +10,7 @@ import {
   Save,
   Trash2,
   Users,
+  Film,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -35,6 +36,14 @@ function CourseManagement() {
   });
 
   /* =====================================================
+     NAVIGATION
+  ===================================================== */
+
+  const goToLectures = () => {
+    navigate(`/instructor/courses/${courseId}/lectures`);
+  };
+
+  /* =====================================================
      FETCH COURSE
   ===================================================== */
 
@@ -42,9 +51,7 @@ function CourseManagement() {
     try {
       setLoading(true);
 
-      const response = await api.get(
-        `/course/${courseId}`
-      );
+      const response = await api.get(`/course/${courseId}`);
 
       if (response.data?.success) {
         const courseData = response.data.course;
@@ -61,8 +68,7 @@ function CourseManagement() {
         });
       } else {
         toast.error(
-          response.data?.message ||
-            "Failed to load course."
+          response.data?.message || "Failed to load course."
         );
       }
     } catch (error) {
@@ -107,29 +113,43 @@ function CourseManagement() {
 
     if (saving) return;
 
+    if (!formData.courseTitle.trim()) {
+      toast.error("Course title is required.");
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      toast.error("Course description is required.");
+      return;
+    }
+
+    if (!formData.category) {
+      toast.error("Please select a category.");
+      return;
+    }
+
+    if (!formData.courseLevel) {
+      toast.error("Please select a course level.");
+      return;
+    }
+
     try {
       setSaving(true);
 
-      const response = await api.put(
-        `/course/${courseId}`,
-        {
-          courseTitle: formData.courseTitle.trim(),
-          subTitle: formData.subTitle.trim(),
-          description: formData.description.trim(),
-          category: formData.category,
-          courseLevel: formData.courseLevel,
-          coursePrice: Number(formData.coursePrice),
-        }
-      );
+      const response = await api.put(`/course/${courseId}`, {
+        courseTitle: formData.courseTitle.trim(),
+        subTitle: formData.subTitle.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        courseLevel: formData.courseLevel,
+        coursePrice: Number(formData.coursePrice),
+      });
 
       if (response.data?.success) {
         setCourse(response.data.course);
-
         setEditing(false);
 
-        toast.success(
-          "Course updated successfully."
-        );
+        toast.success("Course updated successfully.");
       } else {
         toast.error(
           response.data?.message ||
@@ -160,14 +180,10 @@ function CourseManagement() {
     if (!confirmed) return;
 
     try {
-      const response = await api.delete(
-        `/course/${courseId}`
-      );
+      const response = await api.delete(`/course/${courseId}`);
 
       if (response.data?.success) {
-        toast.success(
-          "Course deleted successfully."
-        );
+        toast.success("Course deleted successfully.");
 
         navigate("/instructor/courses", {
           replace: true,
@@ -257,7 +273,6 @@ function CourseManagement() {
         ================================================= */}
 
         <div className="mb-8">
-
           <button
             type="button"
             onClick={() =>
@@ -270,7 +285,6 @@ function CourseManagement() {
           </button>
 
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-
             <div>
               <p className="mb-1 text-sm font-medium text-indigo-600">
                 Course Management
@@ -297,6 +311,15 @@ function CourseManagement() {
                   Edit Course
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={goToLectures}
+                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+              >
+                <Film size={17} />
+                Manage Lectures
+              </button>
 
               <button
                 type="button"
@@ -400,11 +423,11 @@ function CourseManagement() {
                   </p>
                 </div>
 
+                {/* UPDATED LINK */}
+
                 <button
                   type="button"
-                  onClick={() =>
-                    toast("Lecture creation will be added next.")
-                  }
+                  onClick={goToLectures}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
                 >
                   <Plus size={17} />
@@ -419,23 +442,23 @@ function CourseManagement() {
                 </div>
 
                 <h3 className="mt-4 font-semibold text-gray-900">
-                  No lectures yet
+                  Manage your lectures
                 </h3>
 
                 <p className="mt-1 max-w-sm text-sm leading-6 text-gray-500">
-                  Start building your course by adding your
-                  first lecture.
+                  Create lectures, upload videos, edit lecture
+                  titles and enable free previews.
                 </p>
+
+                {/* UPDATED LINK */}
 
                 <button
                   type="button"
-                  onClick={() =>
-                    toast("Lecture creation will be added next.")
-                  }
-                  className="mt-5 inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-600 hover:bg-indigo-100"
+                  onClick={goToLectures}
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-100"
                 >
-                  <Plus size={17} />
-                  Add First Lecture
+                  <Film size={17} />
+                  Manage Lectures
                 </button>
               </div>
             </div>
@@ -509,15 +532,26 @@ function CourseManagement() {
                   Edit Course
                 </button>
 
+                {/* UPDATED LINK */}
+
                 <button
                   type="button"
-                  onClick={() =>
-                    toast("Lecture creation will be added next.")
-                  }
+                  onClick={goToLectures}
                   className="flex w-full items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
                 >
                   <Plus size={18} />
                   Add Lecture
+                </button>
+
+                {/* NEW MANAGE LECTURES LINK */}
+
+                <button
+                  type="button"
+                  onClick={goToLectures}
+                  className="flex w-full items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-left text-sm font-semibold text-indigo-600 transition hover:bg-indigo-100"
+                >
+                  <Film size={18} />
+                  Manage Lectures
                 </button>
               </div>
             </div>
@@ -533,7 +567,7 @@ function CourseManagement() {
 
             <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
 
-              {/* Modal Header */}
+              {/* MODAL HEADER */}
 
               <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
 
@@ -556,7 +590,7 @@ function CourseManagement() {
                 </button>
               </div>
 
-              {/* Form */}
+              {/* FORM */}
 
               <form
                 onSubmit={handleUpdate}
@@ -677,6 +711,7 @@ function CourseManagement() {
                   </label>
 
                   <div className="relative">
+
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">
                       ₹
                     </span>
@@ -693,15 +728,13 @@ function CourseManagement() {
                   </div>
                 </div>
 
-                {/* Buttons */}
+                {/* BUTTONS */}
 
                 <div className="flex justify-end gap-3 border-t border-gray-100 pt-5">
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setEditing(false)
-                    }
+                    onClick={() => setEditing(false)}
                     disabled={saving}
                     className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                   >
@@ -738,7 +771,6 @@ function CourseManagement() {
   );
 }
 
-
 /* =====================================================
    INPUT FIELD
 ===================================================== */
@@ -767,15 +799,11 @@ function InputField({
   );
 }
 
-
 /* =====================================================
    INFO BADGE
 ===================================================== */
 
-function InfoBadge({
-  icon,
-  label,
-}) {
+function InfoBadge({ icon, label }) {
   return (
     <div className="inline-flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600">
       {icon}
@@ -784,18 +812,13 @@ function InfoBadge({
   );
 }
 
-
 /* =====================================================
    DETAIL ROW
 ===================================================== */
 
-function DetailRow({
-  label,
-  value,
-}) {
+function DetailRow({ label, value }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-
       <span className="text-sm text-gray-500">
         {label}
       </span>

@@ -149,17 +149,20 @@ export const loginUser = async (req, res) => {
 
 export const getCurrentUser = async (req, res) => {
   try {
-    const user = req.user.toObject();
-    delete user.password;
+    const userData = req.user.toObject();
 
-    res.status(200).json({
+    delete userData.password;
+
+    return res.status(200).json({
       success: true,
-      user: req.user,
+      user: userData,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Get current user error:", error);
+
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Unable to get current user",
     });
   }
 };
@@ -191,4 +194,47 @@ export const instructorDashboard = (req, res) => {
     success: true,
     message: `Welcome Instructor ${req.user.name}`,
   });
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Name is required",
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.name = name.trim();
+
+    await user.save();
+
+    const userData = user.toObject();
+
+    delete userData.password;
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: userData,
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to update profile",
+    });
+  }
 };
