@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-function ProtectedRoute() {
+function ProtectedRoute({ allowedRoles }) {
   const { user, loading } = useAuth();
 
   // Wait until /auth/me finishes
@@ -24,7 +24,35 @@ function ProtectedRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  // Logged in
+  // Check role
+  if (
+    allowedRoles &&
+    !allowedRoles.includes(user.role)
+  ) {
+    // Instructor trying to access student route
+    if (user.role === "instructor") {
+      return (
+        <Navigate
+          to="/instructor/dashboard"
+          replace
+        />
+      );
+    }
+
+    // Student trying to access instructor route
+    if (user.role === "student") {
+      return (
+        <Navigate
+          to="/dashboard"
+          replace
+        />
+      );
+    }
+
+    // Unknown role
+    return <Navigate to="/login" replace />;
+  }
+
   return <Outlet />;
 }
 

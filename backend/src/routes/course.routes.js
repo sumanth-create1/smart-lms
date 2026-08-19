@@ -1,45 +1,63 @@
-import upload from "../middleware/upload.middleware.js";
-
 import express from "express";
+
 import {
-  createCourse,
-  getAllCourses,
-  getCourseById,
-  updateCourse,
-  deleteCourse,
-  uploadCourseThumbnail,
+    createCourse,
+    getAllCourses,
+    getInstructorCourses,
+    getCourseById,
+    updateCourse,
+    deleteCourse,
+    uploadCourseThumbnail,
 } from "../controllers/course.controller.js";
+
 import {
-  isAuthenticated,
-  authorizeRoles,
+    isAuthenticated,
+    authorizeRoles,
 } from "../middleware/auth.middleware.js";
+
+import upload from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
+
+/* =========================================================
+   CREATE COURSE
+========================================================= */
+
 router.post(
-  "/create",
-  isAuthenticated,
-  authorizeRoles("instructor"),
-  createCourse,
-);
-
-router.get("/", getAllCourses);
-
-router.get("/:id", getCourseById);
-
-router.put(
-    "/:id",
+    "/create",
     isAuthenticated,
     authorizeRoles("instructor"),
-    updateCourse
+    createCourse
 );
 
-router.delete(
-    "/:id",
+
+/* =========================================================
+   GET ALL COURSES
+========================================================= */
+
+router.get(
+    "/",
+    getAllCourses
+);
+
+
+/* =========================================================
+   GET INSTRUCTOR COURSES
+   MUST BE BEFORE /:id
+========================================================= */
+
+router.get(
+    "/instructor",
     isAuthenticated,
     authorizeRoles("instructor"),
-    deleteCourse
+    getInstructorCourses
 );
+
+
+/* =========================================================
+   UPLOAD COURSE THUMBNAIL
+========================================================= */
 
 router.put(
     "/thumbnail/:courseId",
@@ -48,4 +66,40 @@ router.put(
     upload.single("thumbnail"),
     uploadCourseThumbnail
 );
+
+
+/* =========================================================
+   GET COURSE BY ID
+========================================================= */
+
+router.get(
+    "/:id",
+    getCourseById
+);
+
+
+/* =========================================================
+   UPDATE COURSE
+========================================================= */
+
+router.put(
+    "/:id",
+    isAuthenticated,
+    authorizeRoles("instructor"),
+    updateCourse
+);
+
+
+/* =========================================================
+   DELETE COURSE
+========================================================= */
+
+router.delete(
+    "/:id",
+    isAuthenticated,
+    authorizeRoles("instructor"),
+    deleteCourse
+);
+
+
 export default router;
