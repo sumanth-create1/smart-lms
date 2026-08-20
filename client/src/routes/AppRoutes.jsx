@@ -1,30 +1,55 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+// =====================================================
+// PUBLIC PAGES
+// =====================================================
+
 import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Registration";
 import Courses from "../components/common/Courses";
 
+// =====================================================
+// AUTH
+// =====================================================
+
 import ProtectedRoute from "./ProtectedRoute";
+
+// =====================================================
+// STUDENT
+// =====================================================
 
 import StudentDashboard from "../pages/student/StudentDashboard";
 import StudentDashboardLayout from "../pages/student/Layouts/StudentDashboardLayout";
 
+// =====================================================
+// INSTRUCTOR
+// =====================================================
+
 import InstructorDashboard from "../pages/instructor/InstructorDashboard";
-import InstructorCourses from "../pages/instructor/InstructorCourses";
 import InstructorDashboardLayout from "../pages/instructor/Layouts/InstructorDashboardLayout";
+
+import InstructorCourses from "../pages/instructor/InstructorCourses";
 import CreateCourse from "../pages/instructor/CreateCourse";
 import CourseManagement from "../pages/instructor/CourseManagement";
 import ManageLectures from "../pages/instructor/ManageLectures";
+
 import InstructorProfile from "../pages/instructor/InstructorProfile";
+import InstructorStudents from "../pages/instructor/InstructorStudents";
+import InstructorStudentDetails from "../pages/instructor/InstructorStudentDetails";
+
+// =====================================================
+// ROUTES
+// =====================================================
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* =========================
+
+        {/* =================================================
             PUBLIC ROUTES
-        ========================= */}
+        ================================================= */}
 
         <Route path="/" element={<Home />} />
 
@@ -32,48 +57,121 @@ function AppRoutes() {
 
         <Route path="/register" element={<Register />} />
 
-        {/* =========================
+
+        {/* =================================================
             STUDENT ROUTES
-        ========================= */}
+        ================================================= */}
 
         <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-          <Route element={<StudentDashboardLayout />}>
-            <Route path="/dashboard" element={<StudentDashboard />} />
 
-            <Route path="/courses" element={<Courses />} />
+          <Route element={<StudentDashboardLayout />}>
+
+            <Route
+              path="/dashboard"
+              element={<StudentDashboard />}
+            />
+
+            <Route
+              path="/courses"
+              element={<Courses />}
+            />
+
           </Route>
+
         </Route>
 
-        {/* =========================
+
+        {/* =================================================
             INSTRUCTOR ROUTES
-        ========================= */}
+        ================================================= */}
 
         <Route element={<ProtectedRoute allowedRoles={["instructor"]} />}>
+
           <Route element={<InstructorDashboardLayout />}>
+
+            {/* ---------------------------------------------
+                Instructor Dashboard
+            --------------------------------------------- */}
+
             <Route
               path="/instructor/dashboard"
               element={<InstructorDashboard />}
             />
 
+
+            {/* ---------------------------------------------
+                Create Course
+            --------------------------------------------- */}
+
             <Route
               path="/instructor/create-course"
               element={<CreateCourse />}
             />
-            <Route path="/instructor/courses" element={<InstructorCourses />} />
+
+
+            {/* ---------------------------------------------
+                All Courses
+            --------------------------------------------- */}
+
+            <Route
+              path="/instructor/courses"
+              element={<InstructorCourses />}
+            />
+
+
+            {/* ---------------------------------------------
+                Course Management
+            --------------------------------------------- */}
 
             <Route
               path="/instructor/courses/:courseId"
               element={<CourseManagement />}
             />
 
+
+            {/* ---------------------------------------------
+                Manage Lectures
+            --------------------------------------------- */}
+
             <Route
               path="/instructor/courses/:courseId/lectures"
               element={<ManageLectures />}
             />
 
-            <Route path="/instructor/profile" element={<InstructorProfile />} />
+
+            {/* ---------------------------------------------
+                Instructor Students
+            --------------------------------------------- */}
+
+            <Route
+              path="/instructor/students"
+              element={<InstructorStudents />}
+            />
+
+
+            {/* ---------------------------------------------
+                Student Details
+            --------------------------------------------- */}
+
+            <Route
+              path="/instructor/students/:studentId"
+              element={<InstructorStudentDetails />}
+            />
+
+
+            {/* ---------------------------------------------
+                Instructor Profile
+            --------------------------------------------- */}
+
+            <Route
+              path="/instructor/profile"
+              element={<InstructorProfile />}
+            />
+
           </Route>
+
         </Route>
+
       </Routes>
     </BrowserRouter>
   );

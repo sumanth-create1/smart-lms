@@ -2,6 +2,8 @@ import express from "express";
 
 import {
   getInstructorDashboard,
+  getInstructorStudents,
+  getInstructorStudentDetails,
 } from "../controllers/instructorDashboard.controller.js";
 
 import {
@@ -17,5 +19,20 @@ router.get(
   authorizeRoles("instructor"),
   getInstructorDashboard
 );
+
+router.get(
+  "/instructor/students",
+  isAuthenticated,
+  authorizeRoles("instructor"),
+  getInstructorStudents
+);
+
+router.get(
+  "/instructor/students/:studentId",
+  isAuthenticated,
+  authorizeRoles("instructor"),
+  getInstructorStudentDetails,
+);
+
 
 export default router;
