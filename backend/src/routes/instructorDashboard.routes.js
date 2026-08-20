@@ -4,6 +4,7 @@ import {
   getInstructorDashboard,
   getInstructorStudents,
   getInstructorStudentDetails,
+  getInstructorAnalytics,
 } from "../controllers/instructorDashboard.controller.js";
 
 import {
@@ -34,5 +35,11 @@ router.get(
   getInstructorStudentDetails,
 );
 
+router.get(
+  "/instructor/analytics",
+  isAuthenticated,
+  authorizeRoles("instructor"),
+  getInstructorAnalytics
+);
 
 export default router;

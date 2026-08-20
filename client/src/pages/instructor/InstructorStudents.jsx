@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Users,
   Search,
@@ -7,6 +8,7 @@ import {
   BookOpen,
   CalendarDays,
   UserRound,
+  ArrowRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -25,21 +27,27 @@ function InstructorStudents() {
     try {
       setLoading(true);
 
-      const response = await api.get("/dashboard/instructor/students");
+      const response = await api.get(
+        "/dashboard/instructor/students"
+      );
 
       if (response.data?.success) {
         setEnrollments(response.data.data || []);
       } else {
         toast.error(
-          response.data?.message || "Failed to load students",
+          response.data?.message ||
+            "Failed to load students"
         );
       }
     } catch (error) {
-      console.error("Instructor students error:", error);
+      console.error(
+        "Instructor students error:",
+        error
+      );
 
       toast.error(
         error.response?.data?.message ||
-          "Unable to load students",
+          "Unable to load students"
       );
     } finally {
       setLoading(false);
@@ -78,6 +86,28 @@ function InstructorStudents() {
       );
     });
   }, [enrollments, search]);
+
+  // =====================================================
+  // STATS
+  // =====================================================
+
+  const totalEnrollments = enrollments.length;
+
+  const activeStudents = useMemo(() => {
+    return new Set(
+      enrollments
+        .map((item) => item.student?._id)
+        .filter(Boolean)
+    ).size;
+  }, [enrollments]);
+
+  const enrolledCourses = useMemo(() => {
+    return new Set(
+      enrollments
+        .map((item) => item.course?._id)
+        .filter(Boolean)
+    ).size;
+  }, [enrollments]);
 
   // =====================================================
   // LOADING
@@ -133,29 +163,21 @@ function InstructorStudents() {
 
         <InfoCard
           title="Total Enrollments"
-          value={enrollments.length}
+          value={totalEnrollments}
           icon={<Users size={22} />}
           iconClass="bg-indigo-50 text-indigo-600"
         />
 
         <InfoCard
           title="Active Students"
-          value={new Set(
-            enrollments
-              .map((item) => item.student?._id)
-              .filter(Boolean),
-          ).size}
+          value={activeStudents}
           icon={<UserRound size={22} />}
           iconClass="bg-emerald-50 text-emerald-600"
         />
 
         <InfoCard
           title="Courses Enrolled"
-          value={new Set(
-            enrollments
-              .map((item) => item.course?._id)
-              .filter(Boolean),
-          ).size}
+          value={enrolledCourses}
           icon={<BookOpen size={22} />}
           iconClass="bg-amber-50 text-amber-600"
         />
@@ -184,7 +206,9 @@ function InstructorStudents() {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
             placeholder="Search students, email or course..."
             className="
               w-full
@@ -241,14 +265,16 @@ function InstructorStudents() {
 
         </div>
 
-        {/* EMPTY */}
+        {/* EMPTY STATE */}
 
         {filteredEnrollments.length === 0 ? (
           <EmptyStudents search={search} />
         ) : (
           <>
 
-            {/* DESKTOP TABLE */}
+            {/* =================================================
+                DESKTOP TABLE
+            ================================================= */}
 
             <div className="hidden overflow-x-auto md:block">
 
@@ -258,80 +284,29 @@ function InstructorStudents() {
 
                   <tr>
 
-                    <th
-                      className="
-                        px-6
-                        py-4
-                        text-left
-                        text-xs
-                        font-semibold
-                        uppercase
-                        tracking-wider
-                        text-gray-500
-                      "
-                    >
+                    <TableHeader>
                       Student
-                    </th>
+                    </TableHeader>
 
-                    <th
-                      className="
-                        px-6
-                        py-4
-                        text-left
-                        text-xs
-                        font-semibold
-                        uppercase
-                        tracking-wider
-                        text-gray-500
-                      "
-                    >
+                    <TableHeader>
                       Course
-                    </th>
+                    </TableHeader>
 
-                    <th
-                      className="
-                        px-6
-                        py-4
-                        text-left
-                        text-xs
-                        font-semibold
-                        uppercase
-                        tracking-wider
-                        text-gray-500
-                      "
-                    >
+                    <TableHeader>
                       Level
-                    </th>
+                    </TableHeader>
 
-                    <th
-                      className="
-                        px-6
-                        py-4
-                        text-left
-                        text-xs
-                        font-semibold
-                        uppercase
-                        tracking-wider
-                        text-gray-500
-                      "
-                    >
+                    <TableHeader>
                       Enrolled
-                    </th>
+                    </TableHeader>
 
-                    <th
-                      className="
-                        px-6
-                        py-4
-                        text-left
-                        text-xs
-                        font-semibold
-                        uppercase
-                        tracking-wider
-                        text-gray-500
-                      "
-                    >
+                    <TableHeader>
                       Email
-                    </th>
+                    </TableHeader>
+
+                    <TableHeader>
+                      Action
+                    </TableHeader>
 
                   </tr>
 
@@ -339,170 +314,216 @@ function InstructorStudents() {
 
                 <tbody className="divide-y divide-gray-100">
 
-                  {filteredEnrollments.map((enrollment) => {
+                  {filteredEnrollments.map(
+                    (enrollment) => {
 
-                    const student = enrollment.student;
-                    const course = enrollment.course;
+                      const student =
+                        enrollment.student;
 
-                    return (
-                      <tr
-                        key={enrollment._id}
-                        className="transition hover:bg-gray-50"
-                      >
+                      const course =
+                        enrollment.course;
 
-                        {/* STUDENT */}
+                      const studentId =
+                        student?._id;
 
-                        <td className="px-6 py-5">
+                      return (
+                        <tr
+                          key={enrollment._id}
+                          className="
+                            transition
+                            hover:bg-gray-50
+                          "
+                        >
 
-                          <div className="flex items-center gap-3">
+                          {/* STUDENT */}
 
-                            {student?.avatar ? (
-                              <img
-                                src={student.avatar}
-                                alt={student.name}
-                                className="
-                                  h-11
-                                  w-11
-                                  rounded-full
-                                  object-cover
-                                "
+                          <td className="px-6 py-5">
+
+                            <div className="flex items-center gap-3">
+
+                              <StudentAvatar
+                                student={student}
+                                size="desktop"
                               />
-                            ) : (
-                              <div
-                                className="
-                                  flex
-                                  h-11
-                                  w-11
-                                  shrink-0
-                                  items-center
-                                  justify-center
-                                  rounded-full
-                                  bg-indigo-50
-                                  text-sm
-                                  font-bold
-                                  text-indigo-600
-                                "
-                              >
-                                {student?.name
-                                  ?.charAt(0)
-                                  ?.toUpperCase() || "S"}
+
+                              <div className="min-w-0">
+
+                                {studentId ? (
+                                  <Link
+                                    to={`/instructor/students/${studentId}`}
+                                    className="
+                                      font-semibold
+                                      text-gray-900
+                                      transition
+                                      hover:text-indigo-600
+                                    "
+                                  >
+                                    {student?.name ||
+                                      "Student"}
+                                  </Link>
+                                ) : (
+                                  <p className="font-semibold text-gray-900">
+                                    {student?.name ||
+                                      "Student"}
+                                  </p>
+                                )}
+
+                                <p className="mt-1 text-xs text-gray-500">
+                                  Student
+                                </p>
+
                               </div>
-                            )}
-
-                            <div className="min-w-0">
-
-                              <p className="font-semibold text-gray-900">
-                                {student?.name || "Student"}
-                              </p>
-
-                              <p className="mt-1 text-xs text-gray-500">
-                                Student
-                              </p>
 
                             </div>
 
-                          </div>
+                          </td>
 
-                        </td>
+                          {/* COURSE */}
 
-                        {/* COURSE */}
+                          <td className="px-6 py-5">
 
-                        <td className="px-6 py-5">
+                            <div className="flex items-center gap-2">
 
-                          <div className="flex items-center gap-2">
+                              <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600">
+                                <BookOpen size={16} />
+                              </div>
 
-                            <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600">
-                              <BookOpen size={16} />
+                              <div className="min-w-0">
+
+                                <p className="max-w-[220px] truncate font-medium text-gray-900">
+                                  {course?.courseTitle ||
+                                    "Course"}
+                                </p>
+
+                                <p className="mt-1 text-xs text-gray-400">
+                                  ₹
+                                  {course?.coursePrice ||
+                                    0}
+                                </p>
+
+                              </div>
+
                             </div>
 
-                            <div>
-                              <p className="max-w-[220px] truncate font-medium text-gray-900">
-                                {course?.courseTitle || "Course"}
-                              </p>
+                          </td>
 
-                              <p className="mt-1 text-xs text-gray-400">
-                                ₹{course?.coursePrice || 0}
-                              </p>
-                            </div>
+                          {/* LEVEL */}
 
-                          </div>
+                          <td className="px-6 py-5">
 
-                        </td>
-
-                        {/* LEVEL */}
-
-                        <td className="px-6 py-5">
-
-                          <span
-                            className="
-                              inline-flex
-                              rounded-full
-                              bg-indigo-50
-                              px-3
-                              py-1.5
-                              text-xs
-                              font-medium
-                              text-indigo-600
-                            "
-                          >
-                            {course?.courseLevel || "N/A"}
-                          </span>
-
-                        </td>
-
-                        {/* DATE */}
-
-                        <td className="px-6 py-5">
-
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-
-                            <CalendarDays
-                              size={16}
-                              className="text-gray-400"
-                            />
-
-                            {enrollment.enrolledAt
-                              ? new Date(
-                                  enrollment.enrolledAt,
-                                ).toLocaleDateString()
-                              : "N/A"}
-
-                          </div>
-
-                        </td>
-
-                        {/* EMAIL */}
-
-                        <td className="px-6 py-5">
-
-                          <a
-                            href={`mailto:${student?.email || ""}`}
-                            className="
-                              inline-flex
-                              items-center
-                              gap-2
-                              text-sm
-                              text-gray-600
-                              transition
-                              hover:text-indigo-600
-                            "
-                          >
-                            <Mail
-                              size={16}
-                              className="text-gray-400"
-                            />
-
-                            <span className="max-w-[220px] truncate">
-                              {student?.email || "No email"}
+                            <span
+                              className="
+                                inline-flex
+                                rounded-full
+                                bg-indigo-50
+                                px-3
+                                py-1.5
+                                text-xs
+                                font-medium
+                                text-indigo-600
+                              "
+                            >
+                              {course?.courseLevel ||
+                                "N/A"}
                             </span>
 
-                          </a>
+                          </td>
 
-                        </td>
+                          {/* DATE */}
 
-                      </tr>
-                    );
-                  })}
+                          <td className="px-6 py-5">
+
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+
+                              <CalendarDays
+                                size={16}
+                                className="text-gray-400"
+                              />
+
+                              {formatDate(
+                                enrollment.enrolledAt
+                              )}
+
+                            </div>
+
+                          </td>
+
+                          {/* EMAIL */}
+
+                          <td className="px-6 py-5">
+
+                            {student?.email ? (
+                              <a
+                                href={`mailto:${student.email}`}
+                                className="
+                                  inline-flex
+                                  max-w-[220px]
+                                  items-center
+                                  gap-2
+                                  text-sm
+                                  text-gray-600
+                                  transition
+                                  hover:text-indigo-600
+                                "
+                              >
+                                <Mail
+                                  size={16}
+                                  className="shrink-0 text-gray-400"
+                                />
+
+                                <span className="truncate">
+                                  {student.email}
+                                </span>
+                              </a>
+                            ) : (
+                              <span className="text-sm text-gray-400">
+                                No email
+                              </span>
+                            )}
+
+                          </td>
+
+                          {/* ACTION */}
+
+                          <td className="px-6 py-5">
+
+                            {studentId ? (
+                              <Link
+                                to={`/instructor/students/${studentId}`}
+                                className="
+                                  inline-flex
+                                  items-center
+                                  gap-2
+                                  rounded-lg
+                                  border
+                                  border-gray-200
+                                  bg-white
+                                  px-3
+                                  py-2
+                                  text-xs
+                                  font-semibold
+                                  text-gray-700
+                                  transition
+                                  hover:border-indigo-200
+                                  hover:bg-indigo-50
+                                  hover:text-indigo-600
+                                "
+                              >
+                                View
+                                <ArrowRight size={14} />
+                              </Link>
+                            ) : (
+                              <span className="text-xs text-gray-400">
+                                Unavailable
+                              </span>
+                            )}
+
+                          </td>
+
+                        </tr>
+                      );
+                    }
+                  )}
 
                 </tbody>
 
@@ -516,109 +537,159 @@ function InstructorStudents() {
 
             <div className="divide-y divide-gray-100 md:hidden">
 
-              {filteredEnrollments.map((enrollment) => {
+              {filteredEnrollments.map(
+                (enrollment) => {
 
-                const student = enrollment.student;
-                const course = enrollment.course;
+                  const student =
+                    enrollment.student;
 
-                return (
-                  <div
-                    key={enrollment._id}
-                    className="p-5"
-                  >
+                  const course =
+                    enrollment.course;
 
-                    <div className="flex items-start gap-4">
+                  const studentId =
+                    student?._id;
 
-                      {student?.avatar ? (
-                        <img
-                          src={student.avatar}
-                          alt={student.name}
-                          className="
-                            h-12
-                            w-12
-                            shrink-0
-                            rounded-full
-                            object-cover
-                          "
+                  return (
+                    <div
+                      key={enrollment._id}
+                      className="p-5"
+                    >
+
+                      {/* STUDENT */}
+
+                      <div className="flex items-start gap-4">
+
+                        <StudentAvatar
+                          student={student}
+                          size="mobile"
                         />
-                      ) : (
-                        <div
-                          className="
-                            flex
-                            h-12
-                            w-12
-                            shrink-0
-                            items-center
-                            justify-center
-                            rounded-full
-                            bg-indigo-50
-                            font-bold
-                            text-indigo-600
-                          "
-                        >
-                          {student?.name
-                            ?.charAt(0)
-                            ?.toUpperCase() || "S"}
+
+                        <div className="min-w-0 flex-1">
+
+                          {studentId ? (
+                            <Link
+                              to={`/instructor/students/${studentId}`}
+                              className="
+                                font-semibold
+                                text-gray-900
+                                transition
+                                hover:text-indigo-600
+                              "
+                            >
+                              {student?.name ||
+                                "Student"}
+                            </Link>
+                          ) : (
+                            <h3 className="font-semibold text-gray-900">
+                              {student?.name ||
+                                "Student"}
+                            </h3>
+                          )}
+
+                          {student?.email && (
+                            <a
+                              href={`mailto:${student.email}`}
+                              className="
+                                mt-1
+                                flex
+                                items-center
+                                gap-2
+                                text-sm
+                                text-gray-500
+                                hover:text-indigo-600
+                              "
+                            >
+                              <Mail size={14} />
+
+                              <span className="truncate">
+                                {student.email}
+                              </span>
+                            </a>
+                          )}
+
                         </div>
-                      )}
 
-                      <div className="min-w-0 flex-1">
+                      </div>
 
-                        <h3 className="font-semibold text-gray-900">
-                          {student?.name || "Student"}
-                        </h3>
+                      {/* COURSE */}
 
-                        <p className="mt-1 flex items-center gap-2 text-sm text-gray-500">
-                          <Mail size={14} />
-                          <span className="truncate">
-                            {student?.email || "No email"}
-                          </span>
+                      <div className="mt-5 rounded-xl bg-gray-50 p-4">
+
+                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                          Enrolled Course
                         </p>
 
+                        <p className="mt-1 font-semibold text-gray-900">
+                          {course?.courseTitle ||
+                            "Course"}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+
+                          <span className="
+                            rounded-full
+                            bg-indigo-50
+                            px-2.5
+                            py-1
+                            text-xs
+                            font-medium
+                            text-indigo-600
+                          ">
+                            {course?.courseLevel ||
+                              "N/A"}
+                          </span>
+
+                          <span className="text-xs text-gray-500">
+                            ₹{course?.coursePrice || 0}
+                          </span>
+
+                        </div>
+
+                        <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+
+                          <CalendarDays size={14} />
+
+                          Enrolled{" "}
+                          {formatDate(
+                            enrollment.enrolledAt
+                          )}
+
+                        </div>
+
                       </div>
+
+                      {/* VIEW DETAILS */}
+
+                      {studentId && (
+                        <Link
+                          to={`/instructor/students/${studentId}`}
+                          className="
+                            mt-4
+                            flex
+                            w-full
+                            items-center
+                            justify-center
+                            gap-2
+                            rounded-xl
+                            bg-indigo-600
+                            px-4
+                            py-3
+                            text-sm
+                            font-semibold
+                            text-white
+                            transition
+                            hover:bg-indigo-700
+                          "
+                        >
+                          View Student Details
+                          <ArrowRight size={16} />
+                        </Link>
+                      )}
 
                     </div>
-
-                    <div className="mt-5 rounded-xl bg-gray-50 p-4">
-
-                      <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                        Enrolled Course
-                      </p>
-
-                      <p className="mt-1 font-semibold text-gray-900">
-                        {course?.courseTitle || "Course"}
-                      </p>
-
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-
-                        <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
-                          {course?.courseLevel || "N/A"}
-                        </span>
-
-                        <span className="text-xs text-gray-500">
-                          ₹{course?.coursePrice || 0}
-                        </span>
-
-                      </div>
-
-                      <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
-
-                        <CalendarDays size={14} />
-
-                        Enrolled{" "}
-                        {enrollment.enrolledAt
-                          ? new Date(
-                              enrollment.enrolledAt,
-                            ).toLocaleDateString()
-                          : "N/A"}
-
-                      </div>
-
-                    </div>
-
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
 
             </div>
 
@@ -628,6 +699,97 @@ function InstructorStudents() {
       </div>
     </div>
   );
+}
+
+// =====================================================
+// TABLE HEADER
+// =====================================================
+
+function TableHeader({ children }) {
+  return (
+    <th
+      className="
+        px-6
+        py-4
+        text-left
+        text-xs
+        font-semibold
+        uppercase
+        tracking-wider
+        text-gray-500
+      "
+    >
+      {children}
+    </th>
+  );
+}
+
+// =====================================================
+// STUDENT AVATAR
+// =====================================================
+
+function StudentAvatar({
+  student,
+  size = "desktop",
+}) {
+  const sizeClass =
+    size === "mobile"
+      ? "h-12 w-12"
+      : "h-11 w-11";
+
+  if (student?.avatar) {
+    return (
+      <img
+        src={student.avatar}
+        alt={student.name || "Student"}
+        className={`
+          ${sizeClass}
+          shrink-0
+          rounded-full
+          object-cover
+        `}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`
+        ${sizeClass}
+        flex
+        shrink-0
+        items-center
+        justify-center
+        rounded-full
+        bg-indigo-50
+        text-sm
+        font-bold
+        text-indigo-600
+      `}
+    >
+      {student?.name
+        ?.charAt(0)
+        ?.toUpperCase() || "S"}
+    </div>
+  );
+}
+
+// =====================================================
+// FORMAT DATE
+// =====================================================
+
+function formatDate(date) {
+  if (!date) {
+    return "N/A";
+  }
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "N/A";
+  }
+
+  return parsedDate.toLocaleDateString();
 }
 
 // =====================================================
@@ -654,11 +816,9 @@ function InfoCard({
         hover:shadow-md
       "
     >
-
       <div className="flex items-start justify-between">
 
         <div>
-
           <p className="text-sm font-medium text-gray-500">
             {title}
           </p>
@@ -666,15 +826,15 @@ function InfoCard({
           <p className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
             {value}
           </p>
-
         </div>
 
-        <div className={`rounded-xl p-3 ${iconClass}`}>
+        <div
+          className={`rounded-xl p-3 ${iconClass}`}
+        >
           {icon}
         </div>
 
       </div>
-
     </div>
   );
 }
@@ -685,8 +845,15 @@ function InfoCard({
 
 function EmptyStudents({ search }) {
   return (
-    <div className="flex min-h-[350px] flex-col items-center justify-center px-6 text-center">
-
+    <div className="
+      flex
+      min-h-[350px]
+      flex-col
+      items-center
+      justify-center
+      px-6
+      text-center
+    ">
       <div className="rounded-full bg-gray-100 p-4">
         <Users
           size={28}
@@ -705,7 +872,6 @@ function EmptyStudents({ search }) {
           ? "Try searching with a different student name, email, or course."
           : "Students who enroll in your courses will appear here."}
       </p>
-
     </div>
   );
 }

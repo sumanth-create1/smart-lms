@@ -37,6 +37,7 @@ import ManageLectures from "../pages/instructor/ManageLectures";
 import InstructorProfile from "../pages/instructor/InstructorProfile";
 import InstructorStudents from "../pages/instructor/InstructorStudents";
 import InstructorStudentDetails from "../pages/instructor/InstructorStudentDetails";
+import InstructorAnalytics from "../pages/instructor/InstructorAnalytics";
 
 // =====================================================
 // ROUTES
@@ -46,7 +47,6 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* =================================================
             PUBLIC ROUTES
         ================================================= */}
@@ -57,38 +57,24 @@ function AppRoutes() {
 
         <Route path="/register" element={<Register />} />
 
-
         {/* =================================================
             STUDENT ROUTES
         ================================================= */}
 
         <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-
           <Route element={<StudentDashboardLayout />}>
+            <Route path="/dashboard" element={<StudentDashboard />} />
 
-            <Route
-              path="/dashboard"
-              element={<StudentDashboard />}
-            />
-
-            <Route
-              path="/courses"
-              element={<Courses />}
-            />
-
+            <Route path="/courses" element={<Courses />} />
           </Route>
-
         </Route>
-
 
         {/* =================================================
             INSTRUCTOR ROUTES
         ================================================= */}
 
         <Route element={<ProtectedRoute allowedRoles={["instructor"]} />}>
-
           <Route element={<InstructorDashboardLayout />}>
-
             {/* ---------------------------------------------
                 Instructor Dashboard
             --------------------------------------------- */}
@@ -97,7 +83,6 @@ function AppRoutes() {
               path="/instructor/dashboard"
               element={<InstructorDashboard />}
             />
-
 
             {/* ---------------------------------------------
                 Create Course
@@ -108,16 +93,11 @@ function AppRoutes() {
               element={<CreateCourse />}
             />
 
-
             {/* ---------------------------------------------
                 All Courses
             --------------------------------------------- */}
 
-            <Route
-              path="/instructor/courses"
-              element={<InstructorCourses />}
-            />
-
+            <Route path="/instructor/courses" element={<InstructorCourses />} />
 
             {/* ---------------------------------------------
                 Course Management
@@ -128,7 +108,6 @@ function AppRoutes() {
               element={<CourseManagement />}
             />
 
-
             {/* ---------------------------------------------
                 Manage Lectures
             --------------------------------------------- */}
@@ -137,7 +116,6 @@ function AppRoutes() {
               path="/instructor/courses/:courseId/lectures"
               element={<ManageLectures />}
             />
-
 
             {/* ---------------------------------------------
                 Instructor Students
@@ -148,7 +126,6 @@ function AppRoutes() {
               element={<InstructorStudents />}
             />
 
-
             {/* ---------------------------------------------
                 Student Details
             --------------------------------------------- */}
@@ -158,20 +135,18 @@ function AppRoutes() {
               element={<InstructorStudentDetails />}
             />
 
-
             {/* ---------------------------------------------
                 Instructor Profile
             --------------------------------------------- */}
 
-            <Route
-              path="/instructor/profile"
-              element={<InstructorProfile />}
-            />
-
+            <Route path="/instructor/profile" element={<InstructorProfile />} />
           </Route>
 
+          <Route
+            path="/instructor/analytics"
+            element={<InstructorAnalytics />}
+          />
         </Route>
-
       </Routes>
     </BrowserRouter>
   );
