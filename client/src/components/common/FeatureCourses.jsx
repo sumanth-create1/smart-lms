@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import api from "../../services/api";
 
 const C = {
   bg: "#FBFAF7",
@@ -12,95 +15,29 @@ const C = {
   purple: "#7C3AED",
 };
 
-const COURSES = [
-  {
-    id: 1,
-    title: "MERN Stack Development",
-    description:
-      "Build modern full-stack applications using MongoDB, Express, React and Node.js.",
-    category: "Development",
-    level: "Intermediate",
-    lectures: 42,
-    duration: "18h 30m",
-    price: "₹1,499",
-    color: C.indigo,
-    icon: "⌘",
-  },
-  {
-    id: 2,
-    title: "Java Programming",
-    description:
-      "Master Java fundamentals, OOP concepts and practical programming skills.",
-    category: "Programming",
-    level: "Beginner",
-    lectures: 36,
-    duration: "14h 20m",
-    price: "₹999",
-    color: C.amber,
-    icon: "☕",
-  },
-  {
-    id: 3,
-    title: "Data Structures & Algorithms",
-    description:
-      "Learn important DSA concepts and develop strong problem-solving skills.",
-    category: "DSA",
-    level: "Intermediate",
-    lectures: 55,
-    duration: "24h 10m",
-    price: "₹1,799",
-    color: C.teal,
-    icon: "◈",
-  },
-  {
-    id: 4,
-    title: "React.js Fundamentals",
-    description:
-      "Learn React and build reusable, interactive and scalable interfaces.",
-    category: "Frontend",
-    level: "Beginner",
-    lectures: 28,
-    duration: "10h 45m",
-    price: "₹799",
-    color: C.coral,
-    icon: "⚛",
-  },
-  {
-    id: 5,
-    title: "SQL & Database Management",
-    description:
-      "Understand SQL queries, relational databases and database design.",
-    category: "Database",
-    level: "Beginner",
-    lectures: 30,
-    duration: "11h 30m",
-    price: "₹899",
-    color: C.purple,
-    icon: "▣",
-  },
-  {
-    id: 6,
-    title: "Node.js Backend Development",
-    description:
-      "Create REST APIs, authentication systems and scalable backend applications.",
-    category: "Backend",
-    level: "Intermediate",
-    lectures: 38,
-    duration: "16h 15m",
-    price: "₹1,299",
-    color: C.indigo,
-    icon: "◆",
-  },
+/* ============================================================
+   COLORS
+   Used only for decorative course visuals
+============================================================ */
+
+const COURSE_COLORS = [
+  C.indigo,
+  C.amber,
+  C.teal,
+  C.coral,
+  C.purple,
 ];
 
 /* ============================================================
    COURSE CARD
 ============================================================ */
 
-function CourseCard({ course }) {
+function CourseCard({ course, index }) {
+  const color = COURSE_COLORS[index % COURSE_COLORS.length];
+
   return (
     <Link
-      to={`/courses/${course.id}`}
+      to={`/courses/${course._id}`}
       className="
         group
         flex
@@ -137,7 +74,7 @@ function CourseCard({ course }) {
           py-5
         "
         style={{
-          backgroundColor: `${course.color}0D`,
+          backgroundColor: `${color}0D`,
         }}
       >
         {/* Large decorative circle */}
@@ -156,7 +93,7 @@ function CourseCard({ course }) {
             group-hover:scale-110
           "
           style={{
-            backgroundColor: course.color,
+            backgroundColor: color,
           }}
         />
 
@@ -174,7 +111,7 @@ function CourseCard({ course }) {
             opacity-10
           "
           style={{
-            borderColor: course.color,
+            borderColor: color,
           }}
         />
 
@@ -191,40 +128,73 @@ function CourseCard({ course }) {
             tracking-[0.18em]
           "
           style={{
-            color: course.color,
+            color,
           }}
         >
           {course.category}
         </span>
 
-        {/* Course Icon */}
+        {/* Course thumbnail / fallback */}
 
-        <div
-          className="
-            absolute
-            bottom-5
-            right-6
-            z-10
-            flex
-            h-14
-            w-14
-            items-center
-            justify-center
-            rounded-2xl
-            bg-white
-            text-xl
-            font-bold
-            shadow-[0_6px_18px_rgba(21,18,31,0.10)]
-            transition-transform
-            duration-300
-            group-hover:rotate-6
-          "
-          style={{
-            color: course.color,
-          }}
-        >
-          {course.icon}
-        </div>
+        {course.courseThumbnail?.url ? (
+          <img
+            src={course.courseThumbnail.url}
+            alt={course.courseTitle}
+            className="
+              absolute
+              inset-0
+              h-full
+              w-full
+              object-cover
+              opacity-90
+              transition-transform
+              duration-500
+              group-hover:scale-105
+            "
+          />
+        ) : (
+          <div
+            className="
+              absolute
+              bottom-5
+              right-6
+              z-10
+              flex
+              h-14
+              w-14
+              items-center
+              justify-center
+              rounded-2xl
+              bg-white
+              text-xl
+              font-bold
+              shadow-[0_6px_18px_rgba(21,18,31,0.10)]
+              transition-transform
+              duration-300
+              group-hover:rotate-6
+            "
+            style={{
+              color,
+            }}
+          >
+            📚
+          </div>
+        )}
+
+        {/* Category overlay when thumbnail exists */}
+
+        {course.courseThumbnail?.url && (
+          <div
+            className="
+              absolute
+              inset-0
+              bg-gradient-to-t
+              from-black/40
+              via-transparent
+              to-transparent
+            "
+          />
+        )}
       </div>
 
       {/* ======================================================
@@ -247,11 +217,11 @@ function CourseCard({ course }) {
               font-semibold
             "
             style={{
-              backgroundColor: `${course.color}12`,
-              color: course.color,
+              backgroundColor: `${color}12`,
+              color,
             }}
           >
-            {course.level}
+            {course.courseLevel}
           </span>
 
           <span
@@ -260,7 +230,7 @@ function CourseCard({ course }) {
               color: C.muted,
             }}
           >
-            {course.lectures} lectures
+            Course
           </span>
         </div>
 
@@ -280,7 +250,7 @@ function CourseCard({ course }) {
             color: C.ink,
           }}
         >
-          {course.title}
+          {course.courseTitle}
         </h3>
 
         {/* Description */}
@@ -325,7 +295,9 @@ function CourseCard({ course }) {
                   color: C.ink,
                 }}
               >
-                {course.price}
+                {course.coursePrice === 0
+                  ? "Free"
+                  : `₹${course.coursePrice}`}
               </p>
 
               <p
@@ -334,7 +306,7 @@ function CourseCard({ course }) {
                   color: C.muted,
                 }}
               >
-                {course.duration}
+                Lifetime access
               </p>
             </div>
 
@@ -356,14 +328,13 @@ function CourseCard({ course }) {
                 group-hover:translate-x-1
               "
               style={{
-                backgroundColor: `${course.color}10`,
-                color: course.color,
+                backgroundColor: `${color}10`,
+                color,
               }}
             >
               View course
               <span className="ml-1.5">→</span>
             </span>
-
           </div>
         </div>
       </div>
@@ -373,11 +344,9 @@ function CourseCard({ course }) {
 
 /* ============================================================
    COURSE SET
-   Keeping each set identical makes the infinite animation
-   seamless.
 ============================================================ */
 
-function CourseSet() {
+function CourseSet({ courses }) {
   return (
     <div
       className="
@@ -387,10 +356,11 @@ function CourseSet() {
         pr-6
       "
     >
-      {COURSES.map((course) => (
+      {courses.map((course, index) => (
         <CourseCard
-          key={course.id}
+          key={course._id}
           course={course}
+          index={index}
         />
       ))}
     </div>
@@ -402,6 +372,38 @@ function CourseSet() {
 ============================================================ */
 
 function FeaturedCourses() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  /* ==========================================================
+     FETCH PUBLIC COURSES
+  ========================================================== */
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await api.get("/course");
+
+        if (response.data.success) {
+          setCourses(response.data.courses || []);
+        } else {
+          toast.error("Unable to load courses");
+        }
+      } catch (error) {
+        console.error("Fetch public courses error:", error);
+
+        toast.error(
+          error.response?.data?.message ||
+            "Failed to load courses"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
   return (
     <section
       id="courses"
@@ -520,9 +522,7 @@ function FeaturedCourses() {
             </p>
           </div>
 
-          {/* ==================================================
-              VIEW ALL BUTTON
-          ================================================== */}
+          {/* VIEW ALL */}
 
           <div
             className="
@@ -561,91 +561,158 @@ function FeaturedCourses() {
               <span className="ml-2">→</span>
             </Link>
           </div>
-
         </div>
       </div>
+
+      {/* ======================================================
+          LOADING
+      ====================================================== */}
+
+      {loading && (
+        <div className="flex justify-center pb-24">
+          <div className="flex items-center gap-3 text-sm text-gray-500">
+            <div
+              className="
+                h-5
+                w-5
+                animate-spin
+                rounded-full
+                border-2
+                border-gray-200
+                border-t-indigo-600
+              "
+            />
+
+            Loading courses...
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================
+          EMPTY STATE
+      ====================================================== */}
+
+      {!loading && courses.length === 0 && (
+        <div className="px-6 pb-24 text-center">
+          <div
+            className="
+              mx-auto
+              max-w-md
+              rounded-2xl
+              border
+              bg-white
+              px-6
+              py-12
+            "
+            style={{
+              borderColor: "rgba(21,18,31,0.08)",
+            }}
+          >
+            <div className="text-4xl">📚</div>
+
+            <h3
+              className="mt-4 text-lg font-bold"
+              style={{
+                color: C.ink,
+              }}
+            >
+              No courses available yet
+            </h3>
+
+            <p
+              className="mt-2 text-sm"
+              style={{
+                color: C.muted,
+              }}
+            >
+              New courses will appear here once instructors
+              create them.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================
           COURSE CAROUSEL
       ====================================================== */}
 
-      <div
-        className="
-          relative
-          w-full
-          overflow-hidden
-          pb-20
-          sm:pb-24
-        "
-      >
-
-        {/* Left fade */}
-
+      {!loading && courses.length > 0 && (
         <div
           className="
-            pointer-events-none
-            absolute
-            inset-y-0
-            left-0
-            z-20
-            w-10
-            sm:w-20
-          "
-          style={{
-            background: `
-              linear-gradient(
-                to right,
-                ${C.bg},
-                transparent
-              )
-            `,
-          }}
-        />
-
-        {/* Right fade */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-y-0
-            right-0
-            z-20
-            w-10
-            sm:w-20
-          "
-          style={{
-            background: `
-              linear-gradient(
-                to left,
-                ${C.bg},
-                transparent
-              )
-            `,
-          }}
-        />
-
-        {/* ==================================================
-            ANIMATED TRACK
-        ================================================== */}
-
-        <div
-          className="
-            smart-lms-course-track
-            flex
-            w-max
-            flex-nowrap
+            relative
+            w-full
+            overflow-hidden
+            pb-20
+            sm:pb-24
           "
         >
-          {/* First set */}
 
-          <CourseSet />
+          {/* Left fade */}
 
-          {/* Exact duplicate */}
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-y-0
+              left-0
+              z-20
+              w-10
+              sm:w-20
+            "
+            style={{
+              background: `
+                linear-gradient(
+                  to right,
+                  ${C.bg},
+                  transparent
+                )
+              `,
+            }}
+          />
 
-          <CourseSet />
+          {/* Right fade */}
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-y-0
+              right-0
+              z-20
+              w-10
+              sm:w-20
+            "
+            style={{
+              background: `
+                linear-gradient(
+                  to left,
+                  ${C.bg},
+                  transparent
+                )
+              `,
+            }}
+          />
+
+          {/* ==================================================
+              ANIMATED TRACK
+          ================================================== */}
+
+          <div
+            className="
+              smart-lms-course-track
+              flex
+              w-max
+              flex-nowrap
+            "
+          >
+            <CourseSet courses={courses} />
+
+            {/* Duplicate set for infinite scrolling */}
+
+            <CourseSet courses={courses} />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ======================================================
           ANIMATION

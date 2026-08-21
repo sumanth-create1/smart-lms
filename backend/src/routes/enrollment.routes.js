@@ -1,6 +1,12 @@
 import express from "express";
-import { enrollCourse , getMyCourses } from "../controllers/enrollment.controller.js";
-import { isAuthenticated, authorizeRoles } from "../middleware/auth.middleware.js";
+
+import {
+  enrollCourse,
+  getMyCourses,
+  checkEnrollment,
+} from "../controllers/enrollment.controller.js";
+
+import { isAuthenticated,authorizeRoles } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -16,6 +22,17 @@ router.get(
     isAuthenticated,
     authorizeRoles("student"),
     getMyCourses
+);
+
+// =====================================================
+// CHECK ENROLLMENT
+// =====================================================
+
+router.get(
+  "/check/:courseId",
+  isAuthenticated,
+  authorizeRoles("student"),
+  checkEnrollment
 );
 
 export default router;

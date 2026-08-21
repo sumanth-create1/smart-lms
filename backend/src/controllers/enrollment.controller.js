@@ -57,6 +57,34 @@ export const enrollCourse = async (req, res) => {
   }
 };
 
+// =====================================================
+// CHECK ENROLLMENT
+// =====================================================
+
+export const checkEnrollment = async (req, res) => {
+  try {
+    const studentId = req.user._id;
+    const { courseId } = req.params;
+
+    const enrollment = await Enrollment.findOne({
+      student: studentId,
+      course: courseId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      isEnrolled: Boolean(enrollment),
+    });
+  } catch (error) {
+    console.error("Check enrollment error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export const getMyCourses = async (req, res) => {
   try {
     const studentId = req.user._id;

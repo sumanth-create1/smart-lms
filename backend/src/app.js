@@ -10,6 +10,7 @@ import studentRoutes from "./routes/student.routes.js";
 import progressRoutes from "./routes/progress.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import instructorDashboardRoutes from "./routes/instructorDashboard.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
 
 const app = express();
 
@@ -50,6 +51,11 @@ app.use("/api/v1/dashboard", dashboardRoutes);
 app.use(
   "/api/v1/dashboard",
   instructorDashboardRoutes
+);
+
+app.use(
+  "/api/v1/payment",
+  paymentRoutes
 );
 
 
