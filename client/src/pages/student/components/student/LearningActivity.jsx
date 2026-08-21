@@ -1,17 +1,46 @@
 import { BarChart3, Clock3 } from "lucide-react";
 
-function LearningActivity() {
-  const activity = [
-    { day: "Mon", hours: 1.5 },
-    { day: "Tue", hours: 2.2 },
-    { day: "Wed", hours: 1.1 },
-    { day: "Thu", hours: 2.8 },
-    { day: "Fri", hours: 1.8 },
-    { day: "Sat", hours: 3.4 },
-    { day: "Sun", hours: 2.1 },
-  ];
+function LearningActivity({ activity = [] }) {
+  /*
+   * Backend activity is expected to look something like:
+   *
+   * [
+   *   { day: "Mon", hours: 1.5 },
+   *   { day: "Tue", hours: 2.2 }
+   * ]
+   *
+   * We also safely handle minutes if the backend later returns
+   * duration in minutes.
+   */
 
-  const maxHours = 4;
+  const normalizedActivity = activity.map((item) => ({
+    day: item.day || item.label || "",
+    hours:
+      item.hours ??
+      (item.minutes != null ? Number(item.minutes) / 60 : 0),
+  }));
+
+  const totalHours = normalizedActivity.reduce(
+    (total, item) => total + Number(item.hours || 0),
+    0
+  );
+
+  const maxActivityHours = Math.max(
+    ...normalizedActivity.map((item) => Number(item.hours || 0)),
+    1
+  );
+
+  /*
+   * Keep a reasonable chart scale.
+   *
+   * Example:
+   * 2.5 hours -> max becomes 3
+   * 7 hours   -> max becomes 7
+   */
+  const maxHours = Math.max(
+    Math.ceil(maxActivityHours),
+    4
+  );
 
   return (
     <section className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -38,7 +67,7 @@ function LearningActivity() {
 
       </div>
 
-      {/* Chart */}
+      {/* Content */}
       <div className="p-5 sm:p-6">
 
         {/* Summary */}
@@ -50,13 +79,15 @@ function LearningActivity() {
             </p>
 
             <div className="mt-1 flex items-baseline gap-2">
+
               <span className="text-3xl font-bold tracking-tight text-slate-900">
-                15.1
+                {totalHours.toFixed(1)}
               </span>
 
               <span className="text-sm font-medium text-slate-400">
                 hours
               </span>
+
             </div>
           </div>
 
@@ -67,48 +98,75 @@ function LearningActivity() {
 
         </div>
 
-        {/* Chart */}
-        <div className="flex h-56 items-end gap-2 sm:gap-4">
+        {/* Empty State */}
+        {normalizedActivity.length === 0 ? (
+          <div className="flex h-56 flex-col items-center justify-center rounded-xl bg-slate-50">
 
-          {activity.map((item) => {
-            const height = Math.max(
-              (item.hours / maxHours) * 100,
-              5
-            );
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
+              <BarChart3
+                size={22}
+                className="text-slate-400"
+              />
+            </div>
 
-            return (
-              <div
-                key={item.day}
-                className="flex h-full flex-1 flex-col items-center justify-end"
-              >
+            <p className="mt-3 text-sm font-semibold text-slate-700">
+              No learning activity yet
+            </p>
 
-                {/* Hours */}
-                <span className="mb-2 text-[10px] font-medium text-slate-400">
-                  {item.hours}h
-                </span>
+            <p className="mt-1 text-xs text-slate-400">
+              Start a lesson to see your weekly activity here.
+            </p>
 
-                {/* Bar area */}
-                <div className="flex h-full w-full max-w-9 items-end rounded-lg bg-slate-50">
+          </div>
+        ) : (
+          /* Chart */
+          <div className="flex h-56 items-end gap-2 sm:gap-4">
 
-                  <div
-                    className="w-full rounded-lg bg-indigo-500 transition-all duration-300 hover:bg-indigo-600"
-                    style={{
-                      height: `${height}%`,
-                    }}
-                  />
+            {normalizedActivity.map((item, index) => {
+              const hours = Number(item.hours || 0);
+
+              const height =
+                hours > 0
+                  ? Math.max(
+                      (hours / maxHours) * 100,
+                      5
+                    )
+                  : 2;
+
+              return (
+                <div
+                  key={`${item.day}-${index}`}
+                  className="flex h-full flex-1 flex-col items-center justify-end"
+                >
+
+                  {/* Hours */}
+                  <span className="mb-2 text-[10px] font-medium text-slate-400">
+                    {hours.toFixed(1)}h
+                  </span>
+
+                  {/* Bar area */}
+                  <div className="flex h-full w-full max-w-9 items-end rounded-lg bg-slate-50">
+
+                    <div
+                      className="w-full rounded-lg bg-indigo-500 transition-all duration-300 hover:bg-indigo-600"
+                      style={{
+                        height: `${height}%`,
+                      }}
+                    />
+
+                  </div>
+
+                  {/* Day */}
+                  <span className="mt-3 text-[11px] font-medium text-slate-400">
+                    {item.day}
+                  </span>
 
                 </div>
+              );
+            })}
 
-                {/* Day */}
-                <span className="mt-3 text-[11px] font-medium text-slate-400">
-                  {item.day}
-                </span>
-
-              </div>
-            );
-          })}
-
-        </div>
+          </div>
+        )}
 
       </div>
     </section>

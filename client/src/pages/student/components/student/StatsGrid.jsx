@@ -26,7 +26,7 @@ function StatsGrid({ stats }) {
     },
     {
       title: "Learning Hours",
-      value: Number(stats?.learningHours ?? 0).toFixed(1),
+      value: `${Number(stats?.learningHours ?? 0).toFixed(1)}h`,
       description: "Total study time",
       icon: Clock3,
       iconBg: "bg-amber-50",

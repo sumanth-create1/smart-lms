@@ -4,15 +4,33 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 
-function WeeklyGoal() {
-  const targetHours = 10;
-  const completedHours = 6.5;
+function WeeklyGoal({ weeklyGoal }) {
+  // Data coming from backend
+  const targetHours = Number(weeklyGoal?.targetHours ?? 0);
+  const completedHours = Number(weeklyGoal?.completedHours ?? 0);
+
   const percentage = Math.min(
-    Math.round((completedHours / targetHours) * 100),
+    Math.max(
+      Math.round(
+        Number(
+          weeklyGoal?.percentage ??
+            (targetHours > 0
+              ? (completedHours / targetHours) * 100
+              : 0)
+        )
+      ),
+      0
+    ),
     100
   );
 
+  const remainingHours = Math.max(
+    targetHours - completedHours,
+    0
+  );
+
   const circumference = 2 * Math.PI * 48;
+
   const offset =
     circumference - (percentage / 100) * circumference;
 
@@ -73,7 +91,7 @@ function WeeklyGoal() {
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={offset}
-              className="text-indigo-600"
+              className="text-indigo-600 transition-all duration-500"
             />
           </svg>
 
@@ -103,7 +121,7 @@ function WeeklyGoal() {
             />
 
             <span className="text-lg font-bold text-slate-900">
-              {completedHours}
+              {completedHours.toFixed(1)}
             </span>
 
             <span className="text-sm text-slate-400">
@@ -113,7 +131,7 @@ function WeeklyGoal() {
           </div>
 
           <p className="mt-1 text-xs text-slate-400">
-            {targetHours - completedHours} hours remaining this week
+            {remainingHours.toFixed(1)} hours remaining this week
           </p>
 
         </div>
@@ -124,11 +142,17 @@ function WeeklyGoal() {
           <div>
 
             <p className="text-xs font-semibold text-indigo-700">
-              Great progress!
+              {percentage >= 100
+                ? "Goal completed!"
+                : percentage >= 50
+                ? "Great progress!"
+                : "Keep going!"}
             </p>
 
             <p className="mt-0.5 text-[11px] text-indigo-500">
-              You're on track this week.
+              {percentage >= 100
+                ? "You've reached your weekly goal."
+                : "You're on track this week."}
             </p>
 
           </div>

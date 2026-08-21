@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Registration";
-import Courses from "../components/common/Courses";
 
 // =====================================================
 // AUTH
@@ -21,6 +20,8 @@ import ProtectedRoute from "./ProtectedRoute";
 
 import StudentDashboard from "../pages/student/StudentDashboard";
 import StudentDashboardLayout from "../pages/student/Layouts/StudentDashboardLayout";
+import StudentCourses from "../pages/student/StudentCourses";
+import StudentCourseDetails from "../pages/student/StudentCourseDetails";
 
 // =====================================================
 // INSTRUCTOR
@@ -47,6 +48,7 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* =================================================
             PUBLIC ROUTES
         ================================================= */}
@@ -57,96 +59,120 @@ function AppRoutes() {
 
         <Route path="/register" element={<Register />} />
 
+
         {/* =================================================
             STUDENT ROUTES
         ================================================= */}
 
-        <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={["student"]} />
+          }
+        >
           <Route element={<StudentDashboardLayout />}>
-            <Route path="/dashboard" element={<StudentDashboard />} />
 
-            <Route path="/courses" element={<Courses />} />
+            {/* Student Dashboard */}
+
+            <Route
+              path="/dashboard"
+              element={<StudentDashboard />}
+            />
+
+            {/* All Courses */}
+
+            <Route
+              path="/courses"
+              element={<StudentCourses />}
+            />
+
+            {/* Course Details */}
+
+            <Route
+              path="/courses/:courseId"
+              element={<StudentCourseDetails />}
+            />
+
           </Route>
         </Route>
+
 
         {/* =================================================
             INSTRUCTOR ROUTES
         ================================================= */}
 
-        <Route element={<ProtectedRoute allowedRoles={["instructor"]} />}>
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={["instructor"]} />
+          }
+        >
           <Route element={<InstructorDashboardLayout />}>
-            {/* ---------------------------------------------
-                Instructor Dashboard
-            --------------------------------------------- */}
+
+            {/* Instructor Dashboard */}
 
             <Route
               path="/instructor/dashboard"
               element={<InstructorDashboard />}
             />
 
-            {/* ---------------------------------------------
-                Create Course
-            --------------------------------------------- */}
+            {/* Create Course */}
 
             <Route
               path="/instructor/create-course"
               element={<CreateCourse />}
             />
 
-            {/* ---------------------------------------------
-                All Courses
-            --------------------------------------------- */}
+            {/* Instructor Courses */}
 
-            <Route path="/instructor/courses" element={<InstructorCourses />} />
+            <Route
+              path="/instructor/courses"
+              element={<InstructorCourses />}
+            />
 
-            {/* ---------------------------------------------
-                Course Management
-            --------------------------------------------- */}
+            {/* Course Management */}
 
             <Route
               path="/instructor/courses/:courseId"
               element={<CourseManagement />}
             />
 
-            {/* ---------------------------------------------
-                Manage Lectures
-            --------------------------------------------- */}
+            {/* Manage Lectures */}
 
             <Route
               path="/instructor/courses/:courseId/lectures"
               element={<ManageLectures />}
             />
 
-            {/* ---------------------------------------------
-                Instructor Students
-            --------------------------------------------- */}
+            {/* Instructor Students */}
 
             <Route
               path="/instructor/students"
               element={<InstructorStudents />}
             />
 
-            {/* ---------------------------------------------
-                Student Details
-            --------------------------------------------- */}
+            {/* Student Details */}
 
             <Route
               path="/instructor/students/:studentId"
               element={<InstructorStudentDetails />}
             />
 
-            {/* ---------------------------------------------
-                Instructor Profile
-            --------------------------------------------- */}
+            {/* Instructor Profile */}
 
-            <Route path="/instructor/profile" element={<InstructorProfile />} />
+            <Route
+              path="/instructor/profile"
+              element={<InstructorProfile />}
+            />
+
+            {/* Instructor Analytics */}
+
+            <Route
+              path="/instructor/analytics"
+              element={<InstructorAnalytics />}
+            />
+
           </Route>
-
-          <Route
-            path="/instructor/analytics"
-            element={<InstructorAnalytics />}
-          />
         </Route>
+
       </Routes>
     </BrowserRouter>
   );
