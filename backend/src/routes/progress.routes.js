@@ -4,6 +4,7 @@ import {
   saveProgress,
   getCourseProgress,
   markLectureCompleted,
+  unmarkLectureCompleted,
   getLectureProgress,
 } from "../controllers/progress.controller.js";
 
@@ -48,6 +49,18 @@ router.patch(
   isAuthenticated,
   authorizeRoles("student"),
   markLectureCompleted
+);
+
+// =====================================================
+// MARK LECTURE AS INCOMPLETE
+// PATCH /api/v1/progress/uncomplete/:lectureId
+// =====================================================
+
+router.patch(
+  "/uncomplete/:lectureId",
+  isAuthenticated,
+  authorizeRoles("student"),
+  unmarkLectureCompleted
 );
 
 // =====================================================

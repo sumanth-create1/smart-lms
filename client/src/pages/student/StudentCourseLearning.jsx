@@ -21,16 +21,10 @@ import { useAuth } from "../../context/AuthContext";
 // CONSTANTS
 // =====================================================
 
-// How often progress is sent to backend
 const PROGRESS_SYNC_INTERVAL = 5;
-
-// Small tolerance to prevent browser rounding issues
 const SEEK_TOLERANCE = 1;
-
-// Minimum percentage required before manual completion
 const COMPLETION_PERCENTAGE = 95;
 
-// LocalStorage key
 const getVideoStorageKey = (courseId, lectureId) =>
   `smart-lms-video-${courseId}-${lectureId}`;
 
@@ -41,7 +35,6 @@ const getVideoStorageKey = (courseId, lectureId) =>
 const StudentCourseLearning = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
-
   const { user, loading: authLoading } = useAuth();
 
   const [course, setCourse] = useState(null);
@@ -51,15 +44,13 @@ const StudentCourseLearning = () => {
 
   const [loading, setLoading] = useState(true);
   const [lectureLoading, setLectureLoading] = useState(true);
-  const [enrollmentLoading, setEnrollmentLoading] =
-    useState(true);
-  const [progressLoading, setProgressLoading] =
-    useState(false);
+  const [enrollmentLoading, setEnrollmentLoading] = useState(true);
+  const [progressLoading, setProgressLoading] = useState(false);
 
   const [isEnrolled, setIsEnrolled] = useState(false);
 
   // ===================================================
-  // INITIALIZATION
+  // INITIALIZE
   // ===================================================
 
   useEffect(() => {
@@ -82,10 +73,7 @@ const StudentCourseLearning = () => {
     }
 
     if (user.role !== "student") {
-      toast.error(
-        "Only students can access the learning page."
-      );
-
+      toast.error("Only students can access the learning page.");
       navigate("/courses", { replace: true });
       return;
     }
@@ -105,28 +93,22 @@ const StudentCourseLearning = () => {
     try {
       setEnrollmentLoading(true);
 
-      const response = await api.get(
-        `/enrollment/check/${courseId}`
-      );
+      const response = await api.get(`/enrollment/check/${courseId}`);
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.message ||
-            "Unable to verify enrollment."
+          response.data?.message || "Unable to verify enrollment."
         );
       }
 
       const enrolled = Boolean(
-        response.data.enrolled ??
-          response.data.isEnrolled
+        response.data.enrolled ?? response.data.isEnrolled
       );
 
       setIsEnrolled(enrolled);
 
       if (!enrolled) {
-        toast.error(
-          "You are not enrolled in this course."
-        );
+        toast.error("You are not enrolled in this course.");
 
         navigate(`/courses/${courseId}`, {
           replace: true,
@@ -137,10 +119,7 @@ const StudentCourseLearning = () => {
 
       return true;
     } catch (error) {
-      console.error(
-        "Enrollment check error:",
-        error
-      );
+      console.error("Enrollment check error:", error);
 
       toast.error(
         error.response?.data?.message ||
@@ -159,7 +138,7 @@ const StudentCourseLearning = () => {
   };
 
   // ===================================================
-  // LOAD LEARNING DATA
+  // LOAD DATA
   // ===================================================
 
   const loadLearningData = async () => {
@@ -182,23 +161,17 @@ const StudentCourseLearning = () => {
 
   const fetchCourse = async () => {
     try {
-      const response = await api.get(
-        `/course/${courseId}`
-      );
+      const response = await api.get(`/course/${courseId}`);
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.message ||
-            "Unable to load course."
+          response.data?.message || "Unable to load course."
         );
       }
 
       setCourse(response.data.course);
     } catch (error) {
-      console.error(
-        "Fetch course error:",
-        error
-      );
+      console.error("Fetch course error:", error);
 
       toast.error(
         error.response?.data?.message ||
@@ -220,14 +193,11 @@ const StudentCourseLearning = () => {
     try {
       setLectureLoading(true);
 
-      const response = await api.get(
-        `/lecture/course/${courseId}`
-      );
+      const response = await api.get(`/lecture/course/${courseId}`);
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.message ||
-            "Unable to load lectures."
+          response.data?.message || "Unable to load lectures."
         );
       }
 
@@ -242,10 +212,7 @@ const StudentCourseLearning = () => {
         setSelectedLecture(lectureData[0]);
       }
     } catch (error) {
-      console.error(
-        "Fetch lectures error:",
-        error
-      );
+      console.error("Fetch lectures error:", error);
 
       toast.error(
         error.response?.data?.message ||
@@ -260,14 +227,12 @@ const StudentCourseLearning = () => {
   };
 
   // ===================================================
-  // FETCH COURSE PROGRESS
+  // FETCH PROGRESS
   // ===================================================
 
   const fetchProgress = async () => {
     try {
-      const response = await api.get(
-        `/progress/course/${courseId}`
-      );
+      const response = await api.get(`/progress/course/${courseId}`);
 
       if (!response.data?.success) {
         setProgress(null);
@@ -281,10 +246,7 @@ const StudentCourseLearning = () => {
       );
     } catch (error) {
       if (error.response?.status !== 404) {
-        console.error(
-          "Fetch progress error:",
-          error
-        );
+        console.error("Fetch progress error:", error);
       }
 
       setProgress(null);
@@ -292,22 +254,24 @@ const StudentCourseLearning = () => {
   };
 
   // ===================================================
-  // GET LECTURE PROGRESS
+  // LECTURE PROGRESS
   // ===================================================
 
   const getLectureProgress = (lectureId) => {
-    if (!progress?.lectures) {
+    if (!progress?.lectures || !lectureId) {
       return null;
     }
 
-    return progress.lectures.find((item) => {
-      const id =
-        typeof item.lecture === "object"
-          ? item.lecture?._id
-          : item.lecture;
+    return (
+      progress.lectures.find((item) => {
+        const id =
+          typeof item.lecture === "object"
+            ? item.lecture?._id
+            : item.lecture;
 
-      return String(id) === String(lectureId);
-    });
+        return String(id) === String(lectureId);
+      }) || null
+    );
   };
 
   // ===================================================
@@ -317,11 +281,7 @@ const StudentCourseLearning = () => {
   const completedLectureIds = useMemo(() => {
     const ids = new Set();
 
-    if (!progress?.lectures) {
-      return ids;
-    }
-
-    progress.lectures.forEach((item) => {
+    progress?.lectures?.forEach((item) => {
       if (!item?.completed) return;
 
       const lectureId =
@@ -342,61 +302,39 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   const progressPercentage = useMemo(() => {
-    if (!lectures.length) {
-      return 0;
-    }
+    if (!lectures.length) return 0;
 
     return Math.round(
       Math.min(
-        (completedLectureIds.size /
-          lectures.length) *
-          100,
+        (completedLectureIds.size / lectures.length) * 100,
         100
       )
     );
-  }, [
-    lectures.length,
-    completedLectureIds,
-  ]);
+  }, [lectures.length, completedLectureIds]);
 
   // ===================================================
-  // CURRENT LECTURE INDEX
+  // CURRENT LECTURE
   // ===================================================
 
   const currentLectureIndex = useMemo(() => {
-    if (!selectedLecture) {
-      return -1;
-    }
+    if (!selectedLecture) return -1;
 
     return lectures.findIndex(
       (lecture) =>
-        String(lecture._id) ===
-        String(selectedLecture._id)
+        String(lecture._id) === String(selectedLecture._id)
     );
   }, [lectures, selectedLecture]);
 
-  // ===================================================
-  // CHECK COMPLETION
-  // ===================================================
-
-  const isLectureCompleted = (lectureId) => {
-    if (!lectureId) {
-      return false;
-    }
-
-    return completedLectureIds.has(
-      String(lectureId)
-    );
-  };
+  const isLectureCompleted = (lectureId) =>
+    Boolean(lectureId) &&
+    completedLectureIds.has(String(lectureId));
 
   // ===================================================
   // SELECT LECTURE
   // ===================================================
 
   const handleSelectLecture = (lecture) => {
-    if (!lecture?._id) {
-      return;
-    }
+    if (!lecture?._id) return;
 
     setSelectedLecture(lecture);
 
@@ -419,36 +357,28 @@ const StudentCourseLearning = () => {
     }
 
     if (isLectureCompleted(lectureId)) {
-      toast.info(
-        "This lecture is already completed."
-      );
+      toast.info("This lecture is already completed.");
       return;
     }
 
     try {
       setProgressLoading(true);
 
-      const lectureProgress =
-        getLectureProgress(lectureId);
+      const lectureProgress = getLectureProgress(lectureId);
+      const watchedSeconds = Number(
+        lectureProgress?.watchedSeconds || 0
+      );
 
-      const watchedSeconds =
-        lectureProgress?.watchedSeconds || 0;
-
-      const duration =
-        getLectureDuration(selectedLecture);
+      const duration = getLectureDuration(selectedLecture);
 
       if (duration > 0) {
-        const percentage =
+        const watchedPercentage =
           (watchedSeconds / duration) * 100;
 
-        if (
-          percentage <
-          COMPLETION_PERCENTAGE
-        ) {
+        if (watchedPercentage < COMPLETION_PERCENTAGE) {
           toast.error(
             `Watch at least ${COMPLETION_PERCENTAGE}% of the lecture before completing it.`
           );
-
           return;
         }
       }
@@ -462,34 +392,103 @@ const StudentCourseLearning = () => {
           response.data?.message ||
             "Unable to complete lecture."
         );
-
         return;
       }
 
       if (response.data.progress) {
-        setProgress(
-          response.data.progress
-        );
+        setProgress(response.data.progress);
       }
 
-      clearSavedVideoPosition(
-        courseId,
-        lectureId
+      clearSavedVideoPosition(courseId, lectureId);
+
+      toast.success(
+        response.data.message || "Lecture completed!"
       );
+    } catch (error) {
+      console.error("Mark lecture complete error:", error);
+
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to complete lecture."
+      );
+    } finally {
+      setProgressLoading(false);
+    }
+  };
+
+  // ===================================================
+  // UNMARK COMPLETE
+  // ===================================================
+
+  const handleUnmarkComplete = async () => {
+    const lectureId = selectedLecture?._id;
+
+    if (!lectureId) {
+      toast.error("No lecture selected.");
+      return;
+    }
+
+    if (!isLectureCompleted(lectureId)) {
+      toast.info("This lecture is already incomplete.");
+      return;
+    }
+
+    try {
+      setProgressLoading(true);
+
+      const response = await api.patch(
+        `/progress/uncomplete/${lectureId}`
+      );
+
+      if (!response.data?.success) {
+        toast.error(
+          response.data?.message ||
+            "Unable to mark lecture as incomplete."
+        );
+        return;
+      }
+
+      if (response.data.progress) {
+        setProgress(response.data.progress);
+
+        const updatedLectureProgress =
+          response.data.progress.lectures?.find(
+            (item) => {
+              const id =
+                typeof item.lecture === "object"
+                  ? item.lecture?._id
+                  : item.lecture;
+
+              return String(id) === String(lectureId);
+            }
+          );
+
+        if (
+          updatedLectureProgress?.watchedSeconds !==
+          undefined
+        ) {
+          localStorage.setItem(
+            getVideoStorageKey(courseId, lectureId),
+            String(updatedLectureProgress.watchedSeconds)
+          );
+        }
+      }
 
       toast.success(
         response.data.message ||
-          "Lecture completed!"
+          "Lecture marked as incomplete."
       );
     } catch (error) {
       console.error(
-        "Mark lecture complete error:",
+        "Unmark lecture complete error:",
         error
       );
 
       toast.error(
         error.response?.data?.message ||
-          "Unable to complete lecture."
+          error.message ||
+          "Unable to mark lecture as incomplete."
       );
     } finally {
       setProgressLoading(false);
@@ -501,15 +500,9 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   const handleVideoCompleted = async () => {
-    if (!selectedLecture?._id) {
-      return;
-    }
+    const lectureId = selectedLecture?._id;
 
-    if (
-      isLectureCompleted(
-        selectedLecture._id
-      )
-    ) {
+    if (!lectureId || isLectureCompleted(lectureId)) {
       return;
     }
 
@@ -517,29 +510,20 @@ const StudentCourseLearning = () => {
   };
 
   // ===================================================
-  // NEXT
+  // NAVIGATION
   // ===================================================
 
   const handleNextLecture = () => {
-    if (currentLectureIndex === -1) {
+    if (currentLectureIndex === -1) return;
+
+    if (currentLectureIndex >= lectures.length - 1) {
+      toast.success("You have reached the last lecture.");
       return;
     }
 
-    if (
-      currentLectureIndex >=
-      lectures.length - 1
-    ) {
-      toast.success(
-        "You have reached the last lecture."
-      );
-
-      return;
-    }
-
-    const nextLecture =
-      lectures[currentLectureIndex + 1];
-
-    setSelectedLecture(nextLecture);
+    setSelectedLecture(
+      lectures[currentLectureIndex + 1]
+    );
 
     window.scrollTo({
       top: 0,
@@ -547,23 +531,15 @@ const StudentCourseLearning = () => {
     });
   };
 
-  // ===================================================
-  // PREVIOUS
-  // ===================================================
-
   const handlePreviousLecture = () => {
     if (currentLectureIndex <= 0) {
-      toast.info(
-        "This is the first lecture."
-      );
-
+      toast.info("This is the first lecture.");
       return;
     }
 
-    const previousLecture =
-      lectures[currentLectureIndex - 1];
-
-    setSelectedLecture(previousLecture);
+    setSelectedLecture(
+      lectures[currentLectureIndex - 1]
+    );
 
     window.scrollTo({
       top: 0,
@@ -599,10 +575,7 @@ const StudentCourseLearning = () => {
   // NO LECTURES
   // ===================================================
 
-  if (
-    !lectureLoading &&
-    lectures.length === 0
-  ) {
+  if (!lectureLoading && lectures.length === 0) {
     return (
       <div className="min-h-screen bg-[#F7F6F2]">
         <LearningHeader
@@ -611,16 +584,14 @@ const StudentCourseLearning = () => {
         />
 
         <div className="flex min-h-[70vh] items-center justify-center px-4">
-          <EmptyLectures
-            onBack={handleBack}
-          />
+          <EmptyLectures onBack={handleBack} />
         </div>
       </div>
     );
   }
 
   // ===================================================
-  // UI
+  // RENDER
   // ===================================================
 
   return (
@@ -634,28 +605,19 @@ const StudentCourseLearning = () => {
         <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
 
           {/* SIDEBAR */}
-
           <LectureSidebar
             course={course}
             lectures={lectures}
             selectedLecture={selectedLecture}
-            progressPercentage={
-              progressPercentage
-            }
-            completedLectureIds={
-              completedLectureIds
-            }
-            onSelectLecture={
-              handleSelectLecture
-            }
+            progressPercentage={progressPercentage}
+            completedLectureIds={completedLectureIds}
+            onSelectLecture={handleSelectLecture}
           />
 
-          {/* MAIN */}
-
+          {/* MAIN CONTENT */}
           <main className="min-w-0">
 
             {/* VIDEO */}
-
             <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
               <LectureViewer
                 lecture={selectedLecture}
@@ -670,9 +632,7 @@ const StudentCourseLearning = () => {
                 getLectureProgress={
                   getLectureProgress
                 }
-                onProgressSaved={
-                  setProgress
-                }
+                onProgressSaved={setProgress}
                 onVideoCompleted={
                   handleVideoCompleted
                 }
@@ -680,15 +640,10 @@ const StudentCourseLearning = () => {
             </div>
 
             {/* INFORMATION */}
-
             <LectureInformation
               lecture={selectedLecture}
-              lectureIndex={
-                currentLectureIndex
-              }
-              progressLoading={
-                progressLoading
-              }
+              lectureIndex={currentLectureIndex}
+              progressLoading={progressLoading}
               isCompleted={
                 selectedLecture
                   ? isLectureCompleted(
@@ -699,27 +654,24 @@ const StudentCourseLearning = () => {
               onMarkComplete={
                 handleMarkComplete
               }
+              onUnmarkComplete={
+                handleUnmarkComplete
+              }
             />
 
             {/* NAVIGATION */}
-
             <LectureNavigation
               currentLectureIndex={
                 currentLectureIndex
               }
-              totalLectures={
-                lectures.length
-              }
+              totalLectures={lectures.length}
               onPrevious={
                 handlePreviousLecture
               }
-              onNext={
-                handleNextLecture
-              }
+              onNext={handleNextLecture}
             />
 
             {/* COURSE COMPLETED */}
-
             {progressPercentage === 100 && (
               <CourseCompleted />
             )}
@@ -731,7 +683,7 @@ const StudentCourseLearning = () => {
 };
 
 // =====================================================
-// SIDEBAR
+// LECTURE SIDEBAR
 // =====================================================
 
 const LectureSidebar = ({
@@ -744,9 +696,7 @@ const LectureSidebar = ({
 }) => {
   return (
     <aside className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:sticky lg:top-5 lg:h-[calc(100vh-120px)]">
-
       <div className="border-b border-gray-100 p-5">
-
         <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
           Course Content
         </p>
@@ -756,9 +706,7 @@ const LectureSidebar = ({
         </h2>
 
         <div className="mt-5">
-
           <div className="flex items-center justify-between">
-
             <span className="text-xs font-medium text-gray-500">
               Your Progress
             </span>
@@ -766,30 +714,25 @@ const LectureSidebar = ({
             <span className="text-xs font-bold text-gray-900">
               {progressPercentage}%
             </span>
-
           </div>
 
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
-
             <div
               className="h-full rounded-full bg-gray-900 transition-all duration-500"
               style={{
                 width: `${progressPercentage}%`,
               }}
             />
-
           </div>
 
           <p className="mt-2 text-xs text-gray-400">
             {completedLectureIds.size} of{" "}
             {lectures.length} lectures completed
           </p>
-
         </div>
       </div>
 
       <div className="max-h-[500px] overflow-y-auto lg:max-h-[calc(100vh-350px)]">
-
         {lectures.map((lecture, index) => {
           const completed =
             completedLectureIds.has(
@@ -808,16 +751,9 @@ const LectureSidebar = ({
                 onSelectLecture(lecture)
               }
               className={`
-                flex
-                w-full
-                items-start
-                gap-3
-                border-b
-                border-gray-100
-                px-5
-                py-4
-                text-left
-                transition
+                flex w-full items-start gap-3
+                border-b border-gray-100
+                px-5 py-4 text-left transition
                 ${
                   active
                     ? "bg-gray-900 text-white"
@@ -825,9 +761,7 @@ const LectureSidebar = ({
                 }
               `}
             >
-
               <div className="mt-0.5 shrink-0">
-
                 {completed ? (
                   <CheckCircle2
                     size={19}
@@ -847,16 +781,12 @@ const LectureSidebar = ({
                     }
                   />
                 )}
-
               </div>
 
               <div className="min-w-0 flex-1">
-
                 <p
                   className={`
-                    text-[11px]
-                    font-semibold
-                    uppercase
+                    text-[11px] font-semibold uppercase
                     tracking-wide
                     ${
                       active
@@ -870,9 +800,7 @@ const LectureSidebar = ({
 
                 <p
                   className={`
-                    mt-1
-                    line-clamp-2
-                    text-sm
+                    mt-1 line-clamp-2 text-sm
                     font-semibold
                     ${
                       active
@@ -889,10 +817,7 @@ const LectureSidebar = ({
                 {lecture.duration && (
                   <div
                     className={`
-                      mt-2
-                      flex
-                      items-center
-                      gap-1
+                      mt-2 flex items-center gap-1
                       text-xs
                       ${
                         active
@@ -905,19 +830,17 @@ const LectureSidebar = ({
                     {lecture.duration}
                   </div>
                 )}
-
               </div>
             </button>
           );
         })}
-
       </div>
     </aside>
   );
 };
 
 // =====================================================
-// INFORMATION
+// LECTURE INFORMATION
 // =====================================================
 
 const LectureInformation = ({
@@ -926,14 +849,12 @@ const LectureInformation = ({
   progressLoading,
   isCompleted,
   onMarkComplete,
+  onUnmarkComplete,
 }) => {
   return (
     <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-
         <div className="min-w-0">
-
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
             Lecture{" "}
             {lectureIndex >= 0
@@ -946,70 +867,60 @@ const LectureInformation = ({
               lecture?.lectureTitle ||
               "Untitled Lecture"}
           </h1>
-
         </div>
 
-        <button
-          type="button"
-          onClick={onMarkComplete}
-          disabled={
-            progressLoading ||
-            !lecture ||
-            isCompleted
-          }
-          className={`
-            flex
-            shrink-0
-            items-center
-            justify-center
-            gap-2
-            rounded-xl
-            px-5
-            py-3
-            text-sm
-            font-semibold
-            transition
-            ${
-              isCompleted
-                ? "cursor-default bg-green-50 text-green-700"
-                : "bg-gray-900 text-white hover:bg-gray-800"
+        {isCompleted ? (
+          <button
+            type="button"
+            onClick={onUnmarkComplete}
+            disabled={progressLoading}
+            className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-green-50 px-5 py-3 text-sm font-semibold text-green-700 transition hover:bg-red-50 hover:text-red-700 disabled:cursor-wait disabled:opacity-70"
+          >
+            {progressLoading ? (
+              <>
+                <LoaderCircle
+                  size={17}
+                  className="animate-spin"
+                />
+                Updating...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={17} />
+                Completed
+              </>
+            )}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onMarkComplete}
+            disabled={
+              progressLoading || !lecture
             }
-            ${
-              progressLoading
-                ? "cursor-wait opacity-70"
-                : ""
-            }
-          `}
-        >
-
-          {progressLoading ? (
-            <>
-              <LoaderCircle
-                size={17}
-                className="animate-spin"
-              />
-              Saving...
-            </>
-          ) : isCompleted ? (
-            <>
-              <CheckCircle2 size={17} />
-              Completed
-            </>
-          ) : (
-            <>
-              <CheckCircle2 size={17} />
-              Mark Complete
-            </>
-          )}
-
-        </button>
-
+            className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-wait disabled:opacity-70"
+          >
+            {progressLoading ? (
+              <>
+                <LoaderCircle
+                  size={17}
+                  className="animate-spin"
+                />
+                Saving...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={17} />
+                Mark Complete
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {(lecture?.description ||
         lecture?.content) && (
         <div className="mt-7 border-t border-gray-100 pt-6">
-
           <h2 className="text-base font-bold text-gray-900">
             About this lecture
           </h2>
@@ -1018,16 +929,14 @@ const LectureInformation = ({
             {lecture.description ||
               lecture.content}
           </p>
-
         </div>
       )}
-
     </section>
   );
 };
 
 // =====================================================
-// NAVIGATION
+// LECTURE NAVIGATION
 // =====================================================
 
 const LectureNavigation = ({
@@ -1040,12 +949,10 @@ const LectureNavigation = ({
     currentLectureIndex <= 0;
 
   const isLast =
-    currentLectureIndex >=
-    totalLectures - 1;
+    currentLectureIndex >= totalLectures - 1;
 
   return (
     <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
       <button
         type="button"
         onClick={onPrevious}
@@ -1065,7 +972,6 @@ const LectureNavigation = ({
         Next Lecture
         <ChevronRight size={18} />
       </button>
-
     </div>
   );
 };
@@ -1077,25 +983,21 @@ const LectureNavigation = ({
 const CourseCompleted = () => {
   return (
     <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 p-6">
-
       <div className="flex items-start gap-4">
-
         <CheckCircle2
           size={26}
           className="mt-0.5 shrink-0 text-green-600"
         />
 
         <div>
-
           <h3 className="font-bold text-green-900">
             Course Completed!
           </h3>
 
           <p className="mt-1 text-sm leading-6 text-green-700">
-            Congratulations! You have completed
-            all lectures in this course.
+            Congratulations! You have completed all
+            lectures in this course.
           </p>
-
         </div>
       </div>
     </div>
@@ -1117,9 +1019,7 @@ const LectureViewer = ({
   if (!lecture) {
     return (
       <div className="flex aspect-video items-center justify-center bg-gray-100">
-
         <div className="text-center">
-
           <BookOpen
             size={40}
             className="mx-auto text-gray-300"
@@ -1128,9 +1028,7 @@ const LectureViewer = ({
           <p className="mt-3 text-sm text-gray-500">
             Select a lecture to begin learning.
           </p>
-
         </div>
-
       </div>
     );
   }
@@ -1142,8 +1040,7 @@ const LectureViewer = ({
     lecture.video;
 
   const content =
-    lecture.content ||
-    lecture.description;
+    lecture.content || lecture.description;
 
   if (videoUrl) {
     return (
@@ -1153,15 +1050,9 @@ const LectureViewer = ({
         courseId={courseId}
         lectureId={lecture._id}
         isCompleted={isCompleted}
-        getLectureProgress={
-          getLectureProgress
-        }
-        onProgressSaved={
-          onProgressSaved
-        }
-        onCompleted={
-          onVideoCompleted
-        }
+        getLectureProgress={getLectureProgress}
+        onProgressSaved={onProgressSaved}
+        onCompleted={onVideoCompleted}
       />
     );
   }
@@ -1169,33 +1060,25 @@ const LectureViewer = ({
   if (content) {
     return (
       <div className="flex min-h-[400px] items-center justify-center bg-gray-50 p-6 sm:p-10">
-
         <div className="max-w-3xl">
-
           <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-
             <FileText
               size={25}
               className="text-gray-600"
             />
-
           </div>
 
           <p className="whitespace-pre-line text-sm leading-7 text-gray-600">
             {content}
           </p>
-
         </div>
-
       </div>
     );
   }
 
   return (
     <div className="flex aspect-video items-center justify-center bg-gray-100">
-
       <div className="text-center">
-
         <Lock
           size={38}
           className="mx-auto text-gray-300"
@@ -1204,9 +1087,7 @@ const LectureViewer = ({
         <p className="mt-3 text-sm font-medium text-gray-500">
           Lecture content is not available yet.
         </p>
-
       </div>
-
     </div>
   );
 };
@@ -1226,29 +1107,14 @@ const VideoPlayer = ({
 }) => {
   const videoRef = useRef(null);
 
-  // Last position that was genuinely watched
   const watchedTimeRef = useRef(0);
-
-  // Last backend synced position
   const lastSyncedTimeRef = useRef(0);
 
-  // Prevent recursive seeking
   const restoringSeekRef = useRef(false);
-
-  // Prevent duplicate completion
-  const completionTriggeredRef =
-    useRef(false);
-
-  // Prevent multiple backend requests
-  const savingProgressRef =
-    useRef(false);
-
-  // Track whether video is actually playing
+  const completionTriggeredRef = useRef(false);
+  const savingProgressRef = useRef(false);
   const isPlayingRef = useRef(false);
-
-  // Track last progress update
-  const lastProgressUpdateRef =
-    useRef(0);
+  const lastProgressUpdateRef = useRef(0);
 
   const storageKey = getVideoStorageKey(
     courseId,
@@ -1256,7 +1122,7 @@ const VideoPlayer = ({
   );
 
   // ===================================================
-  // GET INITIAL WATCHED TIME
+  // INITIAL POSITION
   // ===================================================
 
   const getInitialWatchedTime = () => {
@@ -1271,21 +1137,11 @@ const VideoPlayer = ({
       localStorage.getItem(storageKey) || 0
     );
 
-    /*
-     * We use the larger value only because both
-     * represent previously watched positions.
-     *
-     * Importantly, localStorage is NEVER updated
-     * from a skipped seek.
-     */
-    return Math.max(
-      backendTime,
-      localTime
-    );
+    return Math.max(backendTime, localTime);
   };
 
   // ===================================================
-  // LOADED METADATA
+  // METADATA
   // ===================================================
 
   const handleLoadedMetadata = (event) => {
@@ -1296,38 +1152,32 @@ const VideoPlayer = ({
     if (isCompleted) {
       watchedTimeRef.current =
         video.duration || 0;
-
       return;
     }
 
     const initialTime =
       getInitialWatchedTime();
 
-    const safeResumeTime = Math.min(
-      initialTime,
-      Math.max(
-        0,
-        (video.duration || initialTime) -
-          SEEK_TOLERANCE
-      )
+    const maxSafeTime = Math.max(
+      0,
+      (video.duration || initialTime) -
+        SEEK_TOLERANCE
     );
 
-    watchedTimeRef.current =
-      safeResumeTime;
+    const resumeTime = Math.min(
+      initialTime,
+      maxSafeTime
+    );
 
+    watchedTimeRef.current = resumeTime;
     lastSyncedTimeRef.current =
-      Math.floor(safeResumeTime);
-
+      Math.floor(resumeTime);
     lastProgressUpdateRef.current =
-      Math.floor(safeResumeTime);
+      Math.floor(resumeTime);
 
-    /*
-     * Resume from genuine watched position.
-     */
-    if (safeResumeTime > 0) {
+    if (resumeTime > 0) {
       try {
-        video.currentTime =
-          safeResumeTime;
+        video.currentTime = resumeTime;
       } catch (error) {
         console.error(
           "Unable to restore video position:",
@@ -1344,25 +1194,18 @@ const VideoPlayer = ({
   const handleSeeking = () => {
     const video = videoRef.current;
 
-    if (!video || isCompleted) {
+    if (
+      !video ||
+      isCompleted ||
+      restoringSeekRef.current
+    ) {
       return;
     }
 
-    if (restoringSeekRef.current) {
-      return;
-    }
+    const requestedTime = video.currentTime;
+    const allowedTime = watchedTimeRef.current;
 
-    const requestedTime =
-      video.currentTime;
-
-    const allowedTime =
-      watchedTimeRef.current;
-
-    /*
-     * BACKWARD SEEK
-     *
-     * Allow students to go backward.
-     */
+    // Backward seeking is allowed.
     if (
       requestedTime <=
       allowedTime + SEEK_TOLERANCE
@@ -1370,17 +1213,11 @@ const VideoPlayer = ({
       return;
     }
 
-    /*
-     * FORWARD SEEK
-     *
-     * User tried to move beyond genuinely
-     * watched content.
-     */
+    // Forward seeking is blocked.
     restoringSeekRef.current = true;
 
     try {
-      video.currentTime =
-        allowedTime;
+      video.currentTime = allowedTime;
 
       toast.error(
         "You cannot skip ahead. Please watch the video."
@@ -1391,11 +1228,6 @@ const VideoPlayer = ({
         error
       );
     } finally {
-      /*
-       * Delay reset slightly because browsers
-       * can fire another seeking event after
-       * currentTime changes.
-       */
       setTimeout(() => {
         restoringSeekRef.current = false;
       }, 100);
@@ -1409,54 +1241,34 @@ const VideoPlayer = ({
   const handleTimeUpdate = () => {
     const video = videoRef.current;
 
-    if (!video || isCompleted) {
-      return;
-    }
+    if (!video || isCompleted) return;
 
-    const currentTime =
-      video.currentTime;
+    const currentTime = video.currentTime;
 
-    /*
-     * SECURITY CHECK
-     *
-     * If somehow currentTime moves ahead
-     * without the seeking event protecting it,
-     * immediately restore it.
-     */
+    // Extra protection against forward seeking.
     if (
       currentTime >
-      watchedTimeRef.current +
-        SEEK_TOLERANCE
+      watchedTimeRef.current + SEEK_TOLERANCE
     ) {
-      if (
-        !restoringSeekRef.current
-      ) {
-        restoringSeekRef.current =
-          true;
+      if (!restoringSeekRef.current) {
+        restoringSeekRef.current = true;
 
         video.currentTime =
           watchedTimeRef.current;
 
         setTimeout(() => {
-          restoringSeekRef.current =
-            false;
+          restoringSeekRef.current = false;
         }, 100);
       }
 
       return;
     }
 
-    /*
-     * Only update genuine watched position
-     * while the video is actually playing.
-     */
+    // Only count time while playing.
     if (!isPlayingRef.current) {
       return;
     }
 
-    /*
-     * Update watched position naturally.
-     */
     if (
       currentTime >
       watchedTimeRef.current
@@ -1465,22 +1277,15 @@ const VideoPlayer = ({
         currentTime;
     }
 
-    /*
-     * DO NOT save currentTime to localStorage
-     * before verifying that it is genuine.
-     */
-    localStorage.setItem(
-      storageKey,
-      String(
-        Math.floor(
-          watchedTimeRef.current
-        )
-      )
+    const watchedSeconds = Math.floor(
+      watchedTimeRef.current
     );
 
-    /*
-     * Sync every few seconds.
-     */
+    localStorage.setItem(
+      storageKey,
+      String(watchedSeconds)
+    );
+
     if (
       watchedTimeRef.current -
         lastProgressUpdateRef.current >=
@@ -1494,23 +1299,16 @@ const VideoPlayer = ({
   };
 
   // ===================================================
-  // PLAY
+  // PLAY / PAUSE
   // ===================================================
 
   const handlePlay = () => {
     isPlayingRef.current = true;
   };
 
-  // ===================================================
-  // PAUSE
-  // ===================================================
-
   const handlePause = () => {
     isPlayingRef.current = false;
 
-    /*
-     * Save immediately when user pauses.
-     */
     syncProgress(true);
   };
 
@@ -1518,9 +1316,7 @@ const VideoPlayer = ({
   // SYNC PROGRESS
   // ===================================================
 
-  const syncProgress = async (
-    force = false
-  ) => {
+  const syncProgress = async (force = false) => {
     const video = videoRef.current;
 
     if (!video || isCompleted) {
@@ -1535,17 +1331,9 @@ const VideoPlayer = ({
       lastSyncedTimeRef.current
     );
 
-    if (watchedTime <= 0) {
-      return;
-    }
+    if (watchedTime <= 0) return;
 
-    /*
-     * Do not send duplicate progress.
-     */
-    if (
-      !force &&
-      watchedTime <= previousTime
-    ) {
+    if (!force && watchedTime <= previousTime) {
       return;
     }
 
@@ -1554,8 +1342,7 @@ const VideoPlayer = ({
     }
 
     try {
-      savingProgressRef.current =
-        true;
+      savingProgressRef.current = true;
 
       const response = await api.patch(
         `/progress/${lectureId}`,
@@ -1585,8 +1372,7 @@ const VideoPlayer = ({
         error
       );
     } finally {
-      savingProgressRef.current =
-        false;
+      savingProgressRef.current = false;
     }
   };
 
@@ -1595,126 +1381,106 @@ const VideoPlayer = ({
   // ===================================================
 
   const handleEnded = async () => {
-    if (
-      completionTriggeredRef.current
-    ) {
+    if (completionTriggeredRef.current) {
       return;
     }
 
-    completionTriggeredRef.current =
-      true;
+    completionTriggeredRef.current = true;
 
     const video = videoRef.current;
 
-    if (video) {
-      /*
-       * The user reached the actual end.
-       * This is a legitimate completion position.
-       */
-      const duration =
-        video.duration || 0;
+    try {
+      if (video) {
+        const duration =
+          video.duration || 0;
 
-      watchedTimeRef.current =
-        duration;
+        watchedTimeRef.current =
+          duration;
 
-      lastSyncedTimeRef.current =
-        duration;
+        const finalSeconds = Math.floor(
+          duration
+        );
 
-      localStorage.setItem(
-        storageKey,
-        String(Math.floor(duration))
-      );
+        lastSyncedTimeRef.current =
+          finalSeconds;
 
-      try {
-        const response =
-          await api.patch(
-            `/progress/${lectureId}`,
-            {
-              watchedSeconds:
-                Math.floor(duration),
-            }
-          );
+        localStorage.setItem(
+          storageKey,
+          String(finalSeconds)
+        );
+
+        const response = await api.patch(
+          `/progress/${lectureId}`,
+          {
+            watchedSeconds: finalSeconds,
+          }
+        );
 
         if (response.data?.progress) {
           onProgressSaved(
             response.data.progress
           );
         }
-      } catch (error) {
-        console.error(
-          "Final progress sync error:",
-          error
-        );
       }
+
+      await onCompleted();
+
+      clearSavedVideoPosition(
+        courseId,
+        lectureId
+      );
+    } catch (error) {
+      console.error(
+        "Video completion error:",
+        error
+      );
+    } finally {
+      completionTriggeredRef.current = false;
     }
-
-    /*
-     * Complete lecture only after
-     * genuinely reaching the end.
-     */
-    await onCompleted();
-
-    clearSavedVideoPosition(
-      courseId,
-      lectureId
-    );
-
-    completionTriggeredRef.current =
-      false;
   };
 
   // ===================================================
-  // RESET WHEN LECTURE CHANGES
+  // RESET ON LECTURE CHANGE
   // ===================================================
 
   useEffect(() => {
-    const progressData =
+    const lectureProgress =
       getLectureProgress(lectureId);
 
     const backendTime = Number(
-      progressData?.watchedSeconds || 0
+      lectureProgress?.watchedSeconds || 0
     );
 
     const localTime = Number(
       localStorage.getItem(storageKey) || 0
     );
 
-    const initialTime = Math.max(
+    watchedTimeRef.current = Math.max(
       backendTime,
       localTime
     );
-
-    watchedTimeRef.current =
-      initialTime;
 
     lastSyncedTimeRef.current =
       backendTime;
 
     lastProgressUpdateRef.current =
-      initialTime;
+      watchedTimeRef.current;
 
-    restoringSeekRef.current =
-      false;
-
-    completionTriggeredRef.current =
-      false;
-
+    restoringSeekRef.current = false;
+    completionTriggeredRef.current = false;
     isPlayingRef.current = false;
-
-    savingProgressRef.current =
-      false;
-  }, [lectureId]);
+    savingProgressRef.current = false;
+  }, [lectureId, storageKey]);
 
   // ===================================================
-  // BEFORE PAGE UNLOAD
+  // PAGE UNLOAD
   // ===================================================
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      const watchedTime =
-        Math.floor(
-          watchedTimeRef.current
-        );
+    const saveBeforeUnload = () => {
+      const watchedTime = Math.floor(
+        watchedTimeRef.current
+      );
 
       if (watchedTime > 0) {
         localStorage.setItem(
@@ -1726,13 +1492,13 @@ const VideoPlayer = ({
 
     window.addEventListener(
       "beforeunload",
-      handleBeforeUnload
+      saveBeforeUnload
     );
 
     return () => {
       window.removeEventListener(
         "beforeunload",
-        handleBeforeUnload
+        saveBeforeUnload
       );
     };
   }, [storageKey]);
@@ -1749,18 +1515,7 @@ const VideoPlayer = ({
         return;
       }
 
-      /*
-       * Prevent:
-       *
-       * ArrowRight
-       * ArrowLeft
-       * J
-       * L
-       *
-       * from being used to skip.
-       *
-       * Backward seeking is handled manually.
-       */
+      // Disable forward keyboard seeking.
       if (
         event.key === "ArrowRight" ||
         event.key === "l" ||
@@ -1775,9 +1530,7 @@ const VideoPlayer = ({
         return;
       }
 
-      /*
-       * Allow backward seeking.
-       */
+      // Allow 10-second backward seeking.
       if (
         event.key === "ArrowLeft" ||
         event.key === "j" ||
@@ -1785,14 +1538,10 @@ const VideoPlayer = ({
       ) {
         event.preventDefault();
 
-        const newTime = Math.max(
+        video.currentTime = Math.max(
           0,
           video.currentTime - 10
         );
-
-        video.currentTime = newTime;
-
-        return;
       }
     };
 
@@ -1815,7 +1564,6 @@ const VideoPlayer = ({
 
   return (
     <div className="relative bg-black">
-
       <video
         ref={videoRef}
         src={videoUrl}
@@ -1828,32 +1576,25 @@ const VideoPlayer = ({
           handleLoadedMetadata
         }
         onSeeking={handleSeeking}
-        onTimeUpdate={
-          handleTimeUpdate
-        }
+        onTimeUpdate={handleTimeUpdate}
         onPlay={handlePlay}
         onPause={handlePause}
         onEnded={handleEnded}
         className="aspect-video h-auto w-full bg-black object-contain"
       >
-        Your browser does not support
-        the video element.
+        Your browser does not support the video
+        element.
       </video>
-
     </div>
   );
 };
 
 // =====================================================
-// GET LECTURE DURATION
+// HELPERS
 // =====================================================
 
-const getLectureDuration = (
-  lecture
-) => {
-  if (!lecture) {
-    return 0;
-  }
+const getLectureDuration = (lecture) => {
+  if (!lecture) return 0;
 
   const duration =
     lecture.videoDuration ??
@@ -1861,33 +1602,21 @@ const getLectureDuration = (
     lecture.duration ??
     0;
 
-  const numericDuration =
-    Number(duration);
+  const numericDuration = Number(duration);
 
-  return Number.isFinite(
-    numericDuration
-  )
+  return Number.isFinite(numericDuration)
     ? numericDuration
     : 0;
 };
-
-// =====================================================
-// CLEAR VIDEO POSITION
-// =====================================================
 
 const clearSavedVideoPosition = (
   courseId,
   lectureId
 ) => {
-  if (!courseId || !lectureId) {
-    return;
-  }
+  if (!courseId || !lectureId) return;
 
   localStorage.removeItem(
-    getVideoStorageKey(
-      courseId,
-      lectureId
-    )
+    getVideoStorageKey(courseId, lectureId)
   );
 };
 
@@ -1895,19 +1624,14 @@ const clearSavedVideoPosition = (
 // EMPTY LECTURES
 // =====================================================
 
-const EmptyLectures = ({
-  onBack,
-}) => {
+const EmptyLectures = ({ onBack }) => {
   return (
     <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
-
         <BookOpen
           size={26}
           className="text-gray-500"
         />
-
       </div>
 
       <h2 className="mt-5 text-xl font-bold text-gray-900">
@@ -1915,8 +1639,8 @@ const EmptyLectures = ({
       </h2>
 
       <p className="mt-2 text-sm leading-6 text-gray-500">
-        The instructor hasn't added any
-        lectures to this course yet.
+        The instructor hasn't added any lectures
+        to this course yet.
       </p>
 
       <button
@@ -1926,7 +1650,6 @@ const EmptyLectures = ({
       >
         Back to Dashboard
       </button>
-
     </div>
   );
 };
@@ -1941,9 +1664,7 @@ const LearningHeader = ({
 }) => {
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-
       <div className="mx-auto flex min-h-[70px] max-w-[1500px] items-center gap-4 px-4 sm:px-6 lg:px-8">
-
         <button
           type="button"
           onClick={onBack}
@@ -1953,18 +1674,14 @@ const LearningHeader = ({
         </button>
 
         <div className="min-w-0">
-
           <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
             Learning
           </p>
 
           <h1 className="truncate text-sm font-bold text-gray-900 sm:text-base">
-            {course?.courseTitle ||
-              "Course"}
+            {course?.courseTitle || "Course"}
           </h1>
-
         </div>
-
       </div>
     </header>
   );
@@ -1977,9 +1694,7 @@ const LearningHeader = ({
 const LearningLoading = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F7F6F2]">
-
       <div className="text-center">
-
         <LoaderCircle
           size={40}
           className="mx-auto animate-spin text-gray-900"
@@ -1988,11 +1703,10 @@ const LearningLoading = () => {
         <p className="mt-4 text-sm text-gray-500">
           Loading your course...
         </p>
-
       </div>
-
     </div>
   );
 };
 
 export default StudentCourseLearning;
+

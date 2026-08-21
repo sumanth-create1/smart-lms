@@ -545,3 +545,65 @@ export const getLectureProgress = async (
     });
   }
 };
+
+export const unmarkLectureCompleted = async (req, res) => {
+  try {
+    const { lectureId } = req.params;
+    const studentId = req.user._id;
+
+    if (!lectureId) {
+      return res.status(400).json({
+        success: false,
+        message: "Lecture ID is required.",
+      });
+    }
+
+    const courseProgress = await CourseProgress.findOne({
+      student: studentId,
+      "lectures.lecture": lectureId,
+    });
+
+    if (!courseProgress) {
+      return res.status(404).json({
+        success: false,
+        message: "Course progress not found.",
+      });
+    }
+
+    const lectureProgress = courseProgress.lectures.find(
+      (item) =>
+        String(item.lecture) === String(lectureId)
+    );
+
+    if (!lectureProgress) {
+      return res.status(404).json({
+        success: false,
+        message: "Lecture progress not found.",
+      });
+    }
+
+    // Only change completion status.
+    // watchedSeconds remains unchanged.
+    lectureProgress.completed = false;
+
+    await courseProgress.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Lecture marked as incomplete.",
+      progress: courseProgress,
+    });
+  } catch (error) {
+    console.error(
+      "Unmark lecture completed error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Unable to mark lecture as incomplete.",
+    });
+  }
+};
