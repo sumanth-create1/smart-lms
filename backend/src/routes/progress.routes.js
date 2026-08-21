@@ -1,10 +1,12 @@
 import express from "express";
+
 import {
   saveProgress,
   getCourseProgress,
   markLectureCompleted,
   getLectureProgress,
 } from "../controllers/progress.controller.js";
+
 import {
   isAuthenticated,
   authorizeRoles,
@@ -12,26 +14,46 @@ import {
 
 const router = express.Router();
 
+// =====================================================
+// SAVE LECTURE PROGRESS
+// PATCH /api/v1/progress/:lectureId
+// =====================================================
+
 router.patch(
   "/:lectureId",
   isAuthenticated,
   authorizeRoles("student"),
-  saveProgress,
+  saveProgress
 );
+
+// =====================================================
+// GET COURSE PROGRESS
+// GET /api/v1/progress/course/:courseId
+// =====================================================
 
 router.get(
-    "/course/:courseId",
-    isAuthenticated,
-    authorizeRoles("student"),
-    getCourseProgress
+  "/course/:courseId",
+  isAuthenticated,
+  authorizeRoles("student"),
+  getCourseProgress
 );
 
+// =====================================================
+// MARK LECTURE AS COMPLETED
+// PATCH /api/v1/progress/complete/:lectureId
+// =====================================================
+
 router.patch(
-    "/complete/:lectureId",
-    isAuthenticated,
-    authorizeRoles("student"),
-    markLectureCompleted
+  "/complete/:lectureId",
+  isAuthenticated,
+  authorizeRoles("student"),
+  markLectureCompleted
 );
+
+// =====================================================
+// GET LECTURE PROGRESS
+// GET /api/v1/progress/lecture/:lectureId
+// =====================================================
 
 router.get(
   "/lecture/:lectureId",

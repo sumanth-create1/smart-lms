@@ -27,6 +27,7 @@ import ProtectedRoute from "./ProtectedRoute";
 
 import StudentDashboard from "../pages/student/StudentDashboard";
 import StudentDashboardLayout from "../pages/student/Layouts/StudentDashboardLayout";
+import StudentCourseLearning from "../pages/student/StudentCourseLearning";
 
 // =====================================================
 // INSTRUCTOR
@@ -51,27 +52,17 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* =================================================
             PUBLIC ROUTES
         ================================================= */}
 
         {/* Home */}
-        <Route
-          path="/"
-          element={<Home />}
-        />
+        <Route path="/" element={<Home />} />
 
         {/* Authentication */}
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+        <Route path="/login" element={<Login />} />
 
-        <Route
-          path="/register"
-          element={<Register />}
-        />
+        <Route path="/register" element={<Register />} />
 
         {/* =================================================
             PUBLIC COURSE ROUTES
@@ -87,47 +78,32 @@ function AppRoutes() {
 
         ================================================= */}
 
-        <Route
-          path="/courses"
-          element={<StudentCourses />}
-        />
+        <Route path="/courses" element={<StudentCourses />} />
 
-        <Route
-          path="/courses/:courseId"
-          element={<StudentCourseDetails />}
-        />
+        <Route path="/courses/:courseId" element={<StudentCourseDetails />} />
 
         {/* =================================================
             STUDENT PROTECTED ROUTES
         ================================================= */}
 
-        <Route
-          element={
-            <ProtectedRoute allowedRoles={["student"]} />
-          }
-        >
+        <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
           <Route element={<StudentDashboardLayout />}>
-
             {/* Dashboard */}
-            <Route
-              path="/dashboard"
-              element={<StudentDashboard />}
-            />
-
+            <Route path="/dashboard" element={<StudentDashboard />} />
           </Route>
+
+          <Route
+            path="/courses/:courseId/learn"
+            element={<StudentCourseLearning />}
+          />
         </Route>
 
         {/* =================================================
             INSTRUCTOR PROTECTED ROUTES
         ================================================= */}
 
-        <Route
-          element={
-            <ProtectedRoute allowedRoles={["instructor"]} />
-          }
-        >
+        <Route element={<ProtectedRoute allowedRoles={["instructor"]} />}>
           <Route element={<InstructorDashboardLayout />}>
-
             {/* Dashboard */}
             <Route
               path="/instructor/dashboard"
@@ -135,10 +111,7 @@ function AppRoutes() {
             />
 
             {/* Courses */}
-            <Route
-              path="/instructor/courses"
-              element={<InstructorCourses />}
-            />
+            <Route path="/instructor/courses" element={<InstructorCourses />} />
 
             {/* Create Course */}
             <Route
@@ -177,14 +150,9 @@ function AppRoutes() {
             />
 
             {/* Profile */}
-            <Route
-              path="/instructor/profile"
-              element={<InstructorProfile />}
-            />
-
+            <Route path="/instructor/profile" element={<InstructorProfile />} />
           </Route>
         </Route>
-
       </Routes>
     </BrowserRouter>
   );
