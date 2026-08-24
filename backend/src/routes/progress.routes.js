@@ -6,6 +6,7 @@ import {
   markLectureCompleted,
   unmarkLectureCompleted,
   getLectureProgress,
+  getStudentProgress,
 } from "../controllers/progress.controller.js";
 
 import {
@@ -24,7 +25,7 @@ router.patch(
   "/:lectureId",
   isAuthenticated,
   authorizeRoles("student"),
-  saveProgress
+  saveProgress,
 );
 
 // =====================================================
@@ -36,7 +37,7 @@ router.get(
   "/course/:courseId",
   isAuthenticated,
   authorizeRoles("student"),
-  getCourseProgress
+  getCourseProgress,
 );
 
 // =====================================================
@@ -48,7 +49,7 @@ router.patch(
   "/complete/:lectureId",
   isAuthenticated,
   authorizeRoles("student"),
-  markLectureCompleted
+  markLectureCompleted,
 );
 
 // =====================================================
@@ -60,7 +61,7 @@ router.patch(
   "/uncomplete/:lectureId",
   isAuthenticated,
   authorizeRoles("student"),
-  unmarkLectureCompleted
+  unmarkLectureCompleted,
 );
 
 // =====================================================
@@ -72,7 +73,19 @@ router.get(
   "/lecture/:lectureId",
   isAuthenticated,
   authorizeRoles("student"),
-  getLectureProgress
+  getLectureProgress,
+);
+
+// =====================================================
+// GET STUDENT OVERALL PROGRESS
+// GET /api/v1/progress/student
+// =====================================================
+
+router.get(
+  "/student",
+  isAuthenticated,
+  authorizeRoles("student"),
+  getStudentProgress,
 );
 
 export default router;

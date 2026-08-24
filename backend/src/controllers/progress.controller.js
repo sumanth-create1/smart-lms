@@ -3,7 +3,7 @@ import Lecture from "../models/lecture.model.js";
 import calculateProgress from "../utils/calculateProgress.js";
 import StudySession from "../models/studysession.model.js";
 import Activity from "../models/activity.model.js";
-
+import Enrollment from "../models/enrollment.model.js";
 // =====================================================
 // SAVE LECTURE WATCH PROGRESS
 // PATCH /api/v1/progress/:lectureId
@@ -604,6 +604,249 @@ export const unmarkLectureCompleted = async (req, res) => {
       message:
         error.message ||
         "Unable to mark lecture as incomplete.",
+    });
+  }
+};
+
+// =====================================================
+// GET STUDENT OVERALL PROGRESS
+// GET /api/v1/progress/student
+// =====================================================
+
+export const getStudentProgress = async (req, res) => {
+  try {
+    const studentId = req.user._id;
+
+    // -----------------------------------------------
+    // Get enrolled courses
+    // -----------------------------------------------
+
+    const enrollments = await Enrollment.find({
+      student: studentId,
+    })
+      .populate({
+        path: "course",
+        select:
+          "courseTitle courseSubtitle thumbnail category level instructor",
+        populate: {
+          path: "instructor",
+          select: "name avatar",
+        },
+      })
+      .sort({ enrolledAt: -1 });
+
+    // -----------------------------------------------
+    // Get student progress
+    // -----------------------------------------------
+
+    const progressRecords = await CourseProgress.find({
+      student: studentId,
+    }).lean();
+
+    const progressMap = new Map();
+
+    progressRecords.forEach((progress) => {
+      progressMap.set(
+        String(progress.course),
+        progress
+      );
+    });
+
+    // -----------------------------------------------
+    // Build course progress
+    // -----------------------------------------------
+
+    const courses = [];
+
+    for (const enrollment of enrollments) {
+      if (!enrollment.course) continue;
+
+      const course = enrollment.course;
+
+      // ---------------------------------------------
+      // Get actual course lectures
+      // ---------------------------------------------
+
+      const lectures = await Lecture.find({
+        course: course._id,
+      })
+        .select("_id title duration")
+        .sort({ createdAt: 1 })
+        .lean();
+
+      const courseProgress = progressMap.get(
+        String(course._id)
+      );
+
+      const lectureProgress =
+        courseProgress?.lectures || [];
+
+      // ---------------------------------------------
+      // Completed lectures
+      // ---------------------------------------------
+
+      const completedLectureIds = new Set(
+        lectureProgress
+          .filter((lecture) => lecture.completed)
+          .map((lecture) =>
+            String(lecture.lecture)
+          )
+      );
+
+      const completedLectures =
+        lectures.filter((lecture) =>
+          completedLectureIds.has(
+            String(lecture._id)
+          )
+        ).length;
+
+      // ---------------------------------------------
+      // Watched time
+      // ---------------------------------------------
+
+      const totalWatchedSeconds =
+        lectureProgress.reduce(
+          (total, lecture) =>
+            total +
+            Number(lecture.watchedSeconds || 0),
+          0
+        );
+
+      // ---------------------------------------------
+      // Progress percentage
+      // ---------------------------------------------
+
+      const totalLectures = lectures.length;
+
+      const progressPercentage =
+        totalLectures > 0
+          ? Math.round(
+              (completedLectures /
+                totalLectures) *
+                100
+            )
+          : 0;
+
+      const completed =
+        totalLectures > 0 &&
+        completedLectures === totalLectures;
+
+      // ---------------------------------------------
+      // Last activity
+      // ---------------------------------------------
+
+      const lastUpdated =
+        courseProgress?.updatedAt ||
+        enrollment.updatedAt ||
+        enrollment.enrolledAt;
+
+      courses.push({
+        course: {
+          _id: course._id,
+          courseTitle: course.courseTitle,
+          courseSubtitle: course.courseSubtitle,
+          thumbnail: course.thumbnail,
+          category: course.category,
+          level: course.level,
+          instructor: course.instructor,
+        },
+
+        enrolledAt: enrollment.enrolledAt,
+
+        totalLectures,
+
+        completedLectures,
+
+        progressPercentage,
+
+        completed,
+
+        totalWatchedSeconds,
+
+        lastUpdated,
+
+        lectures: lectures.map((lecture) => {
+          const progress = lectureProgress.find(
+            (item) =>
+              String(item.lecture) ===
+              String(lecture._id)
+          );
+
+          return {
+            _id: lecture._id,
+            title: lecture.title,
+            duration: lecture.duration,
+
+            watchedSeconds:
+              progress?.watchedSeconds || 0,
+
+            completed:
+              progress?.completed || false,
+          };
+        }),
+      });
+    }
+
+    // -----------------------------------------------
+    // Overall statistics
+    // -----------------------------------------------
+
+    const totalCourses = courses.length;
+
+    const completedCourses = courses.filter(
+      (course) => course.completed
+    ).length;
+
+    const coursesInProgress = courses.filter(
+      (course) =>
+        course.progressPercentage > 0 &&
+        !course.completed
+    ).length;
+
+    const notStartedCourses = courses.filter(
+      (course) =>
+        course.progressPercentage === 0
+    ).length;
+
+    const overallProgress =
+      totalCourses > 0
+        ? Math.round(
+            courses.reduce(
+              (total, course) =>
+                total +
+                course.progressPercentage,
+              0
+            ) / totalCourses
+          )
+        : 0;
+
+    // -----------------------------------------------
+    // Response
+    // -----------------------------------------------
+
+    return res.status(200).json({
+      success: true,
+
+      stats: {
+        totalCourses,
+        completedCourses,
+        coursesInProgress,
+        notStartedCourses,
+        overallProgress,
+      },
+
+      courses,
+    });
+  } catch (error) {
+    console.error(
+      "Get student progress error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Unable to fetch student progress.",
     });
   }
 };

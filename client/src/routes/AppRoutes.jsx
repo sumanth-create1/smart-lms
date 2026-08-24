@@ -14,7 +14,7 @@ import Register from "../pages/auth/Registration";
 
 import StudentCourses from "../pages/student/StudentCourses";
 import StudentCourseDetails from "../pages/student/StudentCourseDetails";
-
+import StudentProgress from "../pages/student/StudentProgress";
 // =====================================================
 // AUTH
 // =====================================================
@@ -88,6 +88,7 @@ function AppRoutes() {
 
         <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
           <Route element={<StudentDashboardLayout />}>
+          <Route path="/progress" element={<StudentProgress />} />
             {/* Dashboard */}
             <Route path="/dashboard" element={<StudentDashboard />} />
           </Route>
