@@ -59,5 +59,7 @@ app.use(
   paymentRoutes
 );
 
+app.use("/api/v1/achievements", achievementRoutes);
+
 
 export default app;

@@ -10,12 +10,15 @@ import {
   LoaderCircle,
   Lock,
   PlayCircle,
+  Trophy,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+
+import AchievementUnlockCelebration from "./components/student/AchievementUnlockCelebration";
 
 // =====================================================
 // CONSTANTS
@@ -48,6 +51,9 @@ const StudentCourseLearning = () => {
   const [progressLoading, setProgressLoading] = useState(false);
 
   const [isEnrolled, setIsEnrolled] = useState(false);
+
+  // Achievement celebration
+  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
 
   // ===================================================
   // INITIALIZE
@@ -93,22 +99,28 @@ const StudentCourseLearning = () => {
     try {
       setEnrollmentLoading(true);
 
-      const response = await api.get(`/enrollment/check/${courseId}`);
+      const response = await api.get(
+        `/enrollment/check/${courseId}`
+      );
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.message || "Unable to verify enrollment."
+          response.data?.message ||
+            "Unable to verify enrollment."
         );
       }
 
       const enrolled = Boolean(
-        response.data.enrolled ?? response.data.isEnrolled
+        response.data.enrolled ??
+          response.data.isEnrolled
       );
 
       setIsEnrolled(enrolled);
 
       if (!enrolled) {
-        toast.error("You are not enrolled in this course.");
+        toast.error(
+          "You are not enrolled in this course."
+        );
 
         navigate(`/courses/${courseId}`, {
           replace: true,
@@ -119,7 +131,10 @@ const StudentCourseLearning = () => {
 
       return true;
     } catch (error) {
-      console.error("Enrollment check error:", error);
+      console.error(
+        "Enrollment check error:",
+        error
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -161,17 +176,23 @@ const StudentCourseLearning = () => {
 
   const fetchCourse = async () => {
     try {
-      const response = await api.get(`/course/${courseId}`);
+      const response = await api.get(
+        `/course/${courseId}`
+      );
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.message || "Unable to load course."
+          response.data?.message ||
+            "Unable to load course."
         );
       }
 
       setCourse(response.data.course);
     } catch (error) {
-      console.error("Fetch course error:", error);
+      console.error(
+        "Fetch course error:",
+        error
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -193,11 +214,14 @@ const StudentCourseLearning = () => {
     try {
       setLectureLoading(true);
 
-      const response = await api.get(`/lecture/course/${courseId}`);
+      const response = await api.get(
+        `/lecture/course/${courseId}`
+      );
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.message || "Unable to load lectures."
+          response.data?.message ||
+            "Unable to load lectures."
         );
       }
 
@@ -212,7 +236,10 @@ const StudentCourseLearning = () => {
         setSelectedLecture(lectureData[0]);
       }
     } catch (error) {
-      console.error("Fetch lectures error:", error);
+      console.error(
+        "Fetch lectures error:",
+        error
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -232,7 +259,9 @@ const StudentCourseLearning = () => {
 
   const fetchProgress = async () => {
     try {
-      const response = await api.get(`/progress/course/${courseId}`);
+      const response = await api.get(
+        `/progress/course/${courseId}`
+      );
 
       if (!response.data?.success) {
         setProgress(null);
@@ -246,7 +275,10 @@ const StudentCourseLearning = () => {
       );
     } catch (error) {
       if (error.response?.status !== 404) {
-        console.error("Fetch progress error:", error);
+        console.error(
+          "Fetch progress error:",
+          error
+        );
       }
 
       setProgress(null);
@@ -306,7 +338,9 @@ const StudentCourseLearning = () => {
 
     return Math.round(
       Math.min(
-        (completedLectureIds.size / lectures.length) * 100,
+        (completedLectureIds.size /
+          lectures.length) *
+          100,
         100
       )
     );
@@ -321,7 +355,8 @@ const StudentCourseLearning = () => {
 
     return lectures.findIndex(
       (lecture) =>
-        String(lecture._id) === String(selectedLecture._id)
+        String(lecture._id) ===
+        String(selectedLecture._id)
     );
   }, [lectures, selectedLecture]);
 
@@ -345,6 +380,18 @@ const StudentCourseLearning = () => {
   };
 
   // ===================================================
+  // ACHIEVEMENT CELEBRATION
+  // ===================================================
+
+  const showAchievementCelebration = (newlyUnlocked = []) => {
+    if (!Array.isArray(newlyUnlocked) || newlyUnlocked.length === 0) {
+      return;
+    }
+
+    setUnlockedAchievements(newlyUnlocked);
+  };
+
+  // ===================================================
   // MARK COMPLETE
   // ===================================================
 
@@ -357,28 +404,37 @@ const StudentCourseLearning = () => {
     }
 
     if (isLectureCompleted(lectureId)) {
-      toast.info("This lecture is already completed.");
+      toast.info(
+        "This lecture is already completed."
+      );
       return;
     }
 
     try {
       setProgressLoading(true);
 
-      const lectureProgress = getLectureProgress(lectureId);
+      const lectureProgress =
+        getLectureProgress(lectureId);
+
       const watchedSeconds = Number(
         lectureProgress?.watchedSeconds || 0
       );
 
-      const duration = getLectureDuration(selectedLecture);
+      const duration =
+        getLectureDuration(selectedLecture);
 
       if (duration > 0) {
         const watchedPercentage =
           (watchedSeconds / duration) * 100;
 
-        if (watchedPercentage < COMPLETION_PERCENTAGE) {
+        if (
+          watchedPercentage <
+          COMPLETION_PERCENTAGE
+        ) {
           toast.error(
             `Watch at least ${COMPLETION_PERCENTAGE}% of the lecture before completing it.`
           );
+
           return;
         }
       }
@@ -392,6 +448,7 @@ const StudentCourseLearning = () => {
           response.data?.message ||
             "Unable to complete lecture."
         );
+
         return;
       }
 
@@ -399,13 +456,26 @@ const StudentCourseLearning = () => {
         setProgress(response.data.progress);
       }
 
-      clearSavedVideoPosition(courseId, lectureId);
+      clearSavedVideoPosition(
+        courseId,
+        lectureId
+      );
 
+      // Normal completion toast
       toast.success(
-        response.data.message || "Lecture completed!"
+        response.data.message ||
+          "Lecture completed!"
+      );
+
+      // Show animated achievement celebration
+      showAchievementCelebration(
+        response.data.newlyUnlocked || []
       );
     } catch (error) {
-      console.error("Mark lecture complete error:", error);
+      console.error(
+        "Mark lecture complete error:",
+        error
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -430,7 +500,9 @@ const StudentCourseLearning = () => {
     }
 
     if (!isLectureCompleted(lectureId)) {
-      toast.info("This lecture is already incomplete.");
+      toast.info(
+        "This lecture is already incomplete."
+      );
       return;
     }
 
@@ -446,6 +518,7 @@ const StudentCourseLearning = () => {
           response.data?.message ||
             "Unable to mark lecture as incomplete."
         );
+
         return;
       }
 
@@ -460,7 +533,9 @@ const StudentCourseLearning = () => {
                   ? item.lecture?._id
                   : item.lecture;
 
-              return String(id) === String(lectureId);
+              return (
+                String(id) === String(lectureId)
+              );
             }
           );
 
@@ -469,8 +544,13 @@ const StudentCourseLearning = () => {
           undefined
         ) {
           localStorage.setItem(
-            getVideoStorageKey(courseId, lectureId),
-            String(updatedLectureProgress.watchedSeconds)
+            getVideoStorageKey(
+              courseId,
+              lectureId
+            ),
+            String(
+              updatedLectureProgress.watchedSeconds
+            )
           );
         }
       }
@@ -502,7 +582,10 @@ const StudentCourseLearning = () => {
   const handleVideoCompleted = async () => {
     const lectureId = selectedLecture?._id;
 
-    if (!lectureId || isLectureCompleted(lectureId)) {
+    if (
+      !lectureId ||
+      isLectureCompleted(lectureId)
+    ) {
       return;
     }
 
@@ -516,8 +599,14 @@ const StudentCourseLearning = () => {
   const handleNextLecture = () => {
     if (currentLectureIndex === -1) return;
 
-    if (currentLectureIndex >= lectures.length - 1) {
-      toast.success("You have reached the last lecture.");
+    if (
+      currentLectureIndex >=
+      lectures.length - 1
+    ) {
+      toast.success(
+        "You have reached the last lecture."
+      );
+
       return;
     }
 
@@ -533,7 +622,10 @@ const StudentCourseLearning = () => {
 
   const handlePreviousLecture = () => {
     if (currentLectureIndex <= 0) {
-      toast.info("This is the first lecture.");
+      toast.info(
+        "This is the first lecture."
+      );
+
       return;
     }
 
@@ -575,7 +667,10 @@ const StudentCourseLearning = () => {
   // NO LECTURES
   // ===================================================
 
-  if (!lectureLoading && lectures.length === 0) {
+  if (
+    !lectureLoading &&
+    lectures.length === 0
+  ) {
     return (
       <div className="min-h-screen bg-[#F7F6F2]">
         <LearningHeader
@@ -584,7 +679,9 @@ const StudentCourseLearning = () => {
         />
 
         <div className="flex min-h-[70vh] items-center justify-center px-4">
-          <EmptyLectures onBack={handleBack} />
+          <EmptyLectures
+            onBack={handleBack}
+          />
         </div>
       </div>
     );
@@ -609,9 +706,15 @@ const StudentCourseLearning = () => {
             course={course}
             lectures={lectures}
             selectedLecture={selectedLecture}
-            progressPercentage={progressPercentage}
-            completedLectureIds={completedLectureIds}
-            onSelectLecture={handleSelectLecture}
+            progressPercentage={
+              progressPercentage
+            }
+            completedLectureIds={
+              completedLectureIds
+            }
+            onSelectLecture={
+              handleSelectLecture
+            }
           />
 
           {/* MAIN CONTENT */}
@@ -632,7 +735,9 @@ const StudentCourseLearning = () => {
                 getLectureProgress={
                   getLectureProgress
                 }
-                onProgressSaved={setProgress}
+                onProgressSaved={
+                  setProgress
+                }
                 onVideoCompleted={
                   handleVideoCompleted
                 }
@@ -642,8 +747,12 @@ const StudentCourseLearning = () => {
             {/* INFORMATION */}
             <LectureInformation
               lecture={selectedLecture}
-              lectureIndex={currentLectureIndex}
-              progressLoading={progressLoading}
+              lectureIndex={
+                currentLectureIndex
+              }
+              progressLoading={
+                progressLoading
+              }
               isCompleted={
                 selectedLecture
                   ? isLectureCompleted(
@@ -664,7 +773,9 @@ const StudentCourseLearning = () => {
               currentLectureIndex={
                 currentLectureIndex
               }
-              totalLectures={lectures.length}
+              totalLectures={
+                lectures.length
+              }
               onPrevious={
                 handlePreviousLecture
               }
@@ -678,6 +789,13 @@ const StudentCourseLearning = () => {
           </main>
         </div>
       </div>
+
+      {unlockedAchievements.length > 0 && (
+        <AchievementUnlockCelebration
+          achievements={unlockedAchievements}
+          onClose={() => setUnlockedAchievements([])}
+        />
+      )}
     </div>
   );
 };
@@ -949,7 +1067,8 @@ const LectureNavigation = ({
     currentLectureIndex <= 0;
 
   const isLast =
-    currentLectureIndex >= totalLectures - 1;
+    currentLectureIndex >=
+    totalLectures - 1;
 
   return (
     <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -995,8 +1114,8 @@ const CourseCompleted = () => {
           </h3>
 
           <p className="mt-1 text-sm leading-6 text-green-700">
-            Congratulations! You have completed all
-            lectures in this course.
+            Congratulations! You have completed
+            all lectures in this course.
           </p>
         </div>
       </div>
@@ -1040,7 +1159,8 @@ const LectureViewer = ({
     lecture.video;
 
   const content =
-    lecture.content || lecture.description;
+    lecture.content ||
+    lecture.description;
 
   if (videoUrl) {
     return (
@@ -1050,9 +1170,15 @@ const LectureViewer = ({
         courseId={courseId}
         lectureId={lecture._id}
         isCompleted={isCompleted}
-        getLectureProgress={getLectureProgress}
-        onProgressSaved={onProgressSaved}
-        onCompleted={onVideoCompleted}
+        getLectureProgress={
+          getLectureProgress
+        }
+        onProgressSaved={
+          onProgressSaved
+        }
+        onCompleted={
+          onVideoCompleted
+        }
       />
     );
   }
@@ -1111,7 +1237,8 @@ const VideoPlayer = ({
   const lastSyncedTimeRef = useRef(0);
 
   const restoringSeekRef = useRef(false);
-  const completionTriggeredRef = useRef(false);
+  const completionTriggeredRef =
+    useRef(false);
   const savingProgressRef = useRef(false);
   const isPlayingRef = useRef(false);
   const lastProgressUpdateRef = useRef(0);
@@ -1137,14 +1264,19 @@ const VideoPlayer = ({
       localStorage.getItem(storageKey) || 0
     );
 
-    return Math.max(backendTime, localTime);
+    return Math.max(
+      backendTime,
+      localTime
+    );
   };
 
   // ===================================================
   // METADATA
   // ===================================================
 
-  const handleLoadedMetadata = (event) => {
+  const handleLoadedMetadata = (
+    event
+  ) => {
     const video = event.currentTarget;
 
     if (!video) return;
@@ -1152,6 +1284,7 @@ const VideoPlayer = ({
     if (isCompleted) {
       watchedTimeRef.current =
         video.duration || 0;
+
       return;
     }
 
@@ -1169,9 +1302,12 @@ const VideoPlayer = ({
       maxSafeTime
     );
 
-    watchedTimeRef.current = resumeTime;
+    watchedTimeRef.current =
+      resumeTime;
+
     lastSyncedTimeRef.current =
       Math.floor(resumeTime);
+
     lastProgressUpdateRef.current =
       Math.floor(resumeTime);
 
@@ -1202,8 +1338,11 @@ const VideoPlayer = ({
       return;
     }
 
-    const requestedTime = video.currentTime;
-    const allowedTime = watchedTimeRef.current;
+    const requestedTime =
+      video.currentTime;
+
+    const allowedTime =
+      watchedTimeRef.current;
 
     // Backward seeking is allowed.
     if (
@@ -1217,7 +1356,8 @@ const VideoPlayer = ({
     restoringSeekRef.current = true;
 
     try {
-      video.currentTime = allowedTime;
+      video.currentTime =
+        allowedTime;
 
       toast.error(
         "You cannot skip ahead. Please watch the video."
@@ -1243,12 +1383,14 @@ const VideoPlayer = ({
 
     if (!video || isCompleted) return;
 
-    const currentTime = video.currentTime;
+    const currentTime =
+      video.currentTime;
 
     // Extra protection against forward seeking.
     if (
       currentTime >
-      watchedTimeRef.current + SEEK_TOLERANCE
+      watchedTimeRef.current +
+        SEEK_TOLERANCE
     ) {
       if (!restoringSeekRef.current) {
         restoringSeekRef.current = true;
@@ -1316,7 +1458,9 @@ const VideoPlayer = ({
   // SYNC PROGRESS
   // ===================================================
 
-  const syncProgress = async (force = false) => {
+  const syncProgress = async (
+    force = false
+  ) => {
     const video = videoRef.current;
 
     if (!video || isCompleted) {
@@ -1333,7 +1477,10 @@ const VideoPlayer = ({
 
     if (watchedTime <= 0) return;
 
-    if (!force && watchedTime <= previousTime) {
+    if (
+      !force &&
+      watchedTime <= previousTime
+    ) {
       return;
     }
 
@@ -1372,7 +1519,8 @@ const VideoPlayer = ({
         error
       );
     } finally {
-      savingProgressRef.current = false;
+      savingProgressRef.current =
+        false;
     }
   };
 
@@ -1385,7 +1533,8 @@ const VideoPlayer = ({
       return;
     }
 
-    completionTriggeredRef.current = true;
+    completionTriggeredRef.current =
+      true;
 
     const video = videoRef.current;
 
@@ -1423,6 +1572,8 @@ const VideoPlayer = ({
         }
       }
 
+      // This triggers handleMarkComplete()
+      // which also checks achievements.
       await onCompleted();
 
       clearSavedVideoPosition(
@@ -1435,7 +1586,8 @@ const VideoPlayer = ({
         error
       );
     } finally {
-      completionTriggeredRef.current = false;
+      completionTriggeredRef.current =
+        false;
     }
   };
 
@@ -1455,10 +1607,11 @@ const VideoPlayer = ({
       localStorage.getItem(storageKey) || 0
     );
 
-    watchedTimeRef.current = Math.max(
-      backendTime,
-      localTime
-    );
+    watchedTimeRef.current =
+      Math.max(
+        backendTime,
+        localTime
+      );
 
     lastSyncedTimeRef.current =
       backendTime;
@@ -1467,7 +1620,8 @@ const VideoPlayer = ({
       watchedTimeRef.current;
 
     restoringSeekRef.current = false;
-    completionTriggeredRef.current = false;
+    completionTriggeredRef.current =
+      false;
     isPlayingRef.current = false;
     savingProgressRef.current = false;
   }, [lectureId, storageKey]);
@@ -1582,8 +1736,8 @@ const VideoPlayer = ({
         onEnded={handleEnded}
         className="aspect-video h-auto w-full bg-black object-contain"
       >
-        Your browser does not support the video
-        element.
+        Your browser does not support the
+        video element.
       </video>
     </div>
   );
@@ -1593,7 +1747,9 @@ const VideoPlayer = ({
 // HELPERS
 // =====================================================
 
-const getLectureDuration = (lecture) => {
+const getLectureDuration = (
+  lecture
+) => {
   if (!lecture) return 0;
 
   const duration =
@@ -1602,9 +1758,12 @@ const getLectureDuration = (lecture) => {
     lecture.duration ??
     0;
 
-  const numericDuration = Number(duration);
+  const numericDuration =
+    Number(duration);
 
-  return Number.isFinite(numericDuration)
+  return Number.isFinite(
+    numericDuration
+  )
     ? numericDuration
     : 0;
 };
@@ -1616,7 +1775,10 @@ const clearSavedVideoPosition = (
   if (!courseId || !lectureId) return;
 
   localStorage.removeItem(
-    getVideoStorageKey(courseId, lectureId)
+    getVideoStorageKey(
+      courseId,
+      lectureId
+    )
   );
 };
 
@@ -1624,7 +1786,9 @@ const clearSavedVideoPosition = (
 // EMPTY LECTURES
 // =====================================================
 
-const EmptyLectures = ({ onBack }) => {
+const EmptyLectures = ({
+  onBack,
+}) => {
   return (
     <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
@@ -1639,8 +1803,8 @@ const EmptyLectures = ({ onBack }) => {
       </h2>
 
       <p className="mt-2 text-sm leading-6 text-gray-500">
-        The instructor hasn't added any lectures
-        to this course yet.
+        The instructor hasn't added any
+        lectures to this course yet.
       </p>
 
       <button
@@ -1679,7 +1843,8 @@ const LearningHeader = ({
           </p>
 
           <h1 className="truncate text-sm font-bold text-gray-900 sm:text-base">
-            {course?.courseTitle || "Course"}
+            {course?.courseTitle ||
+              "Course"}
           </h1>
         </div>
       </div>
@@ -1709,4 +1874,3 @@ const LearningLoading = () => {
 };
 
 export default StudentCourseLearning;
-
