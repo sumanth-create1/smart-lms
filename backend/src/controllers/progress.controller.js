@@ -4,6 +4,8 @@ import StudySession from "../models/studysession.model.js";
 import Activity from "../models/activity.model.js";
 import Enrollment from "../models/enrollment.model.js";
 
+import { checkAndUnlockAchievements } from "../services/achievement.service.js";
+
 import calculateProgress from "../utils/calculateProgress.js";
 
 // =====================================================
@@ -13,15 +15,7 @@ import calculateProgress from "../utils/calculateProgress.js";
 const MAX_ALLOWED_JUMP = 15;
 const COMPLETION_THRESHOLD = 0.95;
 
-const WEEK_DAYS = [
-  "Sun",
-  "Mon",
-  "Tue",
-  "Wed",
-  "Thu",
-  "Fri",
-  "Sat",
-];
+const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // =====================================================
 // SAVE LECTURE WATCH PROGRESS
@@ -81,7 +75,7 @@ export const saveProgress = async (req, res) => {
     // -------------------------------------------------
 
     let lectureProgress = courseProgress.lectures.find(
-      (item) => String(item.lecture) === String(lectureId)
+      (item) => String(item.lecture) === String(lectureId),
     );
 
     let watchedDelta = 0;
@@ -92,36 +86,29 @@ export const saveProgress = async (req, res) => {
 
     if (lectureProgress) {
       const previousWatchedSeconds = Number(
-        lectureProgress.watchedSeconds || 0
+        lectureProgress.watchedSeconds || 0,
       );
 
       // Prevent large jumps
-      if (
-        watchedSeconds >
-        previousWatchedSeconds + MAX_ALLOWED_JUMP
-      ) {
+      if (watchedSeconds > previousWatchedSeconds + MAX_ALLOWED_JUMP) {
         return res.status(400).json({
           success: false,
           message: "Invalid watch progress detected.",
         });
       }
 
-      watchedDelta = Math.max(
-        0,
-        watchedSeconds - previousWatchedSeconds
-      );
+      watchedDelta = Math.max(0, watchedSeconds - previousWatchedSeconds);
 
       // Never move progress backwards
       lectureProgress.watchedSeconds = Math.max(
         previousWatchedSeconds,
-        watchedSeconds
+        watchedSeconds,
       );
     }
 
     // -------------------------------------------------
     // First progress for lecture
     // -------------------------------------------------
-
     else {
       // Prevent starting with a large timestamp
       if (watchedSeconds > MAX_ALLOWED_JUMP) {
@@ -180,7 +167,7 @@ export const saveProgress = async (req, res) => {
 
     const completionPercentage = calculateProgress(
       courseProgress,
-      totalLectures
+      totalLectures,
     );
 
     // -------------------------------------------------
@@ -252,7 +239,7 @@ export const getCourseProgress = async (req, res) => {
 
     const completionPercentage = calculateProgress(
       courseProgress,
-      totalLectures
+      totalLectures,
     );
 
     return res.status(200).json({
@@ -305,8 +292,7 @@ export const markLectureCompleted = async (req, res) => {
     if (!courseProgress) {
       return res.status(400).json({
         success: false,
-        message:
-          "Start watching the lecture before completing it.",
+        message: "Start watching the lecture before completing it.",
       });
     }
 
@@ -315,14 +301,13 @@ export const markLectureCompleted = async (req, res) => {
     // -------------------------------------------------
 
     const lectureProgress = courseProgress.lectures.find(
-      (item) => String(item.lecture) === String(lectureId)
+      (item) => String(item.lecture) === String(lectureId),
     );
 
     if (!lectureProgress) {
       return res.status(400).json({
         success: false,
-        message:
-          "Start watching this lecture before marking it as completed.",
+        message: "Start watching this lecture before marking it as completed.",
       });
     }
 
@@ -344,19 +329,15 @@ export const markLectureCompleted = async (req, res) => {
 
     const videoDuration = Number(lecture.videoDuration) || 0;
 
-    const watchedSeconds =
-      Number(lectureProgress.watchedSeconds) || 0;
+    const watchedSeconds = Number(lectureProgress.watchedSeconds) || 0;
 
     if (videoDuration > 0) {
-      const requiredSeconds = Math.ceil(
-        videoDuration * COMPLETION_THRESHOLD
-      );
+      const requiredSeconds = Math.ceil(videoDuration * COMPLETION_THRESHOLD);
 
       if (watchedSeconds < requiredSeconds) {
         return res.status(400).json({
           success: false,
-          message:
-            "Watch at least 95% of the lecture before completing it.",
+          message: "Watch at least 95% of the lecture before completing it.",
           watchedSeconds,
           requiredSeconds,
         });
@@ -384,6 +365,12 @@ export const markLectureCompleted = async (req, res) => {
     });
 
     // -------------------------------------------------
+    // Check achievements
+    // -------------------------------------------------
+
+    const achievementResult = await checkAndUnlockAchievements(studentId);
+
+    // -------------------------------------------------
     // Calculate course progress
     // -------------------------------------------------
 
@@ -393,7 +380,7 @@ export const markLectureCompleted = async (req, res) => {
 
     const completionPercentage = calculateProgress(
       courseProgress,
-      totalLectures
+      totalLectures,
     );
 
     return res.status(200).json({
@@ -450,7 +437,7 @@ export const unmarkLectureCompleted = async (req, res) => {
     // -------------------------------------------------
 
     const lectureProgress = courseProgress.lectures.find(
-      (item) => String(item.lecture) === String(lectureId)
+      (item) => String(item.lecture) === String(lectureId),
     );
 
     if (!lectureProgress) {
@@ -474,10 +461,7 @@ export const unmarkLectureCompleted = async (req, res) => {
       progress: courseProgress,
     });
   } catch (error) {
-    console.error(
-      "Unmark lecture completed error:",
-      error
-    );
+    console.error("Unmark lecture completed error:", error);
 
     return res.status(500).json({
       success: false,
@@ -534,7 +518,7 @@ export const getLectureProgress = async (req, res) => {
     // -------------------------------------------------
 
     const lectureProgress = courseProgress.lectures.find(
-      (item) => String(item.lecture) === String(lectureId)
+      (item) => String(item.lecture) === String(lectureId),
     );
 
     // -------------------------------------------------
@@ -556,9 +540,7 @@ export const getLectureProgress = async (req, res) => {
       success: true,
       progress: {
         lecture: lectureId,
-        watchedSeconds: Number(
-          lectureProgress.watchedSeconds || 0
-        ),
+        watchedSeconds: Number(lectureProgress.watchedSeconds || 0),
         completed: Boolean(lectureProgress.completed),
       },
     });
@@ -618,11 +600,7 @@ export const getStudentProgress = async (req, res) => {
     // Fetch all required data in parallel
     // -------------------------------------------------
 
-    const [
-      progressRecords,
-      lectureCounts,
-      studySessions,
-    ] = await Promise.all([
+    const [progressRecords, lectureCounts, studySessions] = await Promise.all([
       CourseProgress.find({
         student: studentId,
         course: { $in: courseIds },
@@ -654,17 +632,11 @@ export const getStudentProgress = async (req, res) => {
     // -------------------------------------------------
 
     const progressMap = new Map(
-      progressRecords.map((progress) => [
-        String(progress.course),
-        progress,
-      ])
+      progressRecords.map((progress) => [String(progress.course), progress]),
     );
 
     const lectureCountMap = new Map(
-      lectureCounts.map((item) => [
-        String(item._id),
-        item.count,
-      ])
+      lectureCounts.map((item) => [String(item._id), item.count]),
     );
 
     // -------------------------------------------------
@@ -681,35 +653,28 @@ export const getStudentProgress = async (req, res) => {
         const course = enrollment.course;
         const courseId = String(course._id);
 
-        const totalCourseLectures =
-          lectureCountMap.get(courseId) || 0;
+        const totalCourseLectures = lectureCountMap.get(courseId) || 0;
 
-        const courseProgress =
-          progressMap.get(courseId);
+        const courseProgress = progressMap.get(courseId);
 
-        const lectureProgress =
-          courseProgress?.lectures || [];
+        const lectureProgress = courseProgress?.lectures || [];
 
         // ---------------------------------------------
         // Completed lectures
         // ---------------------------------------------
 
-        const completedCourseLectures =
-          lectureProgress.filter(
-            (lecture) => lecture.completed === true
-          ).length;
+        const completedCourseLectures = lectureProgress.filter(
+          (lecture) => lecture.completed === true,
+        ).length;
 
         // ---------------------------------------------
         // Watched time
         // ---------------------------------------------
 
-        const watchedSeconds =
-          lectureProgress.reduce(
-            (total, lecture) =>
-              total +
-              Number(lecture.watchedSeconds || 0),
-            0
-          );
+        const watchedSeconds = lectureProgress.reduce(
+          (total, lecture) => total + Number(lecture.watchedSeconds || 0),
+          0,
+        );
 
         // ---------------------------------------------
         // Progress percentage
@@ -717,11 +682,7 @@ export const getStudentProgress = async (req, res) => {
 
         const progressPercentage =
           totalCourseLectures > 0
-            ? Math.round(
-                (completedCourseLectures /
-                  totalCourseLectures) *
-                  100
-              )
+            ? Math.round((completedCourseLectures / totalCourseLectures) * 100)
             : 0;
 
         // ---------------------------------------------
@@ -730,8 +691,7 @@ export const getStudentProgress = async (req, res) => {
 
         const status = getCourseStatus({
           totalLectures: totalCourseLectures,
-          completedLectures:
-            completedCourseLectures,
+          completedLectures: completedCourseLectures,
           watchedSeconds,
           progressPercentage,
         });
@@ -755,8 +715,7 @@ export const getStudentProgress = async (req, res) => {
 
           totalLectures: totalCourseLectures,
 
-          completedLectures:
-            completedCourseLectures,
+          completedLectures: completedCourseLectures,
 
           watchedSeconds,
 
@@ -773,15 +732,15 @@ export const getStudentProgress = async (req, res) => {
     const totalCourses = courses.length;
 
     const completedCourses = courses.filter(
-      (course) => course.status === "completed"
+      (course) => course.status === "completed",
     ).length;
 
     const inProgressCourses = courses.filter(
-      (course) => course.status === "in-progress"
+      (course) => course.status === "in-progress",
     ).length;
 
     const notStartedCourses = courses.filter(
-      (course) => course.status === "not-started"
+      (course) => course.status === "not-started",
     ).length;
 
     // -------------------------------------------------
@@ -790,19 +749,14 @@ export const getStudentProgress = async (req, res) => {
 
     const overallProgress =
       totalLectures > 0
-        ? Math.round(
-            (completedLectures /
-              totalLectures) *
-              100
-          )
+        ? Math.round((completedLectures / totalLectures) * 100)
         : 0;
 
     // -------------------------------------------------
     // Weekly activity
     // -------------------------------------------------
 
-    const weeklyActivity =
-      buildWeeklyActivity(studySessions);
+    const weeklyActivity = buildWeeklyActivity(studySessions);
 
     // -------------------------------------------------
     // Response
@@ -829,10 +783,7 @@ export const getStudentProgress = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(
-      "Get student progress error:",
-      error
-    );
+    console.error("Get student progress error:", error);
 
     return res.status(500).json({
       success: false,
@@ -851,17 +802,11 @@ const getCourseStatus = ({
   watchedSeconds,
   progressPercentage,
 }) => {
-  if (
-    totalLectures > 0 &&
-    progressPercentage === 100
-  ) {
+  if (totalLectures > 0 && progressPercentage === 100) {
     return "completed";
   }
 
-  if (
-    completedLectures > 0 ||
-    watchedSeconds > 0
-  ) {
+  if (completedLectures > 0 || watchedSeconds > 0) {
     return "in-progress";
   }
 
@@ -883,17 +828,13 @@ const buildWeeklyActivity = (sessions = []) => {
 
   const startOfWeek = new Date(now);
 
-  startOfWeek.setDate(
-    now.getDate() - now.getDay()
-  );
+  startOfWeek.setDate(now.getDate() - now.getDay());
 
   startOfWeek.setHours(0, 0, 0, 0);
 
   const endOfWeek = new Date(startOfWeek);
 
-  endOfWeek.setDate(
-    startOfWeek.getDate() + 7
-  );
+  endOfWeek.setDate(startOfWeek.getDate() + 7);
 
   // -------------------------------------------------
   // Process study sessions
@@ -904,9 +845,7 @@ const buildWeeklyActivity = (sessions = []) => {
       return;
     }
 
-    const sessionDate = new Date(
-      session.startedAt
-    );
+    const sessionDate = new Date(session.startedAt);
 
     if (
       Number.isNaN(sessionDate.getTime()) ||
@@ -918,12 +857,9 @@ const buildWeeklyActivity = (sessions = []) => {
 
     const dayIndex = sessionDate.getDay();
 
-    const durationSeconds = Number(
-      session.durationSeconds || 0
-    );
+    const durationSeconds = Number(session.durationSeconds || 0);
 
-    activity[dayIndex].seconds +=
-      durationSeconds;
+    activity[dayIndex].seconds += durationSeconds;
   });
 
   // -------------------------------------------------
@@ -931,9 +867,7 @@ const buildWeeklyActivity = (sessions = []) => {
   // -------------------------------------------------
 
   activity.forEach((item) => {
-    item.hours = Number(
-      (item.seconds / 3600).toFixed(2)
-    );
+    item.hours = Number((item.seconds / 3600).toFixed(2));
   });
 
   return activity;
@@ -982,8 +916,7 @@ const createEmptyStudentProgress = () => {
 
     courses: [],
 
-    weeklyActivity:
-      createEmptyWeeklyActivity(),
+    weeklyActivity: createEmptyWeeklyActivity(),
   };
 };
 
@@ -1043,9 +976,7 @@ const saveStudySession = async ({
   // Update existing session
   // -------------------------------------------------
 
-  session.durationSeconds =
-    Number(session.durationSeconds || 0) +
-    watchedDelta;
+  session.durationSeconds = Number(session.durationSeconds || 0) + watchedDelta;
 
   session.endedAt = now;
 
