@@ -26,20 +26,16 @@ import { getAllAchievements } from "../../services/achievementService";
 // =====================================================
 
 const BADGE_CONFIG = {
+  // ===================================================
+  // 📚 LEARNING
+  // ===================================================
+
   FIRST_LECTURE: {
     icon: GraduationCap,
     gradient: "from-indigo-500 to-violet-600",
     light: "bg-indigo-50",
     text: "text-indigo-600",
     ring: "ring-indigo-100",
-  },
-
-  FIRST_COURSE: {
-    icon: Trophy,
-    gradient: "from-yellow-400 to-orange-500",
-    light: "bg-yellow-50",
-    text: "text-yellow-600",
-    ring: "ring-yellow-100",
   },
 
   FIVE_LECTURES: {
@@ -50,6 +46,14 @@ const BADGE_CONFIG = {
     ring: "ring-emerald-100",
   },
 
+  TEN_LECTURES: {
+    icon: BookOpen,
+    gradient: "from-blue-500 to-indigo-600",
+    light: "bg-blue-50",
+    text: "text-blue-600",
+    ring: "ring-blue-100",
+  },
+
   TWENTY_FIVE_LECTURES: {
     icon: Medal,
     gradient: "from-purple-500 to-indigo-600",
@@ -57,6 +61,86 @@ const BADGE_CONFIG = {
     text: "text-purple-600",
     ring: "ring-purple-100",
   },
+
+  FIFTY_LECTURES: {
+    icon: Zap,
+    gradient: "from-violet-500 to-purple-600",
+    light: "bg-violet-50",
+    text: "text-violet-600",
+    ring: "ring-violet-100",
+  },
+
+  HUNDRED_LECTURES: {
+    icon: Trophy,
+    gradient: "from-yellow-500 to-amber-600",
+    light: "bg-yellow-50",
+    text: "text-yellow-600",
+    ring: "ring-yellow-100",
+  },
+
+  // ===================================================
+  // 🎓 COURSES
+  // ===================================================
+
+  FIRST_COURSE: {
+    icon: Trophy,
+    gradient: "from-yellow-400 to-orange-500",
+    light: "bg-yellow-50",
+    text: "text-yellow-600",
+    ring: "ring-yellow-100",
+  },
+
+  THREE_COURSES: {
+    icon: BookOpen,
+    gradient: "from-sky-500 to-blue-600",
+    light: "bg-sky-50",
+    text: "text-sky-600",
+    ring: "ring-sky-100",
+  },
+
+  FIVE_COURSES: {
+    icon: GraduationCap,
+    gradient: "from-emerald-500 to-green-600",
+    light: "bg-emerald-50",
+    text: "text-emerald-600",
+    ring: "ring-emerald-100",
+  },
+
+  FIRST_COURSE_COMPLETED: {
+    icon: GraduationCap,
+    gradient: "from-green-500 to-emerald-600",
+    light: "bg-green-50",
+    text: "text-green-600",
+    ring: "ring-green-100",
+  },
+
+  THREE_COURSES_COMPLETED: {
+    icon: Medal,
+    gradient: "from-orange-500 to-amber-600",
+    light: "bg-orange-50",
+    text: "text-orange-600",
+    ring: "ring-orange-100",
+  },
+
+  FIVE_COURSES_COMPLETED: {
+    icon: Trophy,
+    gradient: "from-yellow-500 to-orange-600",
+    light: "bg-yellow-50",
+    text: "text-yellow-600",
+    ring: "ring-yellow-100",
+  },
+
+  COURSE_COMPLETED: {
+    icon: Target,
+    gradient: "from-green-500 to-emerald-600",
+    light: "bg-green-50",
+    text: "text-green-600",
+    ring: "ring-green-100",
+  },
+
+  // ===================================================
+  // 🔥 STREAK
+  // ===================================================
 
   THREE_DAY_STREAK: {
     icon: Flame,
@@ -74,12 +158,40 @@ const BADGE_CONFIG = {
     ring: "ring-red-100",
   },
 
+  FOURTEEN_DAY_STREAK: {
+    icon: Flame,
+    gradient: "from-orange-500 to-red-600",
+    light: "bg-orange-50",
+    text: "text-orange-600",
+    ring: "ring-orange-100",
+  },
+
+  THIRTY_DAY_STREAK: {
+    icon: Flame,
+    gradient: "from-red-600 to-pink-600",
+    light: "bg-red-50",
+    text: "text-red-600",
+    ring: "ring-red-100",
+  },
+
+  // ===================================================
+  // ⏱️ TIME
+  // ===================================================
+
   TEN_HOURS: {
     icon: Clock3,
     gradient: "from-cyan-400 to-blue-600",
     light: "bg-cyan-50",
     text: "text-cyan-600",
     ring: "ring-cyan-100",
+  },
+
+  TWENTY_FIVE_HOURS: {
+    icon: Clock3,
+    gradient: "from-blue-500 to-cyan-600",
+    light: "bg-blue-50",
+    text: "text-blue-600",
+    ring: "ring-blue-100",
   },
 
   FIFTY_HOURS: {
@@ -90,13 +202,17 @@ const BADGE_CONFIG = {
     ring: "ring-purple-100",
   },
 
-  COURSE_COMPLETED: {
-    icon: Target,
-    gradient: "from-green-500 to-emerald-600",
-    light: "bg-green-50",
-    text: "text-green-600",
-    ring: "ring-green-100",
+  HUNDRED_HOURS: {
+    icon: Trophy,
+    gradient: "from-purple-600 to-fuchsia-600",
+    light: "bg-purple-50",
+    text: "text-purple-600",
+    ring: "ring-purple-100",
   },
+
+  // ===================================================
+  // ⭐ SPECIAL
+  // ===================================================
 
   PERFECT_COURSE: {
     icon: Star,
@@ -105,7 +221,43 @@ const BADGE_CONFIG = {
     text: "text-pink-600",
     ring: "ring-pink-100",
   },
+
+  EARLY_BIRD: {
+    icon: Sparkles,
+    gradient: "from-amber-400 to-orange-500",
+    light: "bg-amber-50",
+    text: "text-amber-600",
+    ring: "ring-amber-100",
+  },
+
+  NIGHT_OWL: {
+    icon: Star,
+    gradient: "from-indigo-500 to-purple-700",
+    light: "bg-indigo-50",
+    text: "text-indigo-600",
+    ring: "ring-indigo-100",
+  },
+
+  WEEKEND_WARRIOR: {
+    icon: Zap,
+    gradient: "from-red-500 to-orange-600",
+    light: "bg-red-50",
+    text: "text-red-600",
+    ring: "ring-red-100",
+  },
+
+  COMEBACK_KID: {
+    icon: Target,
+    gradient: "from-teal-500 to-emerald-600",
+    light: "bg-teal-50",
+    text: "text-teal-600",
+    ring: "ring-teal-100",
+  },
 };
+
+// =====================================================
+// DEFAULT BADGE
+// =====================================================
 
 const DEFAULT_BADGE = {
   icon: Award,
@@ -120,61 +272,107 @@ const DEFAULT_BADGE = {
 // =====================================================
 
 const getBadgeConfig = (achievement) => {
-  return BADGE_CONFIG[achievement?.code] || DEFAULT_BADGE;
+  return (
+    BADGE_CONFIG[achievement?.key] ||
+    DEFAULT_BADGE
+  );
 };
 
+// -----------------------------------------------------
+// CATEGORY
+// -----------------------------------------------------
+
 const getCategory = (achievement) => {
-  switch (achievement?.requirementType) {
-    case "LECTURES_COMPLETED":
+  switch (achievement?.category) {
+    case "LEARNING":
       return "Learning";
 
-    case "COURSES_ENROLLED":
-    case "COURSES_COMPLETED":
+    case "COURSE":
       return "Courses";
 
     case "STREAK":
       return "Streak";
 
-    case "LEARNING_HOURS":
+    case "TIME":
       return "Hours";
+
+    case "SPECIAL":
+      return "Special";
 
     default:
       return "Special";
   }
 };
 
+// -----------------------------------------------------
+// PROGRESS
+// -----------------------------------------------------
+
 const getProgress = (achievement) => {
-  const current = Number(achievement?.progress || 0);
-  const required = Number(achievement?.requirementValue || 0);
+  const current = Number(
+    achievement?.progress || 0
+  );
+
+  const required = Number(
+    achievement?.requirementValue || 0
+  );
 
   if (!required) {
     return achievement?.unlocked ? 100 : 0;
   }
 
-  return Math.min((current / required) * 100, 100);
+  return Math.min(
+    (current / required) * 100,
+    100
+  );
 };
 
 // =====================================================
 // ACHIEVEMENT CARD
 // =====================================================
 
-function AchievementCard({ achievement, index }) {
-  const config = getBadgeConfig(achievement);
+function AchievementCard({
+  achievement,
+  index,
+}) {
+  const config = getBadgeConfig(
+    achievement
+  );
+
   const Icon = config.icon;
 
-  const unlocked = achievement?.unlocked;
-  const progress = getProgress(achievement);
+  const unlocked =
+    Boolean(achievement?.unlocked);
 
-  const current = Number(achievement?.progress || 0);
-  const required = Number(achievement?.requirementValue || 0);
+  const progress =
+    getProgress(achievement);
+
+  const current = Number(
+    achievement?.progress || 0
+  );
+
+  const required = Number(
+    achievement?.requirementValue || 0
+  );
+
+  const category =
+    getCategory(achievement);
 
   return (
     <div
       className={`
-        achievement-card group relative overflow-hidden
-        rounded-3xl border bg-white p-5
-        transition-all duration-500
-        hover:-translate-y-2 hover:shadow-xl
+        achievement-card
+        group
+        relative
+        overflow-hidden
+        rounded-3xl
+        border
+        bg-white
+        p-5
+        transition-all
+        duration-500
+        hover:-translate-y-2
+        hover:shadow-xl
         ${
           unlocked
             ? "border-emerald-100"
@@ -185,50 +383,92 @@ function AchievementCard({ achievement, index }) {
         animationDelay: `${index * 70}ms`,
       }}
     >
-      {/* Top accent */}
+      {/* =================================================
+          TOP ACCENT
+      ================================================= */}
+
       {unlocked && (
         <div
           className="
-            absolute left-0 right-0 top-0 h-1
+            absolute
+            left-0
+            right-0
+            top-0
+            h-1
             bg-gradient-to-r
-            from-emerald-400 via-teal-400 to-cyan-400
+            from-emerald-400
+            via-teal-400
+            to-cyan-400
           "
         />
       )}
 
-      {/* Decorative circle */}
+      {/* =================================================
+          DECORATIVE CIRCLE
+      ================================================= */}
+
       <div
         className={`
           pointer-events-none
-          absolute -right-12 -top-12
-          h-32 w-32 rounded-full
-          bg-gradient-to-br ${config.gradient}
+          absolute
+          -right-12
+          -top-12
+          h-32
+          w-32
+          rounded-full
+          bg-gradient-to-br
+          ${config.gradient}
           opacity-[0.05]
-          transition-transform duration-700
+          transition-transform
+          duration-700
           group-hover:scale-150
         `}
       />
 
-      {/* Header */}
-      <div className="relative flex items-start justify-between">
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
+      <div
+        className="
+          relative
+          flex
+          items-start
+          justify-between
+        "
+      >
         {/* Badge */}
+
         <div
           className={`
-            relative flex h-[76px] w-[76px]
-            items-center justify-center
+            relative
+            flex
+            h-[76px]
+            w-[76px]
+            items-center
+            justify-center
             rounded-[22px]
-            bg-gradient-to-br ${config.gradient}
+            bg-gradient-to-br
+            ${config.gradient}
             shadow-lg
-            transition-all duration-500
-            group-hover:rotate-3 group-hover:scale-110
-            ${unlocked ? "" : "grayscale opacity-60"}
+            transition-all
+            duration-500
+            group-hover:rotate-3
+            group-hover:scale-110
+            ${
+              unlocked
+                ? ""
+                : "grayscale opacity-60"
+            }
           `}
         >
           <div
             className="
-              absolute inset-1.5
+              absolute
+              inset-1.5
               rounded-[18px]
-              border border-white/30
+              border
+              border-white/30
             "
           />
 
@@ -242,7 +482,9 @@ function AchievementCard({ achievement, index }) {
             <Sparkles
               size={14}
               className="
-                absolute -right-1 -top-1
+                absolute
+                -right-1
+                -top-1
                 animate-pulse
                 text-yellow-400
               "
@@ -251,65 +493,100 @@ function AchievementCard({ achievement, index }) {
         </div>
 
         {/* Status */}
+
         {unlocked ? (
           <span
             className="
-              flex items-center gap-1.5
-              rounded-full bg-emerald-50
-              px-3 py-1.5
-              text-xs font-bold text-emerald-600
+              flex
+              items-center
+              gap-1.5
+              rounded-full
+              bg-emerald-50
+              px-3
+              py-1.5
+              text-xs
+              font-bold
+              text-emerald-600
             "
           >
-            <Check size={13} strokeWidth={3} />
+            <Check
+              size={13}
+              strokeWidth={3}
+            />
+
             Unlocked
           </span>
         ) : (
           <span
             className="
-              flex items-center gap-1.5
-              rounded-full bg-slate-100
-              px-3 py-1.5
-              text-xs font-semibold text-slate-500
+              flex
+              items-center
+              gap-1.5
+              rounded-full
+              bg-slate-100
+              px-3
+              py-1.5
+              text-xs
+              font-semibold
+              text-slate-500
             "
           >
             <Lock size={12} />
+
             Locked
           </span>
         )}
       </div>
 
-      {/* Content */}
+      {/* =================================================
+          CONTENT
+      ================================================= */}
+
       <div className="relative mt-5">
+        {/* Category */}
+
         <div className="mb-2">
           <span
             className={`
-              inline-flex rounded-full
-              px-2.5 py-1
-              text-[10px] font-bold
-              uppercase tracking-wider
+              inline-flex
+              rounded-full
+              px-2.5
+              py-1
+              text-[10px]
+              font-bold
+              uppercase
+              tracking-wider
               ${config.light}
               ${config.text}
             `}
           >
-            {getCategory(achievement)}
+            {category}
           </span>
         </div>
 
+        {/* Title */}
+
         <h3
           className="
-            text-lg font-bold
+            text-lg
+            font-bold
             text-slate-900
             transition-colors
             group-hover:text-indigo-600
           "
         >
-          {achievement?.name || "Achievement"}
+          {achievement?.title ||
+            "Achievement"}
         </h3>
+
+        {/* Description */}
 
         <p
           className="
-            mt-1.5 min-h-[40px]
-            text-sm leading-5
+            mt-1.5
+            min-h-[40px]
+            text-sm
+            leading-5
             text-slate-500
           "
         >
@@ -317,41 +594,82 @@ function AchievementCard({ achievement, index }) {
             "Complete this milestone to unlock it."}
         </p>
 
-        {/* Locked progress */}
-        {!unlocked && required > 0 && (
-          <div className="mt-5">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400">
-                Progress
-              </span>
+        {/* =================================================
+            LOCKED PROGRESS
+        ================================================= */}
 
-              <span className="text-xs font-bold text-indigo-500">
-                {current} / {required}
-              </span>
-            </div>
-
-            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+        {!unlocked &&
+          required > 0 && (
+            <div className="mt-5">
               <div
                 className="
-                  h-full rounded-full
-                  bg-gradient-to-r
-                  from-indigo-500 to-violet-500
-                  transition-all duration-1000
+                  mb-2
+                  flex
+                  items-center
+                  justify-between
                 "
-                style={{
-                  width: `${progress}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
+              >
+                <span
+                  className="
+                    text-xs
+                    font-medium
+                    text-slate-400
+                  "
+                >
+                  Progress
+                </span>
 
-        {/* Unlocked date */}
+                <span
+                  className="
+                    text-xs
+                    font-bold
+                    text-indigo-500
+                  "
+                >
+                  {current} / {required}
+                </span>
+              </div>
+
+              <div
+                className="
+                  h-2
+                  overflow-hidden
+                  rounded-full
+                  bg-slate-100
+                "
+              >
+                <div
+                  className="
+                    h-full
+                    rounded-full
+                    bg-gradient-to-r
+                    from-indigo-500
+                    to-violet-500
+                    transition-all
+                    duration-1000
+                  "
+                  style={{
+                    width: `${progress}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+        {/* =================================================
+            UNLOCKED DATE
+        ================================================= */}
+
         {unlocked && (
           <div
             className="
-              mt-5 flex items-center gap-2
-              text-xs font-medium text-slate-400
+              mt-5
+              flex
+              items-center
+              gap-2
+              text-xs
+              font-medium
+              text-slate-400
             "
           >
             <CalendarDays size={14} />
@@ -361,11 +679,14 @@ function AchievementCard({ achievement, index }) {
               {achievement?.unlockedAt
                 ? new Date(
                     achievement.unlockedAt
-                  ).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })
+                  ).toLocaleDateString(
+                    undefined,
+                    {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    }
+                  )
                 : "recently"}
             </span>
           </div>
@@ -380,39 +701,55 @@ function AchievementCard({ achievement, index }) {
 // =====================================================
 
 export default function Achievements() {
-  const [achievements, setAchievements] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [
+    achievements,
+    setAchievements,
+  ] = useState([]);
 
-  const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [loading, setLoading] =
+    useState(true);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [
+    activeFilter,
+    setActiveFilter,
+  ] = useState("All");
 
   // ===================================================
   // FETCH ACHIEVEMENTS
   // ===================================================
 
   useEffect(() => {
-    const fetchAchievements = async () => {
-      try {
-        setLoading(true);
+    const fetchAchievements =
+      async () => {
+        try {
+          setLoading(true);
 
-        const response = await getAllAchievements();
+          const response =
+            await getAllAchievements();
 
-        setAchievements(
-          response?.achievements || []
-        );
-      } catch (error) {
-        console.error(
-          "Fetch achievements error:",
-          error
-        );
+          setAchievements(
+            Array.isArray(
+              response?.achievements
+            )
+              ? response.achievements
+              : []
+          );
+        } catch (error) {
+          console.error(
+            "Fetch achievements error:",
+            error
+          );
 
-        toast.error(
-          "Failed to load achievements"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+          toast.error(
+            "Failed to load achievements"
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
 
     fetchAchievements();
   }, []);
@@ -422,14 +759,17 @@ export default function Achievements() {
   // ===================================================
 
   const stats = useMemo(() => {
-    const total = achievements.length;
+    const total =
+      achievements.length;
 
-    const unlocked = achievements.filter(
-      (achievement) =>
-        achievement.unlocked
-    ).length;
+    const unlocked =
+      achievements.filter(
+        (achievement) =>
+          achievement?.unlocked
+      ).length;
 
-    const remaining = total - unlocked;
+    const remaining =
+      total - unlocked;
 
     const percentage =
       total > 0
@@ -447,39 +787,55 @@ export default function Achievements() {
   }, [achievements]);
 
   // ===================================================
-  // FILTER
+  // FILTERED ACHIEVEMENTS
   // ===================================================
 
-  const filteredAchievements = useMemo(() => {
-    return achievements.filter(
-      (achievement) => {
-        const searchText =
-          search.toLowerCase();
+  const filteredAchievements =
+    useMemo(() => {
+      const searchText =
+        search
+          .trim()
+          .toLowerCase();
 
-        const matchesSearch =
-          achievement?.name
-            ?.toLowerCase()
-            .includes(searchText) ||
-          achievement?.description
-            ?.toLowerCase()
-            .includes(searchText);
+      return achievements.filter(
+        (achievement) => {
+          const title =
+            achievement?.title
+              ?.toLowerCase() || "";
 
-        const matchesFilter =
-          activeFilter === "All" ||
-          getCategory(achievement) ===
-            activeFilter;
+          const description =
+            achievement?.description
+              ?.toLowerCase() || "";
 
-        return (
-          matchesSearch &&
-          matchesFilter
-        );
-      }
-    );
-  }, [
-    achievements,
-    search,
-    activeFilter,
-  ]);
+          const key =
+            achievement?.key
+              ?.toLowerCase() || "";
+
+          const matchesSearch =
+            !searchText ||
+            title.includes(searchText) ||
+            description.includes(
+              searchText
+            ) ||
+            key.includes(searchText);
+
+          const matchesFilter =
+            activeFilter === "All" ||
+            getCategory(
+              achievement
+            ) === activeFilter;
+
+          return (
+            matchesSearch &&
+            matchesFilter
+          );
+        }
+      );
+    }, [
+      achievements,
+      search,
+      activeFilter,
+    ]);
 
   // ===================================================
   // FILTERS
@@ -490,21 +846,30 @@ export default function Achievements() {
       label: "All",
       icon: Grid2X2,
     },
+
     {
       label: "Learning",
       icon: BookOpen,
     },
+
     {
       label: "Courses",
       icon: GraduationCap,
     },
+
     {
       label: "Streak",
       icon: Flame,
     },
+
     {
       label: "Hours",
       icon: Clock3,
+    },
+
+    {
+      label: "Special",
+      icon: Star,
     },
   ];
 
@@ -514,47 +879,103 @@ export default function Achievements() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8faff] p-5 sm:p-7 lg:p-8">
-        <div className="mx-auto max-w-7xl animate-pulse">
-
-          <div className="h-8 w-64 rounded-lg bg-slate-200" />
+      <div
+        className="
+          min-h-screen
+          bg-[#f8faff]
+          p-5
+          sm:p-7
+          lg:p-8
+        "
+      >
+        <div
+          className="
+            mx-auto
+            max-w-7xl
+            animate-pulse
+          "
+        >
+          {/* Header */}
 
           <div
             className="
-              mt-6 h-[280px]
+              h-8
+              w-64
+              rounded-lg
+              bg-slate-200
+            "
+          />
+
+          {/* Hero */}
+
+          <div
+            className="
+              mt-6
+              h-[280px]
               rounded-[28px]
               bg-white
             "
           />
 
-          <div className="mt-6 flex gap-3">
-            {[1, 2, 3, 4, 5].map(
-              (item) => (
-                <div
-                  key={item}
-                  className="
-                    h-11 w-28
-                    rounded-full
-                    bg-slate-200
-                  "
-                />
-              )
-            )}
+          {/* Filters */}
+
+          <div
+            className="
+              mt-6
+              flex
+              gap-3
+            "
+          >
+            {[
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+            ].map((item) => (
+              <div
+                key={item}
+                className="
+                  h-11
+                  w-28
+                  rounded-full
+                  bg-slate-200
+                "
+              />
+            ))}
           </div>
 
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {[1, 2, 3, 4].map(
-              (item) => (
-                <div
-                  key={item}
-                  className="
-                    h-72
-                    rounded-3xl
-                    bg-white
-                  "
-                />
-              )
-            )}
+          {/* Cards */}
+
+          <div
+            className="
+              mt-8
+              grid
+              gap-5
+              sm:grid-cols-2
+              xl:grid-cols-4
+            "
+          >
+            {[
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+            ].map((item) => (
+              <div
+                key={item}
+                className="
+                  h-72
+                  rounded-3xl
+                  bg-white
+                "
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -600,16 +1021,6 @@ export default function Achievements() {
           }
         }
 
-        @keyframes shine {
-          0% {
-            transform: translateX(-120%);
-          }
-
-          100% {
-            transform: translateX(220%);
-          }
-        }
-
         .achievement-entrance {
           animation:
             achievementEntrance
@@ -643,30 +1054,52 @@ export default function Achievements() {
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#f8faff]">
-        <div className="mx-auto max-w-7xl space-y-7 p-4 sm:p-6 lg:p-8">
-
+      <div
+        className="
+          min-h-screen
+          bg-[#f8faff]
+        "
+      >
+        <div
+          className="
+            mx-auto
+            max-w-7xl
+            space-y-7
+            p-4
+            sm:p-6
+            lg:p-8
+          "
+        >
           {/* =================================================
               PAGE HEADER
           ================================================= */}
 
           <div
             className="
-              flex flex-col gap-5
+              flex
+              flex-col
+              gap-5
               md:flex-row
               md:items-center
               md:justify-between
             "
           >
             <div>
-              <div className="flex items-center gap-2">
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-2
+                "
+              >
                 <span className="text-2xl">
                   👋
                 </span>
 
                 <h1
                   className="
-                    text-2xl font-bold
+                    text-2xl
+                    font-bold
                     tracking-tight
                     text-slate-900
                     sm:text-3xl
@@ -676,18 +1109,33 @@ export default function Achievements() {
                 </h1>
               </div>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Every achievement brings you
-                closer to your goals.
+              <p
+                className="
+                  mt-1
+                  text-sm
+                  text-slate-500
+                "
+              >
+                Every achievement brings
+                you closer to your goals.
               </p>
             </div>
 
             {/* Search */}
-            <div className="relative w-full md:w-72">
+
+            <div
+              className="
+                relative
+                w-full
+                md:w-72
+              "
+            >
               <Search
                 size={18}
                 className="
-                  absolute left-4 top-1/2
+                  absolute
+                  left-4
+                  top-1/2
                   -translate-y-1/2
                   text-slate-400
                 "
@@ -703,12 +1151,16 @@ export default function Achievements() {
                 }
                 placeholder="Search achievements..."
                 className="
-                  h-12 w-full
+                  h-12
+                  w-full
                   rounded-2xl
-                  border border-slate-200
+                  border
+                  border-slate-200
                   bg-white
-                  pl-11 pr-4
-                  text-sm text-slate-700
+                  pl-11
+                  pr-4
+                  text-sm
+                  text-slate-700
                   outline-none
                   transition-all
                   placeholder:text-slate-400
@@ -721,7 +1173,7 @@ export default function Achievements() {
           </div>
 
           {/* =================================================
-              NEW HERO CARD
+              HERO CARD
           ================================================= */}
 
           <section
@@ -738,9 +1190,7 @@ export default function Achievements() {
               lg:p-10
             "
           >
-            {/* ================================
-                BACKGROUND DECORATIONS
-            ================================= */}
+            {/* Background decorations */}
 
             <div
               className="
@@ -813,9 +1263,7 @@ export default function Achievements() {
               "
             />
 
-            {/* ================================
-                HERO CONTENT
-            ================================= */}
+            {/* Hero content */}
 
             <div
               className="
@@ -827,6 +1275,7 @@ export default function Achievements() {
               "
             >
               {/* Trophy */}
+
               <div
                 className="
                   flex
@@ -836,8 +1285,6 @@ export default function Achievements() {
                 "
               >
                 <div className="trophy-float relative">
-
-                  {/* Glow */}
                   <div
                     className="
                       absolute
@@ -848,7 +1295,6 @@ export default function Achievements() {
                     "
                   />
 
-                  {/* Trophy circle */}
                   <div
                     className="
                       relative
@@ -866,6 +1312,7 @@ export default function Achievements() {
                     "
                   >
                     {/* Confetti */}
+
                     <span
                       className="
                         absolute
@@ -915,7 +1362,8 @@ export default function Achievements() {
                       "
                     />
 
-                    {/* Trophy badge */}
+                    {/* Trophy */}
+
                     <div
                       className="
                         flex
@@ -942,6 +1390,7 @@ export default function Achievements() {
               </div>
 
               {/* Main text */}
+
               <div>
                 <p
                   className="
@@ -980,17 +1429,29 @@ export default function Achievements() {
                     sm:text-base
                   "
                 >
-                  Every course, every lecture,
-                  every milestone brings you
-                  closer to your dreams.
-                  <span className="font-semibold text-slate-700">
+                  Every course, every
+                  lecture, every milestone
+                  brings you closer to your
+                  dreams.
+                  <span
+                    className="
+                      font-semibold
+                      text-slate-700
+                    "
+                  >
                     {" "}
                     Keep going!
                   </span>
                 </p>
 
                 {/* Progress */}
-                <div className="mt-7 max-w-xl">
+
+                <div
+                  className="
+                    mt-7
+                    max-w-xl
+                  "
+                >
                   <div
                     className="
                       mb-2
@@ -1046,7 +1507,8 @@ export default function Achievements() {
                         width: `${stats.percentage}%`,
                       }}
                     >
-                      {stats.percentage > 0 && (
+                      {stats.percentage >
+                        0 && (
                         <div
                           className="
                             absolute
@@ -1064,6 +1526,7 @@ export default function Achievements() {
               </div>
 
               {/* Stats */}
+
               <div
                 className="
                   grid
@@ -1073,6 +1536,7 @@ export default function Achievements() {
                 "
               >
                 {/* Unlocked */}
+
                 <div
                   className="
                     rounded-2xl
@@ -1129,6 +1593,7 @@ export default function Achievements() {
                 </div>
 
                 {/* Remaining */}
+
                 <div
                   className="
                     rounded-2xl
@@ -1185,6 +1650,7 @@ export default function Achievements() {
                 </div>
 
                 {/* Complete */}
+
                 <div
                   className="
                     rounded-2xl
@@ -1242,7 +1708,8 @@ export default function Achievements() {
               </div>
             </div>
 
-            {/* Handwritten style motivation */}
+            {/* Motivation */}
+
             <div
               className="
                 absolute
@@ -1357,7 +1824,12 @@ export default function Achievements() {
               "
             >
               Showing{" "}
-              <span className="font-bold text-slate-700">
+              <span
+                className="
+                  font-bold
+                  text-slate-700
+                "
+              >
                 {
                   filteredAchievements.length
                 }
@@ -1462,7 +1934,9 @@ export default function Achievements() {
                 type="button"
                 onClick={() => {
                   setSearch("");
-                  setActiveFilter("All");
+                  setActiveFilter(
+                    "All"
+                  );
                 }}
                 className="
                   mt-5
@@ -1501,7 +1975,7 @@ export default function Achievements() {
                   <AchievementCard
                     key={
                       achievement?._id ||
-                      achievement?.code ||
+                      achievement?.key ||
                       index
                     }
                     achievement={
@@ -1607,12 +2081,19 @@ export default function Achievements() {
                       "
                     >
                       Keep learning, keep
-                      growing, keep unlocking.
+                      growing, keep
+                      unlocking.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div
+                  className="
+                    flex
+                    items-center
+                    gap-2
+                  "
+                >
                   {[
                     Trophy,
                     GraduationCap,

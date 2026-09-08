@@ -1,5 +1,6 @@
 import Achievement from "../models/achievement.model.js";
 import StudentAchievement from "../models/studentAchievement.model.js";
+import StudentXP from "../models/studentXP.model.js";
 
 /**
  * =========================================================
@@ -130,6 +131,70 @@ export const getAllAchievements = async (
       success: false,
       message:
         "Failed to fetch achievements.",
+    });
+  }
+};
+
+
+export const getStudentXP = async (req, res) => {
+  try {
+    const studentId = req.user._id;
+
+    let studentXP = await StudentXP.findOne({
+      student: studentId,
+    }).lean();
+
+    // Create XP record if student doesn't have one yet
+    if (!studentXP) {
+      studentXP = await StudentXP.create({
+        student: studentId,
+        totalXP: 0,
+        level: 1,
+      });
+
+      studentXP = studentXP.toObject();
+    }
+
+    const totalXP = studentXP.totalXP || 0;
+    const level = studentXP.level || 1;
+
+    const currentLevelXP = (level - 1) * 1000;
+    const nextLevelXP = level * 1000;
+
+    const progressXP =
+      totalXP - currentLevelXP;
+
+    const remainingXP = Math.max(
+      0,
+      nextLevelXP - totalXP
+    );
+
+    const progressPercentage = Math.min(
+      100,
+      Math.round((progressXP / 1000) * 100)
+    );
+
+    return res.status(200).json({
+      success: true,
+      xp: {
+        totalXP,
+        level,
+        currentLevelXP,
+        nextLevelXP,
+        progressXP,
+        remainingXP,
+        progressPercentage,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Get student XP error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch student XP.",
     });
   }
 };

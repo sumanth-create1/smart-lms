@@ -1,8 +1,9 @@
 import express from "express";
 
 import {
-    getStudentAchievements,
-    getAllAchievements,
+  getStudentAchievements,
+  getAllAchievements,
+  getStudentXP,
 } from "../controllers/achievement.controller.js";
 
 import { isAuthenticated } from "../middleware/auth.middleware.js";
@@ -15,9 +16,9 @@ const router = express.Router();
  * GET /api/v1/achievements
  */
 router.get(
-    "/",
-    isAuthenticated,
-    getStudentAchievements
+  "/",
+  isAuthenticated,
+  getStudentAchievements
 );
 
 /**
@@ -27,9 +28,20 @@ router.get(
  * GET /api/v1/achievements/all
  */
 router.get(
-    "/all",
-    isAuthenticated,
-    getAllAchievements
+  "/all",
+  isAuthenticated,
+  getAllAchievements
+);
+
+/**
+ * Get student's XP and level
+ *
+ * GET /api/v1/achievements/xp
+ */
+router.get(
+  "/xp",
+  isAuthenticated,
+  getStudentXP
 );
 
 export default router;

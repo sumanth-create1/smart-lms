@@ -16,6 +16,7 @@ import WeeklyGoal from "./components/student/WeeklyGoal";
 import LearningActivity from "./components/student/LearningActivity";
 import RecentActivity from "./components/student/RecentActivity";
 import MyCourses from "./components/student/MyCourses";
+import StudentXPCard from "./components/student/StudentXPCard";
 
 // =====================================================
 // CONSTANTS
@@ -31,6 +32,8 @@ function StudentDashboard() {
   const location = useLocation();
 
   const [dashboard, setDashboard] = useState(null);
+  const [xp, setXp] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +42,7 @@ function StudentDashboard() {
   const firstLoadRef = useRef(true);
 
   // ===================================================
-  // FETCH DASHBOARD
+  // FETCH DASHBOARD + XP
   // ===================================================
 
   const fetchDashboard = useCallback(
@@ -60,21 +63,41 @@ function StudentDashboard() {
 
         setError("");
 
-        const response = await api.get(
-          "/dashboard/student",
-          {
-            params: {
-              _t: Date.now(),
-            },
-          }
-        );
+        // ------------------------------------------------
+        // Fetch dashboard and XP together
+        // ------------------------------------------------
 
-        const data = response.data;
+        const [dashboardResponse, xpResponse] =
+          await Promise.all([
+            api.get("/dashboard/student", {
+              params: {
+                _t: Date.now(),
+              },
+            }),
+
+            api.get("/achievements/xp", {
+              params: {
+                _t: Date.now(),
+              },
+            }),
+          ]);
+
+        const data = dashboardResponse.data;
+        const xpData = xpResponse.data;
 
         console.log(
           "Student Dashboard API response:",
           data
         );
+
+        console.log(
+          "Student XP API response:",
+          xpData
+        );
+
+        // ------------------------------------------------
+        // Validate dashboard response
+        // ------------------------------------------------
 
         if (!data?.success) {
           throw new Error(
@@ -83,17 +106,23 @@ function StudentDashboard() {
           );
         }
 
-        // -----------------------------------------------
-        // IMPORTANT
-        // -----------------------------------------------
-        // Replace the entire dashboard object with
-        // the latest backend response.
-        //
-        // This makes all dashboard components receive
-        // fresh data.
-        // -----------------------------------------------
+        // ------------------------------------------------
+        // Update dashboard
+        // ------------------------------------------------
 
         setDashboard(data);
+
+        // ------------------------------------------------
+        // Update XP
+        // ------------------------------------------------
+
+        if (xpData?.success) {
+          setXp(xpData.xp);
+        }
+
+        // ------------------------------------------------
+        // Success toast
+        // ------------------------------------------------
 
         if (showToast) {
           toast.success(
@@ -227,8 +256,7 @@ function StudentDashboard() {
   //   new Event("student-dashboard-refresh")
   // );
   //
-  // This is useful immediately after completing
-  // a lecture.
+  // This refreshes dashboard + XP immediately.
   // ===================================================
 
   useEffect(() => {
@@ -313,7 +341,6 @@ function StudentDashboard() {
     return (
       <div className="flex min-h-[60vh] w-full items-center justify-center px-4">
         <div className="w-full max-w-md rounded-2xl border border-red-100 bg-white p-6 text-center shadow-sm">
-
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
             <AlertCircle
               size={24}
@@ -426,6 +453,14 @@ function StudentDashboard() {
 
       <StatsGrid
         stats={stats}
+      />
+
+      {/* =================================================
+          XP / LEVEL
+      ================================================= */}
+
+      <StudentXPCard
+        xp={xp}
       />
 
       {/* =================================================

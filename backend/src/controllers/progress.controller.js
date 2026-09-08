@@ -320,6 +320,7 @@ export const markLectureCompleted = async (req, res) => {
         success: true,
         message: "Lecture is already completed.",
         progress: courseProgress,
+        newlyUnlocked: [],
       });
     }
 
@@ -353,7 +354,7 @@ export const markLectureCompleted = async (req, res) => {
     await courseProgress.save();
 
     // -------------------------------------------------
-    // Create activity
+    // Create completion activity
     // -------------------------------------------------
 
     await Activity.create({
@@ -364,11 +365,28 @@ export const markLectureCompleted = async (req, res) => {
       message: `Completed lecture: ${lecture.lectureTitle}`,
     });
 
-    // -------------------------------------------------
-    // Check achievements
-    // -------------------------------------------------
+    // =================================================
+    // CHECK ACHIEVEMENTS
+    // =================================================
 
-    const achievementResult = await checkAndUnlockAchievements(studentId);
+    let achievementResult = {
+      stats: null,
+      newlyUnlocked: [],
+    };
+
+    try {
+      achievementResult = await checkAndUnlockAchievements(studentId);
+
+      console.log(
+        "🏆 ACHIEVEMENT RESULT:",
+        JSON.stringify(achievementResult, null, 2),
+      );
+    } catch (achievementError) {
+      console.error("❌ Achievement check failed:", achievementError);
+
+      // Achievement failure should not
+      // break lecture completion.
+    }
 
     // -------------------------------------------------
     // Calculate course progress
@@ -383,11 +401,21 @@ export const markLectureCompleted = async (req, res) => {
       totalLectures,
     );
 
+    // -------------------------------------------------
+    // Final response
+    // -------------------------------------------------
+
     return res.status(200).json({
       success: true,
+
       message: "Lecture marked as completed.",
+
       progress: courseProgress,
+
       completionPercentage,
+
+      // ⭐ VERY IMPORTANT
+      newlyUnlocked: achievementResult.newlyUnlocked || [],
     });
   } catch (error) {
     console.error("Mark lecture completed error:", error);

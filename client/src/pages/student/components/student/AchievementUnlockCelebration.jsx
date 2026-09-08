@@ -7,17 +7,38 @@ import {
   X,
 } from "lucide-react";
 
+/**
+ * =========================================================
+ * Achievement Rarity
+ * =========================================================
+ *
+ * Rarity is only responsible for the visual presentation.
+ *
+ * XP is now controlled by the backend:
+ *
+ * achievement.xpReward
+ *
+ * Do NOT calculate XP here.
+ */
 function getRarity(achievement) {
-  const value = Number(achievement?.requirementValue || 0);
-  const type = achievement?.requirementType;
+  const value = Number(
+    achievement?.requirementValue || 0
+  );
+
+  const type =
+    achievement?.requirement ||
+    achievement?.requirementType;
+
+  const code =
+    achievement?.key ||
+    achievement?.code;
 
   if (
-    achievement?.code === "PERFECT_COURSE" ||
+    code === "PERFECT_COURSE" ||
     value >= 50
   ) {
     return {
       name: "LEGENDARY",
-      xp: 1000,
       badge:
         "from-yellow-300 via-orange-400 to-red-500",
       text: "text-orange-600",
@@ -25,12 +46,11 @@ function getRarity(achievement) {
   }
 
   if (
-    achievement?.code === "FIFTY_HOURS" ||
+    code === "FIFTY_HOURS" ||
     value >= 25
   ) {
     return {
       name: "EPIC",
-      xp: 500,
       badge:
         "from-purple-400 via-fuchsia-500 to-pink-500",
       text: "text-purple-600",
@@ -43,7 +63,6 @@ function getRarity(achievement) {
   ) {
     return {
       name: "RARE",
-      xp: 250,
       badge:
         "from-blue-400 via-indigo-500 to-purple-600",
       text: "text-indigo-600",
@@ -53,7 +72,6 @@ function getRarity(achievement) {
   if (value >= 5) {
     return {
       name: "UNCOMMON",
-      xp: 100,
       badge:
         "from-emerald-400 via-teal-500 to-cyan-600",
       text: "text-emerald-600",
@@ -62,13 +80,17 @@ function getRarity(achievement) {
 
   return {
     name: "COMMON",
-    xp: 50,
     badge:
       "from-yellow-300 via-yellow-400 to-orange-500",
     text: "text-yellow-600",
   };
 }
 
+/**
+ * =========================================================
+ * Achievement Unlock Celebration
+ * =========================================================
+ */
 export default function AchievementUnlockCelebration({
   achievements = [],
   onClose,
@@ -76,12 +98,52 @@ export default function AchievementUnlockCelebration({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visible, setVisible] = useState(false);
 
-  const achievement = achievements[currentIndex];
+  const achievement =
+    achievements[currentIndex];
+
+  /**
+   * -------------------------------------------------------
+   * Real XP data from backend
+   * -------------------------------------------------------
+   *
+   * The backend now sends:
+   *
+   * xpReward
+   * totalXP
+   * level
+   */
+  const xpReward = Number(
+    achievement?.xpReward || 0
+  );
+
+  const totalXP = Number(
+    achievement?.totalXP || 0
+  );
+
+  const level = Number(
+    achievement?.level || 1
+  );
 
   const rarity = getRarity(achievement);
 
+  /**
+   * -------------------------------------------------------
+   * Reset popup when achievement list changes
+   * -------------------------------------------------------
+   */
   useEffect(() => {
-    if (!achievement) return;
+    setCurrentIndex(0);
+  }, [achievements]);
+
+  /**
+   * -------------------------------------------------------
+   * Entry animation
+   * -------------------------------------------------------
+   */
+  useEffect(() => {
+    if (!achievement) {
+      return;
+    }
 
     setVisible(false);
 
@@ -92,19 +154,20 @@ export default function AchievementUnlockCelebration({
     return () => clearTimeout(timer);
   }, [achievement]);
 
+  /**
+   * -------------------------------------------------------
+   * Nothing to show
+   * -------------------------------------------------------
+   */
   if (!achievement) {
     return null;
   }
 
-  const handleNext = () => {
-    if (currentIndex < achievements.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-      return;
-    }
-
-    handleClose();
-  };
-
+  /**
+   * -------------------------------------------------------
+   * Close celebration
+   * -------------------------------------------------------
+   */
   const handleClose = () => {
     setVisible(false);
 
@@ -113,6 +176,31 @@ export default function AchievementUnlockCelebration({
     }, 250);
   };
 
+  /**
+   * -------------------------------------------------------
+   * Next achievement
+   * -------------------------------------------------------
+   */
+  const handleNext = () => {
+    if (
+      currentIndex <
+      achievements.length - 1
+    ) {
+      setCurrentIndex(
+        (prev) => prev + 1
+      );
+
+      return;
+    }
+
+    handleClose();
+  };
+
+  /**
+   * =======================================================
+   * RENDER
+   * =======================================================
+   */
   return (
     <div
       className={`
@@ -128,9 +216,9 @@ export default function AchievementUnlockCelebration({
       `}
       onClick={handleClose}
     >
-      {/* ============================================
+      {/* ==================================================
           CONFETTI
-      ============================================ */}
+      ================================================== */}
 
       <div
         className="
@@ -152,9 +240,9 @@ export default function AchievementUnlockCelebration({
         )}
       </div>
 
-      {/* ============================================
+      {/* ==================================================
           CARD
-      ============================================ */}
+      ================================================== */}
 
       <div
         onClick={(event) =>
@@ -177,7 +265,10 @@ export default function AchievementUnlockCelebration({
           }
         `}
       >
-        {/* Top gradient */}
+        {/* =================================================
+            TOP GRADIENT
+        ================================================= */}
+
         <div
           className={`
             absolute
@@ -190,7 +281,10 @@ export default function AchievementUnlockCelebration({
           `}
         />
 
-        {/* Close */}
+        {/* =================================================
+            CLOSE BUTTON
+        ================================================= */}
+
         <button
           type="button"
           onClick={handleClose}
@@ -211,15 +305,19 @@ export default function AchievementUnlockCelebration({
             hover:bg-slate-200
             hover:text-slate-700
           "
+          aria-label="Close achievement celebration"
         >
           <X size={17} />
         </button>
 
-        {/* ==========================================
-            CELEBRATION HEADER
-        ========================================== */}
+        {/* =================================================
+            CONTENT
+        ================================================= */}
 
         <div className="px-6 pb-6 pt-10 text-center">
+          {/* ===============================================
+              CELEBRATION HEADER
+          =============================================== */}
 
           <div
             className="
@@ -249,13 +347,13 @@ export default function AchievementUnlockCelebration({
             />
           </div>
 
-          {/* ========================================
+          {/* ===============================================
               BADGE
-          ======================================== */}
+          =============================================== */}
 
           <div className="relative mx-auto mt-7 h-40 w-40">
-
             {/* Glow */}
+
             <div
               className={`
                 absolute
@@ -270,6 +368,7 @@ export default function AchievementUnlockCelebration({
             />
 
             {/* Orbit */}
+
             <div
               className="
                 absolute
@@ -283,6 +382,7 @@ export default function AchievementUnlockCelebration({
             />
 
             {/* Badge */}
+
             <div
               className={`
                 achievement-badge-pop
@@ -315,10 +415,14 @@ export default function AchievementUnlockCelebration({
               <Trophy
                 size={54}
                 strokeWidth={1.6}
-                className="relative text-white"
+                className="
+                  relative
+                  text-white
+                "
               />
 
               {/* Check */}
+
               <div
                 className="
                   absolute
@@ -345,9 +449,9 @@ export default function AchievementUnlockCelebration({
             </div>
           </div>
 
-          {/* ========================================
-              NAME
-          ======================================== */}
+          {/* ===============================================
+              ACHIEVEMENT NAME
+          =============================================== */}
 
           <h2
             className="
@@ -358,9 +462,14 @@ export default function AchievementUnlockCelebration({
               text-slate-900
             "
           >
-            {achievement?.name ||
+            {achievement?.title ||
+              achievement?.name ||
               "New Achievement"}
           </h2>
+
+          {/* ===============================================
+              DESCRIPTION
+          =============================================== */}
 
           <p
             className="
@@ -376,9 +485,9 @@ export default function AchievementUnlockCelebration({
               "You've reached a new milestone!"}
           </p>
 
-          {/* ========================================
-              RARITY + XP
-          ======================================== */}
+          {/* ===============================================
+              RARITY + REAL XP
+          =============================================== */}
 
           <div
             className="
@@ -391,6 +500,8 @@ export default function AchievementUnlockCelebration({
               gap-3
             "
           >
+            {/* Rarity */}
+
             <div
               className={`
                 rounded-full
@@ -405,6 +516,8 @@ export default function AchievementUnlockCelebration({
             >
               {rarity.name}
             </div>
+
+            {/* XP */}
 
             <div
               className="
@@ -422,13 +535,96 @@ export default function AchievementUnlockCelebration({
             >
               <Award size={14} />
 
-              +{rarity.xp} XP
+              +{xpReward} XP
             </div>
           </div>
 
-          {/* ========================================
+          {/* ===============================================
+              XP SUMMARY
+          =============================================== */}
+
+          <div
+            className="
+              mx-auto
+              mt-5
+              grid
+              max-w-xs
+              grid-cols-2
+              gap-3
+            "
+          >
+            {/* Level */}
+
+            <div
+              className="
+                rounded-2xl
+                bg-slate-50
+                px-4
+                py-3
+              "
+            >
+              <p
+                className="
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-wider
+                  text-slate-400
+                "
+              >
+                Level
+              </p>
+
+              <p
+                className="
+                  mt-1
+                  text-xl
+                  font-black
+                  text-slate-900
+                "
+              >
+                {level}
+              </p>
+            </div>
+
+            {/* Total XP */}
+
+            <div
+              className="
+                rounded-2xl
+                bg-indigo-50
+                px-4
+                py-3
+              "
+            >
+              <p
+                className="
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-wider
+                  text-indigo-400
+                "
+              >
+                Total XP
+              </p>
+
+              <p
+                className="
+                  mt-1
+                  text-xl
+                  font-black
+                  text-indigo-600
+                "
+              >
+                {totalXP.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          {/* ===============================================
               NEXT BUTTON
-          ======================================== */}
+          =============================================== */}
 
           <button
             type="button"
@@ -459,7 +655,10 @@ export default function AchievementUnlockCelebration({
               : "Awesome! 🎉"}
           </button>
 
-          {/* Counter */}
+          {/* ===============================================
+              COUNTER
+          =============================================== */}
+
           {achievements.length > 1 && (
             <p
               className="
@@ -476,9 +675,9 @@ export default function AchievementUnlockCelebration({
         </div>
       </div>
 
-      {/* ============================================
+      {/* ==================================================
           ANIMATION STYLES
-      ============================================ */}
+      ================================================== */}
 
       <style>{`
         @keyframes badgePop {

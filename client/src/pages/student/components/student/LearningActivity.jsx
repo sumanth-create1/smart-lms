@@ -2,6 +2,10 @@ import {
   BarChart3,
   Clock3,
   TrendingUp,
+  Flame,
+  Crown,
+  Sword,
+  Shield,
 } from "lucide-react";
 
 // =====================================================
@@ -26,9 +30,7 @@ const getHours = (item = {}) => {
   }
 
   if (item.durationSeconds != null) {
-    const seconds = Number(
-      item.durationSeconds
-    );
+    const seconds = Number(item.durationSeconds);
 
     return Number.isFinite(seconds)
       ? Math.max(seconds / 3600, 0)
@@ -67,57 +69,76 @@ const normalizeActivity = (activity) => {
 };
 
 // =====================================================
-// LOADING SKELETON
+// LOADING
 // =====================================================
 
 const ActivityLoading = () => {
   return (
-    <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      {/* Header */}
+    <section
+      className="
+        relative
+        min-w-0
+        overflow-hidden
+        rounded-[28px]
+        border
+        border-slate-800
+        bg-[#0b0d12]
+        shadow-xl
+      "
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0b0d12] via-[#17181d] to-[#241b16]" />
 
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
-        <div>
-          <div className="h-5 w-36 animate-pulse rounded bg-slate-100" />
+      <div className="relative z-10">
+        {/* Header */}
 
-          <div className="mt-2 h-3 w-48 animate-pulse rounded bg-slate-100" />
-        </div>
-
-        <div className="h-9 w-9 animate-pulse rounded-xl bg-slate-100" />
-      </div>
-
-      {/* Content */}
-
-      <div className="p-5 sm:p-6">
-        <div className="mb-7 flex items-end justify-between">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-5 sm:px-6">
           <div>
-            <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
+            <div className="h-5 w-40 animate-pulse rounded bg-white/10" />
 
-            <div className="mt-2 h-9 w-20 animate-pulse rounded bg-slate-100" />
+            <div className="mt-2 h-3 w-52 animate-pulse rounded bg-white/5" />
           </div>
 
-          <div className="h-8 w-24 animate-pulse rounded-full bg-slate-100" />
+          <div className="h-10 w-10 animate-pulse rounded-xl bg-white/10" />
         </div>
 
-        {/* Chart Skeleton */}
+        {/* Content */}
 
-        <div className="flex h-56 items-end gap-2 sm:gap-4">
-          {[40, 65, 30, 80, 55, 70, 45].map(
-            (height, index) => (
-              <div
-                key={index}
-                className="flex h-full flex-1 flex-col items-center justify-end"
-              >
+        <div className="p-5 sm:p-6">
+          <div className="mb-7 flex items-end justify-between">
+            <div>
+              <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+
+              <div className="mt-2 h-9 w-24 animate-pulse rounded bg-white/10" />
+            </div>
+
+            <div className="h-8 w-28 animate-pulse rounded-full bg-white/10" />
+          </div>
+
+          <div className="flex h-56 items-end gap-2 sm:gap-4">
+            {[40, 65, 30, 80, 55, 70, 45].map(
+              (height, index) => (
                 <div
-                  className="w-full max-w-9 animate-pulse rounded-lg bg-slate-100"
-                  style={{
-                    height: `${height}%`,
-                  }}
-                />
+                  key={index}
+                  className="flex h-full flex-1 flex-col items-center justify-end"
+                >
+                  <div
+                    className="
+                      w-full
+                      max-w-9
+                      animate-pulse
+                      rounded-t-md
+                      bg-white/10
+                    "
+                    style={{
+                      height: `${height}%`,
+                    }}
+                  />
 
-                <div className="mt-3 h-3 w-7 animate-pulse rounded bg-slate-100" />
-              </div>
-            )
-          )}
+                  <div className="mt-3 h-3 w-7 animate-pulse rounded bg-white/10" />
+                </div>
+              )
+            )}
+          </div>
         </div>
       </div>
     </section>
@@ -130,21 +151,59 @@ const ActivityLoading = () => {
 
 const EmptyActivity = () => {
   return (
-    <div className="flex h-56 flex-col items-center justify-center rounded-xl bg-slate-50 px-5 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
-        <BarChart3
-          size={22}
-          className="text-slate-400"
+    <div
+      className="
+        relative
+        flex
+        h-56
+        flex-col
+        items-center
+        justify-center
+        overflow-hidden
+        rounded-2xl
+        border
+        border-white/10
+        bg-black/20
+        px-5
+        text-center
+      "
+    >
+      {/* Decorative flames */}
+
+      <div className="absolute left-8 top-8 text-2xl opacity-10">
+        🔥
+      </div>
+
+      <div className="absolute bottom-8 right-8 text-2xl opacity-10">
+        ⚔️
+      </div>
+
+      <div
+        className="
+          flex
+          h-14
+          w-14
+          items-center
+          justify-center
+          rounded-2xl
+          border
+          border-amber-500/20
+          bg-amber-500/10
+        "
+      >
+        <Shield
+          size={24}
+          className="text-amber-500"
         />
       </div>
 
-      <p className="mt-3 text-sm font-semibold text-slate-700">
-        No learning activity yet
+      <p className="mt-4 text-sm font-bold text-slate-200">
+        No battles recorded yet
       </p>
 
-      <p className="mt-1 max-w-xs text-xs leading-5 text-slate-400">
-        Start a lesson to see your weekly
-        learning activity here.
+      <p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">
+        Start a lesson and your learning battles
+        will appear in the weekly chronicle.
       </p>
     </div>
   );
@@ -159,7 +218,7 @@ function LearningActivity({
   loading = false,
 }) {
   // ===================================================
-  // NORMALIZE DATA
+  // NORMALIZE
   // ===================================================
 
   const normalizedActivity =
@@ -177,26 +236,15 @@ function LearningActivity({
     );
 
   // ===================================================
-  // MAX BAR
+  // MAX ACTIVITY
   // ===================================================
 
   const maxActivityHours = Math.max(
     ...normalizedActivity.map(
-      (item) =>
-        Number(item.hours || 0)
+      (item) => Number(item.hours || 0)
     ),
     0
   );
-
-  /*
-   * Minimum chart scale is 4 hours.
-   *
-   * Example:
-   *
-   * 1.5h -> 4h scale
-   * 3.2h -> 4h scale
-   * 6.7h -> 7h scale
-   */
 
   const maxHours = Math.max(
     Math.ceil(maxActivityHours),
@@ -204,7 +252,7 @@ function LearningActivity({
   );
 
   // ===================================================
-  // WEEKLY AVERAGE
+  // ACTIVE DAYS
   // ===================================================
 
   const activeDays =
@@ -212,10 +260,29 @@ function LearningActivity({
       (item) => item.hours > 0
     ).length;
 
+  // ===================================================
+  // AVERAGE
+  // ===================================================
+
   const averageHours =
     activeDays > 0
       ? totalHours / activeDays
       : 0;
+
+  // ===================================================
+  // MOST ACTIVE DAY
+  // ===================================================
+
+  const strongestDay =
+    normalizedActivity.length > 0
+      ? normalizedActivity.reduce(
+          (max, item) =>
+            item.hours > max.hours
+              ? item
+              : max,
+          normalizedActivity[0]
+        )
+      : null;
 
   // ===================================================
   // LOADING
@@ -230,27 +297,200 @@ function LearningActivity({
   // ===================================================
 
   return (
-    <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section
+      className="
+        group
+        relative
+        min-w-0
+        overflow-hidden
+        rounded-[28px]
+        border
+        border-slate-800
+        bg-[#090b10]
+        shadow-xl
+        shadow-slate-300/20
+        transition-all
+        duration-500
+        hover:-translate-y-1
+        hover:shadow-2xl
+      "
+    >
+      {/* =================================================
+          CINEMATIC BACKGROUND
+      ================================================= */}
+
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Base */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            bg-gradient-to-br
+            from-[#090b10]
+            via-[#15171d]
+            to-[#211913]
+          "
+        />
+
+        {/* Warm fire glow */}
+
+        <div
+          className="
+            absolute
+            -right-24
+            -top-24
+            h-72
+            w-72
+            rounded-full
+            bg-amber-600/10
+            blur-[100px]
+            transition-all
+            duration-1000
+            group-hover:scale-125
+          "
+        />
+
+        {/* Red glow */}
+
+        <div
+          className="
+            absolute
+            -bottom-32
+            -left-20
+            h-80
+            w-80
+            rounded-full
+            bg-red-900/10
+            blur-[110px]
+          "
+        />
+
+        {/* Stone texture */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            opacity-[0.035]
+            [background-image:linear-gradient(135deg,transparent_25%,white_25%,transparent_26%),linear-gradient(45deg,transparent_25%,white_25%,transparent_26%)]
+            [background-size:22px_22px]
+          "
+        />
+
+        {/* Ember particles */}
+
+        <div className="absolute right-[12%] top-[18%] h-1 w-1 animate-ping rounded-full bg-amber-400/60" />
+
+        <div className="absolute right-[25%] top-[35%] h-1.5 w-1.5 animate-pulse rounded-full bg-orange-400/50" />
+
+        <div className="absolute left-[18%] top-[30%] h-1 w-1 animate-ping rounded-full bg-red-400/40" />
+
+        <div className="absolute left-[35%] bottom-[20%] h-1 w-1 animate-pulse rounded-full bg-amber-300/40" />
+      </div>
+
       {/* =================================================
           HEADER
       ================================================= */}
 
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
-        <div>
-          <h2 className="text-base font-bold text-slate-900 sm:text-lg">
-            Learning Activity
-          </h2>
+      <div
+        className="
+          relative
+          z-10
+          flex
+          items-center
+          justify-between
+          border-b
+          border-white/10
+          px-5
+          py-5
+          sm:px-6
+        "
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="
+              flex
+              h-10
+              w-10
+              items-center
+              justify-center
+              rounded-xl
+              border
+              border-amber-500/20
+              bg-amber-500/10
+              shadow-inner
+              transition-all
+              duration-300
+              group-hover:scale-105
+            "
+          >
+            <BarChart3
+              size={19}
+              className="text-amber-400"
+            />
+          </div>
 
-          <p className="mt-0.5 text-xs text-slate-400 sm:text-sm">
-            Your study activity this week
-          </p>
+          <div>
+            <h2
+              className="
+                m-0
+                text-base
+                font-bold
+                tracking-tight
+                text-white
+                sm:text-lg
+              "
+            >
+              Weekly Chronicle
+            </h2>
+
+            <p
+              className="
+                m-0
+                mt-0.5
+                text-xs
+                text-slate-500
+                sm:text-sm
+              "
+            >
+              Your battles across the realm
+            </p>
+          </div>
         </div>
 
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50">
-          <BarChart3
-            size={18}
-            className="text-indigo-600"
+        {/* Chronicle badge */}
+
+        <div
+          className="
+            hidden
+            items-center
+            gap-1.5
+            rounded-full
+            border
+            border-amber-500/20
+            bg-amber-500/10
+            px-3
+            py-1.5
+            sm:flex
+          "
+        >
+          <Flame
+            size={13}
+            className="text-orange-400"
           />
+
+          <span
+            className="
+              text-[10px]
+              font-bold
+              uppercase
+              tracking-[0.14em]
+              text-amber-400
+            "
+          >
+            This Week
+          </span>
         </div>
       </div>
 
@@ -258,25 +498,64 @@ function LearningActivity({
           CONTENT
       ================================================= */}
 
-      <div className="p-5 sm:p-6">
+      <div className="relative z-10 p-5 sm:p-6">
         {/* =================================================
             SUMMARY
         ================================================= */}
 
-        <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div
+          className="
+            mb-8
+            flex
+            flex-col
+            gap-4
+            sm:flex-row
+            sm:items-end
+            sm:justify-between
+          "
+        >
           {/* Total */}
 
           <div>
-            <p className="text-xs font-medium text-slate-400">
-              Total this week
-            </p>
+            <div className="flex items-center gap-2">
+              <Sword
+                size={14}
+                className="text-amber-500"
+              />
+
+              <p
+                className="
+                  m-0
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.16em]
+                  text-slate-500
+                "
+              >
+                Time on the realm
+              </p>
+            </div>
 
             <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-3xl font-bold tracking-tight text-slate-900">
+              <span
+                className="
+                  text-4xl
+                  font-black
+                  tracking-tight
+                  text-white
+                "
+              >
                 {totalHours.toFixed(1)}
               </span>
 
-              <span className="text-sm font-medium text-slate-400">
+              <span
+                className="
+                  text-sm
+                  font-medium
+                  text-slate-500
+                "
+              >
                 hours
               </span>
             </div>
@@ -285,23 +564,53 @@ function LearningActivity({
           {/* Stats */}
 
           <div className="flex flex-wrap gap-2">
-            {/* Active Days */}
+            {/* Active days */}
 
-            <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600">
+            <div
+              className="
+                flex
+                items-center
+                gap-1.5
+                rounded-full
+                border
+                border-emerald-500/20
+                bg-emerald-500/10
+                px-3
+                py-1.5
+                text-xs
+                font-semibold
+                text-emerald-400
+              "
+            >
               <Clock3 size={13} />
 
               <span>
                 {activeDays}{" "}
                 {activeDays === 1
-                  ? "day"
-                  : "days"}
+                  ? "battle"
+                  : "battles"}
               </span>
             </div>
 
             {/* Average */}
 
             {activeDays > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600">
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-1.5
+                  rounded-full
+                  border
+                  border-amber-500/20
+                  bg-amber-500/10
+                  px-3
+                  py-1.5
+                  text-xs
+                  font-semibold
+                  text-amber-400
+                "
+              >
                 <TrendingUp size={13} />
 
                 <span>
@@ -313,81 +622,284 @@ function LearningActivity({
         </div>
 
         {/* =================================================
-            EMPTY STATE
+            EMPTY
         ================================================= */}
 
         {normalizedActivity.length === 0 ? (
           <EmptyActivity />
         ) : (
-          /* =================================================
-             CHART
-          ================================================= */
+          <>
+            {/* =================================================
+                CHART
+            ================================================= */}
 
-          <div className="w-full">
-            {/* Chart */}
+            <div className="w-full">
+              <div
+                className="
+                  flex
+                  h-56
+                  items-end
+                  gap-2
+                  sm:gap-4
+                "
+              >
+                {normalizedActivity.map(
+                  (item, index) => {
+                    const hours = Number(
+                      item.hours || 0
+                    );
 
-            <div className="flex h-56 items-end gap-2 sm:gap-4">
-              {normalizedActivity.map(
-                (item, index) => {
-                  const hours = Number(
-                    item.hours || 0
-                  );
+                    const height =
+                      hours > 0
+                        ? Math.max(
+                            (hours / maxHours) *
+                              100,
+                            5
+                          )
+                        : 2;
 
-                  /*
-                   * Calculate bar height.
-                   *
-                   * Minimum visible height is 3%
-                   * for days with activity.
-                   */
+                    const isStrongest =
+                      strongestDay?.day ===
+                        item.day &&
+                      strongestDay?.hours ===
+                        item.hours &&
+                      hours > 0;
 
-                  const height =
-                    hours > 0
-                      ? Math.max(
-                          (hours /
-                            maxHours) *
-                            100,
-                          5
-                        )
-                      : 2;
+                    return (
+                      <div
+                        key={`${item.day}-${index}`}
+                        className="
+                          flex
+                          h-full
+                          min-w-0
+                          flex-1
+                          flex-col
+                          items-center
+                          justify-end
+                        "
+                      >
+                        {/* Crown */}
 
-                  return (
-                    <div
-                      key={`${item.day}-${index}`}
-                      className="flex h-full min-w-0 flex-1 flex-col items-center justify-end"
-                    >
-                      {/* Hours */}
-
-                      <span className="mb-2 whitespace-nowrap text-[10px] font-medium text-slate-400">
-                        {hours.toFixed(1)}h
-                      </span>
-
-                      {/* Bar Area */}
-
-                      <div className="flex h-full w-full max-w-9 items-end overflow-hidden rounded-lg bg-slate-50">
                         <div
-                          className="w-full rounded-lg bg-indigo-500 transition-all duration-500 hover:bg-indigo-600"
-                          style={{
-                            height: `${height}%`,
-                          }}
-                          title={`${item.day}: ${hours.toFixed(
-                            1
-                          )} hours`}
-                        />
+                          className={`
+                            mb-1
+                            flex
+                            h-5
+                            items-center
+                            justify-center
+                            transition-all
+                            duration-500
+                            ${
+                              isStrongest
+                                ? "opacity-100"
+                                : "opacity-0"
+                            }
+                          `}
+                        >
+                          <Crown
+                            size={13}
+                            className="text-amber-400"
+                            fill="currentColor"
+                          />
+                        </div>
+
+                        {/* Hours */}
+
+                        <span
+                          className="
+                            mb-2
+                            whitespace-nowrap
+                            text-[10px]
+                            font-semibold
+                            text-slate-500
+                          "
+                        >
+                          {hours.toFixed(1)}h
+                        </span>
+
+                        {/* BAR */}
+
+                        <div
+                          className="
+                            relative
+                            flex
+                            h-full
+                            w-full
+                            max-w-10
+                            items-end
+                            overflow-hidden
+                            rounded-t-lg
+                            border
+                            border-white/5
+                            bg-white/[0.035]
+                          "
+                        >
+                          {/* Stone background */}
+
+                          <div
+                            className="
+                              absolute
+                              inset-0
+                              opacity-30
+                              [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%)]
+                              [background-size:8px_8px]
+                            "
+                          />
+
+                          {/* Actual bar */}
+
+                          <div
+                            className={`
+                              relative
+                              w-full
+                              rounded-t-lg
+                              bg-gradient-to-t
+                              from-red-900
+                              via-red-700
+                              to-amber-500
+                              shadow-lg
+                              transition-all
+                              duration-1000
+                              ease-out
+                              ${
+                                isStrongest
+                                  ? "shadow-amber-500/30"
+                                  : "shadow-red-900/20"
+                              }
+                            `}
+                            style={{
+                              height: `${height}%`,
+                            }}
+                          >
+                            {/* Fire highlight */}
+
+                            {hours > 0 && (
+                              <div
+                                className="
+                                  absolute
+                                  left-0
+                                  right-0
+                                  top-0
+                                  h-px
+                                  bg-amber-300/80
+                                "
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Day */}
+
+                        <span
+                          className="
+                            mt-3
+                            truncate
+                            text-[11px]
+                            font-semibold
+                            text-slate-500
+                          "
+                        >
+                          {item.day || "-"}
+                        </span>
                       </div>
-
-                      {/* Day */}
-
-                      <span className="mt-3 truncate text-[11px] font-medium text-slate-400">
-                        {item.day || "-"}
-                      </span>
-                    </div>
-                  );
-                }
-              )}
+                    );
+                  }
+                )}
+              </div>
             </div>
-          </div>
+
+            {/* =================================================
+                STRONGEST DAY
+            ================================================= */}
+
+            {strongestDay &&
+              strongestDay.hours > 0 && (
+                <div
+                  className="
+                    mt-7
+                    flex
+                    items-center
+                    gap-3
+                    rounded-2xl
+                    border
+                    border-amber-500/15
+                    bg-gradient-to-r
+                    from-amber-500/[0.08]
+                    to-red-500/[0.05]
+                    p-4
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      h-11
+                      w-11
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      bg-amber-500/10
+                      text-xl
+                    "
+                  >
+                    👑
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="
+                        m-0
+                        text-sm
+                        font-bold
+                        text-amber-300
+                      "
+                    >
+                      {strongestDay.day} claims the crown
+                    </p>
+
+                    <p
+                      className="
+                        m-0
+                        mt-0.5
+                        text-xs
+                        leading-5
+                        text-slate-500
+                      "
+                    >
+                      Your strongest learning battle —
+                      {strongestDay.hours.toFixed(1)} hours
+                      of study.
+                    </p>
+                  </div>
+
+                  <Shield
+                    size={20}
+                    className="hidden text-amber-500/50 sm:block"
+                  />
+                </div>
+              )}
+          </>
         )}
       </div>
+
+      {/* =================================================
+          CINEMATIC FOOTER
+      ================================================= */}
+
+      <div
+        className="
+          absolute
+          bottom-0
+          left-0
+          h-px
+          w-full
+          bg-gradient-to-r
+          from-transparent
+          via-amber-600
+          to-transparent
+          opacity-50
+        "
+      />
     </section>
   );
 }

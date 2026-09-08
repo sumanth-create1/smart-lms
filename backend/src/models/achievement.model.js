@@ -29,13 +29,7 @@ const achievementSchema = new mongoose.Schema(
 
     category: {
       type: String,
-      enum: [
-        "LEARNING",
-        "COURSE",
-        "STREAK",
-        "TIME",
-        "SPECIAL",
-      ],
+      enum: ["LEARNING", "COURSE", "STREAK", "TIME", "SPECIAL"],
       default: "LEARNING",
     },
 
@@ -49,6 +43,12 @@ const achievementSchema = new mongoose.Schema(
       default: 1,
     },
 
+    xpReward: {
+      type: Number,
+      default: 50,
+      min: 0,
+    },
+
     isActive: {
       type: Boolean,
       default: true,
@@ -56,12 +56,9 @@ const achievementSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-const Achievement = mongoose.model(
-  "Achievement",
-  achievementSchema
-);
+const Achievement = mongoose.model("Achievement", achievementSchema);
 
 export default Achievement;

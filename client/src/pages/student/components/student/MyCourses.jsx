@@ -4,6 +4,9 @@ import {
   ArrowRight,
   Play,
   CheckCircle2,
+  Flame,
+  Crown,
+  Crosshair,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -38,17 +41,98 @@ function MyCourses({ courses = [] }) {
 
   if (courses.length === 0) {
     return (
-      <section className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section
+        className="
+          relative
+          min-w-0
+          overflow-hidden
+          rounded-[28px]
+          border
+          border-zinc-800
+          bg-[#090909]
+          shadow-2xl
+        "
+      >
+        {/* CINEMATIC GLOW */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -right-24
+            -top-24
+            h-64
+            w-64
+            rounded-full
+            bg-red-600/10
+            blur-3xl
+          "
+        />
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -bottom-24
+            -left-24
+            h-64
+            w-64
+            rounded-full
+            bg-orange-500/5
+            blur-3xl
+          "
+        />
+
         {/* HEADER */}
 
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+        <div
+          className="
+            relative
+            flex
+            items-center
+            justify-between
+            border-b
+            border-zinc-800
+            px-5
+            py-5
+            sm:px-7
+          "
+        >
           <div>
-            <h2 className="text-base font-bold text-slate-900 sm:text-lg">
+            <div className="mb-1 flex items-center gap-2">
+              <Crown
+                size={15}
+                className="text-red-500"
+              />
+
+              <span
+                className="
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.25em]
+                  text-red-500
+                "
+              >
+                The Collection
+              </span>
+            </div>
+
+            <h2
+              className="
+                text-lg
+                font-black
+                uppercase
+                tracking-tight
+                text-white
+                sm:text-xl
+              "
+            >
               My Courses
             </h2>
 
-            <p className="mt-0.5 text-xs text-slate-400 sm:text-sm">
-              Courses you're currently learning
+            <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
+              Your missions in progress
             </p>
           </div>
 
@@ -56,62 +140,137 @@ function MyCourses({ courses = [] }) {
             type="button"
             onClick={handleViewAll}
             className="
+              group
               inline-flex
               items-center
-              gap-1
+              gap-2
+              rounded-lg
+              border
+              border-zinc-700
+              bg-zinc-900
+              px-3
+              py-2
               text-xs
-              font-semibold
-              text-indigo-600
+              font-bold
+              uppercase
+              tracking-wider
+              text-zinc-300
               transition
-              hover:text-indigo-700
-              sm:text-sm
+              hover:border-red-600
+              hover:bg-red-600/10
+              hover:text-red-500
+              sm:px-4
             "
           >
             View all
-            <ArrowRight size={15} />
+            <ArrowRight
+              size={14}
+              className="transition-transform group-hover:translate-x-1"
+            />
           </button>
         </div>
 
         {/* EMPTY STATE */}
 
-        <div className="flex min-h-[280px] flex-col items-center justify-center px-5 py-10 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50">
-            <BookOpen
-              size={25}
-              className="text-indigo-600"
+        <div
+          className="
+            relative
+            flex
+            min-h-[320px]
+            flex-col
+            items-center
+            justify-center
+            px-5
+            py-12
+            text-center
+          "
+        >
+          {/* TARGET */}
+
+          <div
+            className="
+              relative
+              flex
+              h-20
+              w-20
+              items-center
+              justify-center
+              rounded-full
+              border
+              border-red-600/30
+              bg-red-600/5
+              shadow-[0_0_50px_rgba(220,38,38,0.12)]
+            "
+          >
+            <div
+              className="
+                absolute
+                inset-2
+                rounded-full
+                border
+                border-red-600/20
+              "
+            />
+
+            <Crosshair
+              size={30}
+              className="text-red-500"
             />
           </div>
 
-          <h3 className="mt-4 text-base font-bold text-slate-900">
-            No courses yet
+          <h3
+            className="
+              mt-6
+              text-xl
+              font-black
+              uppercase
+              tracking-tight
+              text-white
+            "
+          >
+            No missions assigned
           </h3>
 
-          <p className="mt-1 max-w-sm text-sm leading-6 text-slate-400">
-            Enroll in a course to start building your
-            learning journey.
+          <p
+            className="
+              mt-2
+              max-w-sm
+              text-sm
+              leading-6
+              text-zinc-500
+            "
+          >
+            Choose your next mission. Build your skills.
+            Become the one they call when it matters.
           </p>
 
           <button
             type="button"
             onClick={handleViewAll}
             className="
-              mt-5
+              mt-6
               inline-flex
               items-center
               gap-2
               rounded-xl
-              bg-indigo-600
-              px-4
-              py-2.5
+              bg-red-600
+              px-5
+              py-3
               text-sm
-              font-semibold
+              font-black
+              uppercase
+              tracking-wide
               text-white
+              shadow-lg
+              shadow-red-900/30
               transition
-              hover:bg-indigo-700
+              hover:bg-red-500
+              hover:shadow-red-600/20
+              active:scale-[0.98]
             "
           >
-            Browse Courses
-            <ArrowRight size={15} />
+            Choose Mission
+            <ArrowRight size={16} />
           </button>
         </div>
       </section>
@@ -123,19 +282,102 @@ function MyCourses({ courses = [] }) {
   // =====================================================
 
   return (
-    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section
+      className="
+        relative
+        min-w-0
+        overflow-hidden
+        rounded-[28px]
+        border
+        border-zinc-800
+        bg-[#090909]
+        shadow-2xl
+      "
+    >
+      {/* =================================================
+          BACKGROUND CINEMATIC GLOW
+      ================================================= */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -right-32
+          -top-32
+          h-80
+          w-80
+          rounded-full
+          bg-red-600/10
+          blur-3xl
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -bottom-32
+          -left-32
+          h-80
+          w-80
+          rounded-full
+          bg-orange-600/5
+          blur-3xl
+        "
+      />
+
       {/* =================================================
           HEADER
       ================================================= */}
 
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+      <div
+        className="
+          relative
+          flex
+          items-center
+          justify-between
+          border-b
+          border-zinc-800
+          px-5
+          py-5
+          sm:px-7
+        "
+      >
         <div>
-          <h2 className="text-base font-bold text-slate-900 sm:text-lg">
+          <div className="mb-1 flex items-center gap-2">
+            <Flame
+              size={14}
+              className="text-red-500"
+            />
+
+            <span
+              className="
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-[0.3em]
+                text-red-500
+              "
+            >
+              Active Missions
+            </span>
+          </div>
+
+          <h2
+            className="
+              text-lg
+              font-black
+              uppercase
+              tracking-tight
+              text-white
+              sm:text-xl
+            "
+          >
             My Courses
           </h2>
 
-          <p className="mt-0.5 text-xs text-slate-400 sm:text-sm">
-            Courses you're currently learning
+          <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
+            Every course is another mission.
           </p>
         </div>
 
@@ -143,19 +385,37 @@ function MyCourses({ courses = [] }) {
           type="button"
           onClick={handleViewAll}
           className="
+            group
             inline-flex
             items-center
-            gap-1
+            gap-2
+            rounded-lg
+            border
+            border-zinc-700
+            bg-zinc-900
+            px-3
+            py-2
             text-xs
-            font-semibold
-            text-indigo-600
+            font-bold
+            uppercase
+            tracking-wider
+            text-zinc-300
             transition
-            hover:text-indigo-700
-            sm:text-sm
+            hover:border-red-600
+            hover:bg-red-600/10
+            hover:text-red-500
+            sm:px-4
           "
         >
-          View all
-          <ArrowRight size={15} />
+          All missions
+
+          <ArrowRight
+            size={14}
+            className="
+              transition-transform
+              group-hover:translate-x-1
+            "
+          />
         </button>
       </div>
 
@@ -163,8 +423,19 @@ function MyCourses({ courses = [] }) {
           COURSE GRID
       ================================================= */}
 
-      <div className="grid grid-cols-1 divide-y divide-slate-100 xl:grid-cols-3 xl:divide-x xl:divide-y-0">
-        {courses.map((course) => {
+      <div
+        className="
+          relative
+          grid
+          grid-cols-1
+          divide-y
+          divide-zinc-800
+          xl:grid-cols-3
+          xl:divide-x
+          xl:divide-y-0
+        "
+      >
+        {courses.map((course, index) => {
           const title =
             course.courseTitle ||
             course.title ||
@@ -213,12 +484,32 @@ function MyCourses({ courses = [] }) {
               key={course._id}
               className="
                 group
+                relative
                 p-5
                 transition
-                hover:bg-slate-50/70
+                duration-300
+                hover:bg-white/[0.02]
                 sm:p-6
               "
             >
+              {/* SIDE RED LINE */}
+
+              <div
+                className="
+                  absolute
+                  left-0
+                  top-0
+                  h-full
+                  w-[2px]
+                  origin-top
+                  scale-y-0
+                  bg-red-600
+                  transition-transform
+                  duration-500
+                  group-hover:scale-y-100
+                "
+              />
+
               {/* =================================================
                   COURSE VISUAL
               ================================================= */}
@@ -226,12 +517,13 @@ function MyCourses({ courses = [] }) {
               <div
                 className="
                   relative
-                  h-32
+                  h-36
                   overflow-hidden
                   rounded-2xl
-                  bg-gradient-to-br
-                  from-indigo-600
-                  to-violet-500
+                  border
+                  border-zinc-800
+                  bg-zinc-900
+                  shadow-xl
                 "
               >
                 {thumbnail ? (
@@ -242,9 +534,12 @@ function MyCourses({ courses = [] }) {
                       h-full
                       w-full
                       object-cover
+                      opacity-80
+                      grayscale-[15%]
                       transition
-                      duration-300
-                      group-hover:scale-105
+                      duration-700
+                      group-hover:scale-110
+                      group-hover:opacity-100
                     "
                   />
                 ) : (
@@ -252,12 +547,24 @@ function MyCourses({ courses = [] }) {
                     <div
                       className="
                         absolute
-                        -right-8
-                        -top-8
-                        h-28
-                        w-28
+                        inset-0
+                        bg-gradient-to-br
+                        from-zinc-900
+                        via-red-950
+                        to-black
+                      "
+                    />
+
+                    <div
+                      className="
+                        absolute
+                        -right-10
+                        -top-10
+                        h-32
+                        w-32
                         rounded-full
-                        bg-white/10
+                        bg-red-600/10
+                        blur-2xl
                       "
                     />
 
@@ -265,11 +572,12 @@ function MyCourses({ courses = [] }) {
                       className="
                         absolute
                         -bottom-10
-                        -left-8
-                        h-28
-                        w-28
+                        -left-10
+                        h-32
+                        w-32
                         rounded-full
-                        bg-white/10
+                        bg-orange-600/10
+                        blur-2xl
                       "
                     />
 
@@ -285,27 +593,53 @@ function MyCourses({ courses = [] }) {
                       <div
                         className="
                           flex
-                          h-12
-                          w-12
+                          h-14
+                          w-14
                           items-center
                           justify-center
                           rounded-full
-                          bg-white
-                          shadow-md
+                          border
+                          border-red-500/30
+                          bg-black/60
+                          text-red-500
+                          shadow-[0_0_30px_rgba(220,38,38,0.2)]
                         "
                       >
-                        <BookOpen
-                          size={21}
-                          className="text-indigo-600"
-                        />
+                        <BookOpen size={23} />
                       </div>
                     </div>
                   </>
                 )}
 
-                {/* DARK OVERLAY */}
+                {/* CINEMATIC OVERLAY */}
 
-                <div className="absolute inset-0 bg-black/5" />
+                <div
+                  className="
+                    absolute
+                    inset-0
+                    bg-gradient-to-t
+                    from-black/80
+                    via-black/10
+                    to-black/20
+                  "
+                />
+
+                {/* MISSION NUMBER */}
+
+                <div
+                  className="
+                    absolute
+                    bottom-3
+                    left-3
+                    text-[9px]
+                    font-bold
+                    uppercase
+                    tracking-[0.25em]
+                    text-white/40
+                  "
+                >
+                  Mission {String(index + 1).padStart(2, "0")}
+                </div>
 
                 {/* LEVEL */}
 
@@ -314,20 +648,24 @@ function MyCourses({ courses = [] }) {
                     absolute
                     left-3
                     top-3
-                    rounded-lg
-                    bg-black/30
+                    rounded-md
+                    border
+                    border-white/10
+                    bg-black/60
                     px-2
                     py-1
-                    text-[10px]
-                    font-semibold
+                    text-[9px]
+                    font-bold
+                    uppercase
+                    tracking-wider
                     text-white
-                    backdrop-blur-sm
+                    backdrop-blur-md
                   "
                 >
                   {level}
                 </span>
 
-                {/* COMPLETED BADGE */}
+                {/* COMPLETED */}
 
                 {isCompleted && (
                   <span
@@ -338,19 +676,22 @@ function MyCourses({ courses = [] }) {
                       inline-flex
                       items-center
                       gap-1
-                      rounded-lg
-                      bg-green-500/90
+                      rounded-md
+                      border
+                      border-green-500/30
+                      bg-green-950/80
                       px-2
                       py-1
-                      text-[10px]
-                      font-semibold
-                      text-white
-                      backdrop-blur-sm
+                      text-[9px]
+                      font-bold
+                      uppercase
+                      tracking-wider
+                      text-green-400
+                      backdrop-blur-md
                     "
                   >
-                    <CheckCircle2 size={12} />
-
-                    Completed
+                    <CheckCircle2 size={11} />
+                    Complete
                   </span>
                 )}
               </div>
@@ -359,18 +700,21 @@ function MyCourses({ courses = [] }) {
                   CATEGORY
               ================================================= */}
 
-              <p
-                className="
-                  mt-5
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-[0.12em]
-                  text-indigo-600
-                "
-              >
-                {category}
-              </p>
+              <div className="mt-5 flex items-center gap-2">
+                <span className="h-px w-5 bg-red-600" />
+
+                <p
+                  className="
+                    text-[9px]
+                    font-black
+                    uppercase
+                    tracking-[0.25em]
+                    text-red-500
+                  "
+                >
+                  {category}
+                </p>
+              </div>
 
               {/* =================================================
                   TITLE
@@ -378,11 +722,13 @@ function MyCourses({ courses = [] }) {
 
               <h3
                 className="
-                  mt-1
+                  mt-2
                   line-clamp-1
                   text-base
-                  font-bold
-                  text-slate-900
+                  font-black
+                  uppercase
+                  tracking-tight
+                  text-white
                 "
                 title={title}
               >
@@ -399,7 +745,7 @@ function MyCourses({ courses = [] }) {
                     mt-1
                     line-clamp-1
                     text-xs
-                    text-slate-400
+                    text-zinc-500
                   "
                 >
                   {course.subTitle}
@@ -410,40 +756,62 @@ function MyCourses({ courses = [] }) {
                   INSTRUCTOR
               ================================================= */}
 
-              <p className="mt-1 text-xs text-slate-400">
-                By {instructor}
+              <p className="mt-2 text-xs text-zinc-600">
+                Operated by{" "}
+                <span className="text-zinc-400">
+                  {instructor}
+                </span>
               </p>
 
               {/* =================================================
                   PROGRESS
               ================================================= */}
 
-              <div className="mt-5">
+              <div className="mt-6">
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-500">
-                    Progress
+                  <span
+                    className="
+                      text-[10px]
+                      font-bold
+                      uppercase
+                      tracking-wider
+                      text-zinc-600
+                    "
+                  >
+                    Mission Progress
                   </span>
 
-                  <span className="text-xs font-bold text-indigo-600">
+                  <span
+                    className="
+                      text-xs
+                      font-black
+                      text-red-500
+                    "
+                  >
                     {progress}%
                   </span>
                 </div>
 
                 <div
                   className="
-                    h-2
+                    relative
+                    h-1.5
                     overflow-hidden
                     rounded-full
-                    bg-slate-100
+                    bg-zinc-800
                   "
                 >
                   <div
                     className="
                       h-full
                       rounded-full
-                      bg-indigo-600
+                      bg-gradient-to-r
+                      from-red-700
+                      via-red-500
+                      to-orange-500
+                      shadow-[0_0_10px_rgba(239,68,68,0.4)]
                       transition-all
-                      duration-500
+                      duration-700
                     "
                     style={{
                       width: `${progress}%`,
@@ -462,28 +830,30 @@ function MyCourses({ courses = [] }) {
                   flex
                   items-center
                   justify-between
-                  text-[11px]
-                  text-slate-400
+                  text-[10px]
+                  font-medium
+                  uppercase
+                  tracking-wider
+                  text-zinc-600
                 "
               >
                 <span>
-                  {completedLessons}/{totalLessons}{" "}
-                  lessons
+                  {completedLessons}/{totalLessons} lessons
                 </span>
 
                 <span className="inline-flex items-center gap-1">
-                  <Clock3 size={12} />
+                  <Clock3 size={11} />
 
                   {isCompleted
-                    ? "Completed"
+                    ? "Mission complete"
                     : progress > 0
-                    ? "In progress"
-                    : "Not started"}
+                    ? "In operation"
+                    : "Awaiting start"}
                 </span>
               </div>
 
               {/* =================================================
-                  BUTTON
+                  ACTION BUTTON
               ================================================= */}
 
               <button
@@ -492,6 +862,7 @@ function MyCourses({ courses = [] }) {
                   handleOpenCourse(course)
                 }
                 className="
+                  group/btn
                   mt-5
                   flex
                   w-full
@@ -500,42 +871,80 @@ function MyCourses({ courses = [] }) {
                   gap-2
                   rounded-xl
                   border
-                  border-slate-200
-                  bg-white
+                  border-zinc-700
+                  bg-zinc-900
                   px-4
-                  py-2.5
-                  text-xs
-                  font-semibold
-                  text-slate-700
+                  py-3
+                  text-[10px]
+                  font-black
+                  uppercase
+                  tracking-[0.15em]
+                  text-zinc-300
                   transition
-                  hover:border-indigo-200
-                  hover:bg-indigo-50
-                  hover:text-indigo-600
-                  active:scale-[0.99]
+                  duration-300
+                  hover:border-red-600
+                  hover:bg-red-600
+                  hover:text-white
+                  hover:shadow-[0_0_25px_rgba(220,38,38,0.18)]
+                  active:scale-[0.98]
                 "
               >
                 {isCompleted ? (
                   <>
-                    <CheckCircle2 size={14} />
+                    <CheckCircle2
+                      size={14}
+                      className="transition-transform group-hover/btn:scale-110"
+                    />
 
-                    Review Course
+                    Review Mission
                   </>
                 ) : (
                   <>
                     <Play
-                      size={14}
+                      size={13}
                       fill="currentColor"
+                      className="transition-transform group-hover/btn:scale-110"
                     />
 
                     {progress > 0
-                      ? "Continue Learning"
-                      : "Start Learning"}
+                      ? "Continue Mission"
+                      : "Begin Mission"}
                   </>
                 )}
               </button>
             </div>
           );
         })}
+      </div>
+
+      {/* =================================================
+          FOOTER
+      ================================================= */}
+
+      <div
+        className="
+          relative
+          flex
+          items-center
+          justify-center
+          border-t
+          border-zinc-800
+          bg-black/20
+          px-5
+          py-3
+        "
+      >
+        <p
+          className="
+            text-[9px]
+            font-bold
+            uppercase
+            tracking-[0.3em]
+            text-zinc-700
+          "
+        >
+          Stay focused • Complete the mission • Become OG
+        </p>
       </div>
     </section>
   );
