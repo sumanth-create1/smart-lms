@@ -8,12 +8,16 @@ import {
   Flame,
   GraduationCap,
   ChevronRight,
+  Trophy,
+  Swords,
+  Target,
+  Zap,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 // =====================================================
-// CONTINUE LEARNING
+// CONTINUE LEARNING — FIGHT CLUB THEME
 // =====================================================
 
 function ContinueLearning({ courses = [] }) {
@@ -52,48 +56,98 @@ function ContinueLearning({ courses = [] }) {
           overflow-hidden
           rounded-[28px]
           border
-          border-slate-200
-          bg-gradient-to-br
-          from-white
-          via-white
-          to-violet-50/50
-          shadow-sm
+          border-zinc-800
+          bg-[#090909]
+          shadow-xl
+          shadow-black/30
           transition-all
-          duration-300
-          hover:shadow-lg
+          duration-500
+          hover:-translate-y-1
+          hover:border-red-900/60
+          hover:shadow-2xl
         "
       >
-        {/* Background decoration */}
+        {/* =================================================
+            CINEMATIC BACKGROUND
+        ================================================= */}
 
-        <div
-          className="
-            pointer-events-none
-            absolute
-            -right-16
-            -top-16
-            h-44
-            w-44
-            rounded-full
-            bg-violet-100/60
-            blur-2xl
-          "
-        />
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="
+              absolute
+              inset-0
+              bg-gradient-to-br
+              from-[#050505]
+              via-[#111111]
+              to-[#1a0505]
+            "
+          />
 
-        <div
-          className="
-            pointer-events-none
-            absolute
-            -bottom-16
-            left-1/3
-            h-40
-            w-40
-            rounded-full
-            bg-fuchsia-100/40
-            blur-2xl
-          "
-        />
+          <div
+            className="
+              absolute
+              -right-24
+              -top-24
+              h-72
+              w-72
+              rounded-full
+              bg-red-700/15
+              blur-[100px]
+              transition-transform
+              duration-1000
+              group-hover:scale-125
+            "
+          />
 
-        {/* Header */}
+          <div
+            className="
+              absolute
+              -bottom-24
+              -left-20
+              h-72
+              w-72
+              rounded-full
+              bg-red-900/10
+              blur-[100px]
+            "
+          />
+
+          {/* Grit texture */}
+
+          <div
+            className="
+              absolute
+              inset-0
+              opacity-[0.035]
+              [background-image:linear-gradient(120deg,transparent_45%,white_46%,transparent_47%)]
+              [background-size:14px_14px]
+            "
+          />
+
+          {/* Silhouette */}
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              -bottom-12
+              -right-2
+              text-[170px]
+              leading-none
+              opacity-[0.025]
+              grayscale
+              transition-all
+              duration-700
+              group-hover:opacity-[0.05]
+            "
+          >
+            🥊
+          </div>
+        </div>
+
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
         <div
           className="
@@ -103,7 +157,7 @@ function ContinueLearning({ courses = [] }) {
             items-center
             justify-between
             border-b
-            border-slate-100
+            border-zinc-800
             px-5
             py-5
             sm:px-6
@@ -119,12 +173,14 @@ function ContinueLearning({ courses = [] }) {
                   items-center
                   justify-center
                   rounded-xl
-                  bg-violet-50
+                  border
+                  border-red-900/50
+                  bg-red-950/30
                 "
               >
-                <GraduationCap
+                <Swords
                   size={18}
-                  className="text-violet-600"
+                  className="text-red-500"
                 />
               </div>
 
@@ -132,12 +188,13 @@ function ContinueLearning({ courses = [] }) {
                 className="
                   m-0
                   text-base
-                  font-bold
-                  text-slate-900
+                  font-black
+                  tracking-tight
+                  text-white
                   sm:text-lg
                 "
               >
-                Continue Learning
+                Fight Record
               </h2>
             </div>
 
@@ -147,11 +204,11 @@ function ContinueLearning({ courses = [] }) {
                 mt-1
                 pl-11
                 text-xs
-                text-slate-400
+                text-zinc-600
                 sm:text-sm
               "
             >
-              Pick up where you left off
+              No excuses. Keep training.
             </p>
           </div>
 
@@ -167,25 +224,29 @@ function ContinueLearning({ courses = [] }) {
               py-1.5
               text-xs
               font-bold
-              text-violet-600
+              uppercase
+              tracking-wider
+              text-red-500
               transition-all
-              hover:bg-violet-50
+              hover:bg-red-950/30
               sm:text-sm
             "
           >
-            View all
+            All fights
             <ArrowRight size={15} />
           </button>
         </div>
 
-        {/* Empty content */}
+        {/* =================================================
+            EMPTY STATE
+        ================================================= */}
 
         <div
           className="
             relative
             z-10
             flex
-            min-h-[280px]
+            min-h-[300px]
             flex-col
             items-center
             justify-center
@@ -194,16 +255,14 @@ function ContinueLearning({ courses = [] }) {
             text-center
           "
         >
-          {/* Animated illustration */}
-
           <div className="relative">
             <div
               className="
                 absolute
                 inset-0
                 rounded-full
-                bg-violet-200/40
-                blur-2xl
+                bg-red-600/10
+                blur-3xl
                 animate-pulse
               "
             />
@@ -217,35 +276,36 @@ function ContinueLearning({ courses = [] }) {
                 items-center
                 justify-center
                 rounded-[26px]
-                bg-gradient-to-br
-                from-violet-100
-                to-fuchsia-100
+                border
+                border-red-900/40
+                bg-red-950/30
                 text-4xl
-                shadow-sm
-                animate-[float_4s_ease-in-out_infinite]
+                shadow-lg
+                shadow-red-950/30
+                animate-[fightFloat_4s_ease-in-out_infinite]
               "
             >
-              📚
+              🥊
             </div>
 
             <Sparkles
-              size={16}
+              size={15}
               className="
                 absolute
                 -right-4
                 -top-2
-                text-violet-400
+                text-red-500
                 animate-pulse
               "
             />
 
-            <Sparkles
-              size={12}
+            <Zap
+              size={13}
               className="
                 absolute
-                -bottom-2
+                -bottom-3
                 -left-4
-                text-fuchsia-400
+                text-zinc-600
                 animate-pulse
               "
             />
@@ -256,11 +316,13 @@ function ContinueLearning({ courses = [] }) {
               m-0
               mt-6
               text-lg
-              font-extrabold
-              text-slate-900
+              font-black
+              uppercase
+              tracking-tight
+              text-white
             "
           >
-            Your learning journey starts here
+            No fight has started
           </h3>
 
           <p
@@ -270,11 +332,11 @@ function ContinueLearning({ courses = [] }) {
               max-w-sm
               text-sm
               leading-6
-              text-slate-400
+              text-zinc-600
             "
           >
-            Explore our courses, choose something you love,
-            and start building your skills today.
+            Pick a course, enter the arena, and start
+            sharpening your skills.
           </p>
 
           <button
@@ -286,36 +348,53 @@ function ContinueLearning({ courses = [] }) {
               items-center
               gap-2
               rounded-xl
-              bg-gradient-to-r
-              from-violet-600
-              to-fuchsia-600
+              border
+              border-red-700/50
+              bg-red-700
               px-5
               py-3
               text-sm
-              font-bold
+              font-black
+              uppercase
+              tracking-wide
               text-white
               shadow-lg
-              shadow-violet-200
+              shadow-red-950/40
               transition-all
               duration-300
               hover:-translate-y-1
-              hover:shadow-xl
+              hover:bg-red-600
+              hover:shadow-[0_0_30px_rgba(220,38,38,0.25)]
             "
           >
-            Explore Courses
+            Enter The Fight
             <ArrowRight size={16} />
           </button>
         </div>
 
+        <div
+          className="
+            absolute
+            bottom-0
+            left-0
+            h-[2px]
+            w-full
+            bg-gradient-to-r
+            from-transparent
+            via-red-700
+            to-transparent
+          "
+        />
+
         <style>{`
-          @keyframes float {
+          @keyframes fightFloat {
             0%,
             100% {
               transform: translateY(0);
             }
 
             50% {
-              transform: translateY(-8px);
+              transform: translateY(-8px) rotate(-2deg);
             }
           }
         `}</style>
@@ -382,30 +461,31 @@ function ContinueLearning({ courses = [] }) {
     course.category ||
     "Course";
 
-  const isCompleted = progress >= 100;
+  const isCompleted =
+    progress >= 100;
 
   // =====================================================
-  // MOTIVATIONAL MESSAGE
+  // PROGRESS MESSAGE
   // =====================================================
 
   const getProgressMessage = () => {
     if (isCompleted) {
-      return "Amazing! You've completed this course.";
+      return "Fight won. But the training never ends.";
     }
 
     if (progress >= 75) {
-      return "You're almost there. Finish strong!";
+      return "Final round. Finish what you started.";
     }
 
     if (progress >= 50) {
-      return "You're halfway there. Keep the momentum!";
+      return "Halfway through. Don't lose momentum.";
     }
 
     if (progress > 0) {
-      return "Great start. Keep building your momentum!";
+      return "You've entered the fight. Keep moving.";
     }
 
-    return "Ready to start your learning journey?";
+    return "The first rule: you have to start.";
   };
 
   // =====================================================
@@ -421,36 +501,120 @@ function ContinueLearning({ courses = [] }) {
         overflow-hidden
         rounded-[28px]
         border
-        border-slate-200/80
-        bg-white
-        shadow-sm
+        border-zinc-800
+        bg-[#090909]
+        shadow-xl
+        shadow-black/30
         transition-all
         duration-500
         hover:-translate-y-1
-        hover:shadow-xl
-        hover:shadow-slate-200/50
+        hover:border-red-900/60
+        hover:shadow-2xl
       "
     >
       {/* =================================================
-          BACKGROUND GLOW
+          BACKGROUND
       ================================================= */}
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -right-24
-          -top-24
-          h-64
-          w-64
-          rounded-full
-          bg-violet-100/50
-          blur-3xl
-          transition-transform
-          duration-1000
-          group-hover:scale-125
-        "
-      />
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Main gradient */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            bg-gradient-to-br
+            from-[#050505]
+            via-[#101010]
+            to-[#190606]
+          "
+        />
+
+        {/* Red glow */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -right-24
+            -top-24
+            h-72
+            w-72
+            rounded-full
+            bg-red-700/15
+            blur-[100px]
+            transition-transform
+            duration-1000
+            group-hover:scale-125
+          "
+        />
+
+        {/* Bottom glow */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -bottom-28
+            left-1/3
+            h-72
+            w-72
+            rounded-full
+            bg-red-900/10
+            blur-[100px]
+          "
+        />
+
+        {/* Grit */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            opacity-[0.035]
+            [background-image:linear-gradient(120deg,transparent_45%,white_46%,transparent_47%)]
+            [background-size:16px_16px]
+          "
+        />
+
+        {/* Horizontal fight-club line */}
+
+        <div
+          className="
+            absolute
+            left-0
+            top-16
+            h-px
+            w-full
+            bg-gradient-to-r
+            from-transparent
+            via-red-900/30
+            to-transparent
+          "
+        />
+
+        {/* Silhouette */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -bottom-16
+            -right-5
+            text-[190px]
+            leading-none
+            opacity-[0.025]
+            grayscale
+            transition-all
+            duration-700
+            group-hover:scale-105
+            group-hover:opacity-[0.05]
+          "
+        >
+          🥊
+        </div>
+      </div>
 
       {/* =================================================
           HEADER
@@ -464,7 +628,7 @@ function ContinueLearning({ courses = [] }) {
           items-center
           justify-between
           border-b
-          border-slate-100
+          border-zinc-800
           px-5
           py-5
           sm:px-6
@@ -480,27 +644,31 @@ function ContinueLearning({ courses = [] }) {
                 items-center
                 justify-center
                 rounded-xl
-                bg-gradient-to-br
-                from-violet-100
-                to-fuchsia-100
+                border
+                border-red-900/50
+                bg-red-950/30
+                text-red-500
+                transition-all
+                duration-300
+                group-hover:border-red-700/60
+                group-hover:shadow-[0_0_18px_rgba(220,38,38,0.15)]
               "
             >
-              <GraduationCap
-                size={18}
-                className="text-violet-600"
-              />
+              <Swords size={18} />
             </div>
 
             <h2
               className="
                 m-0
                 text-base
-                font-bold
-                text-slate-900
+                font-black
+                uppercase
+                tracking-tight
+                text-white
                 sm:text-lg
               "
             >
-              Continue Learning
+              Fight Record
             </h2>
           </div>
 
@@ -510,7 +678,7 @@ function ContinueLearning({ courses = [] }) {
               mt-1
               pl-11
               text-xs
-              text-slate-400
+              text-zinc-600
               sm:text-sm
             "
           >
@@ -530,13 +698,15 @@ function ContinueLearning({ courses = [] }) {
             py-1.5
             text-xs
             font-bold
-            text-violet-600
+            uppercase
+            tracking-wider
+            text-red-500
             transition-all
-            hover:bg-violet-50
+            hover:bg-red-950/30
             sm:text-sm
           "
         >
-          View all
+          All fights
           <ArrowRight size={15} />
         </button>
       </div>
@@ -545,7 +715,14 @@ function ContinueLearning({ courses = [] }) {
           COURSE CONTENT
       ================================================= */}
 
-      <div className="relative z-10 p-5 sm:p-6">
+      <div
+        className="
+          relative
+          z-10
+          p-5
+          sm:p-6
+        "
+      >
         <div
           className="
             grid
@@ -555,7 +732,7 @@ function ContinueLearning({ courses = [] }) {
           "
         >
           {/* =================================================
-              THUMBNAIL
+              COURSE IMAGE / FIGHT POSTER
           ================================================= */}
 
           <div
@@ -565,12 +742,14 @@ function ContinueLearning({ courses = [] }) {
               w-full
               overflow-hidden
               rounded-3xl
+              border
+              border-zinc-800
               bg-gradient-to-br
-              from-violet-600
-              via-fuchsia-500
-              to-orange-400
-              shadow-lg
-              shadow-violet-100
+              from-zinc-900
+              via-[#111111]
+              to-red-950
+              shadow-xl
+              shadow-black/40
               sm:h-56
               xl:h-full
               xl:min-h-[330px]
@@ -584,14 +763,16 @@ function ContinueLearning({ courses = [] }) {
                   h-full
                   w-full
                   object-cover
-                  transition-transform
+                  grayscale-[15%]
+                  transition-all
                   duration-700
                   group-hover:scale-105
+                  group-hover:grayscale-0
                 "
               />
             ) : (
               <>
-                {/* Decorative circles */}
+                {/* Background circles */}
 
                 <div
                   className="
@@ -601,7 +782,8 @@ function ContinueLearning({ courses = [] }) {
                     h-40
                     w-40
                     rounded-full
-                    bg-white/15
+                    bg-red-700/20
+                    blur-sm
                   "
                 />
 
@@ -613,11 +795,11 @@ function ContinueLearning({ courses = [] }) {
                     h-44
                     w-44
                     rounded-full
-                    bg-white/10
+                    bg-red-900/20
                   "
                 />
 
-                {/* Illustration */}
+                {/* Fight illustration */}
 
                 <div
                   className="
@@ -636,28 +818,32 @@ function ContinueLearning({ courses = [] }) {
                       items-center
                       justify-center
                       rounded-[32px]
-                      bg-white/15
+                      border
+                      border-red-800/40
+                      bg-black/40
                       text-6xl
+                      shadow-2xl
+                      shadow-black
                       backdrop-blur-sm
-                      animate-[float_4s_ease-in-out_infinite]
+                      animate-[fightFloat_4s_ease-in-out_infinite]
                     "
                   >
-                    📖
+                    🥊
                   </div>
                 </div>
               </>
             )}
 
-            {/* Image overlay */}
+            {/* Dark overlay */}
 
             <div
               className="
                 absolute
                 inset-0
                 bg-gradient-to-t
-                from-black/45
-                via-transparent
-                to-black/10
+                from-black/80
+                via-black/20
+                to-black/30
               "
             />
 
@@ -680,13 +866,15 @@ function ContinueLearning({ courses = [] }) {
                 className="
                   rounded-lg
                   border
-                  border-white/20
-                  bg-black/25
+                  border-red-700/40
+                  bg-black/60
                   px-2.5
                   py-1.5
                   text-[10px]
-                  font-bold
-                  text-white
+                  font-black
+                  uppercase
+                  tracking-wider
+                  text-red-400
                   backdrop-blur-md
                 "
               >
@@ -697,13 +885,15 @@ function ContinueLearning({ courses = [] }) {
                 className="
                   rounded-lg
                   border
-                  border-white/20
-                  bg-black/25
+                  border-white/10
+                  bg-black/60
                   px-2.5
                   py-1.5
                   text-[10px]
                   font-bold
-                  text-white
+                  uppercase
+                  tracking-wider
+                  text-zinc-300
                   backdrop-blur-md
                 "
               >
@@ -731,7 +921,7 @@ function ContinueLearning({ courses = [] }) {
                 justify-center
               "
             >
-              {/* Pulse ring */}
+              {/* Red pulse */}
 
               <div
                 className="
@@ -740,7 +930,7 @@ function ContinueLearning({ courses = [] }) {
                   w-20
                   rounded-full
                   border
-                  border-white/30
+                  border-red-500/40
                   animate-ping
                 "
               />
@@ -754,27 +944,31 @@ function ContinueLearning({ courses = [] }) {
                   items-center
                   justify-center
                   rounded-full
-                  bg-white
+                  border
+                  border-white/20
+                  bg-black/80
+                  text-red-500
                   shadow-2xl
+                  shadow-black
+                  backdrop-blur-md
                   transition-all
                   duration-300
                   group-hover:scale-110
+                  group-hover:border-red-500/60
+                  group-hover:shadow-[0_0_30px_rgba(220,38,38,0.3)]
                 "
               >
                 {isCompleted ? (
                   <CheckCircle2
                     size={27}
-                    className="text-emerald-500"
+                    className="text-red-500"
                     strokeWidth={2.5}
                   />
                 ) : (
                   <Play
                     size={25}
                     fill="currentColor"
-                    className="
-                      ml-1
-                      text-violet-600
-                    "
+                    className="ml-1"
                   />
                 )}
               </div>
@@ -801,12 +995,14 @@ function ContinueLearning({ courses = [] }) {
                   items-center
                   gap-1.5
                   rounded-lg
-                  bg-black/30
+                  border
+                  border-white/10
+                  bg-black/60
                   px-2.5
                   py-1.5
                   text-[10px]
                   font-medium
-                  text-white
+                  text-zinc-300
                   backdrop-blur-md
                 "
               >
@@ -821,13 +1017,16 @@ function ContinueLearning({ courses = [] }) {
                 <span
                   className="
                     rounded-lg
-                    bg-white/90
+                    border
+                    border-red-700/40
+                    bg-red-950/80
                     px-2.5
                     py-1.5
                     text-[10px]
-                    font-extrabold
-                    text-violet-600
-                    shadow-sm
+                    font-black
+                    text-red-400
+                    shadow-lg
+                    shadow-black/30
                   "
                 >
                   {progress}% complete
@@ -841,20 +1040,22 @@ function ContinueLearning({ courses = [] }) {
           ================================================= */}
 
           <div className="flex min-w-0 flex-col">
-            {/* Category */}
+            {/* Fight category */}
 
             <div className="flex items-center gap-2">
               <span
                 className="
                   rounded-full
-                  bg-violet-50
+                  border
+                  border-red-900/40
+                  bg-red-950/30
                   px-2.5
                   py-1
                   text-[10px]
-                  font-bold
+                  font-black
                   uppercase
                   tracking-wider
-                  text-violet-600
+                  text-red-500
                 "
               >
                 {category}
@@ -867,16 +1068,18 @@ function ContinueLearning({ courses = [] }) {
                     items-center
                     gap-1
                     rounded-full
-                    bg-emerald-50
+                    border
+                    border-emerald-900/40
+                    bg-emerald-950/30
                     px-2.5
                     py-1
                     text-[10px]
                     font-bold
-                    text-emerald-600
+                    text-emerald-500
                   "
                 >
                   <CheckCircle2 size={11} />
-                  Completed
+                  Fight Won
                 </span>
               )}
             </div>
@@ -889,10 +1092,11 @@ function ContinueLearning({ courses = [] }) {
                 mt-3
                 line-clamp-2
                 text-xl
-                font-extrabold
+                font-black
+                uppercase
                 leading-tight
                 tracking-tight
-                text-slate-900
+                text-white
                 sm:text-2xl
               "
               title={title}
@@ -909,7 +1113,7 @@ function ContinueLearning({ courses = [] }) {
                 items-center
                 gap-2
                 text-xs
-                text-slate-400
+                text-zinc-600
               "
             >
               <div
@@ -920,18 +1124,20 @@ function ContinueLearning({ courses = [] }) {
                   items-center
                   justify-center
                   rounded-full
-                  bg-slate-100
+                  border
+                  border-zinc-800
+                  bg-zinc-900
                 "
               >
                 <GraduationCap
                   size={13}
-                  className="text-slate-500"
+                  className="text-zinc-500"
                 />
               </div>
 
               <span>
-                Taught by{" "}
-                <span className="font-semibold text-slate-600">
+                Trained by{" "}
+                <span className="font-semibold text-zinc-400">
                   {instructor}
                 </span>
               </span>
@@ -948,14 +1154,14 @@ function ContinueLearning({ courses = [] }) {
                 overflow-hidden
                 rounded-2xl
                 border
-                border-violet-100
+                border-red-900/30
                 bg-gradient-to-br
-                from-violet-50
-                to-fuchsia-50/50
+                from-red-950/30
+                to-zinc-900
                 p-4
               "
             >
-              {/* Decorative glow */}
+              {/* Red glow */}
 
               <div
                 className="
@@ -966,12 +1172,20 @@ function ContinueLearning({ courses = [] }) {
                   h-20
                   w-20
                   rounded-full
-                  bg-violet-100
+                  bg-red-600/10
                   blur-xl
                 "
               />
 
-              <div className="relative z-10 flex items-start gap-3">
+              <div
+                className="
+                  relative
+                  z-10
+                  flex
+                  items-start
+                  gap-3
+                "
+              >
                 <div
                   className="
                     flex
@@ -981,14 +1195,13 @@ function ContinueLearning({ courses = [] }) {
                     items-center
                     justify-center
                     rounded-xl
-                    bg-white
-                    shadow-sm
+                    border
+                    border-red-900/40
+                    bg-black/50
+                    text-red-500
                   "
                 >
-                  <BookOpen
-                    size={18}
-                    className="text-violet-600"
-                  />
+                  <BookOpen size={18} />
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -996,19 +1209,25 @@ function ContinueLearning({ courses = [] }) {
                     <span
                       className="
                         text-[10px]
-                        font-bold
+                        font-black
                         uppercase
                         tracking-wider
-                        text-violet-500
+                        text-red-500
                       "
                     >
-                      Up next
+                      Current Round
                     </span>
 
-                    <span className="h-1 w-1 rounded-full bg-violet-300" />
+                    <span className="h-1 w-1 rounded-full bg-zinc-700" />
 
-                    <span className="text-[10px] font-medium text-slate-400">
-                      Current lesson
+                    <span
+                      className="
+                        text-[10px]
+                        font-medium
+                        text-zinc-600
+                      "
+                    >
+                      Training
                     </span>
                   </div>
 
@@ -1020,7 +1239,7 @@ function ContinueLearning({ courses = [] }) {
                       text-sm
                       font-bold
                       leading-5
-                      text-slate-800
+                      text-zinc-300
                     "
                   >
                     {currentLesson}
@@ -1032,10 +1251,11 @@ function ContinueLearning({ courses = [] }) {
                   className="
                     mt-2
                     shrink-0
-                    text-violet-300
+                    text-zinc-700
                     transition-transform
                     duration-300
                     group-hover:translate-x-1
+                    group-hover:text-red-500
                   "
                 />
               </div>
@@ -1046,32 +1266,51 @@ function ContinueLearning({ courses = [] }) {
             ================================================= */}
 
             <div className="mt-6">
-              <div className="mb-2.5 flex items-center justify-between">
+              <div
+                className="
+                  mb-2.5
+                  flex
+                  items-center
+                  justify-between
+                "
+              >
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-600">
-                    Your progress
+                  <span
+                    className="
+                      text-xs
+                      font-black
+                      uppercase
+                      tracking-wider
+                      text-zinc-500
+                    "
+                  >
+                    Fight Progress
                   </span>
 
-                  {progress > 0 && progress < 100 && (
-                    <Flame
-                      size={14}
-                      className="text-orange-500 animate-pulse"
-                    />
-                  )}
+                  {progress > 0 &&
+                    progress < 100 && (
+                      <Flame
+                        size={14}
+                        className="
+                          text-red-500
+                          animate-pulse
+                        "
+                      />
+                    )}
                 </div>
 
                 <span
                   className="
                     text-sm
-                    font-extrabold
-                    text-violet-600
+                    font-black
+                    text-red-500
                   "
                 >
                   {progress}%
                 </span>
               </div>
 
-              {/* Progress bar */}
+              {/* Progress */}
 
               <div
                 className="
@@ -1079,7 +1318,7 @@ function ContinueLearning({ courses = [] }) {
                   h-3
                   overflow-hidden
                   rounded-full
-                  bg-slate-100
+                  bg-zinc-900
                 "
               >
                 <div
@@ -1088,10 +1327,10 @@ function ContinueLearning({ courses = [] }) {
                     h-full
                     rounded-full
                     bg-gradient-to-r
-                    from-violet-500
-                    via-fuchsia-500
-                    to-pink-500
-                    shadow-[0_0_12px_rgba(168,85,247,0.3)]
+                    from-red-950
+                    via-red-700
+                    to-red-500
+                    shadow-[0_0_14px_rgba(220,38,38,0.35)]
                     transition-all
                     duration-1000
                   "
@@ -1099,21 +1338,20 @@ function ContinueLearning({ courses = [] }) {
                     width: `${progress}%`,
                   }}
                 >
-                  {/* Moving shine */}
-
-                  {progress > 0 && progress < 100 && (
-                    <div
-                      className="
-                        absolute
-                        inset-y-0
-                        -left-8
-                        w-8
-                        bg-white/35
-                        blur-sm
-                        animate-[progressShine_2.5s_infinite]
-                      "
-                    />
-                  )}
+                  {progress > 0 &&
+                    progress < 100 && (
+                      <div
+                        className="
+                          absolute
+                          inset-y-0
+                          -left-8
+                          w-8
+                          bg-white/25
+                          blur-sm
+                          animate-[progressShine_2s_infinite]
+                        "
+                      />
+                    )}
                 </div>
               </div>
 
@@ -1129,22 +1367,38 @@ function ContinueLearning({ courses = [] }) {
                   gap-2
                 "
               >
-                <span className="text-[11px] font-medium text-slate-400">
-                  {completedLessons} of {totalLessons} lessons
+                <span
+                  className="
+                    text-[11px]
+                    font-medium
+                    text-zinc-600
+                  "
+                >
+                  {completedLessons} of{" "}
+                  {totalLessons} rounds
                 </span>
 
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
+                <span
+                  className="
+                    inline-flex
+                    items-center
+                    gap-1
+                    text-[11px]
+                    font-medium
+                    text-zinc-600
+                  "
+                >
                   <Clock3 size={12} />
 
                   {watchedMinutes > 0
                     ? `${watchedMinutes} min watched`
-                    : "Ready to begin"}
+                    : "Training not started"}
                 </span>
               </div>
             </div>
 
             {/* =================================================
-                MOTIVATION + BUTTON
+                MOTIVATION + ACTION
             ================================================= */}
 
             <div
@@ -1168,18 +1422,20 @@ function ContinueLearning({ courses = [] }) {
                     items-center
                     justify-center
                     rounded-xl
-                    bg-amber-50
+                    border
+                    border-red-900/40
+                    bg-red-950/30
                   "
                 >
                   {isCompleted ? (
                     <Trophy
                       size={15}
-                      className="text-amber-500"
+                      className="text-red-500"
                     />
                   ) : (
-                    <Sparkles
+                    <Target
                       size={15}
-                      className="text-amber-500"
+                      className="text-red-500"
                     />
                   )}
                 </div>
@@ -1190,47 +1446,50 @@ function ContinueLearning({ courses = [] }) {
                     text-xs
                     font-semibold
                     leading-5
-                    text-slate-500
+                    text-zinc-500
                   "
                 >
                   {getProgressMessage()}
                 </p>
               </div>
 
-              {/* Continue button */}
+              {/* Continue */}
 
               <button
                 type="button"
                 onClick={handleContinueCourse}
                 className="
+                  group/fight
                   inline-flex
                   shrink-0
                   items-center
                   justify-center
                   gap-2
                   rounded-xl
-                  bg-gradient-to-r
-                  from-violet-600
-                  to-fuchsia-600
+                  border
+                  border-red-700/50
+                  bg-red-700
                   px-5
                   py-3
                   text-sm
-                  font-bold
+                  font-black
+                  uppercase
+                  tracking-wide
                   text-white
                   shadow-lg
-                  shadow-violet-200
+                  shadow-red-950/40
                   transition-all
                   duration-300
                   hover:-translate-y-0.5
-                  hover:shadow-xl
-                  hover:shadow-violet-200
+                  hover:bg-red-600
+                  hover:shadow-[0_0_30px_rgba(220,38,38,0.25)]
                   active:translate-y-0
                 "
               >
                 {isCompleted ? (
                   <>
                     <CheckCircle2 size={16} />
-                    Review Course
+                    Review Fight
                   </>
                 ) : (
                   <>
@@ -1240,8 +1499,8 @@ function ContinueLearning({ courses = [] }) {
                     />
 
                     {progress > 0
-                      ? "Continue Learning"
-                      : "Start Learning"}
+                      ? "Continue Fight"
+                      : "Enter Fight"}
                   </>
                 )}
 
@@ -1250,7 +1509,7 @@ function ContinueLearning({ courses = [] }) {
                   className="
                     transition-transform
                     duration-300
-                    group-hover:translate-x-1
+                    group-hover/fight:translate-x-1
                   "
                 />
               </button>
@@ -1259,19 +1518,56 @@ function ContinueLearning({ courses = [] }) {
         </div>
       </div>
 
-      {/* =====================================================
-          ANIMATION KEYFRAMES
-      ===================================================== */}
+      {/* =================================================
+          CINEMATIC FOOTER
+      ================================================= */}
+
+      <div
+        className="
+          absolute
+          bottom-0
+          left-0
+          h-[2px]
+          w-full
+          bg-gradient-to-r
+          from-transparent
+          via-red-700
+          to-transparent
+          opacity-70
+        "
+      />
+
+      {/* Moving red light */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-y-0
+          -left-40
+          w-24
+          skew-x-[-20deg]
+          bg-red-500/10
+          blur-xl
+          transition-all
+          duration-[1800ms]
+          group-hover:left-[110%]
+        "
+      />
+
+      {/* =================================================
+          ANIMATIONS
+      ================================================= */}
 
       <style>{`
-        @keyframes float {
+        @keyframes fightFloat {
           0%,
           100% {
             transform: translateY(0px);
           }
 
           50% {
-            transform: translateY(-8px);
+            transform: translateY(-8px) rotate(-2deg);
           }
         }
 

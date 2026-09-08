@@ -2,9 +2,17 @@ import {
   Award,
   ChevronRight,
   Sparkles,
-  Star,
   Trophy,
   Zap,
+  Crown,
+  Rocket,
+  Crosshair,
+  Target,
+  Shield,
+  Activity,
+  ScanLine,
+  CircleDot,
+  Flame,
 } from "lucide-react";
 
 function StudentXPCard({ xp }) {
@@ -23,6 +31,8 @@ function StudentXPCard({ xp }) {
     Math.max(0, progressPercentage)
   );
 
+  const isCloseToLevelUp = safeProgress >= 80;
+
   return (
     <section
       className="
@@ -32,109 +42,189 @@ function StudentXPCard({ xp }) {
         overflow-hidden
         rounded-[28px]
         border
-        border-violet-100
-        bg-gradient-to-br
-        from-violet-50
-        via-white
-        to-fuchsia-50
+        border-zinc-800
+        bg-[#090909]
         p-6
-        shadow-sm
+        shadow-2xl
+        shadow-black/20
         transition-all
         duration-500
         hover:-translate-y-1
-        hover:shadow-xl
-        hover:shadow-violet-100/60
+        hover:border-red-900/70
+        hover:shadow-[0_25px_70px_rgba(0,0,0,0.45)]
         sm:p-7
         lg:p-8
       "
     >
       {/* =====================================================
-          BACKGROUND DECORATION
+          TACTICAL BACKGROUND
+      ===================================================== */}
+
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Main red glow */}
+
+        <div
+          className="
+            absolute
+            -right-32
+            -top-32
+            h-80
+            w-80
+            rounded-full
+            bg-red-950/50
+            blur-3xl
+            transition-all
+            duration-1000
+            group-hover:scale-125
+            group-hover:bg-red-900/40
+          "
+        />
+
+        {/* Bottom red glow */}
+
+        <div
+          className="
+            absolute
+            -bottom-32
+            left-1/3
+            h-72
+            w-72
+            rounded-full
+            bg-red-950/30
+            blur-3xl
+            transition-transform
+            duration-1000
+            group-hover:scale-110
+          "
+        />
+
+        {/* Gold glow */}
+
+        <div
+          className="
+            absolute
+            right-1/4
+            top-1/2
+            h-32
+            w-32
+            rounded-full
+            bg-amber-900/10
+            blur-3xl
+            animate-pulse
+          "
+        />
+
+        {/* Tactical diagonal pattern */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            opacity-[0.045]
+            [background-image:linear-gradient(135deg,transparent_24%,#ffffff_25%,transparent_26%)]
+            [background-size:22px_22px]
+          "
+        />
+
+        {/* Scan line */}
+
+        <div
+          className="
+            absolute
+            left-0
+            right-0
+            top-0
+            h-px
+            bg-gradient-to-r
+            from-transparent
+            via-red-500/50
+            to-transparent
+            animate-[scanLine_5s_linear_infinite]
+          "
+        />
+
+        {/* Tactical particles */}
+
+        <CircleDot
+          size={9}
+          className="
+            absolute
+            left-[38%]
+            top-8
+            text-red-500/60
+            animate-[particleFloat_4s_ease-in-out_infinite]
+          "
+        />
+
+        <CircleDot
+          size={7}
+          className="
+            absolute
+            right-[35%]
+            top-[28%]
+            text-red-400/40
+            animate-[particleFloat_5s_ease-in-out_infinite_1s]
+          "
+        />
+
+        <Sparkles
+          size={12}
+          className="
+            absolute
+            right-[27%]
+            bottom-12
+            text-amber-500/50
+            animate-[starFloat_3s_ease-in-out_infinite]
+          "
+        />
+
+        <Target
+          size={10}
+          className="
+            absolute
+            left-[25%]
+            top-[40%]
+            text-red-500/30
+            animate-pulse
+          "
+        />
+      </div>
+
+      {/* =====================================================
+          TOP TACTICAL LABEL
       ===================================================== */}
 
       <div
         className="
-          pointer-events-none
           absolute
-          -right-20
-          -top-20
-          h-64
-          w-64
-          rounded-full
-          bg-violet-200/40
-          blur-3xl
-          transition-transform
-          duration-1000
-          group-hover:scale-125
+          right-6
+          top-5
+          hidden
+          items-center
+          gap-2
+          text-[8px]
+          font-black
+          uppercase
+          tracking-[0.25em]
+          text-zinc-600
+          sm:flex
         "
-      />
+      >
+        <Activity size={10} />
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -bottom-24
-          left-1/3
-          h-56
-          w-56
-          rounded-full
-          bg-fuchsia-200/30
-          blur-3xl
-        "
-      />
+        ACTIVE CONTRACT
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          right-1/3
-          top-1/2
-          h-24
-          w-24
-          rounded-full
-          bg-amber-200/20
-          blur-2xl
-          animate-pulse
-        "
-      />
-
-      {/* Floating particles */}
-
-      <Sparkles
-        size={15}
-        className="
-          pointer-events-none
-          absolute
-          right-[38%]
-          top-7
-          text-violet-300
-          animate-pulse
-        "
-      />
-
-      <Star
-        size={11}
-        className="
-          pointer-events-none
-          absolute
-          right-[28%]
-          bottom-12
-          text-fuchsia-300
-          animate-pulse
-        "
-      />
-
-      <Sparkles
-        size={12}
-        className="
-          pointer-events-none
-          absolute
-          left-[42%]
-          bottom-8
-          text-amber-300
-          animate-pulse
-        "
-      />
+        <span
+          className="
+            h-1.5
+            w-1.5
+            animate-pulse
+            rounded-full
+            bg-red-500
+            shadow-[0_0_8px_rgba(239,68,68,0.8)]
+          "
+        />
+      </div>
 
       {/* =====================================================
           MAIN CONTENT
@@ -146,7 +236,7 @@ function StudentXPCard({ xp }) {
             grid
             grid-cols-1
             gap-8
-            lg:grid-cols-[1fr_240px]
+            lg:grid-cols-[1fr_250px]
             lg:items-center
           "
         >
@@ -155,56 +245,88 @@ function StudentXPCard({ xp }) {
           ================================================= */}
 
           <div>
-            {/* Header */}
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                {/* Level icon */}
+                {/* Tactical level icon */}
 
                 <div
                   className="
                     relative
                     flex
-                    h-12
-                    w-12
+                    h-14
+                    w-14
                     shrink-0
                     items-center
                     justify-center
                     rounded-2xl
+                    border
+                    border-red-800/60
                     bg-gradient-to-br
-                    from-violet-500
-                    to-fuchsia-500
-                    shadow-lg
-                    shadow-violet-200
-                    transition-transform
+                    from-red-700
+                    via-red-900
+                    to-black
+                    shadow-[0_0_25px_rgba(220,38,38,0.18)]
+                    transition-all
                     duration-500
-                    group-hover:rotate-6
                     group-hover:scale-110
+                    group-hover:rotate-2
+                    group-hover:shadow-[0_0_35px_rgba(220,38,38,0.3)]
                   "
                 >
-                  <Award
-                    size={24}
-                    className="text-white"
-                    strokeWidth={2}
+                  {/* Rotating tactical ring */}
+
+                  <div
+                    className="
+                      absolute
+                      -inset-1
+                      rounded-[18px]
+                      border
+                      border-dashed
+                      border-red-700/40
+                      animate-[rotateRing_8s_linear_infinite]
+                    "
                   />
+
+                  <Crosshair
+                    size={25}
+                    className="
+                      relative
+                      z-10
+                      text-red-100
+                      drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]
+                    "
+                    strokeWidth={1.7}
+                  />
+
+                  {/* Level indicator */}
 
                   <span
                     className="
                       absolute
                       -right-1
                       -top-1
+                      z-20
                       flex
                       h-4
                       w-4
+                      animate-[badgePulse_2s_ease-in-out_infinite]
                       items-center
                       justify-center
                       rounded-full
-                      bg-amber-400
-                      text-[8px]
+                      border
+                      border-red-400/30
+                      bg-red-600
+                      text-[7px]
+                      font-black
                       text-white
+                      shadow-[0_0_12px_rgba(239,68,68,0.7)]
                     "
                   >
-                    ✦
+                    +
                   </span>
                 </div>
 
@@ -212,14 +334,14 @@ function StudentXPCard({ xp }) {
                   <p
                     className="
                       m-0
-                      text-[11px]
-                      font-bold
+                      text-[9px]
+                      font-black
                       uppercase
-                      tracking-[0.16em]
-                      text-violet-400
+                      tracking-[0.25em]
+                      text-red-500
                     "
                   >
-                    Your learning journey
+                    Training Status
                   </p>
 
                   <div className="mt-0.5 flex items-center gap-2">
@@ -227,9 +349,9 @@ function StudentXPCard({ xp }) {
                       className="
                         m-0
                         text-xl
-                        font-extrabold
+                        font-black
                         tracking-tight
-                        text-slate-900
+                        text-white
                       "
                     >
                       Level {level}
@@ -237,65 +359,89 @@ function StudentXPCard({ xp }) {
 
                     <span
                       className="
-                        rounded-full
-                        bg-violet-100
+                        rounded-sm
+                        border
+                        border-zinc-700
+                        bg-zinc-900
                         px-2
                         py-0.5
-                        text-[10px]
-                        font-bold
-                        text-violet-600
+                        text-[8px]
+                        font-black
+                        uppercase
+                        tracking-[0.15em]
+                        text-zinc-400
                       "
                     >
-                      LEARNER
+                      Operator
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* XP badge */}
+              {/* =================================================
+                  XP BADGE
+              ================================================= */}
 
               <div
                 className="
                   flex
+                  shrink-0
                   items-center
                   gap-2
                   rounded-full
                   border
-                  border-amber-100
-                  bg-white
+                  border-zinc-800
+                  bg-zinc-950/90
                   px-3
                   py-2
-                  shadow-sm
-                  transition-transform
+                  shadow-lg
+                  transition-all
                   duration-300
-                  group-hover:scale-105
+                  group-hover:border-red-900/60
+                  group-hover:shadow-[0_0_20px_rgba(220,38,38,0.1)]
                 "
               >
                 <div
                   className="
+                    relative
                     flex
                     h-6
                     w-6
                     items-center
                     justify-center
                     rounded-full
-                    bg-amber-50
+                    bg-red-950
                   "
                 >
                   <Zap
                     size={13}
-                    className="text-amber-500"
+                    className="
+                      animate-[zapPulse_1.5s_ease-in-out_infinite]
+                      text-red-500
+                    "
                     fill="currentColor"
+                  />
+
+                  <span
+                    className="
+                      absolute
+                      inset-0
+                      animate-ping
+                      rounded-full
+                      bg-red-500/10
+                    "
                   />
                 </div>
 
-                <span className="text-xs font-extrabold text-slate-700">
+                <span className="text-xs font-black text-zinc-300">
                   {totalXP.toLocaleString()} XP
                 </span>
               </div>
             </div>
 
-            {/* XP Number */}
+            {/* =================================================
+                XP NUMBER
+            ================================================= */}
 
             <div className="mt-7">
               <div className="flex items-end gap-3">
@@ -304,7 +450,7 @@ function StudentXPCard({ xp }) {
                     text-4xl
                     font-black
                     tracking-tight
-                    text-slate-900
+                    text-white
                     sm:text-5xl
                   "
                 >
@@ -316,24 +462,36 @@ function StudentXPCard({ xp }) {
                     mb-1
                     text-sm
                     font-semibold
-                    text-slate-400
+                    text-zinc-600
                   "
                 >
                   / 1,000 XP
                 </span>
               </div>
 
-              <p
-                className="
-                  m-0
-                  mt-1
-                  text-xs
-                  font-medium
-                  text-slate-400
-                "
-              >
-                XP earned toward Level {level + 1}
-              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <Rocket
+                  size={13}
+                  className="
+                    text-red-500
+                    transition-transform
+                    duration-300
+                    group-hover:-translate-y-1
+                    group-hover:translate-x-1
+                  "
+                />
+
+                <p
+                  className="
+                    m-0
+                    text-xs
+                    font-medium
+                    text-zinc-500
+                  "
+                >
+                  XP required to reach Level {level + 1}
+                </p>
+              </div>
             </div>
 
             {/* =================================================
@@ -344,32 +502,38 @@ function StudentXPCard({ xp }) {
               <div className="mb-2 flex items-center justify-between">
                 <span
                   className="
-                    text-xs
-                    font-bold
-                    text-slate-500
+                    text-[10px]
+                    font-black
+                    uppercase
+                    tracking-[0.15em]
+                    text-zinc-500
                   "
                 >
-                  Level progress
+                  Contract Progress
                 </span>
 
                 <span
                   className="
                     text-xs
-                    font-extrabold
-                    text-violet-600
+                    font-black
+                    text-red-500
                   "
                 >
                   {safeProgress}%
                 </span>
               </div>
 
+              {/* Tactical progress track */}
+
               <div
                 className="
                   relative
                   h-3
                   overflow-hidden
-                  rounded-full
-                  bg-violet-100
+                  border
+                  border-zinc-800
+                  bg-zinc-950
+                  shadow-inner
                 "
               >
                 {/* Progress */}
@@ -378,12 +542,11 @@ function StudentXPCard({ xp }) {
                   className="
                     relative
                     h-full
-                    rounded-full
                     bg-gradient-to-r
-                    from-violet-500
-                    via-fuchsia-500
-                    to-pink-500
-                    shadow-[0_0_14px_rgba(168,85,247,0.35)]
+                    from-red-950
+                    via-red-700
+                    to-red-500
+                    shadow-[0_0_20px_rgba(239,68,68,0.45)]
                     transition-all
                     duration-1000
                     ease-out
@@ -398,31 +561,66 @@ function StudentXPCard({ xp }) {
                     className="
                       absolute
                       inset-y-0
-                      -left-10
-                      w-10
-                      bg-white/30
+                      -left-12
+                      w-12
+                      -skew-x-12
+                      bg-white/20
                       blur-sm
-                      animate-[shimmer_2.5s_infinite]
+                      animate-[shimmer_2.2s_linear_infinite]
                     "
                   />
+
+                  {/* Progress endpoint */}
+
+                  {safeProgress > 0 && (
+                    <div
+                      className="
+                        absolute
+                        right-0
+                        top-1/2
+                        h-2
+                        w-2
+                        -translate-y-1/2
+                        rounded-full
+                        bg-red-100
+                        shadow-[0_0_10px_rgba(248,113,113,1)]
+                      "
+                    />
+                  )}
                 </div>
               </div>
 
               {/* Progress information */}
 
               <div className="mt-2 flex items-center justify-between">
-                <span className="text-[11px] font-medium text-slate-400">
-                  Keep going!
+                <span
+                  className="
+                    text-[10px]
+                    font-medium
+                    text-zinc-600
+                  "
+                >
+                  {isCloseToLevelUp
+                    ? "Target within reach."
+                    : "Mission continues."}
                 </span>
 
-                <span className="text-[11px] font-bold text-violet-600">
-                  {remainingXP.toLocaleString()} XP left
+                <span
+                  className="
+                    text-[10px]
+                    font-black
+                    uppercase
+                    tracking-wider
+                    text-red-500
+                  "
+                >
+                  {remainingXP.toLocaleString()} XP remaining
                 </span>
               </div>
             </div>
 
             {/* =================================================
-                MOTIVATION CARD
+                MOTIVATION / CONTRACT CARD
             ================================================= */}
 
             <div
@@ -431,34 +629,63 @@ function StudentXPCard({ xp }) {
                 flex
                 items-center
                 gap-3
-                rounded-2xl
+                rounded-xl
                 border
-                border-white
-                bg-white/80
+                border-zinc-800
+                bg-zinc-950/80
                 px-4
                 py-3.5
-                shadow-sm
+                shadow-inner
                 backdrop-blur-sm
                 transition-all
                 duration-300
-                group-hover:bg-white
+                group-hover:border-red-950
+                group-hover:bg-zinc-950
               "
             >
               <div
                 className="
+                  relative
                   flex
                   h-9
                   w-9
                   shrink-0
+                  animate-[trophyFloat_3s_ease-in-out_infinite]
                   items-center
                   justify-center
-                  rounded-xl
-                  bg-violet-50
+                  rounded-lg
+                  border
+                  border-red-900/50
+                  bg-red-950/40
                 "
               >
-                <Trophy
-                  size={17}
-                  className="text-violet-500"
+                {isCloseToLevelUp ? (
+                  <Flame
+                    size={17}
+                    className="
+                      text-red-500
+                      drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]
+                    "
+                  />
+                ) : (
+                  <Trophy
+                    size={17}
+                    className="
+                      text-amber-500
+                      drop-shadow-[0_0_5px_rgba(245,158,11,0.35)]
+                    "
+                  />
+                )}
+
+                <Sparkles
+                  size={8}
+                  className="
+                    absolute
+                    -right-1
+                    -top-1
+                    animate-ping
+                    text-red-500
+                  "
                 />
               </div>
 
@@ -467,11 +694,13 @@ function StudentXPCard({ xp }) {
                   className="
                     m-0
                     text-xs
-                    font-bold
-                    text-slate-700
+                    font-black
+                    text-zinc-200
                   "
                 >
-                  You're building something great.
+                  {isCloseToLevelUp
+                    ? "The next level is almost yours."
+                    : "Stay focused. Keep earning."}
                 </p>
 
                 <p
@@ -479,12 +708,12 @@ function StudentXPCard({ xp }) {
                     m-0
                     mt-0.5
                     truncate
-                    text-[11px]
-                    text-slate-400
+                    text-[10px]
+                    text-zinc-600
                   "
                 >
                   Complete lectures and achievements to
-                  keep earning XP.
+                  increase your XP.
                 </p>
               </div>
 
@@ -492,47 +721,127 @@ function StudentXPCard({ xp }) {
                 size={17}
                 className="
                   shrink-0
-                  text-slate-300
-                  transition-transform
+                  text-zinc-700
+                  transition-all
                   duration-300
                   group-hover:translate-x-1
-                  group-hover:text-violet-500
+                  group-hover:text-red-500
                 "
               />
             </div>
           </div>
 
           {/* =================================================
-              RIGHT SIDE — ANIMATED MASCOTS
+              RIGHT SIDE — TACTICAL HUD
           ================================================= */}
 
           <div
             className="
               relative
               hidden
-              h-[220px]
+              h-[250px]
               lg:block
             "
           >
-            {/* Glow behind mascot */}
+            {/* Central red glow */}
 
             <div
               className="
                 absolute
                 left-1/2
                 top-1/2
-                h-40
-                w-40
+                h-48
+                w-48
                 -translate-x-1/2
                 -translate-y-1/2
                 rounded-full
-                bg-violet-200/50
+                bg-red-950/40
                 blur-3xl
                 animate-pulse
               "
             />
 
-            {/* Main animal */}
+            {/* Outer tactical ring */}
+
+            <div
+              className="
+                absolute
+                left-1/2
+                top-1/2
+                h-48
+                w-48
+                -translate-x-1/2
+                -translate-y-1/2
+                rounded-full
+                border
+                border-red-900/40
+                animate-[orbitSpin_15s_linear_infinite]
+              "
+            />
+
+            {/* Inner tactical ring */}
+
+            <div
+              className="
+                absolute
+                left-1/2
+                top-1/2
+                h-36
+                w-36
+                -translate-x-1/2
+                -translate-y-1/2
+                rounded-full
+                border
+                border-dashed
+                border-zinc-700
+                animate-[orbitSpinReverse_20s_linear_infinite]
+              "
+            />
+
+            {/* Crosshair */}
+
+            <div
+              className="
+                absolute
+                left-1/2
+                top-1/2
+                flex
+                h-40
+                w-40
+                -translate-x-1/2
+                -translate-y-1/2
+                items-center
+                justify-center
+              "
+            >
+              <div
+                className="
+                  absolute
+                  h-full
+                  w-px
+                  bg-gradient-to-b
+                  from-transparent
+                  via-red-800/50
+                  to-transparent
+                "
+              />
+
+              <div
+                className="
+                  absolute
+                  h-px
+                  w-full
+                  bg-gradient-to-r
+                  from-transparent
+                  via-red-800/50
+                  to-transparent
+                "
+              />
+            </div>
+
+            {/* =================================================
+                CENTRAL OPERATOR BADGE
+            ================================================= */}
 
             <div
               className="
@@ -544,151 +853,314 @@ function StudentXPCard({ xp }) {
                 -translate-y-1/2
                 flex-col
                 items-center
-                animate-[float_4s_ease-in-out_infinite]
+                animate-[mascotFloat_4s_ease-in-out_infinite]
               "
             >
               <div
                 className="
+                  relative
                   flex
                   h-28
                   w-28
                   items-center
                   justify-center
-                  rounded-[32px]
+                  rounded-full
                   border
-                  border-white
-                  bg-white/80
-                  text-6xl
-                  shadow-xl
-                  shadow-violet-200/50
-                  backdrop-blur
-                  transition-transform
+                  border-red-800/70
+                  bg-gradient-to-br
+                  from-zinc-800
+                  via-zinc-950
+                  to-black
+                  shadow-[0_0_35px_rgba(220,38,38,0.2)]
+                  transition-all
                   duration-500
                   group-hover:scale-110
+                  group-hover:border-red-600/70
                 "
               >
-                🐼
+                {/* Inner circle */}
+
+                <div
+                  className="
+                    absolute
+                    inset-3
+                    rounded-full
+                    border
+                    border-zinc-800
+                  "
+                />
+
+                <Crosshair
+                  size={48}
+                  strokeWidth={1}
+                  className="
+                    text-red-500
+                    drop-shadow-[0_0_12px_rgba(239,68,68,0.7)]
+                  "
+                />
+
+                {/* Crown */}
+
+                <Crown
+                  size={18}
+                  className="
+                    absolute
+                    right-3
+                    top-1
+                    animate-[crownFloat_2.5s_ease-in-out_infinite]
+                    text-amber-500
+                  "
+                  fill="currentColor"
+                />
+
+                {/* Target dot */}
+
+                <div
+                  className="
+                    absolute
+                    h-2
+                    w-2
+                    animate-ping
+                    rounded-full
+                    bg-red-500
+                  "
+                />
               </div>
+
+              {/* Contract status */}
 
               <div
                 className="
                   mt-3
+                  flex
+                  items-center
+                  gap-2
                   rounded-full
-                  bg-white
+                  border
+                  border-red-900/60
+                  bg-black
                   px-4
                   py-1.5
-                  text-[11px]
-                  font-bold
-                  text-violet-600
-                  shadow-sm
+                  text-[9px]
+                  font-black
+                  uppercase
+                  tracking-[0.2em]
+                  text-red-500
+                  shadow-[0_0_15px_rgba(220,38,38,0.1)]
                 "
               >
-                Keep going! 🚀
+                <span
+                  className="
+                    h-1.5
+                    w-1.5
+                    animate-pulse
+                    rounded-full
+                    bg-red-500
+                  "
+                />
+
+                {isCloseToLevelUp
+                  ? "Target Acquired"
+                  : "Mission Active"}
               </div>
             </div>
 
-            {/* Floating rabbit */}
+            {/* =================================================
+                TOP LEFT — SHIELD
+            ================================================= */}
 
             <div
               className="
                 absolute
                 left-1
-                top-7
+                top-8
                 flex
                 h-12
                 w-12
+                animate-[rabbitFloat_3.5s_ease-in-out_infinite]
                 items-center
                 justify-center
-                rounded-2xl
-                bg-white
-                text-2xl
+                rounded-xl
+                border
+                border-zinc-800
+                bg-zinc-950
                 shadow-lg
-                animate-[float_3.5s_ease-in-out_infinite]
+                transition-transform
+                duration-300
+                group-hover:scale-110
               "
             >
-              🐰
+              <Shield
+                size={21}
+                className="
+                  text-zinc-500
+                  transition-colors
+                  group-hover:text-red-500
+                "
+              />
             </div>
 
-            {/* Floating fox */}
+            {/* =================================================
+                TOP RIGHT — TARGET
+            ================================================= */}
 
             <div
               className="
                 absolute
-                bottom-7
                 right-2
-                flex
-                h-12
-                w-12
-                items-center
-                justify-center
-                rounded-2xl
-                bg-white
-                text-2xl
-                shadow-lg
-                animate-[float_4.5s_ease-in-out_infinite]
-              "
-            >
-              🦊
-            </div>
-
-            {/* Floating star */}
-
-            <div
-              className="
-                absolute
-                right-5
                 top-2
                 flex
                 h-9
                 w-9
+                animate-[starFloat_3s_ease-in-out_infinite]
+                items-center
+                justify-center
+                rounded-lg
+                border
+                border-red-900/50
+                bg-red-950/20
+              "
+            >
+              <Target
+                size={17}
+                className="text-red-500"
+              />
+            </div>
+
+            {/* =================================================
+                BOTTOM RIGHT — AWARD
+            ================================================= */}
+
+            <div
+              className="
+                absolute
+                bottom-8
+                right-1
+                flex
+                h-12
+                w-12
+                animate-[foxFloat_4.5s_ease-in-out_infinite]
                 items-center
                 justify-center
                 rounded-xl
-                bg-amber-50
-                text-lg
-                shadow-sm
-                animate-pulse
+                border
+                border-zinc-800
+                bg-zinc-950
+                shadow-lg
+                transition-transform
+                duration-300
+                group-hover:scale-110
               "
             >
-              ⭐
+              <Award
+                size={21}
+                className="
+                  text-amber-500
+                  drop-shadow-[0_0_7px_rgba(245,158,11,0.3)]
+                "
+              />
             </div>
 
-            {/* Floating XP */}
+            {/* =================================================
+                XP FLOATING BADGE
+            ================================================= */}
 
             <div
               className="
                 absolute
                 bottom-1
-                left-8
+                left-5
+                flex
+                animate-[xpFloat_3s_ease-in-out_infinite]
+                items-center
+                gap-1.5
+                rounded-full
+                border
+                border-red-900/60
+                bg-black
+                px-3
+                py-1.5
+                text-[9px]
+                font-black
+                uppercase
+                tracking-wider
+                text-red-500
+                shadow-[0_0_15px_rgba(220,38,38,0.1)]
+              "
+            >
+              <Zap
+                size={11}
+                className="animate-pulse"
+                fill="currentColor"
+              />
+
+              + XP
+            </div>
+
+            {/* =================================================
+                ROCKET
+            ================================================= */}
+
+            <div
+              className="
+                absolute
+                bottom-14
+                left-[18%]
+                animate-[rocketFloat_4s_ease-in-out_infinite]
+              "
+            >
+              <Rocket
+                size={20}
+                className="text-zinc-700"
+              />
+            </div>
+
+            {/* =================================================
+                LEVEL BADGE
+            ================================================= */}
+
+            <div
+              className="
+                absolute
+                right-[15%]
+                top-[45%]
                 flex
                 items-center
                 gap-1.5
                 rounded-full
                 border
-                border-amber-100
-                bg-white
-                px-3
+                border-zinc-800
+                bg-black
+                px-2.5
                 py-1.5
-                text-[10px]
-                font-bold
-                text-amber-600
-                shadow-sm
-                animate-[float_3s_ease-in-out_infinite]
+                shadow-lg
+                animate-[badgeFloat_4s_ease-in-out_infinite]
               "
             >
-              <Zap
-                size={12}
+              <Crown
+                size={11}
+                className="text-amber-500"
                 fill="currentColor"
               />
 
-              +XP
+              <span
+                className="
+                  text-[9px]
+                  font-black
+                  uppercase
+                  tracking-wider
+                  text-zinc-400
+                "
+              >
+                LVL {level}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
       {/* =====================================================
-          LEVEL FOOTER
+          FOOTER
       ===================================================== */}
 
       <div
@@ -702,7 +1174,7 @@ function StudentXPCard({ xp }) {
           justify-between
           gap-3
           border-t
-          border-violet-100
+          border-zinc-800
           pt-5
         "
       >
@@ -712,19 +1184,30 @@ function StudentXPCard({ xp }) {
               flex
               h-7
               w-7
+              animate-[iconFloat_3s_ease-in-out_infinite]
               items-center
               justify-center
               rounded-lg
-              bg-emerald-50
+              border
+              border-red-900/50
+              bg-red-950/30
             "
           >
             <Sparkles
               size={13}
-              className="text-emerald-500"
+              className="text-red-500"
             />
           </div>
 
-          <span className="text-xs font-semibold text-slate-500">
+          <span
+            className="
+              text-[10px]
+              font-semibold
+              uppercase
+              tracking-wider
+              text-zinc-600
+            "
+          >
             Every lesson moves you forward
           </span>
         </div>
@@ -735,39 +1218,272 @@ function StudentXPCard({ xp }) {
             items-center
             gap-1.5
             text-xs
-            font-bold
-            text-violet-600
+            font-black
+            text-red-500
           "
         >
           Level {level + 1}
 
-          <ChevronRight size={14} />
+          <ChevronRight
+            size={14}
+            className="
+              transition-transform
+              duration-300
+              group-hover:translate-x-1
+            "
+          />
         </div>
       </div>
 
       {/* =====================================================
-          ANIMATION KEYFRAMES
+          ANIMATIONS
       ===================================================== */}
 
       <style>{`
-        @keyframes float {
+        @keyframes mascotFloat {
           0%,
           100% {
-            transform: translateY(0px);
+            transform:
+              translate(-50%, -50%)
+              translateY(0);
           }
 
           50% {
-            transform: translateY(-10px);
+            transform:
+              translate(-50%, -50%)
+              translateY(-8px);
+          }
+        }
+
+        @keyframes rabbitFloat {
+          0%,
+          100% {
+            transform:
+              translateY(0)
+              rotate(0deg);
+          }
+
+          50% {
+            transform:
+              translateY(-8px)
+              rotate(-3deg);
+          }
+        }
+
+        @keyframes foxFloat {
+          0%,
+          100% {
+            transform:
+              translateY(0)
+              rotate(0deg);
+          }
+
+          50% {
+            transform:
+              translateY(-7px)
+              rotate(3deg);
+          }
+        }
+
+        @keyframes rocketFloat {
+          0%,
+          100% {
+            transform:
+              translateY(0)
+              rotate(-5deg);
+          }
+
+          50% {
+            transform:
+              translateY(-10px)
+              rotate(4deg);
+          }
+        }
+
+        @keyframes xpFloat {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-5px);
+          }
+        }
+
+        @keyframes badgeFloat {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-4px);
+          }
+        }
+
+        @keyframes trophyFloat {
+          0%,
+          100% {
+            transform:
+              translateY(0)
+              rotate(0deg);
+          }
+
+          50% {
+            transform:
+              translateY(-4px)
+              rotate(3deg);
+          }
+        }
+
+        @keyframes crownFloat {
+          0%,
+          100% {
+            transform:
+              translateY(0)
+              rotate(0deg);
+          }
+
+          50% {
+            transform:
+              translateY(-4px)
+              rotate(4deg);
+          }
+        }
+
+        @keyframes iconFloat {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-3px);
+          }
+        }
+
+        @keyframes particleFloat {
+          0%,
+          100% {
+            transform:
+              translateY(0)
+              rotate(0deg);
+            opacity: 0.3;
+          }
+
+          50% {
+            transform:
+              translateY(-10px)
+              rotate(15deg);
+            opacity: 1;
+          }
+        }
+
+        @keyframes starFloat {
+          0%,
+          100% {
+            transform:
+              translateY(0)
+              rotate(0deg)
+              scale(1);
+          }
+
+          50% {
+            transform:
+              translateY(-7px)
+              rotate(15deg)
+              scale(1.08);
+          }
+        }
+
+        @keyframes zapPulse {
+          0%,
+          100% {
+            transform: scale(1);
+          }
+
+          50% {
+            transform: scale(1.18);
+          }
+        }
+
+        @keyframes badgePulse {
+          0%,
+          100% {
+            transform: scale(1);
+          }
+
+          50% {
+            transform: scale(1.2);
+          }
+        }
+
+        @keyframes rotateRing {
+          from {
+            transform: rotate(0deg);
+          }
+
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @keyframes orbitSpin {
+          from {
+            transform:
+              translate(-50%, -50%)
+              rotate(0deg);
+          }
+
+          to {
+            transform:
+              translate(-50%, -50%)
+              rotate(360deg);
+          }
+        }
+
+        @keyframes orbitSpinReverse {
+          from {
+            transform:
+              translate(-50%, -50%)
+              rotate(360deg);
+          }
+
+          to {
+            transform:
+              translate(-50%, -50%)
+              rotate(0deg);
           }
         }
 
         @keyframes shimmer {
           0% {
-            left: -40px;
+            left: -50px;
           }
 
           100% {
-            left: 100%;
+            left: 110%;
+          }
+        }
+
+        @keyframes scanLine {
+          0% {
+            transform: translateY(-5px);
+            opacity: 0;
+          }
+
+          15% {
+            opacity: 1;
+          }
+
+          50% {
+            opacity: 0.7;
+          }
+
+          100% {
+            transform: translateY(270px);
+            opacity: 0;
           }
         }
       `}</style>

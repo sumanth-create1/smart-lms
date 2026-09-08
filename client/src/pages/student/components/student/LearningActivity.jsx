@@ -6,6 +6,9 @@ import {
   Crown,
   Sword,
   Shield,
+  Sparkles,
+  Swords,
+  Crosshair,
 } from "lucide-react";
 
 // =====================================================
@@ -81,17 +84,68 @@ const ActivityLoading = () => {
         overflow-hidden
         rounded-[28px]
         border
-        border-slate-800
-        bg-[#0b0d12]
-        shadow-xl
+        border-zinc-800
+        bg-[#070707]
+        shadow-2xl
+        shadow-black/50
       "
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0b0d12] via-[#17181d] to-[#241b16]" />
+      {/* Background */}
+
+      <div
+        className="
+          absolute
+          inset-0
+          bg-gradient-to-br
+          from-[#030303]
+          via-[#101114]
+          to-[#1b0909]
+        "
+      />
+
+      {/* Red glow */}
+
+      <div
+        className="
+          absolute
+          -right-24
+          -top-24
+          h-80
+          w-80
+          animate-pulse
+          rounded-full
+          bg-red-800/10
+          blur-[110px]
+        "
+      />
+
+      {/* Texture */}
+
+      <div
+        className="
+          absolute
+          inset-0
+          opacity-[0.035]
+          [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)]
+          [background-size:12px_12px]
+        "
+      />
 
       <div className="relative z-10">
         {/* Header */}
 
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-5 sm:px-6">
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            border-b
+            border-white/[0.08]
+            px-5
+            py-5
+            sm:px-6
+          "
+        >
           <div>
             <div className="h-5 w-40 animate-pulse rounded bg-white/10" />
 
@@ -119,7 +173,14 @@ const ActivityLoading = () => {
               (height, index) => (
                 <div
                   key={index}
-                  className="flex h-full flex-1 flex-col items-center justify-end"
+                  className="
+                    flex
+                    h-full
+                    flex-1
+                    flex-col
+                    items-center
+                    justify-end
+                  "
                 >
                   <div
                     className="
@@ -162,46 +223,91 @@ const EmptyActivity = () => {
         overflow-hidden
         rounded-2xl
         border
-        border-white/10
-        bg-black/20
+        border-white/[0.08]
+        bg-black/25
         px-5
         text-center
       "
     >
-      {/* Decorative flames */}
+      {/* Floating decorative icons */}
 
-      <div className="absolute left-8 top-8 text-2xl opacity-10">
-        🔥
-      </div>
+      <Flame
+        size={22}
+        className="
+          absolute
+          left-8
+          top-8
+          animate-[floatIcon_4s_ease-in-out_infinite]
+          text-red-500/20
+        "
+      />
 
-      <div className="absolute bottom-8 right-8 text-2xl opacity-10">
-        ⚔️
-      </div>
+      <Sword
+        size={22}
+        className="
+          absolute
+          bottom-8
+          right-8
+          rotate-[-20deg]
+          animate-[swordFloat_4.5s_ease-in-out_infinite]
+          text-amber-500/20
+        "
+      />
+
+      <Sparkles
+        size={16}
+        className="
+          absolute
+          right-20
+          top-12
+          animate-pulse
+          text-amber-400/20
+        "
+      />
+
+      {/* Shield */}
 
       <div
         className="
+          relative
           flex
           h-14
           w-14
+          animate-[floatIcon_4s_ease-in-out_infinite]
           items-center
           justify-center
           rounded-2xl
           border
           border-amber-500/20
           bg-amber-500/10
+          shadow-[0_0_30px_rgba(245,158,11,0.08)]
         "
       >
         <Shield
           size={24}
-          className="text-amber-500"
+          className="
+            text-amber-500
+            drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]
+          "
+        />
+
+        <div
+          className="
+            absolute
+            inset-0
+            animate-ping
+            rounded-2xl
+            border
+            border-amber-500/10
+          "
         />
       </div>
 
-      <p className="mt-4 text-sm font-bold text-slate-200">
+      <p className="mt-4 text-sm font-bold text-zinc-200">
         No battles recorded yet
       </p>
 
-      <p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">
+      <p className="mt-1 max-w-xs text-xs leading-5 text-zinc-500">
         Start a lesson and your learning battles
         will appear in the weekly chronicle.
       </p>
@@ -305,14 +411,15 @@ function LearningActivity({
         overflow-hidden
         rounded-[28px]
         border
-        border-slate-800
-        bg-[#090b10]
-        shadow-xl
-        shadow-slate-300/20
+        border-zinc-800
+        bg-[#070707]
+        shadow-2xl
+        shadow-black/50
         transition-all
         duration-500
         hover:-translate-y-1
-        hover:shadow-2xl
+        hover:border-red-900/60
+        hover:shadow-[0_30px_80px_rgba(0,0,0,0.6)]
       "
     >
       {/* =================================================
@@ -327,27 +434,28 @@ function LearningActivity({
             absolute
             inset-0
             bg-gradient-to-br
-            from-[#090b10]
-            via-[#15171d]
-            to-[#211913]
+            from-[#050608]
+            via-[#101217]
+            to-[#1b0909]
           "
         />
 
-        {/* Warm fire glow */}
+        {/* Fire glow */}
 
         <div
           className="
             absolute
             -right-24
             -top-24
-            h-72
-            w-72
+            h-80
+            w-80
             rounded-full
             bg-amber-600/10
-            blur-[100px]
+            blur-[110px]
             transition-all
             duration-1000
             group-hover:scale-125
+            group-hover:bg-amber-600/15
           "
         />
 
@@ -357,12 +465,15 @@ function LearningActivity({
           className="
             absolute
             -bottom-32
-            -left-20
-            h-80
-            w-80
+            -left-24
+            h-96
+            w-96
             rounded-full
-            bg-red-900/10
-            blur-[110px]
+            bg-red-900/15
+            blur-[120px]
+            transition-all
+            duration-1000
+            group-hover:bg-red-800/20
           "
         />
 
@@ -378,15 +489,94 @@ function LearningActivity({
           "
         />
 
-        {/* Ember particles */}
+        {/* Moving cinematic scan */}
 
-        <div className="absolute right-[12%] top-[18%] h-1 w-1 animate-ping rounded-full bg-amber-400/60" />
+        <div
+          className="
+            absolute
+            left-[-30%]
+            top-0
+            h-full
+            w-[25%]
+            -skew-x-12
+            bg-gradient-to-r
+            from-transparent
+            via-red-500/[0.025]
+            to-transparent
+            transition-all
+            duration-[1800ms]
+            group-hover:left-[120%]
+          "
+        />
 
-        <div className="absolute right-[25%] top-[35%] h-1.5 w-1.5 animate-pulse rounded-full bg-orange-400/50" />
+        {/* =================================================
+            EMBERS
+        ================================================= */}
 
-        <div className="absolute left-[18%] top-[30%] h-1 w-1 animate-ping rounded-full bg-red-400/40" />
+        <span
+          className="
+            absolute
+            left-[12%]
+            top-[25%]
+            h-1
+            w-1
+            animate-[emberFloat_5s_ease-in-out_infinite]
+            rounded-full
+            bg-red-400/60
+          "
+        />
 
-        <div className="absolute left-[35%] bottom-[20%] h-1 w-1 animate-pulse rounded-full bg-amber-300/40" />
+        <span
+          className="
+            absolute
+            left-[30%]
+            top-[60%]
+            h-1.5
+            w-1.5
+            animate-[emberFloat_6s_ease-in-out_infinite_1s]
+            rounded-full
+            bg-amber-400/50
+          "
+        />
+
+        <span
+          className="
+            absolute
+            right-[15%]
+            top-[18%]
+            h-1
+            w-1
+            animate-[emberFloat_5.5s_ease-in-out_infinite_0.5s]
+            rounded-full
+            bg-orange-400/60
+          "
+        />
+
+        <span
+          className="
+            absolute
+            right-[28%]
+            top-[42%]
+            h-1
+            w-1
+            animate-pulse
+            rounded-full
+            bg-red-500/50
+          "
+        />
+
+        <span
+          className="
+            absolute
+            bottom-[20%]
+            right-[12%]
+            h-1
+            w-1
+            animate-[emberFloat_7s_ease-in-out_infinite_1.5s]
+            rounded-full
+            bg-amber-300/50
+          "
+        />
       </div>
 
       {/* =================================================
@@ -401,57 +591,97 @@ function LearningActivity({
           items-center
           justify-between
           border-b
-          border-white/10
+          border-white/[0.08]
           px-5
           py-5
           sm:px-6
         "
       >
         <div className="flex items-center gap-3">
+          {/* Animated chart icon */}
+
           <div
             className="
+              relative
               flex
-              h-10
-              w-10
+              h-11
+              w-11
+              animate-[iconFloat_4s_ease-in-out_infinite]
               items-center
               justify-center
               rounded-xl
               border
               border-amber-500/20
               bg-amber-500/10
-              shadow-inner
+              shadow-[0_0_25px_rgba(245,158,11,0.08)]
               transition-all
               duration-300
-              group-hover:scale-105
+              group-hover:scale-110
+              group-hover:border-amber-500/40
             "
           >
             <BarChart3
               size={19}
-              className="text-amber-400"
+              className="
+                text-amber-400
+                drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]
+              "
+            />
+
+            {/* Orbit dot */}
+
+            <span
+              className="
+                absolute
+                -right-1
+                -top-1
+                h-2
+                w-2
+                animate-pulse
+                rounded-full
+                bg-amber-400
+                shadow-[0_0_10px_rgba(245,158,11,0.9)]
+              "
             />
           </div>
 
           <div>
-            <h2
-              className="
-                m-0
-                text-base
-                font-bold
-                tracking-tight
-                text-white
-                sm:text-lg
-              "
-            >
-              Weekly Chronicle
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2
+                className="
+                  m-0
+                  text-base
+                  font-black
+                  uppercase
+                  tracking-tight
+                  text-white
+                  sm:text-lg
+                "
+              >
+                Weekly Chronicle
+              </h2>
+
+              <Swords
+                size={13}
+                className="
+                  hidden
+                  animate-[swordFloat_4s_ease-in-out_infinite]
+                  text-red-500/70
+                  sm:block
+                "
+              />
+            </div>
 
             <p
               className="
                 m-0
                 mt-0.5
-                text-xs
-                text-slate-500
-                sm:text-sm
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-[0.13em]
+                text-zinc-600
+                sm:text-xs
               "
             >
               Your battles across the realm
@@ -468,25 +698,30 @@ function LearningActivity({
             gap-1.5
             rounded-full
             border
-            border-amber-500/20
-            bg-amber-500/10
+            border-red-900/40
+            bg-red-950/20
             px-3
             py-1.5
+            shadow-[0_0_20px_rgba(127,29,29,0.08)]
             sm:flex
           "
         >
           <Flame
             size={13}
-            className="text-orange-400"
+            className="
+              animate-[flameFlicker_1.2s_ease-in-out_infinite]
+              text-red-500
+              drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]
+            "
           />
 
           <span
             className="
-              text-[10px]
-              font-bold
+              text-[9px]
+              font-black
               uppercase
-              tracking-[0.14em]
-              text-amber-400
+              tracking-[0.16em]
+              text-red-400
             "
           >
             This Week
@@ -520,17 +755,21 @@ function LearningActivity({
             <div className="flex items-center gap-2">
               <Sword
                 size={14}
-                className="text-amber-500"
+                className="
+                  animate-[swordFloat_3.5s_ease-in-out_infinite]
+                  text-red-500
+                  drop-shadow-[0_0_7px_rgba(239,68,68,0.6)]
+                "
               />
 
               <p
                 className="
                   m-0
                   text-[10px]
-                  font-bold
+                  font-black
                   uppercase
                   tracking-[0.16em]
-                  text-slate-500
+                  text-zinc-600
                 "
               >
                 Time on the realm
@@ -544,6 +783,7 @@ function LearningActivity({
                   font-black
                   tracking-tight
                   text-white
+                  drop-shadow-[0_0_15px_rgba(255,255,255,0.08)]
                 "
               >
                 {totalHours.toFixed(1)}
@@ -553,7 +793,7 @@ function LearningActivity({
                 className="
                   text-sm
                   font-medium
-                  text-slate-500
+                  text-zinc-600
                 "
               >
                 hours
@@ -568,6 +808,7 @@ function LearningActivity({
 
             <div
               className="
+                group/stat
                 flex
                 items-center
                 gap-1.5
@@ -580,9 +821,19 @@ function LearningActivity({
                 text-xs
                 font-semibold
                 text-emerald-400
+                transition-all
+                duration-300
+                hover:scale-105
               "
             >
-              <Clock3 size={13} />
+              <Clock3
+                size={13}
+                className="
+                  transition-transform
+                  duration-300
+                  group-hover/stat:rotate-12
+                "
+              />
 
               <span>
                 {activeDays}{" "}
@@ -597,6 +848,7 @@ function LearningActivity({
             {activeDays > 0 && (
               <div
                 className="
+                  group/stat
                   flex
                   items-center
                   gap-1.5
@@ -609,9 +861,19 @@ function LearningActivity({
                   text-xs
                   font-semibold
                   text-amber-400
+                  transition-all
+                  duration-300
+                  hover:scale-105
                 "
               >
-                <TrendingUp size={13} />
+                <TrendingUp
+                  size={13}
+                  className="
+                    transition-transform
+                    duration-300
+                    group-hover/stat:-translate-y-0.5
+                  "
+                />
 
                 <span>
                   {averageHours.toFixed(1)}h/day
@@ -669,6 +931,7 @@ function LearningActivity({
                       <div
                         key={`${item.day}-${index}`}
                         className="
+                          group/bar
                           flex
                           h-full
                           min-w-0
@@ -697,8 +960,16 @@ function LearningActivity({
                           `}
                         >
                           <Crown
-                            size={13}
-                            className="text-amber-400"
+                            size={14}
+                            className={`
+                              ${
+                                isStrongest
+                                  ? "animate-[crownFloat_2.5s_ease-in-out_infinite]"
+                                  : ""
+                              }
+                              text-amber-400
+                              drop-shadow-[0_0_7px_rgba(245,158,11,0.8)]
+                            `}
                             fill="currentColor"
                           />
                         </div>
@@ -711,7 +982,10 @@ function LearningActivity({
                             whitespace-nowrap
                             text-[10px]
                             font-semibold
-                            text-slate-500
+                            text-zinc-600
+                            transition-all
+                            duration-300
+                            group-hover/bar:text-zinc-300
                           "
                         >
                           {hours.toFixed(1)}h
@@ -730,8 +1004,11 @@ function LearningActivity({
                             overflow-hidden
                             rounded-t-lg
                             border
-                            border-white/5
-                            bg-white/[0.035]
+                            border-white/[0.05]
+                            bg-white/[0.025]
+                            transition-all
+                            duration-300
+                            group-hover/bar:border-red-900/40
                           "
                         >
                           {/* Stone background */}
@@ -754,8 +1031,8 @@ function LearningActivity({
                               w-full
                               rounded-t-lg
                               bg-gradient-to-t
-                              from-red-900
-                              via-red-700
+                              from-red-950
+                              via-red-800
                               to-amber-500
                               shadow-lg
                               transition-all
@@ -763,8 +1040,8 @@ function LearningActivity({
                               ease-out
                               ${
                                 isStrongest
-                                  ? "shadow-amber-500/30"
-                                  : "shadow-red-900/20"
+                                  ? "shadow-amber-500/40"
+                                  : "shadow-red-950/30"
                               }
                             `}
                             style={{
@@ -774,16 +1051,39 @@ function LearningActivity({
                             {/* Fire highlight */}
 
                             {hours > 0 && (
-                              <div
-                                className="
-                                  absolute
-                                  left-0
-                                  right-0
-                                  top-0
-                                  h-px
-                                  bg-amber-300/80
-                                "
-                              />
+                              <>
+                                <div
+                                  className="
+                                    absolute
+                                    left-0
+                                    right-0
+                                    top-0
+                                    h-px
+                                    bg-amber-300/90
+                                    shadow-[0_0_8px_rgba(252,211,77,0.8)]
+                                  "
+                                />
+
+                                {/* Moving shine */}
+
+                                <div
+                                  className="
+                                    absolute
+                                    left-0
+                                    top-0
+                                    h-full
+                                    w-full
+                                    -translate-y-full
+                                    bg-gradient-to-b
+                                    from-white/20
+                                    via-transparent
+                                    to-transparent
+                                    transition-transform
+                                    duration-700
+                                    group-hover/bar:translate-y-full
+                                  "
+                                />
+                              </>
                             )}
                           </div>
                         </div>
@@ -796,7 +1096,10 @@ function LearningActivity({
                             truncate
                             text-[11px]
                             font-semibold
-                            text-slate-500
+                            text-zinc-600
+                            transition-colors
+                            duration-300
+                            group-hover/bar:text-zinc-300
                           "
                         >
                           {item.day || "-"}
@@ -816,33 +1119,82 @@ function LearningActivity({
               strongestDay.hours > 0 && (
                 <div
                   className="
+                    group/crown
+                    relative
                     mt-7
                     flex
                     items-center
                     gap-3
+                    overflow-hidden
                     rounded-2xl
                     border
                     border-amber-500/15
                     bg-gradient-to-r
                     from-amber-500/[0.08]
-                    to-red-500/[0.05]
+                    via-red-500/[0.05]
+                    to-transparent
                     p-4
+                    transition-all
+                    duration-300
+                    hover:border-amber-500/30
                   "
                 >
+                  {/* Animated background */}
+
                   <div
                     className="
+                      absolute
+                      -right-10
+                      top-1/2
+                      h-24
+                      w-24
+                      -translate-y-1/2
+                      animate-pulse
+                      rounded-full
+                      bg-amber-500/5
+                      blur-2xl
+                    "
+                  />
+
+                  {/* Crown */}
+
+                  <div
+                    className="
+                      relative
                       flex
                       h-11
                       w-11
                       shrink-0
+                      animate-[crownFloat_3s_ease-in-out_infinite]
                       items-center
                       justify-center
                       rounded-xl
+                      border
+                      border-amber-500/20
                       bg-amber-500/10
                       text-xl
+                      shadow-[0_0_20px_rgba(245,158,11,0.08)]
                     "
                   >
-                    👑
+                    <Crown
+                      size={21}
+                      className="
+                        text-amber-400
+                        drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]
+                      "
+                      fill="currentColor"
+                    />
+
+                    <Sparkles
+                      size={10}
+                      className="
+                        absolute
+                        -right-1
+                        -top-1
+                        animate-ping
+                        text-amber-300
+                      "
+                    />
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -850,7 +1202,7 @@ function LearningActivity({
                       className="
                         m-0
                         text-sm
-                        font-bold
+                        font-black
                         text-amber-300
                       "
                     >
@@ -863,19 +1215,38 @@ function LearningActivity({
                         mt-0.5
                         text-xs
                         leading-5
-                        text-slate-500
+                        text-zinc-600
                       "
                     >
                       Your strongest learning battle —
-                      {strongestDay.hours.toFixed(1)} hours
-                      of study.
+                      {" "}
+                      {strongestDay.hours.toFixed(1)}
+                      {" "}
+                      hours of study.
                     </p>
                   </div>
 
-                  <Shield
-                    size={20}
-                    className="hidden text-amber-500/50 sm:block"
-                  />
+                  {/* Animated shield */}
+
+                  <div className="relative hidden sm:block">
+                    <Shield
+                      size={21}
+                      className="
+                        animate-[shieldPulse_3s_ease-in-out_infinite]
+                        text-amber-500/50
+                      "
+                    />
+
+                    <div
+                      className="
+                        absolute
+                        inset-0
+                        animate-ping
+                        rounded-full
+                        bg-amber-500/10
+                      "
+                    />
+                  </div>
                 </div>
               )}
           </>
@@ -883,7 +1254,7 @@ function LearningActivity({
       </div>
 
       {/* =================================================
-          CINEMATIC FOOTER
+          FOOTER
       ================================================= */}
 
       <div
@@ -895,11 +1266,140 @@ function LearningActivity({
           w-full
           bg-gradient-to-r
           from-transparent
-          via-amber-600
+          via-red-700
           to-transparent
-          opacity-50
+          opacity-70
         "
       />
+
+      {/* Animated red footer scanner */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          bottom-0
+          left-[-20%]
+          h-px
+          w-[20%]
+          bg-red-400
+          shadow-[0_0_12px_rgba(239,68,68,0.8)]
+          transition-all
+          duration-[1600ms]
+          group-hover:left-[100%]
+        "
+      />
+
+      {/* =================================================
+          ANIMATIONS
+      ================================================= */}
+
+      <style>{`
+        @keyframes iconFloat {
+          0%,
+          100% {
+            transform: translateY(0) rotate(0deg);
+          }
+
+          50% {
+            transform: translateY(-4px) rotate(1deg);
+          }
+        }
+
+        @keyframes floatIcon {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+
+          50% {
+            transform: translateY(-7px);
+          }
+        }
+
+        @keyframes swordFloat {
+          0%,
+          100% {
+            transform: translateY(0) rotate(-20deg);
+          }
+
+          50% {
+            transform: translateY(-5px) rotate(-12deg);
+          }
+        }
+
+        @keyframes crownFloat {
+          0%,
+          100% {
+            transform: translateY(0) rotate(0deg);
+          }
+
+          50% {
+            transform: translateY(-5px) rotate(3deg);
+          }
+        }
+
+        @keyframes shieldPulse {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.45;
+          }
+
+          50% {
+            transform: scale(1.12);
+            opacity: 0.8;
+          }
+        }
+
+        @keyframes flameFlicker {
+          0%,
+          100% {
+            transform: scale(1) rotate(-2deg);
+            opacity: 0.8;
+          }
+
+          25% {
+            transform: scale(1.08) rotate(2deg);
+            opacity: 1;
+          }
+
+          50% {
+            transform: scale(0.94) rotate(-3deg);
+            opacity: 0.75;
+          }
+
+          75% {
+            transform: scale(1.05) rotate(3deg);
+            opacity: 0.95;
+          }
+        }
+
+        @keyframes emberFloat {
+          0% {
+            transform: translateY(0) translateX(0);
+            opacity: 0;
+          }
+
+          20% {
+            opacity: 0.7;
+          }
+
+          50% {
+            transform: translateY(-25px) translateX(8px);
+            opacity: 0.5;
+          }
+
+          80% {
+            opacity: 0.3;
+          }
+
+          100% {
+            transform: translateY(-55px) translateX(-5px);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </section>
   );
 }
