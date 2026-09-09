@@ -7,6 +7,7 @@ import {
   logoutUser,
   instructorDashboard,
   updateProfile,
+  changePassword,
 } from "../controllers/auth.controller.js";
 
 import {
@@ -43,6 +44,12 @@ router.put(
   "/profile",
   isAuthenticated,
   updateProfile
+);
+
+router.patch(
+  "/change-password",
+  isAuthenticated,
+  changePassword
 );
 
 
