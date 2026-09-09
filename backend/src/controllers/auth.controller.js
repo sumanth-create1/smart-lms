@@ -1,4 +1,6 @@
 import User from "../models/user.model.js";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 
 export const registerUser = async (req, res) => {
   try {
@@ -198,12 +200,19 @@ export const instructorDashboard = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, bio, avatar } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
         message: "Name is required",
+      });
+    }
+
+    if (bio && bio.trim().length > 300) {
+      return res.status(400).json({
+        success: false,
+        message: "Bio cannot exceed 300 characters",
       });
     }
 
@@ -217,11 +226,12 @@ export const updateProfile = async (req, res) => {
     }
 
     user.name = name.trim();
+    user.bio = bio?.trim() || "";
+    user.avatar = avatar || "";
 
     await user.save();
 
     const userData = user.toObject();
-
     delete userData.password;
 
     return res.status(200).json({

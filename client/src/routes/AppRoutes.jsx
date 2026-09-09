@@ -31,6 +31,7 @@ import StudentCourseLearning from "../pages/student/StudentCourseLearning";
 import StudentProgress from "../pages/student/StudentProgress";
 import Achievements from "../pages/student/Achievements";
 import Settings from "../pages/student/Settings";
+import Profile from "../pages/student/Profile";
 
 // =====================================================
 // INSTRUCTOR
@@ -91,6 +92,9 @@ function AppRoutes() {
 
             {/* Achievements */}
             <Route path="/achievements" element={<Achievements />} />
+
+            {/* Profile */}
+            <Route path="/profile" element={<Profile />} />
 
             {/* Settings */}
             <Route path="/settings" element={<Settings />} />
