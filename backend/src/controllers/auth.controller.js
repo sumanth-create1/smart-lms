@@ -2,12 +2,21 @@ import User from "../models/user.model.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
+
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({
+      email: email?.toLowerCase().trim(),
+    });
 
     if (existingUser) {
       return res.status(400).json({
@@ -18,18 +27,23 @@ export const registerUser = async (req, res) => {
 
     const user = await User.create({
       name,
-      email,
+      email: email.toLowerCase().trim(),
       password,
       role,
     });
 
-    res.status(201).json({
+    const userData = user.toObject();
+    delete userData.password;
+
+    return res.status(201).json({
       success: true,
       message: "User registered successfully",
-      data: user,
+      data: userData,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Register error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -245,6 +259,262 @@ export const updateProfile = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Unable to update profile",
+    });
+  }
+};
+
+export const changeEmail = async (req, res) => {
+  try {
+    const { newEmail } = req.body;
+
+    // =========================================
+    // VALIDATION
+    // =========================================
+
+    if (!newEmail || !newEmail.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "New email is required",
+      });
+    }
+
+    const email = newEmail.trim().toLowerCase();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid email address",
+      });
+    }
+
+    // =========================================
+    // FIND CURRENT USER
+    // =========================================
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // =========================================
+    // CHECK SAME EMAIL
+    // =========================================
+
+    if (email === user.email) {
+      return res.status(400).json({
+        success: false,
+        message: "This is already your current email",
+      });
+    }
+
+    // =========================================
+    // CHECK EMAIL AVAILABILITY
+    // =========================================
+
+    const existingUser = await User.findOne({
+      email,
+      _id: { $ne: user._id },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "This email is already registered",
+      });
+    }
+
+    // =========================================
+    // GENERATE VERIFICATION TOKEN
+    // =========================================
+
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    user.pendingEmail = email;
+    user.emailVerificationToken = verificationToken;
+
+    // Token expires after 15 minutes
+    user.emailVerificationExpires = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
+
+    await user.save();
+
+    // =========================================
+    // VERIFICATION URL
+    // =========================================
+
+    const verificationUrl =
+      `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+    // =========================================
+    // SEND EMAIL
+    // =========================================
+
+    await transporter.sendMail({
+      from: `"Smart LMS" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Verify your new Smart LMS email",
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: 40px auto;
+          padding: 30px;
+          border: 1px solid #333;
+          border-radius: 12px;
+          background: #111;
+          color: #eee;
+        ">
+
+          <h2 style="color: #d4af37;">
+            Verify Your New Email
+          </h2>
+
+          <p>
+            Hello ${user.name},
+          </p>
+
+          <p>
+            You requested to change your Smart LMS email address to:
+          </p>
+
+          <p>
+            <strong>${email}</strong>
+          </p>
+
+          <p>
+            Click the button below to confirm this email address.
+          </p>
+
+          <div style="margin: 30px 0;">
+            <a
+              href="${verificationUrl}"
+              style="
+                display: inline-block;
+                padding: 12px 24px;
+                background: #b08d57;
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: bold;
+              "
+            >
+              Verify Email
+            </a>
+          </div>
+
+          <p style="font-size: 13px; color: #aaa;">
+            This verification link expires in 15 minutes.
+          </p>
+
+          <p style="font-size: 13px; color: #777;">
+            If you didn't request this change, you can safely ignore this email.
+          </p>
+
+        </div>
+      `,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Verification email sent to your new email address",
+    });
+  } catch (error) {
+    console.error("Change email error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to send verification email",
+    });
+  }
+};
+
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification token is required",
+      });
+    }
+
+    // =========================================
+    // FIND USER USING TOKEN
+    // =========================================
+
+    const user = await User.findOne({
+      emailVerificationToken: token,
+      emailVerificationExpires: {
+        $gt: new Date(),
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired verification link",
+      });
+    }
+
+    // =========================================
+    // CHECK PENDING EMAIL
+    // =========================================
+
+    if (!user.pendingEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "No pending email change found",
+      });
+    }
+
+    // =========================================
+    // CHECK EMAIL STILL AVAILABLE
+    // =========================================
+
+    const existingUser = await User.findOne({
+      email: user.pendingEmail,
+      _id: { $ne: user._id },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "This email is already registered",
+      });
+    }
+
+    // =========================================
+    // UPDATE EMAIL
+    // =========================================
+
+    user.email = user.pendingEmail;
+
+    user.pendingEmail = "";
+    user.emailVerificationToken = "";
+    user.emailVerificationExpires = null;
+
+    user.isVerified = true;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Email address verified and updated successfully",
+    });
+  } catch (error) {
+    console.error("Verify email error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to verify email",
     });
   }
 };

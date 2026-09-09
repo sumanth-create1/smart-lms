@@ -8,6 +8,8 @@ import {
   instructorDashboard,
   updateProfile,
   changePassword,
+  changeEmail,
+  verifyEmail,
 } from "../controllers/auth.controller.js";
 
 import {
@@ -52,5 +54,16 @@ router.patch(
   changePassword
 );
 
+
+router.post(
+  "/change-email",
+  isAuthenticated,
+  changeEmail
+);
+
+router.get(
+  "/verify-email/:token",
+  verifyEmail
+);
 
 export default router;

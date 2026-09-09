@@ -9,12 +9,11 @@ import {
   TrendingUp,
   Flame,
   Swords,
+  Sword,
   Trophy,
   Crown,
   Shield,
   Castle,
-  Snowflake,
-  Moon,
   Feather,
   Sparkles,
 } from "lucide-react";

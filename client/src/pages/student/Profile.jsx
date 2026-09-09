@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AtSign,
   CalendarDays,
   Check,
   CheckCircle2,
   Crown,
-  Flame,
   LoaderCircle,
   Mail,
   Pencil,
@@ -19,1169 +19,1089 @@ import {
 import toast from "react-hot-toast";
 
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 // =====================================================
-// MEDIEVAL FANTASY AVATARS
+// MEDIEVAL AVATARS
 // =====================================================
 
 const AVATARS = [
   {
-    id: "northern-warden",
     name: "Northern Warden",
-    seed: "Northern Warden",
-    icon: "❄️",
-    description: "Guardian of the North",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Northern-Warden",
   },
   {
-    id: "wolf-lord",
     name: "Wolf Lord",
-    seed: "Wolf Lord",
-    icon: "🐺",
-    description: "Lord of the Wolves",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Wolf-Lord",
   },
   {
-    id: "iron-king",
     name: "Iron King",
-    seed: "Iron King",
-    icon: "👑",
-    description: "Ruler of the Realm",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Iron-King",
   },
   {
-    id: "dragon-rider",
     name: "Dragon Rider",
-    seed: "Dragon Rider",
-    icon: "🐉",
-    description: "Rider of Ancient Beasts",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Dragon-Rider",
   },
   {
-    id: "royal-guardian",
     name: "Royal Guardian",
-    seed: "Royal Guardian",
-    icon: "🛡️",
-    description: "Shield of the Crown",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Royal-Guardian",
   },
   {
-    id: "raven-keeper",
     name: "Raven Keeper",
-    seed: "Raven Keeper",
-    icon: "🐦‍⬛",
-    description: "Keeper of Secrets",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Raven-Keeper",
   },
   {
-    id: "fireborn",
     name: "Fireborn",
-    seed: "Fireborn Warrior",
-    icon: "🔥",
-    description: "Born of Fire",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Fireborn-Warrior",
+    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Fireborn",
   },
   {
-    id: "night-warden",
     name: "Night Warden",
-    seed: "Night Warden",
-    icon: "🌑",
-    description: "Watcher Beyond the Wall",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Night-Warden",
   },
   {
-    id: "shadow-blade",
     name: "Shadow Blade",
-    seed: "Shadow Blade",
-    icon: "🗡️",
-    description: "Master of Silent Blades",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Shadow-Blade",
   },
   {
-    id: "castle-lord",
     name: "Castle Lord",
-    seed: "Castle Lord",
-    icon: "🏰",
-    description: "Lord of the Fortress",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Castle-Lord",
   },
   {
-    id: "realm-queen",
     name: "Realm Queen",
-    seed: "Realm Queen",
-    icon: "👸",
-    description: "Queen of the Realm",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Realm-Queen",
   },
   {
-    id: "dragon-knight",
     name: "Dragon Knight",
-    seed: "Dragon Knight",
-    icon: "🐲",
-    description: "Knight of the Ancient Order",
     url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Dragon-Knight",
   },
 ];
 
 // =====================================================
-// INFO CARD
+// HELPERS
 // =====================================================
 
-function InfoCard({ icon: Icon, label, value }) {
-  return (
-    <div className="group relative overflow-hidden rounded-xl border border-slate-800/80 bg-[#0b1014]/80 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-amber-400/25 hover:bg-[#0d1318]">
-      <div className="pointer-events-none absolute inset-y-0 -left-24 w-20 -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent transition-transform duration-700 group-hover:translate-x-[500px]" />
+const formatDate = (date) => {
+  if (!date) return "Unknown";
 
-      <div className="relative flex items-center gap-3">
-        <div className="rounded-lg border border-cyan-400/10 bg-cyan-400/[0.06] p-2.5 transition-all duration-300 group-hover:border-amber-400/20 group-hover:bg-amber-400/[0.06]">
-          <Icon className="h-5 w-5 text-cyan-400 transition-colors duration-300 group-hover:text-amber-400" />
-        </div>
-
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
-            {label}
-          </p>
-
-          <p className="mt-1 truncate text-sm font-medium capitalize text-slate-200">
-            {value}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// =====================================================
-// FLOATING PARTICLES
-// =====================================================
-
-function FloatingParticles() {
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 25 }, (_, index) => ({
-        id: index,
-        left: `${Math.random() * 100}%`,
-        delay: `${Math.random() * 8}s`,
-        duration: `${7 + Math.random() * 8}s`,
-        size: `${1 + Math.random() * 3}px`,
-      })),
-    []
-  );
-
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {particles.map((particle) => (
-        <span
-          key={particle.id}
-          className="absolute bottom-0 rounded-full bg-amber-300/40 opacity-0"
-          style={{
-            left: particle.left,
-            width: particle.size,
-            height: particle.size,
-            animation: `riseParticle ${particle.duration} linear ${particle.delay} infinite`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+  try {
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return "Unknown";
+  }
+};
 
 // =====================================================
 // PROFILE
 // =====================================================
 
 function Profile() {
-  const [user, setUser] = useState(null);
+  const { user, setUser } = useAuth();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const cursorGlowRef = useRef(null);
+  const cursorDotRef = useRef(null);
+
+  // ---------------------------------------------------
+  // STATE
+  // ---------------------------------------------------
 
   const [editing, setEditing] = useState(false);
 
-  const [error, setError] = useState("");
+  const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [avatar, setAvatar] = useState("");
 
-  const [formData, setFormData] = useState({
-    name: "",
-    bio: "",
-    avatar: "",
-  });
+  const [saving, setSaving] = useState(false);
 
-  // ===================================================
-  // FETCH PROFILE
-  // ===================================================
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+
+  // Password
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Email
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [changingEmail, setChangingEmail] = useState(false);
+
+  // ---------------------------------------------------
+  // SYNC AUTH USER → LOCAL FORM
+  // ---------------------------------------------------
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setLoading(true);
-        setError("");
+    if (!user) return;
 
-        const response = await api.get("/auth/me");
+    setName(user.name || "");
+    setBio(user.bio || "");
+    setAvatar(user.avatar || "");
+  }, [user]);
 
-        if (response.data?.success) {
-          const currentUser = response.data.user;
+  // ---------------------------------------------------
+  // CURSOR EFFECT
+  // ---------------------------------------------------
 
-          setUser(currentUser);
+  useEffect(() => {
+    const handlePointerMove = (event) => {
+      const { clientX, clientY } = event;
 
-          setFormData({
-            name: currentUser?.name || "",
-            bio: currentUser?.bio || "",
-            avatar: currentUser?.avatar || "",
-          });
-        } else {
-          setError("Unable to load your profile.");
-        }
-      } catch (error) {
-        console.error("Fetch profile error:", error);
+      if (cursorGlowRef.current) {
+        cursorGlowRef.current.style.transform = `translate3d(
+          ${clientX - 180}px,
+          ${clientY - 180}px,
+          0
+        )`;
+      }
 
-        setError(
-          error.response?.data?.message ||
-            "Unable to load your profile."
-        );
-      } finally {
-        setLoading(false);
+      if (cursorDotRef.current) {
+        cursorDotRef.current.style.transform = `translate3d(
+          ${clientX - 4}px,
+          ${clientY - 4}px,
+          0
+        )`;
       }
     };
 
-    fetchProfile();
+    window.addEventListener("pointermove", handlePointerMove);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+    };
   }, []);
 
-  // ===================================================
-  // INPUT CHANGE
-  // ===================================================
+  // ---------------------------------------------------
+  // RANDOM AVATAR
+  // ---------------------------------------------------
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const randomAvatar = () => {
+    const current = avatar;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const available = AVATARS.filter(
+      (item) => item.url !== current
+    );
 
-    if (error) {
-      setError("");
+    const random =
+      available[Math.floor(Math.random() * available.length)];
+
+    if (random) {
+      setAvatar(random.url);
     }
   };
 
-  // ===================================================
-  // EDIT
-  // ===================================================
-
-  const handleEdit = () => {
-    setFormData({
-      name: user?.name || "",
-      bio: user?.bio || "",
-      avatar: user?.avatar || "",
-    });
-
-    setError("");
-    setEditing(true);
-  };
-
-  // ===================================================
-  // CANCEL
-  // ===================================================
-
-  const handleCancel = () => {
-    setFormData({
-      name: user?.name || "",
-      bio: user?.bio || "",
-      avatar: user?.avatar || "",
-    });
-
-    setError("");
-    setEditing(false);
-  };
-
-  // ===================================================
+  // ---------------------------------------------------
   // SELECT AVATAR
-  // ===================================================
+  // ---------------------------------------------------
 
-  const handleAvatarSelect = (avatar) => {
-    setFormData((prev) => ({
-      ...prev,
-      avatar: avatar.url,
-    }));
-
-    setError("");
+  const selectAvatar = (url) => {
+    setAvatar(url);
+    setShowAvatarPicker(false);
   };
 
-  // ===================================================
-  // RANDOM AVATAR
-  // ===================================================
-
-  const handleRandomAvatar = () => {
-    const currentIndex = AVATARS.findIndex(
-      (avatar) => avatar.url === formData.avatar
-    );
-
-    let randomIndex;
-
-    do {
-      randomIndex = Math.floor(
-        Math.random() * AVATARS.length
-      );
-    } while (
-      AVATARS.length > 1 &&
-      randomIndex === currentIndex
-    );
-
-    setFormData((prev) => ({
-      ...prev,
-      avatar: AVATARS[randomIndex].url,
-    }));
-
-    setError("");
-
-    toast.success(
-      `The ${AVATARS[randomIndex].name} has been chosen.`
-    );
-  };
-
-  // ===================================================
-  // SAVE
-  // ===================================================
+  // ---------------------------------------------------
+  // SAVE PROFILE
+  // ---------------------------------------------------
 
   const handleSaveProfile = async () => {
+    if (!name.trim()) {
+      toast.error("Your name cannot be empty.");
+      return;
+    }
+
+    if (bio.length > 300) {
+      toast.error("Bio cannot exceed 300 characters.");
+      return;
+    }
+
     try {
-      const trimmedName = formData.name.trim();
-      const trimmedBio = formData.bio.trim();
-
-      if (!trimmedName) {
-        setError("Name is required.");
-        return;
-      }
-
-      if (trimmedBio.length > 300) {
-        setError("Bio cannot exceed 300 characters.");
-        return;
-      }
-
       setSaving(true);
-      setError("");
 
       const response = await api.put("/auth/profile", {
-        name: trimmedName,
-        bio: trimmedBio,
-        avatar: formData.avatar,
+        name: name.trim(),
+        bio: bio.trim(),
+        avatar,
       });
 
-      if (response.data?.success) {
-        const updatedUser = response.data.user;
+      if (response.data.success) {
+        const updatedUser =
+          response.data.user || response.data;
+
+        // =================================================
+        // 🔥 IMPORTANT
+        // Update AuthContext immediately.
+        // No manual refresh required.
+        // =================================================
 
         setUser(updatedUser);
 
-        setFormData({
-          name: updatedUser?.name || "",
-          bio: updatedUser?.bio || "",
-          avatar: updatedUser?.avatar || "",
-        });
+        toast.success("Your profile has been updated.");
 
         setEditing(false);
-
-        toast.success("Your record has been updated.");
-      } else {
-        setError(
-          response.data?.message ||
-            "Unable to update your profile."
-        );
       }
     } catch (error) {
-      console.error("Update profile error:", error);
+      console.error("Profile update error:", error);
 
-      const message =
+      toast.error(
         error.response?.data?.message ||
-        "Unable to update your profile.";
-
-      setError(message);
-
-      toast.error(message);
+          "Failed to update profile."
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // ===================================================
+  // ---------------------------------------------------
+  // CANCEL EDITING
+  // ---------------------------------------------------
+
+  const handleCancelEdit = () => {
+    setName(user?.name || "");
+    setBio(user?.bio || "");
+    setAvatar(user?.avatar || "");
+
+    setEditing(false);
+  };
+
+  // ---------------------------------------------------
+  // CHANGE PASSWORD
+  // ---------------------------------------------------
+
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("Please fill in all password fields.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error(
+        "New password must contain at least 6 characters."
+      );
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match.");
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+
+      await api.patch("/auth/change-password", {
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+
+      toast.success("Password changed successfully.");
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+
+      setShowPasswordForm(false);
+    } catch (error) {
+      console.error("Password change error:", error);
+
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to change password."
+      );
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  // ---------------------------------------------------
+  // CHANGE EMAIL
+  // ---------------------------------------------------
+
+  const handleChangeEmail = async (event) => {
+    event.preventDefault();
+
+    const email = newEmail.trim().toLowerCase();
+
+    if (!email) {
+      toast.error("Please enter a new email.");
+      return;
+    }
+
+    if (!email.includes("@")) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    if (email === user?.email?.toLowerCase()) {
+      toast.error("This is already your current email.");
+      return;
+    }
+
+    try {
+      setChangingEmail(true);
+
+      const response = await api.patch(
+        "/auth/change-email",
+        {
+          newEmail: email,
+        }
+      );
+
+      toast.success(
+        response.data?.message ||
+          "Verification email sent."
+      );
+
+      setNewEmail("");
+      setShowEmailForm(false);
+    } catch (error) {
+      console.error("Email change error:", error);
+
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to change email."
+      );
+    } finally {
+      setChangingEmail(false);
+    }
+  };
+
+  // ---------------------------------------------------
+  // CURRENT AVATAR NAME
+  // ---------------------------------------------------
+
+  const selectedAvatarName = useMemo(() => {
+    const found = AVATARS.find(
+      (item) => item.url === avatar
+    );
+
+    return found?.name || "Your chosen avatar";
+  }, [avatar]);
+
+  // =====================================================
   // LOADING
-  // ===================================================
+  // =====================================================
 
-  if (loading) {
+  if (!user) {
     return (
-      <div className="flex min-h-[500px] items-center justify-center">
-        <div className="flex flex-col items-center gap-5">
-          <div className="relative">
-            <div className="absolute -inset-5 animate-ping rounded-full bg-cyan-400/[0.03]" />
-
-            <div className="absolute -inset-2 animate-pulse rounded-full border border-amber-400/10" />
-
-            <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-cyan-400/20 bg-[#0a0e11] shadow-2xl">
-              <LoaderCircle className="h-7 w-7 animate-spin text-cyan-400" />
-            </div>
-          </div>
-
-          <div className="text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-400/70">
-              Consulting the records
-            </p>
-
-            <p className="mt-2 text-[11px] text-slate-600">
-              Retrieving your identity from the realm...
-            </p>
-          </div>
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <div className="flex items-center gap-3 text-slate-400">
+          <LoaderCircle className="h-5 w-5 animate-spin" />
+          <span>Opening your house record...</span>
         </div>
       </div>
     );
   }
 
-  // ===================================================
-  // ERROR
-  // ===================================================
-
-  if (error && !user) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="max-w-md rounded-2xl border border-red-500/20 bg-red-950/10 p-8 text-center">
-          <Shield className="mx-auto h-10 w-10 text-red-400" />
-
-          <h2 className="mt-4 text-lg font-semibold text-red-300">
-            The records could not be opened
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500">
-            {error}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // =====================================================
+  // UI
+  // =====================================================
 
   return (
-    <div className="relative space-y-6 pb-12">
+    <div className="relative min-h-screen overflow-hidden text-slate-200">
       {/* =================================================
-          ANIMATIONS
+          CURSOR GLOW
       ================================================= */}
 
-      <style>
-        {`
-          @keyframes riseParticle {
-            0% {
-              transform: translateY(20px) scale(.7);
-              opacity: 0;
-            }
+      <div
+        ref={cursorGlowRef}
+        className="pointer-events-none fixed left-0 top-0 z-[1] h-[360px] w-[360px] rounded-full bg-amber-500/[0.045] blur-3xl transition-transform duration-150 ease-out"
+      />
 
-            15% {
-              opacity: .45;
-            }
-
-            70% {
-              opacity: .18;
-            }
-
-            100% {
-              transform: translateY(-380px) scale(1);
-              opacity: 0;
-            }
-          }
-
-          @keyframes moonPulse {
-            0%, 100% {
-              opacity: .22;
-              transform: scale(1);
-            }
-
-            50% {
-              opacity: .38;
-              transform: scale(1.06);
-            }
-          }
-
-          @keyframes slowFloat {
-            0%, 100% {
-              transform: translateY(0);
-            }
-
-            50% {
-              transform: translateY(-5px);
-            }
-          }
-
-          @keyframes pulseGlow {
-            0%, 100% {
-              opacity: .2;
-            }
-
-            50% {
-              opacity: .6;
-            }
-          }
-
-          @keyframes swordGlow {
-            0%, 100% {
-              opacity: .3;
-              transform: scaleX(1);
-            }
-
-            50% {
-              opacity: .8;
-              transform: scaleX(1.04);
-            }
-          }
-        `}
-      </style>
+      <div
+        ref={cursorDotRef}
+        className="pointer-events-none fixed left-0 top-0 z-[60] h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.8)] transition-transform duration-75"
+      />
 
       {/* =================================================
-          BACKGROUND
+          AMBIENT BACKGROUND
       ================================================= */}
 
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute left-[25%] top-10 h-[420px] w-[420px] rounded-full bg-cyan-500/[0.025] blur-[150px]" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-32 top-40 h-80 w-80 rounded-full bg-sky-500/[0.025] blur-3xl" />
 
-        <div className="absolute bottom-0 right-0 h-[500px] w-[500px] rounded-full bg-amber-500/[0.025] blur-[170px]" />
+        <div className="absolute -right-32 top-10 h-96 w-96 rounded-full bg-amber-500/[0.025] blur-3xl" />
 
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#06080a_90%)]" />
+        {/* Stars */}
+        <div className="absolute left-[12%] top-20 h-1 w-1 animate-pulse rounded-full bg-slate-400/60" />
+        <div className="absolute left-[28%] top-36 h-1 w-1 animate-pulse rounded-full bg-amber-300/50" />
+        <div className="absolute left-[72%] top-28 h-1 w-1 animate-pulse rounded-full bg-slate-300/60" />
+        <div className="absolute right-[12%] top-52 h-1 w-1 animate-pulse rounded-full bg-amber-200/50" />
+        <div className="absolute right-[30%] top-24 h-1 w-1 animate-pulse rounded-full bg-slate-300/50" />
+
+        {/* Embers */}
+        <div className="absolute left-[18%] top-[48%] h-1 w-1 animate-pulse rounded-full bg-orange-400/40" />
+        <div className="absolute right-[18%] top-[58%] h-1 w-1 animate-pulse rounded-full bg-amber-400/50" />
+        <div className="absolute left-[50%] top-[72%] h-1 w-1 animate-pulse rounded-full bg-orange-300/30" />
       </div>
 
-      {/* =================================================
-          HEADER
-      ================================================= */}
-
-      <div className="relative">
-        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.35em] text-cyan-400">
-          <Sparkles className="h-3.5 w-3.5" />
-          The Realm · Identity
-        </div>
-
-        <div className="mt-2 flex items-center gap-4">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100 sm:text-4xl">
-            Your Profile
-          </h1>
-
-          <div className="hidden h-px flex-1 bg-gradient-to-r from-slate-800 via-amber-400/20 to-transparent sm:block" />
-        </div>
-
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
-          Your identity within the realm. Choose your banner,
-          maintain your record, and continue your journey.
-        </p>
-      </div>
-
-      {/* =================================================
-          MAIN PROFILE CARD
-      ================================================= */}
-
-      <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-[#080c0f] shadow-2xl shadow-black/40">
+      <div className="relative z-10 mx-auto max-w-[1500px] space-y-6">
         {/* =================================================
-            FANTASY BANNER
+            HERO
         ================================================= */}
 
-        <div className="relative h-52 overflow-hidden border-b border-slate-800/70 bg-gradient-to-b from-[#0b141c] via-[#080e13] to-[#080c0f]">
-          <FloatingParticles />
-
+        <section className="group relative overflow-hidden rounded-3xl border border-slate-700/60 bg-[#0b0e11]/95 shadow-2xl shadow-black/40">
           {/* Moon */}
-          <div
-            className="absolute right-[13%] top-8 h-20 w-20 rounded-full bg-slate-300/[0.08]"
-            style={{
-              animation:
-                "moonPulse 5s ease-in-out infinite",
-            }}
-          />
-
-          <div
-            className="absolute right-[10%] top-4 h-28 w-28 rounded-full bg-slate-200/[0.035] blur-xl"
-            style={{
-              animation:
-                "moonPulse 5s ease-in-out infinite",
-            }}
-          />
-
-          {/* Stars */}
-
-          <span className="absolute left-[12%] top-10 h-1 w-1 rounded-full bg-slate-300/40" />
-          <span className="absolute left-[25%] top-7 h-1 w-1 rounded-full bg-cyan-200/30" />
-          <span className="absolute left-[39%] top-20 h-1 w-1 rounded-full bg-slate-300/40" />
-          <span className="absolute left-[53%] top-9 h-1 w-1 rounded-full bg-slate-300/30" />
-          <span className="absolute left-[70%] top-24 h-1 w-1 rounded-full bg-cyan-200/30" />
-          <span className="absolute left-[84%] top-12 h-1 w-1 rounded-full bg-slate-300/40" />
+          <div className="absolute right-16 top-10 h-28 w-28 rounded-full border border-slate-400/10 bg-slate-200/[0.035] shadow-[0_0_70px_rgba(226,232,240,0.08)]" />
 
           {/* Mountains */}
+          <div className="absolute bottom-0 left-0 right-0 h-28 opacity-40">
+            <div className="absolute bottom-0 left-[5%] h-24 w-48 rotate-12 bg-slate-950/80 [clip-path:polygon(50%_0,100%_100%,0_100%)]" />
 
-          <div
-            className="absolute bottom-0 left-0 h-28 w-[48%] opacity-40"
-            style={{
-              clipPath:
-                "polygon(0 100%, 14% 48%, 27% 70%, 43% 20%, 58% 64%, 75% 34%, 100% 100%)",
-              background: "#040607",
-            }}
-          />
+            <div className="absolute bottom-0 left-[24%] h-32 w-64 bg-slate-950/80 [clip-path:polygon(50%_0,100%_100%,0_100%)]" />
 
-          <div
-            className="absolute bottom-0 right-0 h-32 w-[52%] opacity-30"
-            style={{
-              clipPath:
-                "polygon(0 100%, 18% 60%, 35% 30%, 52% 70%, 68% 40%, 82% 60%, 100% 25%, 100% 100%)",
-              background: "#040607",
-            }}
-          />
+            <div className="absolute bottom-0 right-[18%] h-28 w-56 -rotate-6 bg-slate-950/80 [clip-path:polygon(50%_0,100%_100%,0_100%)]" />
+
+            <div className="absolute bottom-0 right-[2%] h-20 w-44 bg-slate-950/80 [clip-path:polygon(50%_0,100%_100%,0_100%)]" />
+          </div>
 
           {/* Castle */}
+          <div className="absolute bottom-0 right-[28%] opacity-40">
+            <div className="relative h-24 w-32 border-x border-t border-slate-700 bg-slate-950/70">
+              <div className="absolute -left-4 bottom-0 h-32 w-7 border border-slate-700 bg-slate-950" />
+              <div className="absolute -right-4 bottom-0 h-32 w-7 border border-slate-700 bg-slate-950" />
 
-          <div className="absolute bottom-0 left-1/2 flex -translate-x-1/2 items-end opacity-45">
-            <div className="h-20 w-40 bg-[#030405]" />
-
-            <div className="relative h-32 w-9 bg-[#020304]">
-              <div className="absolute -top-5 left-0 h-5 w-9 bg-[#020304]" />
+              <div className="absolute left-4 top-8 h-3 w-3 bg-amber-300/30" />
+              <div className="absolute left-20 top-12 h-3 w-3 bg-amber-300/20" />
+              <div className="absolute left-14 top-2 h-2 w-2 bg-amber-300/20" />
             </div>
-
-            <div className="relative h-24 w-10 bg-[#020304]">
-              <div className="absolute -top-5 left-0 h-5 w-10 bg-[#020304]" />
-            </div>
-
-            <div className="relative h-36 w-11 bg-[#020304]">
-              <div className="absolute -top-5 left-0 h-5 w-11 bg-[#020304]" />
-            </div>
-
-            <div className="h-20 w-40 bg-[#030405]" />
           </div>
 
-          {/* Castle lights */}
+          {/* Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0b0e11] via-[#0b0e11]/90 to-transparent" />
 
-          <div className="absolute bottom-7 left-1/2 flex -translate-x-1/2 gap-7 opacity-40">
-            <span className="h-2.5 w-1 rounded-full bg-amber-300 blur-[1px]" />
-            <span className="h-3.5 w-1 rounded-full bg-amber-300 blur-[1px]" />
-            <span className="h-2.5 w-1 rounded-full bg-amber-300 blur-[1px]" />
-          </div>
-
-          {/* Mist */}
-
-          <div className="absolute bottom-0 left-0 h-24 w-full bg-gradient-to-t from-[#080c0f] via-[#080c0f]/70 to-transparent" />
-
-          {/* Horizon */}
-
-          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
-        </div>
-
-        {/* =================================================
-            CONTENT
-        ================================================= */}
-
-        <div className="relative px-5 pb-8 sm:px-8">
-          {/* =================================================
-              IDENTITY
-          ================================================= */}
-
-          <div className="-mt-16 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
-              {/* Avatar */}
-
-              <div
-                className="relative"
-                style={{
-                  animation:
-                    "slowFloat 5s ease-in-out infinite",
-                }}
-              >
-                <div
-                  className="absolute -inset-4 rounded-full bg-cyan-400/[0.035] blur-xl"
-                  style={{
-                    animation:
-                      "pulseGlow 4s ease-in-out infinite",
-                  }}
-                />
-
-                <div className="absolute -inset-1 rounded-full border border-amber-400/20" />
-
-                <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-[5px] border-[#080c0f] bg-gradient-to-br from-slate-800 to-slate-950 shadow-2xl shadow-black/60">
-                  {user?.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt={user?.name || "Profile"}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <User className="h-12 w-12 text-slate-600" />
-                  )}
-
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent" />
+          <div className="relative px-6 py-10 sm:px-10 lg:px-14">
+            <div className="max-w-2xl">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-400/[0.06]">
+                  <Crown className="h-5 w-5 text-amber-300" />
                 </div>
-
-                {/* Verified */}
-
-                <div className="absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full border-[3px] border-[#080c0f] bg-emerald-500 shadow-lg shadow-emerald-950/40">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-white" />
-                </div>
-              </div>
-
-              {/* Name */}
-
-              <div className="pb-2">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-bold text-white">
-                    {user?.name || "Unknown User"}
-                  </h2>
-
-                  <Crown className="h-4 w-4 text-amber-400" />
-                </div>
-
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-cyan-400/10 bg-cyan-400/[0.06] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
-                    {user?.role || "student"}
-                  </span>
-
-                  <span className="text-xs text-slate-700">
-                    ·
-                  </span>
-
-                  <span className="text-xs text-slate-600">
-                    Member of the Realm
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Edit button */}
-
-            {!editing && (
-              <button
-                type="button"
-                onClick={handleEdit}
-                className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-5 py-2.5 text-sm font-medium text-amber-300 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-400/40 hover:bg-amber-400/10 hover:shadow-lg hover:shadow-amber-950/20"
-              >
-                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-
-                <Pencil className="relative h-4 w-4" />
-
-                <span className="relative">
-                  Edit Profile
-                </span>
-              </button>
-            )}
-          </div>
-
-          {/* =================================================
-              EDIT PANEL
-          ================================================= */}
-
-          {editing && (
-            <div className="mt-8 overflow-hidden rounded-2xl border border-amber-400/15 bg-gradient-to-br from-amber-400/[0.025] to-cyan-400/[0.02]">
-              {/* Header */}
-
-              <div className="border-b border-slate-800/80 px-5 py-4 sm:px-6">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg border border-amber-400/10 bg-amber-400/[0.05] p-2">
-                    <Sword className="h-4 w-4 text-amber-400" />
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-400">
-                      Rewrite Your Record
-                    </p>
-
-                    <p className="mt-1 text-xs text-slate-600">
-                      Choose the identity that represents you.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-7 p-5 sm:p-6">
-                {/* =================================================
-                    AVATAR SELECTION
-                ================================================= */}
 
                 <div>
-                  <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <label className="text-sm font-semibold text-slate-200">
-                        Choose Your Banner
-                      </label>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-amber-300/70">
+                    The Realm · Identity
+                  </p>
 
-                      <p className="mt-1 text-xs text-slate-600">
-                        Choose a warrior, ruler, guardian, or
-                        creature to represent your realm identity.
+                  <p className="mt-1 text-xs text-slate-500">
+                    House Record
+                  </p>
+                </div>
+              </div>
+
+              <h1 className="font-serif text-3xl font-semibold tracking-tight text-slate-100 sm:text-4xl">
+                Your Profile
+              </h1>
+
+              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-400">
+                Every learner carries a banner. Shape your identity,
+                choose your sigil, and keep your record worthy of
+                the realm.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 rounded-full border border-slate-700/70 bg-black/20 px-4 py-2 text-xs text-slate-400 backdrop-blur-sm">
+                  <Shield className="h-3.5 w-3.5 text-sky-300" />
+                  Protected Account
+                </div>
+
+                <div className="flex items-center gap-2 rounded-full border border-slate-700/70 bg-black/20 px-4 py-2 text-xs text-slate-400 backdrop-blur-sm">
+                  <Sword className="h-3.5 w-3.5 text-amber-300" />
+                  Learner of the Realm
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* =================================================
+            MAIN GRID
+        ================================================= */}
+
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          {/* =================================================
+              PROFILE CARD
+          ================================================= */}
+
+          <section className="group relative overflow-hidden rounded-3xl border border-slate-700/60 bg-[#0b0e11]/95 shadow-xl shadow-black/20">
+            {/* Top line */}
+            <div className="h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
+
+            <div className="p-6 sm:p-8">
+              {/* Header */}
+              <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-amber-300" />
+
+                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300/70">
+                      Personal Record
+                    </p>
+                  </div>
+
+                  <h2 className="mt-2 font-serif text-2xl font-semibold text-slate-100">
+                    House Identity
+                  </h2>
+                </div>
+
+                {!editing ? (
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="group/btn inline-flex items-center justify-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-4 py-2.5 text-sm font-medium text-amber-200 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-300/40 hover:bg-amber-400/[0.1] hover:shadow-[0_0_25px_rgba(251,191,36,0.08)]"
+                  >
+                    <Pencil className="h-4 w-4 transition-transform duration-300 group-hover/btn:rotate-12" />
+                    Edit Record
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={saving}
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-sm text-slate-300 transition hover:border-slate-600 hover:text-white disabled:opacity-50"
+                    >
+                      <X className="h-4 w-4" />
+                      Cancel
+                    </button>
+
+                    <button
+                      onClick={handleSaveProfile}
+                      disabled={saving}
+                      className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 text-sm font-medium text-amber-200 transition hover:bg-amber-400/15 disabled:opacity-50"
+                    >
+                      {saving ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+
+                      {saving ? "Saving..." : "Save Record"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* =================================================
+                  AVATAR
+              ================================================= */}
+
+              <div className="mt-8 flex flex-col items-center gap-5 border-b border-slate-800/80 pb-8 sm:flex-row">
+                <div className="relative">
+                  {/* Outer ring */}
+                  <div className="absolute -inset-2 rounded-full border border-amber-300/10" />
+
+                  <div className="absolute -inset-4 rounded-full border border-slate-700/30" />
+
+                  {/* Avatar */}
+                  <div className="relative h-32 w-32 overflow-hidden rounded-full border-2 border-amber-300/30 bg-slate-900 shadow-[0_0_40px_rgba(251,191,36,0.08)] transition-all duration-500 hover:scale-105 hover:border-amber-300/50 hover:shadow-[0_0_55px_rgba(251,191,36,0.14)]">
+                    {avatar ? (
+                      <img
+                        src={avatar}
+                        alt="Profile avatar"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <User className="h-12 w-12 text-slate-600" />
+                      </div>
+                    )}
+
+                    <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-br from-white/[0.08] via-transparent to-black/30" />
+                  </div>
+
+                  {/* Online indicator */}
+                  <div className="absolute bottom-2 right-1 flex h-7 w-7 items-center justify-center rounded-full border-4 border-[#0b0e11] bg-emerald-400">
+                    <Check className="h-3 w-3 text-slate-950" />
+                  </div>
+                </div>
+
+                <div className="text-center sm:text-left">
+                  <p className="font-serif text-xl font-semibold text-slate-100">
+                    {user.name}
+                  </p>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    {selectedAvatarName}
+                  </p>
+
+                  {editing && (
+                    <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
+                      <button
+                        onClick={() =>
+                          setShowAvatarPicker(
+                            !showAvatarPicker
+                          )
+                        }
+                        className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300 transition hover:border-amber-400/30 hover:text-amber-200"
+                      >
+                        <User className="h-3.5 w-3.5" />
+                        Choose Sigil
+                      </button>
+
+                      <button
+                        onClick={randomAvatar}
+                        className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300 transition hover:border-sky-400/30 hover:text-sky-200"
+                      >
+                        <Shuffle className="h-3.5 w-3.5" />
+                        Random
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* =================================================
+                  AVATAR PICKER
+              ================================================= */}
+
+              {editing && showAvatarPicker && (
+                <div className="mt-6 rounded-2xl border border-slate-700/70 bg-[#080b0e] p-4 shadow-2xl">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-serif font-semibold text-slate-200">
+                        Choose Your Sigil
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        Select the banner that represents you.
                       </p>
                     </div>
 
                     <button
-                      type="button"
-                      onClick={handleRandomAvatar}
-                      className="group inline-flex w-fit items-center gap-2 rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] px-3 py-2 text-xs font-medium text-cyan-300 transition-all duration-300 hover:border-cyan-400/30 hover:bg-cyan-400/[0.08]"
+                      onClick={() =>
+                        setShowAvatarPicker(false)
+                      }
+                      className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
                     >
-                      <Shuffle className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-180" />
-
-                      Random Avatar
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
 
-                  {/* Avatar Grid */}
-
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-                    {AVATARS.map((avatar) => {
+                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                    {AVATARS.map((item) => {
                       const selected =
-                        formData.avatar === avatar.url;
+                        avatar === item.url;
 
                       return (
                         <button
-                          key={avatar.id}
-                          type="button"
+                          key={item.name}
                           onClick={() =>
-                            handleAvatarSelect(avatar)
+                            selectAvatar(item.url)
                           }
-                          className={`group relative overflow-hidden rounded-xl border p-2 text-left transition-all duration-300 ${
+                          className={`group relative overflow-hidden rounded-xl border p-2 transition-all duration-300 ${
                             selected
-                              ? "scale-[1.02] border-amber-400/60 bg-amber-400/[0.07] shadow-xl shadow-amber-950/30"
-                              : "border-slate-800 bg-[#070a0d] hover:-translate-y-1 hover:border-slate-600 hover:bg-slate-950"
+                              ? "border-amber-300/60 bg-amber-300/[0.08] shadow-[0_0_25px_rgba(251,191,36,0.08)]"
+                              : "border-slate-800 bg-slate-900/60 hover:-translate-y-1 hover:border-slate-600"
                           }`}
                         >
-                          {/* Avatar */}
-
-                          <div className="relative aspect-square overflow-hidden rounded-lg bg-gradient-to-br from-slate-800/70 to-black">
+                          <div className="aspect-square overflow-hidden rounded-lg bg-slate-950">
                             <img
-                              src={avatar.url}
-                              alt={avatar.name}
+                              src={item.url}
+                              alt={item.name}
                               className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
                             />
-
-                            {/* Dark overlay */}
-
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
-
-                            {/* Selected */}
-
-                            {selected && (
-                              <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-slate-950 shadow-lg">
-                                <Check className="h-3.5 w-3.5" />
-                              </div>
-                            )}
-
-                            {/* Icon */}
-
-                            <div className="absolute bottom-2 left-2 text-lg drop-shadow-lg">
-                              {avatar.icon}
-                            </div>
                           </div>
 
-                          {/* Name */}
+                          <p className="mt-2 truncate text-[10px] text-slate-500">
+                            {item.name}
+                          </p>
 
-                          <div className="mt-3">
-                            <div className="flex items-center gap-1.5">
-                              <p
-                                className={`text-xs font-semibold ${
-                                  selected
-                                    ? "text-amber-300"
-                                    : "text-slate-300"
-                                }`}
-                              >
-                                {avatar.name}
-                              </p>
+                          {selected && (
+                            <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-300">
+                              <Check className="h-3 w-3 text-slate-950" />
                             </div>
-
-                            <p className="mt-1 text-[9px] leading-4 text-slate-600">
-                              {avatar.description}
-                            </p>
-                          </div>
+                          )}
                         </button>
                       );
                     })}
                   </div>
+                </div>
+              )}
 
-                  {/* Current selection */}
+              {/* =================================================
+                  FORM
+              ================================================= */}
 
-                  {formData.avatar && (
-                    <div className="mt-4 flex items-center gap-3 rounded-lg border border-amber-400/10 bg-amber-400/[0.025] px-4 py-3">
-                      <div className="h-9 w-9 overflow-hidden rounded-full border border-amber-400/20">
-                        <img
-                          src={formData.avatar}
-                          alt="Selected avatar"
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
+              <div className="mt-8 grid gap-6 md:grid-cols-2">
+                {/* Name */}
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <User className="h-3.5 w-3.5" />
+                    Name
+                  </label>
 
-                      <div>
-                        <p className="text-[9px] uppercase tracking-[0.2em] text-slate-600">
-                          Current Selection
-                        </p>
-
-                        <p className="mt-0.5 text-xs font-medium text-amber-300">
-                          {AVATARS.find(
-                            (avatar) =>
-                              avatar.url ===
-                              formData.avatar
-                          )?.name ||
-                            "Custom Realm Avatar"}
-                        </p>
-                      </div>
+                  {editing ? (
+                    <input
+                      value={name}
+                      onChange={(e) =>
+                        setName(e.target.value)
+                      }
+                      maxLength={100}
+                      className="w-full rounded-xl border border-slate-700 bg-[#080b0e] px-4 py-3 text-sm text-slate-200 outline-none transition focus:border-amber-400/50 focus:ring-1 focus:ring-amber-400/20"
+                      placeholder="Enter your name"
+                    />
+                  ) : (
+                    <div className="rounded-xl border border-slate-800 bg-[#080b0e]/70 px-4 py-3 text-sm text-slate-200">
+                      {user.name || "Not set"}
                     </div>
                   )}
                 </div>
 
-                {/* Divider */}
-
-                <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
-
-                {/* =================================================
-                    NAME
-                ================================================= */}
-
+                {/* Email */}
                 <div>
-                  <label
-                    htmlFor="profile-name"
-                    className="mb-2 block text-sm font-medium text-slate-300"
-                  >
-                    Display Name
+                  <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <Mail className="h-3.5 w-3.5" />
+                    Email
                   </label>
 
-                  <input
-                    id="profile-name"
-                    name="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleChange}
-                    maxLength={100}
-                    placeholder="Enter your name"
-                    className="w-full rounded-lg border border-slate-800 bg-[#070a0d] px-4 py-3 text-sm text-slate-200 outline-none transition-all placeholder:text-slate-700 focus:border-cyan-400/40 focus:ring-1 focus:ring-cyan-400/10"
-                  />
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-800 bg-[#080b0e]/70 px-4 py-3">
+                    <span className="min-w-0 flex-1 truncate text-sm text-slate-300">
+                      {user.email}
+                    </span>
+
+                    {user.isVerified ? (
+                      <span className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+                        Unverified
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      setShowEmailForm(
+                        !showEmailForm
+                      )
+                    }
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs text-sky-300 transition hover:text-sky-200"
+                  >
+                    <AtSign className="h-3.5 w-3.5" />
+                    Change email
+                  </button>
                 </div>
+              </div>
 
-                {/* =================================================
-                    BIO
-                ================================================= */}
+              {/* =================================================
+                  BIO
+              ================================================= */}
 
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <label
-                      htmlFor="profile-bio"
-                      className="text-sm font-medium text-slate-300"
-                    >
-                      Biography
-                    </label>
+              <div className="mt-6">
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Chronicle / Bio
+                  </label>
 
+                  {editing && (
                     <span
-                      className={`text-xs ${
-                        formData.bio.length >= 280
+                      className={`text-[10px] ${
+                        bio.length > 270
                           ? "text-amber-400"
-                          : "text-slate-700"
+                          : "text-slate-600"
                       }`}
                     >
-                      {formData.bio.length}/300
+                      {bio.length}/300
                     </span>
-                  </div>
-
-                  <textarea
-                    id="profile-bio"
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    maxLength={300}
-                    rows={4}
-                    placeholder="Tell the realm a little about yourself..."
-                    className="w-full resize-none rounded-lg border border-slate-800 bg-[#070a0d] px-4 py-3 text-sm leading-relaxed text-slate-200 outline-none transition-all placeholder:text-slate-700 focus:border-cyan-400/40 focus:ring-1 focus:ring-cyan-400/10"
-                  />
-                </div>
-
-                {/* =================================================
-                    ERROR
-                ================================================= */}
-
-                {error && (
-                  <div className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/[0.04] px-4 py-3 text-sm text-red-400">
-                    <Shield className="h-4 w-4 shrink-0" />
-
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                {/* =================================================
-                    ACTIONS
-                ================================================= */}
-
-                <div className="flex flex-col-reverse gap-3 border-t border-slate-800/70 pt-5 sm:flex-row sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    disabled={saving}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-5 py-2.5 text-sm font-medium text-slate-400 transition-all hover:border-slate-700 hover:bg-slate-900 hover:text-slate-200 disabled:opacity-50"
-                  >
-                    <X className="h-4 w-4" />
-
-                    Cancel
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSaveProfile}
-                    disabled={saving}
-                    className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-gradient-to-r from-cyan-500 to-cyan-400 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-950/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-950/40 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-
-                    {saving ? (
-                      <LoaderCircle className="relative h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="relative h-4 w-4" />
-                    )}
-
-                    <span className="relative">
-                      {saving
-                        ? "Saving..."
-                        : "Save Changes"}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* =================================================
-              ACCOUNT INFORMATION
-          ================================================= */}
-
-          <div className="mt-9">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="h-px w-8 bg-amber-400/30" />
-
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-600">
-                Account Information
-              </p>
-
-              <div className="h-px flex-1 bg-gradient-to-r from-slate-800 to-transparent" />
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <InfoCard
-                icon={User}
-                label="Name"
-                value={user?.name || "Not provided"}
-              />
-
-              <InfoCard
-                icon={Mail}
-                label="Email"
-                value={user?.email || "Not provided"}
-              />
-
-              <InfoCard
-                icon={Shield}
-                label="Role"
-                value={user?.role || "Not provided"}
-              />
-
-              <InfoCard
-                icon={CalendarDays}
-                label="Member since"
-                value={
-                  user?.createdAt
-                    ? new Date(
-                        user.createdAt
-                      ).toLocaleDateString()
-                    : "Not available"
-                }
-              />
-            </div>
-          </div>
-
-          {/* =================================================
-              BIO
-          ================================================= */}
-
-          <div className="group relative mt-6 overflow-hidden rounded-xl border border-slate-800 bg-[#0a0e11]/70 p-5">
-            <div className="absolute left-0 top-0 h-full w-px bg-gradient-to-b from-transparent via-amber-400/40 to-transparent" />
-
-            <div className="pointer-events-none absolute inset-y-0 -left-32 w-32 -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.025] to-transparent transition-transform duration-1000 group-hover:translate-x-[800px]" />
-
-            <div className="relative">
-              <div className="mb-3 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-amber-400" />
-
-                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-600">
-                  About the Seeker
-                </p>
-              </div>
-
-              <p className="text-sm leading-7 text-slate-400">
-                {user?.bio?.trim()
-                  ? user.bio
-                  : "No biography has been written yet. Tell the realm a little about yourself."}
-              </p>
-            </div>
-          </div>
-
-          {/* =================================================
-              EMAIL VERIFICATION
-          ================================================= */}
-
-          <div
-            className={`group relative mt-6 overflow-hidden rounded-xl border p-5 transition-all duration-300 ${
-              user?.isVerified
-                ? "border-emerald-500/15 bg-emerald-500/[0.025] hover:border-emerald-500/30"
-                : "border-amber-500/15 bg-amber-500/[0.025] hover:border-amber-500/30"
-            }`}
-          >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <div
-                  className={`rounded-lg border p-2.5 ${
-                    user?.isVerified
-                      ? "border-emerald-400/10 bg-emerald-400/[0.06]"
-                      : "border-amber-400/10 bg-amber-400/[0.06]"
-                  }`}
-                >
-                  {user?.isVerified ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                  ) : (
-                    <Mail className="h-5 w-5 text-amber-400" />
                   )}
                 </div>
 
+                {editing ? (
+                  <textarea
+                    value={bio}
+                    onChange={(e) =>
+                      setBio(e.target.value)
+                    }
+                    maxLength={300}
+                    rows={5}
+                    placeholder="Write a short description about yourself..."
+                    className="w-full resize-none rounded-xl border border-slate-700 bg-[#080b0e] px-4 py-3 text-sm leading-6 text-slate-200 outline-none transition placeholder:text-slate-700 focus:border-amber-400/50 focus:ring-1 focus:ring-amber-400/20"
+                  />
+                ) : (
+                  <div className="min-h-[120px] rounded-xl border border-slate-800 bg-[#080b0e]/70 px-4 py-4 text-sm leading-7 text-slate-400">
+                    {user.bio ||
+                      "No chronicle has been written yet."}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* =================================================
+              ACCOUNT DETAILS
+          ================================================= */}
+
+          <div className="space-y-6">
+            {/* Account */}
+            <section className="relative overflow-hidden rounded-3xl border border-slate-700/60 bg-[#0b0e11]/95 shadow-xl shadow-black/20">
+              <div className="h-px bg-gradient-to-r from-transparent via-sky-400/30 to-transparent" />
+
+              <div className="p-6 sm:p-8">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-sky-400/20 bg-sky-400/[0.05]">
+                    <Shield className="h-5 w-5 text-sky-300" />
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-sky-300/70">
+                      Maester's Archive
+                    </p>
+
+                    <h3 className="mt-1 font-serif text-xl font-semibold text-slate-100">
+                      Account Details
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="mt-7 space-y-3">
+                  {/* Role */}
+                  <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-[#080b0e]/70 p-4">
+                    <div>
+                      <p className="text-xs text-slate-500">
+                        Rank
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium capitalize text-slate-200">
+                        {user.role || "student"}
+                      </p>
+                    </div>
+
+                    <Crown className="h-5 w-5 text-amber-300/70" />
+                  </div>
+
+                  {/* Joined */}
+                  <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-[#080b0e]/70 p-4">
+                    <div>
+                      <p className="text-xs text-slate-500">
+                        Joined the Realm
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium text-slate-200">
+                        {formatDate(user.createdAt)}
+                      </p>
+                    </div>
+
+                    <CalendarDays className="h-5 w-5 text-slate-500" />
+                  </div>
+
+                  {/* Verification */}
+                  <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-[#080b0e]/70 p-4">
+                    <div>
+                      <p className="text-xs text-slate-500">
+                        Email Status
+                      </p>
+
+                      <p
+                        className={`mt-1 text-sm font-medium ${
+                          user.isVerified
+                            ? "text-emerald-400"
+                            : "text-amber-400"
+                        }`}
+                      >
+                        {user.isVerified
+                          ? "Verified"
+                          : "Awaiting verification"}
+                      </p>
+                    </div>
+
+                    {user.isVerified ? (
+                      <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                    ) : (
+                      <Mail className="h-5 w-5 text-amber-400" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* =================================================
+                SECURITY
+            ================================================= */}
+
+            <section className="relative overflow-hidden rounded-3xl border border-slate-700/60 bg-[#0b0e11]/95 shadow-xl shadow-black/20">
+              <div className="h-px bg-gradient-to-r from-transparent via-red-400/20 to-transparent" />
+
+              <div className="p-6 sm:p-8">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-400/15 bg-red-400/[0.04]">
+                    <Sword className="h-5 w-5 text-red-300/80" />
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-red-300/60">
+                      Keep Your Walls Strong
+                    </p>
+
+                    <h3 className="mt-1 font-serif text-xl font-semibold text-slate-100">
+                      Security
+                    </h3>
+                  </div>
+                </div>
+
+                <p className="mt-4 text-sm leading-6 text-slate-500">
+                  Protect your account by keeping your password
+                  strong and unique.
+                </p>
+
+                <button
+                  onClick={() =>
+                    setShowPasswordForm(
+                      !showPasswordForm
+                    )
+                  }
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2.5 text-sm text-slate-300 transition hover:border-red-400/30 hover:text-red-200"
+                >
+                  <Shield className="h-4 w-4" />
+                  {showPasswordForm
+                    ? "Close"
+                    : "Change Password"}
+                </button>
+
+                {/* Password form */}
+                {showPasswordForm && (
+                  <form
+                    onSubmit={handleChangePassword}
+                    className="mt-5 space-y-3 border-t border-slate-800 pt-5"
+                  >
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) =>
+                        setCurrentPassword(
+                          e.target.value
+                        )
+                      }
+                      placeholder="Current password"
+                      className="w-full rounded-xl border border-slate-700 bg-[#080b0e] px-4 py-3 text-sm text-slate-200 outline-none transition placeholder:text-slate-700 focus:border-red-400/40"
+                    />
+
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) =>
+                        setNewPassword(
+                          e.target.value
+                        )
+                      }
+                      placeholder="New password"
+                      className="w-full rounded-xl border border-slate-700 bg-[#080b0e] px-4 py-3 text-sm text-slate-200 outline-none transition placeholder:text-slate-700 focus:border-red-400/40"
+                    />
+
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) =>
+                        setConfirmPassword(
+                          e.target.value
+                        )
+                      }
+                      placeholder="Confirm new password"
+                      className="w-full rounded-xl border border-slate-700 bg-[#080b0e] px-4 py-3 text-sm text-slate-200 outline-none transition placeholder:text-slate-700 focus:border-red-400/40"
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={changingPassword}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400/20 bg-red-400/[0.06] px-4 py-3 text-sm font-medium text-red-200 transition hover:bg-red-400/[0.1] disabled:opacity-50"
+                    >
+                      {changingPassword && (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      )}
+
+                      {changingPassword
+                        ? "Changing..."
+                        : "Change Password"}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
+
+        {/* =================================================
+            EMAIL CHANGE
+        ================================================= */}
+
+        {showEmailForm && (
+          <section className="relative overflow-hidden rounded-3xl border border-slate-700/60 bg-[#0b0e11]/95 shadow-xl">
+            <div className="h-px bg-gradient-to-r from-transparent via-sky-400/30 to-transparent" />
+
+            <div className="p-6 sm:p-8">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-sky-400/20 bg-sky-400/[0.05]">
+                  <AtSign className="h-5 w-5 text-sky-300" />
+                </div>
+
                 <div>
-                  <p className="font-medium text-slate-200">
-                    Email Verification
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-sky-300/70">
+                    Raven Message
                   </p>
 
-                  <p className="mt-1 text-sm text-slate-600">
-                    {user?.isVerified
-                      ? "Your email address has been verified and your account record is secure."
-                      : "Your email address has not been verified yet."}
-                  </p>
+                  <h3 className="mt-1 font-serif text-xl font-semibold text-slate-100">
+                    Change Email Address
+                  </h3>
                 </div>
               </div>
 
-              <span
-                className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
-                  user?.isVerified
-                    ? "border-emerald-400/15 bg-emerald-500/[0.06] text-emerald-400"
-                    : "border-amber-400/15 bg-amber-500/[0.06] text-amber-400"
-                }`}
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-500">
+                Enter a new email address. A verification message
+                will be sent before the new address becomes your
+                account email.
+              </p>
+
+              <form
+                onSubmit={handleChangeEmail}
+                className="mt-6 flex flex-col gap-3 sm:flex-row"
               >
-                {user?.isVerified
-                  ? "Verified"
-                  : "Unverified"}
-              </span>
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) =>
+                    setNewEmail(e.target.value)
+                  }
+                  placeholder="new-email@example.com"
+                  className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-[#080b0e] px-4 py-3 text-sm text-slate-200 outline-none transition placeholder:text-slate-700 focus:border-sky-400/40 focus:ring-1 focus:ring-sky-400/10"
+                />
+
+                <button
+                  type="submit"
+                  disabled={changingEmail}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[0.06] px-5 py-3 text-sm font-medium text-sky-200 transition hover:bg-sky-400/[0.1] disabled:opacity-50"
+                >
+                  {changingEmail ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Mail className="h-4 w-4" />
+                  )}
+
+                  {changingEmail
+                    ? "Sending..."
+                    : "Send Verification"}
+                </button>
+              </form>
             </div>
-          </div>
+          </section>
+        )}
 
-          {/* =================================================
-              REALM FOOTER
-          ================================================= */}
+        {/* =================================================
+            FOOTER
+        ================================================= */}
 
-          <div className="mt-8 flex flex-col items-center justify-center gap-2">
-            <div
-              className="h-px w-32 bg-gradient-to-r from-transparent via-amber-400/30 to-transparent"
-              style={{
-                animation:
-                  "swordGlow 3s ease-in-out infinite",
-              }}
-            />
+        <div className="flex items-center justify-center gap-3 py-5 text-center">
+          <div className="h-px w-16 bg-gradient-to-r from-transparent to-slate-700" />
 
-            <div className="flex items-center gap-3 text-[9px] uppercase tracking-[0.35em] text-slate-700">
-              <Crown className="h-3 w-3 text-amber-400/30" />
+          <span className="text-[10px] uppercase tracking-[0.35em] text-slate-700">
+            Your story · Your realm · Your journey
+          </span>
 
-              <span>
-                Your record · Your banner · Your realm
-              </span>
-
-              <Crown className="h-3 w-3 text-amber-400/30" />
-            </div>
-          </div>
+          <div className="h-px w-16 bg-gradient-to-l from-transparent to-slate-700" />
         </div>
       </div>
     </div>
