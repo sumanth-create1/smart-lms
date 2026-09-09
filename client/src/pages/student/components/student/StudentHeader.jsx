@@ -2,6 +2,7 @@ import {
   Search,
   Bell,
   ChevronDown,
+  ChevronRight,
   Swords,
   User,
   Settings,
@@ -9,6 +10,9 @@ import {
   X,
   BookOpen,
   CheckCircle2,
+  Crown,
+  Shield,
+  Flame,
 } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
@@ -20,12 +24,17 @@ function StudentHeader() {
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
-  const [showNotifications, setShowNotifications] =
-    useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+
+  const [mousePosition, setMousePosition] = useState({
+    x: 0,
+    y: 0,
+  });
 
   const notificationRef = useRef(null);
   const profileRef = useRef(null);
+  const headerRef = useRef(null);
 
   // =====================================================
   // SEARCH
@@ -82,7 +91,7 @@ function StudentHeader() {
   };
 
   // =====================================================
-  // CLOSE DROPDOWNS WHEN CLICKING OUTSIDE
+  // CLOSE DROPDOWNS
   // =====================================================
 
   useEffect(() => {
@@ -102,10 +111,7 @@ function StudentHeader() {
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
       document.removeEventListener(
@@ -116,7 +122,7 @@ function StudentHeader() {
   }, []);
 
   // =====================================================
-  // ESCAPE KEY
+  // ESCAPE
   // =====================================================
 
   useEffect(() => {
@@ -127,10 +133,7 @@ function StudentHeader() {
       }
     };
 
-    document.addEventListener(
-      "keydown",
-      handleEscape
-    );
+    document.addEventListener("keydown", handleEscape);
 
     return () => {
       document.removeEventListener(
@@ -140,25 +143,81 @@ function StudentHeader() {
     };
   }, []);
 
+  // =====================================================
+  // MOUSE FOLLOW EFFECT
+  // =====================================================
+
+  useEffect(() => {
+    const header = headerRef.current;
+
+    if (!header) return;
+
+    const handleMouseMove = (event) => {
+      const rect = header.getBoundingClientRect();
+
+      setMousePosition({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
+    };
+
+    header.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      header.removeEventListener(
+        "mousemove",
+        handleMouseMove
+      );
+    };
+  }, []);
+
   return (
     <header
+      ref={headerRef}
       className="
         fixed
         left-0
         right-0
         top-0
         z-40
-        h-[72px]
+        h-[74px]
         overflow-visible
         border-b
-        border-zinc-800
-        bg-[#090909]/95
+        border-[#292722]
+        bg-[#0a0a09]/95
+        text-white
+        shadow-[0_10px_40px_rgba(0,0,0,0.35)]
         backdrop-blur-xl
         lg:left-64
       "
     >
       {/* =====================================================
-          CINEMATIC GLOW
+          MOUSE FOLLOW LIGHT
+      ===================================================== */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          z-0
+          h-48
+          w-48
+          -translate-x-1/2
+          -translate-y-1/2
+          rounded-full
+          bg-amber-500/[0.045]
+          blur-3xl
+          transition-[left,top]
+          duration-150
+        "
+        style={{
+          left: mousePosition.x,
+          top: mousePosition.y,
+        }}
+      />
+
+      {/* =====================================================
+          AMBIENT BACKGROUND
       ===================================================== */}
 
       <div
@@ -166,11 +225,11 @@ function StudentHeader() {
           pointer-events-none
           absolute
           -right-20
-          -top-24
+          -top-28
           h-48
           w-48
           rounded-full
-          bg-red-600/10
+          bg-amber-700/[0.06]
           blur-3xl
         "
       />
@@ -179,13 +238,59 @@ function StudentHeader() {
         className="
           pointer-events-none
           absolute
-          -bottom-20
-          -left-20
+          -bottom-24
+          left-1/3
           h-40
           w-40
           rounded-full
-          bg-red-900/10
+          bg-orange-900/[0.04]
           blur-3xl
+        "
+      />
+
+      {/* =====================================================
+          MEDIEVAL TEXTURE
+      ===================================================== */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          opacity-[0.025]
+        "
+        style={{
+          backgroundImage: `
+            linear-gradient(
+              rgba(255,255,255,.35) 1px,
+              transparent 1px
+            ),
+            linear-gradient(
+              90deg,
+              rgba(255,255,255,.35) 1px,
+              transparent 1px
+            )
+          `,
+          backgroundSize: "36px 36px",
+        }}
+      />
+
+      {/* =====================================================
+          TOP GOLD LINE
+      ===================================================== */}
+
+      <div
+        className="
+          absolute
+          left-0
+          top-0
+          h-[2px]
+          w-full
+          bg-gradient-to-r
+          from-transparent
+          via-amber-600/70
+          to-transparent
+          shadow-[0_0_14px_rgba(217,167,75,.25)]
         "
       />
 
@@ -196,6 +301,7 @@ function StudentHeader() {
       <div
         className="
           relative
+          z-10
           flex
           h-full
           items-center
@@ -206,45 +312,113 @@ function StudentHeader() {
         "
       >
         {/* ===================================================
-            TITLE
+            LEFT SIDE
         =================================================== */}
 
         <div className="flex items-center gap-3">
+          {/* House Sigil */}
+
           <div
             className="
+              group/sigil
+              relative
               hidden
-              h-9
-              w-9
+              h-10
+              w-10
               items-center
               justify-center
-              rounded-lg
+              overflow-hidden
               border
-              border-red-600/30
-              bg-red-600/5
-              text-red-500
+              border-[#554b35]
+              bg-gradient-to-br
+              from-[#29251d]
+              via-[#141412]
+              to-black
+              text-amber-500
+              shadow-[inset_0_0_20px_rgba(212,175,55,.05)]
+              transition-all
+              duration-500
+              hover:border-amber-600/60
+              hover:shadow-[0_0_22px_rgba(212,175,55,.12)]
               sm:flex
             "
           >
-            <Swords size={17} />
+            <Swords
+              size={19}
+              strokeWidth={1.5}
+              className="
+                transition-all
+                duration-700
+                group-hover/sigil:rotate-12
+                group-hover/sigil:scale-110
+              "
+            />
+
+            {/* Corner marks */}
+
+            <span
+              className="
+                absolute
+                left-0
+                top-0
+                h-2
+                w-2
+                border-l
+                border-t
+                border-amber-700/50
+              "
+            />
+
+            <span
+              className="
+                absolute
+                bottom-0
+                right-0
+                h-2
+                w-2
+                border-b
+                border-r
+                border-amber-700/50
+              "
+            />
           </div>
+
+          {/* Title */}
 
           <div>
             <div className="mb-0.5 flex items-center gap-2">
+              <Crown
+                size={10}
+                className="
+                  hidden
+                  text-amber-600
+                  sm:block
+                "
+              />
+
               <span
                 className="
                   hidden
-                  text-[9px]
+                  text-[8px]
                   font-black
                   uppercase
-                  tracking-[0.3em]
-                  text-red-500
+                  tracking-[0.32em]
+                  text-amber-600
                   sm:block
                 "
               >
-                Fight Record
+                The Learning Realm
               </span>
 
-              <span className="hidden h-px w-5 bg-red-600/50 sm:block" />
+              <span
+                className="
+                  hidden
+                  h-px
+                  w-7
+                  bg-amber-700/40
+                  sm:block
+                "
+              />
             </div>
 
             <h2
@@ -252,8 +426,8 @@ function StudentHeader() {
                 text-lg
                 font-black
                 uppercase
-                tracking-tight
-                text-white
+                tracking-[0.04em]
+                text-[#e7e1d4]
                 sm:text-xl
               "
             >
@@ -267,7 +441,6 @@ function StudentHeader() {
         =================================================== */}
 
         <div className="flex items-center gap-2 sm:gap-3">
-
           {/* =================================================
               SEARCH
           ================================================= */}
@@ -275,38 +448,47 @@ function StudentHeader() {
           <form
             onSubmit={handleSearchSubmit}
             className="
+              group/search
               hidden
               h-10
               w-64
               items-center
               gap-2
-              rounded-lg
               border
-              border-zinc-800
-              bg-zinc-950
+              border-[#292722]
+              bg-[#10100e]
               px-3
-              transition
-              focus-within:border-red-600/50
+              transition-all
+              duration-300
+              focus-within:border-amber-700/60
+              focus-within:bg-[#12120f]
+              focus-within:shadow-[0_0_20px_rgba(212,175,55,.05)]
               md:flex
             "
           >
             <Search
               size={16}
-              className="shrink-0 text-zinc-600"
+              className="
+                shrink-0
+                text-[#5d584d]
+                transition-colors
+                duration-300
+                group-focus-within/search:text-amber-600
+              "
             />
 
             <input
               type="text"
               value={search}
               onChange={handleSearch}
-              placeholder="Search the record..."
+              placeholder="Search the realm..."
               className="
                 w-full
                 bg-transparent
                 text-xs
-                text-zinc-300
+                text-[#cfc8ba]
                 outline-none
-                placeholder:text-zinc-700
+                placeholder:text-[#4c4942]
               "
             />
 
@@ -314,7 +496,11 @@ function StudentHeader() {
               <button
                 type="button"
                 onClick={clearSearch}
-                className="text-zinc-600 transition hover:text-red-500"
+                className="
+                  text-[#575249]
+                  transition
+                  hover:text-amber-500
+                "
               >
                 <X size={14} />
               </button>
@@ -322,7 +508,7 @@ function StudentHeader() {
           </form>
 
           {/* =================================================
-              NOTIFICATION
+              NOTIFICATIONS
           ================================================= */}
 
           <div
@@ -347,40 +533,48 @@ function StudentHeader() {
                 w-10
                 items-center
                 justify-center
-                rounded-lg
                 border
-                border-zinc-800
-                bg-zinc-950
-                text-zinc-500
-                transition
-                hover:border-red-600/40
-                hover:bg-red-600/5
-                hover:text-red-500
+                border-[#292722]
+                bg-[#10100e]
+                text-[#686258]
+                transition-all
+                duration-300
+                hover:border-amber-700/50
+                hover:bg-[#17150f]
+                hover:text-amber-500
+                hover:shadow-[0_0_18px_rgba(212,175,55,.06)]
               "
             >
               <Bell
-                size={18}
+                size={17}
                 className="
-                  transition
-                  group-hover:rotate-6
+                  transition-all
+                  duration-500
+                  group-hover:rotate-12
+                  group-hover:scale-110
                 "
               />
 
-              {/* Notification dot */}
+              {/* Notification flame */}
 
               <span
                 className="
                   absolute
-                  right-2
-                  top-2
-                  h-1.5
-                  w-1.5
-                  animate-pulse
+                  right-1.5
+                  top-1.5
+                  flex
+                  h-3
+                  w-3
+                  items-center
+                  justify-center
                   rounded-full
-                  bg-red-500
-                  shadow-[0_0_8px_rgba(239,68,68,0.8)]
+                  bg-amber-600
+                  shadow-[0_0_10px_rgba(217,167,75,.55)]
+                  animate-pulse
                 "
-              />
+              >
+                <span className="h-1 w-1 rounded-full bg-[#fff4cf]" />
+              </span>
             </button>
 
             {/* =================================================
@@ -395,14 +589,26 @@ function StudentHeader() {
                   top-12
                   w-80
                   overflow-hidden
-                  rounded-xl
                   border
-                  border-zinc-800
-                  bg-[#0d0d0d]
-                  shadow-2xl
-                  shadow-black/50
+                  border-[#3a352c]
+                  bg-[#0d0d0b]
+                  shadow-[0_25px_70px_rgba(0,0,0,.65)]
+                  animate-dropdown
                 "
               >
+                {/* Decorative top */}
+
+                <div
+                  className="
+                    h-[2px]
+                    w-full
+                    bg-gradient-to-r
+                    from-transparent
+                    via-amber-600
+                    to-transparent
+                  "
+                />
+
                 {/* Header */}
 
                 <div
@@ -411,39 +617,51 @@ function StudentHeader() {
                     items-center
                     justify-between
                     border-b
-                    border-zinc-800
+                    border-[#292722]
+                    bg-gradient-to-r
+                    from-amber-950/10
+                    to-transparent
                     px-4
-                    py-3
+                    py-4
                   "
                 >
-                  <div>
-                    <p
-                      className="
-                        text-xs
-                        font-black
-                        uppercase
-                        tracking-wider
-                        text-white
-                      "
-                    >
-                      Notifications
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <Crown
+                      size={14}
+                      className="text-amber-600"
+                    />
 
-                    <p className="mt-0.5 text-[10px] text-zinc-600">
-                      Your latest activity
-                    </p>
+                    <div>
+                      <p
+                        className="
+                          text-xs
+                          font-black
+                          uppercase
+                          tracking-[0.15em]
+                          text-[#ddd5c5]
+                        "
+                      >
+                        Raven Scrolls
+                      </p>
+
+                      <p className="mt-0.5 text-[10px] text-[#615c52]">
+                        Messages from the realm
+                      </p>
+                    </div>
                   </div>
 
                   <span
                     className="
-                      rounded-md
-                      bg-red-600/10
+                      border
+                      border-amber-800/30
+                      bg-amber-950/20
                       px-2
                       py-1
-                      text-[9px]
-                      font-bold
+                      text-[8px]
+                      font-black
                       uppercase
-                      text-red-500
+                      tracking-wider
+                      text-amber-600
                     "
                   >
                     2 New
@@ -454,14 +672,17 @@ function StudentHeader() {
 
                 <div
                   className="
+                    group/notification
+                    relative
                     flex
                     gap-3
                     border-b
-                    border-zinc-800
+                    border-[#292722]
                     px-4
                     py-4
-                    transition
-                    hover:bg-white/[0.02]
+                    transition-all
+                    duration-300
+                    hover:bg-amber-950/[0.08]
                   "
                 >
                   <div
@@ -472,22 +693,26 @@ function StudentHeader() {
                       shrink-0
                       items-center
                       justify-center
-                      rounded-lg
-                      bg-red-600/10
-                      text-red-500
+                      border
+                      border-emerald-900/40
+                      bg-emerald-950/20
+                      text-emerald-500
+                      transition-transform
+                      duration-300
+                      group-hover/notification:scale-110
                     "
                   >
                     <CheckCircle2 size={16} />
                   </div>
 
                   <div>
-                    <p className="text-xs font-bold text-zinc-300">
+                    <p className="text-xs font-bold text-[#d7d0c2]">
                       Mission completed
                     </p>
 
-                    <p className="mt-1 text-[10px] leading-4 text-zinc-600">
+                    <p className="mt-1 text-[10px] leading-4 text-[#615c52]">
                       You completed a lecture.
-                      Keep pushing forward.
+                      Your knowledge grows stronger.
                     </p>
                   </div>
                 </div>
@@ -496,12 +721,16 @@ function StudentHeader() {
 
                 <div
                   className="
+                    group/notification
                     flex
                     gap-3
+                    border-b
+                    border-[#292722]
                     px-4
                     py-4
-                    transition
-                    hover:bg-white/[0.02]
+                    transition-all
+                    duration-300
+                    hover:bg-amber-950/[0.08]
                   "
                 >
                   <div
@@ -512,21 +741,26 @@ function StudentHeader() {
                       shrink-0
                       items-center
                       justify-center
-                      rounded-lg
-                      bg-zinc-800
-                      text-zinc-400
+                      border
+                      border-[#38342c]
+                      bg-[#171613]
+                      text-amber-600
+                      transition-transform
+                      duration-300
+                      group-hover/notification:scale-110
                     "
                   >
                     <BookOpen size={16} />
                   </div>
 
                   <div>
-                    <p className="text-xs font-bold text-zinc-300">
+                    <p className="text-xs font-bold text-[#d7d0c2]">
                       New learning mission
                     </p>
 
-                    <p className="mt-1 text-[10px] leading-4 text-zinc-600">
-                      Continue your current course.
+                    <p className="mt-1 text-[10px] leading-4 text-[#615c52]">
+                      Continue your current course
+                      and strengthen your skills.
                     </p>
                   </div>
                 </div>
@@ -540,28 +774,44 @@ function StudentHeader() {
                     navigate("/notifications");
                   }}
                   className="
+                    group/view
+                    flex
                     w-full
+                    items-center
+                    justify-center
+                    gap-2
                     border-t
-                    border-zinc-800
+                    border-[#292722]
                     px-4
                     py-3
-                    text-[9px]
+                    text-[8px]
                     font-black
                     uppercase
-                    tracking-[0.2em]
-                    text-red-500
-                    transition
-                    hover:bg-red-600/5
+                    tracking-[0.22em]
+                    text-amber-600
+                    transition-all
+                    duration-300
+                    hover:bg-amber-950/10
+                    hover:text-amber-400
                   "
                 >
-                  View all notifications
+                  View all scrolls
+
+                  <ChevronRight
+                    size={11}
+                    className="
+                      transition-transform
+                      duration-300
+                      group-hover/view:translate-x-1
+                    "
+                  />
                 </button>
               </div>
             )}
           </div>
 
           {/* =================================================
-              USER
+              PROFILE
           ================================================= */}
 
           <div
@@ -582,13 +832,13 @@ function StudentHeader() {
                 flex
                 items-center
                 gap-2
-                rounded-lg
                 border
                 border-transparent
                 p-1.5
-                transition
-                hover:border-zinc-800
-                hover:bg-zinc-950
+                transition-all
+                duration-300
+                hover:border-[#292722]
+                hover:bg-[#10100e]
               "
             >
               {/* Avatar */}
@@ -602,20 +852,35 @@ function StudentHeader() {
                   items-center
                   justify-center
                   overflow-hidden
-                  rounded-lg
                   border
-                  border-red-600/30
+                  border-amber-800/40
                   bg-gradient-to-br
-                  from-zinc-800
+                  from-[#302b20]
+                  via-[#171613]
                   to-black
                   text-sm
                   font-black
-                  text-red-500
+                  text-amber-500
+                  shadow-[inset_0_0_15px_rgba(212,175,55,.04)]
+                  transition-all
+                  duration-500
+                  group-hover:border-amber-600/60
+                  group-hover:shadow-[0_0_18px_rgba(212,175,55,.1)]
                 "
               >
-                {user?.name
-                  ?.charAt(0)
-                  ?.toUpperCase() || "S"}
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user?.name || "Student"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  user?.name
+                    ?.charAt(0)
+                    ?.toUpperCase() || "S"
+                )}
+
+                {/* Online */}
 
                 <span
                   className="
@@ -624,7 +889,10 @@ function StudentHeader() {
                     right-0
                     h-2
                     w-2
-                    bg-red-600
+                    border
+                    border-black
+                    bg-emerald-500
+                    shadow-[0_0_8px_rgba(34,197,94,.7)]
                   "
                 />
               </div>
@@ -636,37 +904,45 @@ function StudentHeader() {
                   className="
                     max-w-28
                     truncate
-                    text-[11px]
-                    font-bold
+                    text-[10px]
+                    font-black
                     uppercase
-                    tracking-wide
-                    text-zinc-200
+                    tracking-[0.08em]
+                    text-[#d7d0c2]
                   "
                 >
                   {user?.name || "Student"}
                 </p>
 
-                <p
-                  className="
-                    mt-0.5
-                    text-[9px]
-                    font-bold
-                    uppercase
-                    tracking-[0.18em]
-                    text-red-500
-                  "
-                >
-                  Fighter
-                </p>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <Shield
+                    size={8}
+                    className="text-amber-700"
+                  />
+
+                  <p
+                    className="
+                      text-[8px]
+                      font-bold
+                      uppercase
+                      tracking-[0.18em]
+                      text-amber-600
+                    "
+                  >
+                    Learner
+                  </p>
+                </div>
               </div>
 
               <ChevronDown
                 size={14}
                 className="
                   hidden
-                  text-zinc-600
-                  transition
-                  group-hover:text-red-500
+                  text-[#575249]
+                  transition-all
+                  duration-300
+                  group-hover:translate-y-0.5
+                  group-hover:text-amber-500
                   sm:block
                 "
               />
@@ -684,49 +960,104 @@ function StudentHeader() {
                   top-12
                   w-64
                   overflow-hidden
-                  rounded-xl
                   border
-                  border-zinc-800
-                  bg-[#0d0d0d]
-                  shadow-2xl
-                  shadow-black/50
+                  border-[#3a352c]
+                  bg-[#0d0d0b]
+                  shadow-[0_25px_70px_rgba(0,0,0,.65)]
+                  animate-dropdown
                 "
               >
+                {/* Top gold line */}
+
+                <div
+                  className="
+                    h-[2px]
+                    w-full
+                    bg-gradient-to-r
+                    from-transparent
+                    via-amber-600
+                    to-transparent
+                  "
+                />
+
                 {/* Profile header */}
 
                 <div
                   className="
+                    relative
+                    overflow-hidden
                     border-b
-                    border-zinc-800
-                    bg-gradient-to-r
-                    from-red-950/30
+                    border-[#292722]
+                    bg-gradient-to-br
+                    from-amber-950/20
+                    via-transparent
                     to-transparent
                     px-4
-                    py-4
+                    py-5
                   "
                 >
-                  <p
+                  <div
                     className="
-                      truncate
-                      text-sm
-                      font-black
-                      uppercase
-                      text-white
+                      pointer-events-none
+                      absolute
+                      -right-6
+                      -top-6
+                      h-20
+                      w-20
+                      rounded-full
+                      bg-amber-600/[0.08]
+                      blur-2xl
                     "
-                  >
-                    {user?.name || "Student"}
-                  </p>
+                  />
 
-                  <p
-                    className="
-                      mt-1
-                      truncate
-                      text-[10px]
-                      text-zinc-600
-                    "
-                  >
-                    {user?.email || "student@example.com"}
-                  </p>
+                  <div className="relative flex items-center gap-3">
+                    <div
+                      className="
+                        flex
+                        h-11
+                        w-11
+                        items-center
+                        justify-center
+                        border
+                        border-amber-800/40
+                        bg-[#171613]
+                        text-sm
+                        font-black
+                        text-amber-500
+                      "
+                    >
+                      {user?.name
+                        ?.charAt(0)
+                        ?.toUpperCase() || "S"}
+                    </div>
+
+                    <div className="min-w-0">
+                      <p
+                        className="
+                          truncate
+                          text-sm
+                          font-black
+                          uppercase
+                          tracking-wide
+                          text-[#e0d8c8]
+                        "
+                      >
+                        {user?.name || "Student"}
+                      </p>
+
+                      <p
+                        className="
+                          mt-1
+                          truncate
+                          text-[9px]
+                          text-[#625d53]
+                        "
+                      >
+                        {user?.email ||
+                          "student@example.com"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Profile */}
@@ -735,24 +1066,58 @@ function StudentHeader() {
                   type="button"
                   onClick={handleProfile}
                   className="
+                    group/item
                     flex
                     w-full
                     items-center
                     gap-3
+                    border-b
+                    border-[#201f1b]
                     px-4
                     py-3
                     text-left
                     text-xs
                     font-semibold
-                    text-zinc-400
-                    transition
-                    hover:bg-white/[0.03]
-                    hover:text-white
+                    text-[#777066]
+                    transition-all
+                    duration-300
+                    hover:bg-amber-950/[0.08]
+                    hover:pl-5
+                    hover:text-[#d7d0c2]
                   "
                 >
-                  <User size={15} />
+                  <span
+                    className="
+                      flex
+                      h-7
+                      w-7
+                      items-center
+                      justify-center
+                      border
+                      border-[#292722]
+                      bg-[#131311]
+                      transition-all
+                      duration-300
+                      group-hover/item:border-amber-800/40
+                      group-hover/item:text-amber-500
+                    "
+                  >
+                    <User size={14} />
+                  </span>
 
-                  Profile
+                  <span>Profile</span>
+
+                  <ChevronRight
+                    size={12}
+                    className="
+                      ml-auto
+                      opacity-0
+                      transition-all
+                      duration-300
+                      group-hover/item:translate-x-1
+                      group-hover/item:opacity-100
+                    "
+                  />
                 </button>
 
                 {/* Settings */}
@@ -761,34 +1126,67 @@ function StudentHeader() {
                   type="button"
                   onClick={handleSettings}
                   className="
+                    group/item
                     flex
                     w-full
                     items-center
                     gap-3
+                    border-b
+                    border-[#201f1b]
                     px-4
                     py-3
                     text-left
                     text-xs
                     font-semibold
-                    text-zinc-400
-                    transition
-                    hover:bg-white/[0.03]
-                    hover:text-white
+                    text-[#777066]
+                    transition-all
+                    duration-300
+                    hover:bg-amber-950/[0.08]
+                    hover:pl-5
+                    hover:text-[#d7d0c2]
                   "
                 >
-                  <Settings size={15} />
+                  <span
+                    className="
+                      flex
+                      h-7
+                      w-7
+                      items-center
+                      justify-center
+                      border
+                      border-[#292722]
+                      bg-[#131311]
+                      transition-all
+                      duration-300
+                      group-hover/item:border-amber-800/40
+                      group-hover/item:text-amber-500
+                    "
+                  >
+                    <Settings size={14} />
+                  </span>
 
-                  Settings
+                  <span>Settings</span>
+
+                  <ChevronRight
+                    size={12}
+                    className="
+                      ml-auto
+                      opacity-0
+                      transition-all
+                      duration-300
+                      group-hover/item:translate-x-1
+                      group-hover/item:opacity-100
+                    "
+                  />
                 </button>
 
                 {/* Logout */}
-
-                <div className="border-t border-zinc-800" />
 
                 <button
                   type="button"
                   onClick={handleLogout}
                   className="
+                    group/logout
                     flex
                     w-full
                     items-center
@@ -798,15 +1196,45 @@ function StudentHeader() {
                     text-left
                     text-xs
                     font-bold
-                    text-red-500
-                    transition
-                    hover:bg-red-600/5
+                    text-red-600
+                    transition-all
+                    duration-300
+                    hover:bg-red-950/10
+                    hover:pl-5
                     hover:text-red-400
                   "
                 >
-                  <LogOut size={15} />
+                  <span
+                    className="
+                      flex
+                      h-7
+                      w-7
+                      items-center
+                      justify-center
+                      border
+                      border-red-950/40
+                      bg-red-950/10
+                      transition-all
+                      duration-300
+                      group-hover/logout:border-red-800/50
+                    "
+                  >
+                    <LogOut size={14} />
+                  </span>
 
-                  Leave the Fight
+                  <span>Leave the Realm</span>
+
+                  <ChevronRight
+                    size={12}
+                    className="
+                      ml-auto
+                      opacity-0
+                      transition-all
+                      duration-300
+                      group-hover/logout:translate-x-1
+                      group-hover/logout:opacity-100
+                    "
+                  />
                 </button>
               </div>
             )}
@@ -815,7 +1243,7 @@ function StudentHeader() {
       </div>
 
       {/* =====================================================
-          RED CINEMATIC LINE
+          BOTTOM DECORATIVE LINE
       ===================================================== */}
 
       <div
@@ -824,11 +1252,71 @@ function StudentHeader() {
           bottom-0
           left-0
           h-px
-          w-24
-          bg-red-600
-          shadow-[0_0_10px_rgba(220,38,38,0.6)]
+          w-full
+          bg-gradient-to-r
+          from-transparent
+          via-amber-700/70
+          to-transparent
+          shadow-[0_0_12px_rgba(217,167,75,.25)]
         "
       />
+
+      {/* Animated center glow */}
+
+      <div
+        className="
+          absolute
+          bottom-[-1px]
+          left-1/2
+          h-[2px]
+          w-24
+          -translate-x-1/2
+          bg-amber-500/50
+          blur-[2px]
+          animate-goldPulse
+        "
+      />
+
+      {/* =====================================================
+          ANIMATIONS
+      ===================================================== */}
+
+      <style>{`
+
+        @keyframes dropdown {
+          from {
+            opacity: 0;
+            transform: translateY(-6px) scale(.98);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .animate-dropdown {
+          animation: dropdown .2s ease-out;
+        }
+
+        @keyframes goldPulse {
+          0%,
+          100% {
+            opacity: .35;
+            width: 60px;
+          }
+
+          50% {
+            opacity: .8;
+            width: 110px;
+          }
+        }
+
+        .animate-goldPulse {
+          animation: goldPulse 3s ease-in-out infinite;
+        }
+
+      `}</style>
     </header>
   );
 }

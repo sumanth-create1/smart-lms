@@ -1,17 +1,15 @@
 import { Outlet } from "react-router-dom";
-import StudentSidebar from "../components/student/StudentSidebar"
+import StudentSidebar from "../components/student/StudentSidebar";
 import StudentHeader from "../components/student/StudentHeader";
 
 function StudentDashboardLayout() {
   return (
-    <div className="min-h-screen bg-[#F7F8FC]">
-
+    <div className="min-h-screen bg-[#06080a] text-slate-200">
       {/* Sidebar */}
       <StudentSidebar />
 
       {/* Main Area */}
-      <div className="lg:ml-64">
-
+      <div className="lg:ml-72">
         {/* Header */}
         <StudentHeader />
 
@@ -21,7 +19,6 @@ function StudentDashboardLayout() {
             <Outlet />
           </div>
         </main>
-
       </div>
     </div>
   );

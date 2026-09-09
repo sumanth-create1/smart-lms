@@ -30,6 +30,7 @@ import StudentDashboardLayout from "../pages/student/Layouts/StudentDashboardLay
 import StudentCourseLearning from "../pages/student/StudentCourseLearning";
 import StudentProgress from "../pages/student/StudentProgress";
 import Achievements from "../pages/student/Achievements";
+import Settings from "../pages/student/Settings";
 
 // =====================================================
 // INSTRUCTOR
@@ -54,7 +55,6 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* =================================================
             PUBLIC ROUTES
         ================================================= */}
@@ -69,47 +69,31 @@ function AppRoutes() {
             PUBLIC COURSE ROUTES
         ================================================= */}
 
-        <Route
-          path="/courses"
-          element={<StudentCourses />}
-        />
+        <Route path="/courses" element={<StudentCourses />} />
 
-        <Route
-          path="/courses/:courseId"
-          element={<StudentCourseDetails />}
-        />
+        <Route path="/courses/:courseId" element={<StudentCourseDetails />} />
 
         {/* =================================================
             STUDENT PROTECTED ROUTES
         ================================================= */}
 
-        <Route
-          element={
-            <ProtectedRoute
-              allowedRoles={["student"]}
-            />
-          }
-        >
-          <Route element={<StudentDashboardLayout />}>
+        {/* =================================================
+    STUDENT PROTECTED ROUTES
+================================================= */}
 
+        <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
+          <Route element={<StudentDashboardLayout />}>
             {/* Dashboard */}
-            <Route
-              path="/dashboard"
-              element={<StudentDashboard />}
-            />
+            <Route path="/dashboard" element={<StudentDashboard />} />
 
             {/* Progress */}
-            <Route
-              path="/progress"
-              element={<StudentProgress />}
-            />
+            <Route path="/progress" element={<StudentProgress />} />
 
             {/* Achievements */}
-            <Route
-              path="/achievements"
-              element={<Achievements />}
-            />
+            <Route path="/achievements" element={<Achievements />} />
 
+            {/* Settings */}
+            <Route path="/settings" element={<Settings />} />
           </Route>
 
           {/* Course Learning */}
@@ -123,15 +107,8 @@ function AppRoutes() {
             INSTRUCTOR PROTECTED ROUTES
         ================================================= */}
 
-        <Route
-          element={
-            <ProtectedRoute
-              allowedRoles={["instructor"]}
-            />
-          }
-        >
+        <Route element={<ProtectedRoute allowedRoles={["instructor"]} />}>
           <Route element={<InstructorDashboardLayout />}>
-
             {/* Dashboard */}
             <Route
               path="/instructor/dashboard"
@@ -139,10 +116,7 @@ function AppRoutes() {
             />
 
             {/* Courses */}
-            <Route
-              path="/instructor/courses"
-              element={<InstructorCourses />}
-            />
+            <Route path="/instructor/courses" element={<InstructorCourses />} />
 
             {/* Create Course */}
             <Route
@@ -181,14 +155,9 @@ function AppRoutes() {
             />
 
             {/* Profile */}
-            <Route
-              path="/instructor/profile"
-              element={<InstructorProfile />}
-            />
-
+            <Route path="/instructor/profile" element={<InstructorProfile />} />
           </Route>
         </Route>
-
       </Routes>
     </BrowserRouter>
   );

@@ -8,7 +8,11 @@ import {
   Shield,
   Sparkles,
   Swords,
-  Crosshair,
+  Castle,
+  Snowflake,
+  Moon,
+  Feather,
+  Mountain,
 } from "lucide-react";
 
 // =====================================================
@@ -84,52 +88,84 @@ const ActivityLoading = () => {
         overflow-hidden
         rounded-[28px]
         border
-        border-zinc-800
-        bg-[#070707]
+        border-slate-700/50
+        bg-[#07090b]
         shadow-2xl
-        shadow-black/50
+        shadow-black/60
       "
     >
-      {/* Background */}
+      {/* ================================================
+          MEDIEVAL BACKGROUND
+      ================================================= */}
 
-      <div
-        className="
-          absolute
-          inset-0
-          bg-gradient-to-br
-          from-[#030303]
-          via-[#101114]
-          to-[#1b0909]
-        "
-      />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Stone base */}
+        <div
+          className="
+            absolute
+            inset-0
+            bg-gradient-to-br
+            from-[#07090b]
+            via-[#11161a]
+            to-[#0a0d0f]
+          "
+        />
 
-      {/* Red glow */}
+        {/* Moon glow */}
+        <div
+          className="
+            absolute
+            right-[-60px]
+            top-[-70px]
+            h-56
+            w-56
+            rounded-full
+            bg-slate-200/[0.035]
+            blur-[45px]
+            animate-pulse
+          "
+        />
 
-      <div
-        className="
-          absolute
-          -right-24
-          -top-24
-          h-80
-          w-80
-          animate-pulse
-          rounded-full
-          bg-red-800/10
-          blur-[110px]
-        "
-      />
+        {/* Gold glow */}
+        <div
+          className="
+            absolute
+            left-[-100px]
+            bottom-[-100px]
+            h-72
+            w-72
+            rounded-full
+            bg-amber-600/[0.04]
+            blur-[90px]
+          "
+        />
 
-      {/* Texture */}
+        {/* Stone texture */}
+        <div
+          className="
+            absolute
+            inset-0
+            opacity-[0.04]
+            [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%)]
+            [background-size:24px_24px]
+          "
+        />
 
-      <div
-        className="
-          absolute
-          inset-0
-          opacity-[0.035]
-          [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)]
-          [background-size:12px_12px]
-        "
-      />
+        {/* Fog */}
+        <div
+          className="
+            absolute
+            bottom-0
+            left-[-20%]
+            h-24
+            w-[140%]
+            rounded-full
+            bg-slate-200/[0.025]
+            blur-3xl
+            animate-[fogDrift_12s_ease-in-out_infinite]
+          "
+        />
+      </div>
 
       <div className="relative z-10">
         {/* Header */}
@@ -140,7 +176,7 @@ const ActivityLoading = () => {
             items-center
             justify-between
             border-b
-            border-white/[0.08]
+            border-white/[0.07]
             px-5
             py-5
             sm:px-6
@@ -202,6 +238,20 @@ const ActivityLoading = () => {
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fogDrift {
+          0%, 100% {
+            transform: translateX(-5%);
+            opacity: .3;
+          }
+
+          50% {
+            transform: translateX(5%);
+            opacity: .6;
+          }
+        }
+      `}</style>
     </section>
   );
 };
@@ -223,24 +273,54 @@ const EmptyActivity = () => {
         overflow-hidden
         rounded-2xl
         border
-        border-white/[0.08]
-        bg-black/25
+        border-slate-700/40
+        bg-black/30
         px-5
         text-center
       "
     >
-      {/* Floating decorative icons */}
+      {/* Moon */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          right-8
+          top-6
+          h-14
+          w-14
+          rounded-full
+          bg-slate-200/[0.035]
+          shadow-[0_0_40px_rgba(186,230,253,0.06)]
+        "
+      >
+        <Moon
+          size={25}
+          className="
+            absolute
+            left-1/2
+            top-1/2
+            -translate-x-1/2
+            -translate-y-1/2
+            text-slate-300/20
+          "
+        />
+      </div>
+
+      {/* Floating flame */}
 
       <Flame
-        size={22}
+        size={20}
         className="
           absolute
           left-8
           top-8
-          animate-[floatIcon_4s_ease-in-out_infinite]
-          text-red-500/20
+          animate-[flameFlicker_1.8s_ease-in-out_infinite]
+          text-amber-500/20
         "
       />
+
+      {/* Sword */}
 
       <Sword
         size={22}
@@ -249,10 +329,25 @@ const EmptyActivity = () => {
           bottom-8
           right-8
           rotate-[-20deg]
-          animate-[swordFloat_4.5s_ease-in-out_infinite]
-          text-amber-500/20
+          animate-[swordFloat_4s_ease-in-out_infinite]
+          text-slate-300/20
         "
       />
+
+      {/* Feather */}
+
+      <Feather
+        size={18}
+        className="
+          absolute
+          left-20
+          bottom-12
+          animate-[featherFloat_6s_ease-in-out_infinite]
+          text-sky-300/20
+        "
+      />
+
+      {/* Sparkles */}
 
       <Sparkles
         size={16}
@@ -279,15 +374,15 @@ const EmptyActivity = () => {
           rounded-2xl
           border
           border-amber-500/20
-          bg-amber-500/10
-          shadow-[0_0_30px_rgba(245,158,11,0.08)]
+          bg-amber-500/[0.07]
+          shadow-[0_0_35px_rgba(245,158,11,0.06)]
         "
       >
         <Shield
           size={24}
           className="
-            text-amber-500
-            drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]
+            text-amber-400
+            drop-shadow-[0_0_9px_rgba(245,158,11,0.45)]
           "
         />
 
@@ -298,18 +393,18 @@ const EmptyActivity = () => {
             animate-ping
             rounded-2xl
             border
-            border-amber-500/10
+            border-amber-500/[0.08]
           "
         />
       </div>
 
-      <p className="mt-4 text-sm font-bold text-zinc-200">
+      <p className="mt-4 text-sm font-black text-slate-200">
         No battles recorded yet
       </p>
 
-      <p className="mt-1 max-w-xs text-xs leading-5 text-zinc-500">
-        Start a lesson and your learning battles
-        will appear in the weekly chronicle.
+      <p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">
+        Begin a lesson and your learning battles
+        will be written into the weekly chronicle.
       </p>
     </div>
   );
@@ -411,22 +506,23 @@ function LearningActivity({
         overflow-hidden
         rounded-[28px]
         border
-        border-zinc-800
-        bg-[#070707]
+        border-slate-700/50
+        bg-[#07090b]
         shadow-2xl
-        shadow-black/50
+        shadow-black/60
         transition-all
         duration-500
         hover:-translate-y-1
-        hover:border-red-900/60
-        hover:shadow-[0_30px_80px_rgba(0,0,0,0.6)]
+        hover:border-amber-700/40
+        hover:shadow-[0_30px_90px_rgba(0,0,0,0.65)]
       "
     >
       {/* =================================================
-          CINEMATIC BACKGROUND
+          CINEMATIC REALM BACKGROUND
       ================================================= */}
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
+
         {/* Base */}
 
         <div
@@ -434,62 +530,209 @@ function LearningActivity({
             absolute
             inset-0
             bg-gradient-to-br
-            from-[#050608]
-            via-[#101217]
-            to-[#1b0909]
+            from-[#050709]
+            via-[#11171b]
+            to-[#090b0d]
           "
         />
 
-        {/* Fire glow */}
+        {/* =============================================
+            MOON
+        ============================================== */}
 
         <div
           className="
             absolute
-            -right-24
-            -top-24
+            right-[7%]
+            top-[7%]
+            h-24
+            w-24
+            rounded-full
+            bg-slate-200/[0.035]
+            shadow-[0_0_70px_rgba(186,230,253,0.06)]
+            animate-[moonPulse_7s_ease-in-out_infinite]
+          "
+        >
+          <div
+            className="
+              absolute
+              inset-3
+              rounded-full
+              border
+              border-slate-300/[0.04]
+            "
+          />
+        </div>
+
+        {/* =============================================
+            CASTLE SILHOUETTE
+        ============================================== */}
+
+        <div
+          className="
+            absolute
+            bottom-0
+            left-0
+            h-24
+            w-full
+            opacity-[0.16]
+          "
+        >
+          <div className="absolute bottom-0 left-[5%] h-16 w-20 border-x border-t border-slate-500/20" />
+
+          <div className="absolute bottom-0 left-[12%] h-24 w-7 border-x border-t border-slate-500/20" />
+
+          <div className="absolute bottom-0 left-[18%] h-14 w-12 border-x border-t border-slate-500/20" />
+
+          <div className="absolute bottom-0 right-[12%] h-20 w-9 border-x border-t border-slate-500/20" />
+
+          <div className="absolute bottom-0 right-[5%] h-14 w-16 border-x border-t border-slate-500/20" />
+
+          <Castle
+            size={75}
+            className="
+              absolute
+              bottom-[-5px]
+              left-1/2
+              -translate-x-1/2
+              text-slate-400/[0.08]
+            "
+          />
+        </div>
+
+        {/* =============================================
+            MOUNTAINS
+        ============================================== */}
+
+        <div
+          className="
+            absolute
+            bottom-0
+            left-[-5%]
+            h-20
+            w-[110%]
+            opacity-[0.07]
+          "
+        >
+          <Mountain
+            size={180}
+            className="
+              absolute
+              bottom-[-45px]
+              left-[8%]
+            "
+          />
+
+          <Mountain
+            size={150}
+            className="
+              absolute
+              bottom-[-50px]
+              right-[10%]
+            "
+          />
+        </div>
+
+        {/* =============================================
+            GOLDEN TORCH GLOW
+        ============================================== */}
+
+        <div
+          className="
+            absolute
+            -left-28
+            -bottom-28
             h-80
             w-80
             rounded-full
-            bg-amber-600/10
+            bg-amber-700/[0.07]
+            blur-[100px]
+            transition-all
+            duration-1000
+            group-hover:scale-125
+            group-hover:bg-amber-600/[0.11]
+          "
+        />
+
+        {/* =============================================
+            ICE GLOW
+        ============================================== */}
+
+        <div
+          className="
+            absolute
+            -right-28
+            -top-28
+            h-80
+            w-80
+            rounded-full
+            bg-sky-800/[0.08]
             blur-[110px]
             transition-all
             duration-1000
             group-hover:scale-125
-            group-hover:bg-amber-600/15
           "
         />
 
-        {/* Red glow */}
-
-        <div
-          className="
-            absolute
-            -bottom-32
-            -left-24
-            h-96
-            w-96
-            rounded-full
-            bg-red-900/15
-            blur-[120px]
-            transition-all
-            duration-1000
-            group-hover:bg-red-800/20
-          "
-        />
-
-        {/* Stone texture */}
+        {/* =============================================
+            STONE TEXTURE
+        ============================================== */}
 
         <div
           className="
             absolute
             inset-0
-            opacity-[0.035]
-            [background-image:linear-gradient(135deg,transparent_25%,white_25%,transparent_26%),linear-gradient(45deg,transparent_25%,white_25%,transparent_26%)]
-            [background-size:22px_22px]
+            opacity-[0.045]
+            [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%),linear-gradient(45deg,transparent_45%,white_46%,transparent_47%)]
+            [background-size:25px_25px]
           "
         />
 
-        {/* Moving cinematic scan */}
+        {/* =============================================
+            FOG
+        ============================================== */}
+
+        <div
+          className="
+            absolute
+            bottom-[-20px]
+            left-[-20%]
+            h-28
+            w-[140%]
+            rounded-[50%]
+            bg-slate-300/[0.025]
+            blur-3xl
+            animate-[fogDrift_14s_ease-in-out_infinite]
+          "
+        />
+
+        {/* =============================================
+            SNOW
+        ============================================== */}
+
+        <span className="absolute left-[8%] top-[18%] h-1 w-1 rounded-full bg-sky-100/40 animate-[snowFall_8s_linear_infinite]" />
+
+        <span className="absolute left-[22%] top-[8%] h-1 w-1 rounded-full bg-white/30 animate-[snowFall_11s_linear_infinite_1s]" />
+
+        <span className="absolute left-[40%] top-[25%] h-1.5 w-1.5 rounded-full bg-sky-100/30 animate-[snowFall_9s_linear_infinite_2s]" />
+
+        <span className="absolute right-[28%] top-[12%] h-1 w-1 rounded-full bg-white/35 animate-[snowFall_10s_linear_infinite_1.5s]" />
+
+        <span className="absolute right-[12%] top-[30%] h-1.5 w-1.5 rounded-full bg-sky-100/30 animate-[snowFall_12s_linear_infinite_3s]" />
+
+        {/* =============================================
+            EMBERS
+        ============================================== */}
+
+        <span className="absolute left-[15%] bottom-[20%] h-1 w-1 rounded-full bg-amber-400/60 animate-[emberFloat_5s_ease-in-out_infinite]" />
+
+        <span className="absolute left-[32%] bottom-[18%] h-1.5 w-1.5 rounded-full bg-amber-300/50 animate-[emberFloat_6s_ease-in-out_infinite_1s]" />
+
+        <span className="absolute right-[18%] bottom-[25%] h-1 w-1 rounded-full bg-orange-400/50 animate-[emberFloat_7s_ease-in-out_infinite_2s]" />
+
+        {/* =============================================
+            CINEMATIC LIGHT SWEEP
+        ============================================== */}
 
         <div
           className="
@@ -501,80 +744,11 @@ function LearningActivity({
             -skew-x-12
             bg-gradient-to-r
             from-transparent
-            via-red-500/[0.025]
+            via-amber-300/[0.025]
             to-transparent
             transition-all
             duration-[1800ms]
             group-hover:left-[120%]
-          "
-        />
-
-        {/* =================================================
-            EMBERS
-        ================================================= */}
-
-        <span
-          className="
-            absolute
-            left-[12%]
-            top-[25%]
-            h-1
-            w-1
-            animate-[emberFloat_5s_ease-in-out_infinite]
-            rounded-full
-            bg-red-400/60
-          "
-        />
-
-        <span
-          className="
-            absolute
-            left-[30%]
-            top-[60%]
-            h-1.5
-            w-1.5
-            animate-[emberFloat_6s_ease-in-out_infinite_1s]
-            rounded-full
-            bg-amber-400/50
-          "
-        />
-
-        <span
-          className="
-            absolute
-            right-[15%]
-            top-[18%]
-            h-1
-            w-1
-            animate-[emberFloat_5.5s_ease-in-out_infinite_0.5s]
-            rounded-full
-            bg-orange-400/60
-          "
-        />
-
-        <span
-          className="
-            absolute
-            right-[28%]
-            top-[42%]
-            h-1
-            w-1
-            animate-pulse
-            rounded-full
-            bg-red-500/50
-          "
-        />
-
-        <span
-          className="
-            absolute
-            bottom-[20%]
-            right-[12%]
-            h-1
-            w-1
-            animate-[emberFloat_7s_ease-in-out_infinite_1.5s]
-            rounded-full
-            bg-amber-300/50
           "
         />
       </div>
@@ -591,14 +765,15 @@ function LearningActivity({
           items-center
           justify-between
           border-b
-          border-white/[0.08]
+          border-white/[0.07]
           px-5
           py-5
           sm:px-6
         "
       >
         <div className="flex items-center gap-3">
-          {/* Animated chart icon */}
+
+          {/* Chronicle icon */}
 
           <div
             className="
@@ -612,8 +787,8 @@ function LearningActivity({
               rounded-xl
               border
               border-amber-500/20
-              bg-amber-500/10
-              shadow-[0_0_25px_rgba(245,158,11,0.08)]
+              bg-amber-500/[0.07]
+              shadow-[0_0_30px_rgba(245,158,11,0.07)]
               transition-all
               duration-300
               group-hover:scale-110
@@ -628,7 +803,7 @@ function LearningActivity({
               "
             />
 
-            {/* Orbit dot */}
+            {/* Crown dot */}
 
             <span
               className="
@@ -647,6 +822,7 @@ function LearningActivity({
 
           <div>
             <div className="flex items-center gap-2">
+
               <h2
                 className="
                   m-0
@@ -666,7 +842,7 @@ function LearningActivity({
                 className="
                   hidden
                   animate-[swordFloat_4s_ease-in-out_infinite]
-                  text-red-500/70
+                  text-slate-400/60
                   sm:block
                 "
               />
@@ -680,7 +856,7 @@ function LearningActivity({
                 font-bold
                 uppercase
                 tracking-[0.13em]
-                text-zinc-600
+                text-slate-500
                 sm:text-xs
               "
             >
@@ -689,7 +865,7 @@ function LearningActivity({
           </div>
         </div>
 
-        {/* Chronicle badge */}
+        {/* Realm status */}
 
         <div
           className="
@@ -698,20 +874,20 @@ function LearningActivity({
             gap-1.5
             rounded-full
             border
-            border-red-900/40
-            bg-red-950/20
+            border-amber-500/20
+            bg-amber-500/[0.06]
             px-3
             py-1.5
-            shadow-[0_0_20px_rgba(127,29,29,0.08)]
+            shadow-[0_0_20px_rgba(245,158,11,0.06)]
             sm:flex
           "
         >
           <Flame
             size={13}
             className="
-              animate-[flameFlicker_1.2s_ease-in-out_infinite]
-              text-red-500
-              drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]
+              animate-[flameFlicker_1.4s_ease-in-out_infinite]
+              text-amber-400
+              drop-shadow-[0_0_6px_rgba(245,158,11,0.7)]
             "
           />
 
@@ -721,10 +897,10 @@ function LearningActivity({
               font-black
               uppercase
               tracking-[0.16em]
-              text-red-400
+              text-amber-400
             "
           >
-            This Week
+            Realm Active
           </span>
         </div>
       </div>
@@ -734,6 +910,7 @@ function LearningActivity({
       ================================================= */}
 
       <div className="relative z-10 p-5 sm:p-6">
+
         {/* =================================================
             SUMMARY
         ================================================= */}
@@ -749,16 +926,18 @@ function LearningActivity({
             sm:justify-between
           "
         >
+
           {/* Total */}
 
           <div>
             <div className="flex items-center gap-2">
+
               <Sword
                 size={14}
                 className="
                   animate-[swordFloat_3.5s_ease-in-out_infinite]
-                  text-red-500
-                  drop-shadow-[0_0_7px_rgba(239,68,68,0.6)]
+                  text-sky-400/70
+                  drop-shadow-[0_0_7px_rgba(56,189,248,0.5)]
                 "
               />
 
@@ -769,14 +948,15 @@ function LearningActivity({
                   font-black
                   uppercase
                   tracking-[0.16em]
-                  text-zinc-600
+                  text-slate-500
                 "
               >
-                Time on the realm
+                Time in the realm
               </p>
             </div>
 
             <div className="mt-1 flex items-baseline gap-2">
+
               <span
                 className="
                   text-4xl
@@ -793,7 +973,7 @@ function LearningActivity({
                 className="
                   text-sm
                   font-medium
-                  text-zinc-600
+                  text-slate-500
                 "
               >
                 hours
@@ -804,6 +984,7 @@ function LearningActivity({
           {/* Stats */}
 
           <div className="flex flex-wrap gap-2">
+
             {/* Active days */}
 
             <div
@@ -814,13 +995,13 @@ function LearningActivity({
                 gap-1.5
                 rounded-full
                 border
-                border-emerald-500/20
-                bg-emerald-500/10
+                border-sky-500/20
+                bg-sky-500/[0.06]
                 px-3
                 py-1.5
                 text-xs
                 font-semibold
-                text-emerald-400
+                text-sky-400
                 transition-all
                 duration-300
                 hover:scale-105
@@ -855,7 +1036,7 @@ function LearningActivity({
                   rounded-full
                   border
                   border-amber-500/20
-                  bg-amber-500/10
+                  bg-amber-500/[0.06]
                   px-3
                   py-1.5
                   text-xs
@@ -896,6 +1077,7 @@ function LearningActivity({
             ================================================= */}
 
             <div className="w-full">
+
               <div
                 className="
                   flex
@@ -907,6 +1089,7 @@ function LearningActivity({
               >
                 {normalizedActivity.map(
                   (item, index) => {
+
                     const hours = Number(
                       item.hours || 0
                     );
@@ -941,6 +1124,7 @@ function LearningActivity({
                           justify-end
                         "
                       >
+
                         {/* Crown */}
 
                         <div
@@ -982,10 +1166,10 @@ function LearningActivity({
                             whitespace-nowrap
                             text-[10px]
                             font-semibold
-                            text-zinc-600
+                            text-slate-500
                             transition-all
                             duration-300
-                            group-hover/bar:text-zinc-300
+                            group-hover/bar:text-slate-200
                           "
                         >
                           {hours.toFixed(1)}h
@@ -1005,13 +1189,14 @@ function LearningActivity({
                             rounded-t-lg
                             border
                             border-white/[0.05]
-                            bg-white/[0.025]
+                            bg-white/[0.02]
                             transition-all
                             duration-300
-                            group-hover/bar:border-red-900/40
+                            group-hover/bar:border-amber-700/40
                           "
                         >
-                          {/* Stone background */}
+
+                          {/* Stone pattern */}
 
                           <div
                             className="
@@ -1019,7 +1204,7 @@ function LearningActivity({
                               inset-0
                               opacity-30
                               [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%)]
-                              [background-size:8px_8px]
+                              [background-size:9px_9px]
                             "
                           />
 
@@ -1031,9 +1216,9 @@ function LearningActivity({
                               w-full
                               rounded-t-lg
                               bg-gradient-to-t
-                              from-red-950
-                              via-red-800
-                              to-amber-500
+                              from-[#15191c]
+                              via-[#37434a]
+                              to-amber-400
                               shadow-lg
                               transition-all
                               duration-1000
@@ -1041,50 +1226,62 @@ function LearningActivity({
                               ${
                                 isStrongest
                                   ? "shadow-amber-500/40"
-                                  : "shadow-red-950/30"
+                                  : "shadow-black/40"
                               }
                             `}
                             style={{
                               height: `${height}%`,
                             }}
                           >
-                            {/* Fire highlight */}
 
-                            {hours > 0 && (
-                              <>
-                                <div
-                                  className="
-                                    absolute
-                                    left-0
-                                    right-0
-                                    top-0
-                                    h-px
-                                    bg-amber-300/90
-                                    shadow-[0_0_8px_rgba(252,211,77,0.8)]
-                                  "
-                                />
+                            {/* Gold edge */}
 
-                                {/* Moving shine */}
+                            <div
+                              className="
+                                absolute
+                                left-0
+                                right-0
+                                top-0
+                                h-px
+                                bg-amber-300/90
+                                shadow-[0_0_8px_rgba(252,211,77,0.8)]
+                              "
+                            />
 
-                                <div
-                                  className="
-                                    absolute
-                                    left-0
-                                    top-0
-                                    h-full
-                                    w-full
-                                    -translate-y-full
-                                    bg-gradient-to-b
-                                    from-white/20
-                                    via-transparent
-                                    to-transparent
-                                    transition-transform
-                                    duration-700
-                                    group-hover/bar:translate-y-full
-                                  "
-                                />
-                              </>
-                            )}
+                            {/* Moving shine */}
+
+                            <div
+                              className="
+                                absolute
+                                left-0
+                                top-0
+                                h-full
+                                w-full
+                                -translate-y-full
+                                bg-gradient-to-b
+                                from-white/20
+                                via-transparent
+                                to-transparent
+                                transition-transform
+                                duration-700
+                                group-hover/bar:translate-y-full
+                              "
+                            />
+
+                            {/* Ice highlight */}
+
+                            <div
+                              className="
+                                absolute
+                                bottom-0
+                                left-1/2
+                                h-1/2
+                                w-px
+                                -translate-x-1/2
+                                bg-sky-300/20
+                                blur-sm
+                              "
+                            />
                           </div>
                         </div>
 
@@ -1096,10 +1293,10 @@ function LearningActivity({
                             truncate
                             text-[11px]
                             font-semibold
-                            text-zinc-600
+                            text-slate-500
                             transition-colors
                             duration-300
-                            group-hover/bar:text-zinc-300
+                            group-hover/bar:text-slate-200
                           "
                         >
                           {item.day || "-"}
@@ -1130,8 +1327,8 @@ function LearningActivity({
                     border
                     border-amber-500/15
                     bg-gradient-to-r
-                    from-amber-500/[0.08]
-                    via-red-500/[0.05]
+                    from-amber-500/[0.07]
+                    via-slate-500/[0.03]
                     to-transparent
                     p-4
                     transition-all
@@ -1139,7 +1336,8 @@ function LearningActivity({
                     hover:border-amber-500/30
                   "
                 >
-                  {/* Animated background */}
+
+                  {/* Animated glow */}
 
                   <div
                     className="
@@ -1151,7 +1349,7 @@ function LearningActivity({
                       -translate-y-1/2
                       animate-pulse
                       rounded-full
-                      bg-amber-500/5
+                      bg-amber-500/[0.05]
                       blur-2xl
                     "
                   />
@@ -1171,9 +1369,8 @@ function LearningActivity({
                       rounded-xl
                       border
                       border-amber-500/20
-                      bg-amber-500/10
-                      text-xl
-                      shadow-[0_0_20px_rgba(245,158,11,0.08)]
+                      bg-amber-500/[0.07]
+                      shadow-[0_0_25px_rgba(245,158,11,0.08)]
                     "
                   >
                     <Crown
@@ -1197,7 +1394,10 @@ function LearningActivity({
                     />
                   </div>
 
+                  {/* Text */}
+
                   <div className="min-w-0 flex-1">
+
                     <p
                       className="
                         m-0
@@ -1215,7 +1415,7 @@ function LearningActivity({
                         mt-0.5
                         text-xs
                         leading-5
-                        text-zinc-600
+                        text-slate-500
                       "
                     >
                       Your strongest learning battle —
@@ -1226,14 +1426,15 @@ function LearningActivity({
                     </p>
                   </div>
 
-                  {/* Animated shield */}
+                  {/* Shield */}
 
                   <div className="relative hidden sm:block">
+
                     <Shield
                       size={21}
                       className="
                         animate-[shieldPulse_3s_ease-in-out_infinite]
-                        text-amber-500/50
+                        text-slate-300/40
                       "
                     />
 
@@ -1243,7 +1444,7 @@ function LearningActivity({
                         inset-0
                         animate-ping
                         rounded-full
-                        bg-amber-500/10
+                        bg-amber-500/[0.07]
                       "
                     />
                   </div>
@@ -1266,13 +1467,13 @@ function LearningActivity({
           w-full
           bg-gradient-to-r
           from-transparent
-          via-red-700
+          via-amber-700
           to-transparent
           opacity-70
         "
       />
 
-      {/* Animated red footer scanner */}
+      {/* Animated footer scanner */}
 
       <div
         className="
@@ -1282,8 +1483,8 @@ function LearningActivity({
           left-[-20%]
           h-px
           w-[20%]
-          bg-red-400
-          shadow-[0_0_12px_rgba(239,68,68,0.8)]
+          bg-amber-300
+          shadow-[0_0_12px_rgba(245,158,11,0.8)]
           transition-all
           duration-[1600ms]
           group-hover:left-[100%]
@@ -1295,9 +1496,9 @@ function LearningActivity({
       ================================================= */}
 
       <style>{`
+
         @keyframes iconFloat {
-          0%,
-          100% {
+          0%, 100% {
             transform: translateY(0) rotate(0deg);
           }
 
@@ -1307,8 +1508,7 @@ function LearningActivity({
         }
 
         @keyframes floatIcon {
-          0%,
-          100% {
+          0%, 100% {
             transform: translateY(0);
           }
 
@@ -1318,8 +1518,7 @@ function LearningActivity({
         }
 
         @keyframes swordFloat {
-          0%,
-          100% {
+          0%, 100% {
             transform: translateY(0) rotate(-20deg);
           }
 
@@ -1329,8 +1528,7 @@ function LearningActivity({
         }
 
         @keyframes crownFloat {
-          0%,
-          100% {
+          0%, 100% {
             transform: translateY(0) rotate(0deg);
           }
 
@@ -1340,23 +1538,21 @@ function LearningActivity({
         }
 
         @keyframes shieldPulse {
-          0%,
-          100% {
+          0%, 100% {
             transform: scale(1);
-            opacity: 0.45;
+            opacity: .45;
           }
 
           50% {
             transform: scale(1.12);
-            opacity: 0.8;
+            opacity: .8;
           }
         }
 
         @keyframes flameFlicker {
-          0%,
-          100% {
+          0%, 100% {
             transform: scale(1) rotate(-2deg);
-            opacity: 0.8;
+            opacity: .8;
           }
 
           25% {
@@ -1365,13 +1561,13 @@ function LearningActivity({
           }
 
           50% {
-            transform: scale(0.94) rotate(-3deg);
-            opacity: 0.75;
+            transform: scale(.94) rotate(-3deg);
+            opacity: .7;
           }
 
           75% {
             transform: scale(1.05) rotate(3deg);
-            opacity: 0.95;
+            opacity: .95;
           }
         }
 
@@ -1382,16 +1578,16 @@ function LearningActivity({
           }
 
           20% {
-            opacity: 0.7;
+            opacity: .7;
           }
 
           50% {
             transform: translateY(-25px) translateX(8px);
-            opacity: 0.5;
+            opacity: .5;
           }
 
           80% {
-            opacity: 0.3;
+            opacity: .3;
           }
 
           100% {
@@ -1399,6 +1595,62 @@ function LearningActivity({
             opacity: 0;
           }
         }
+
+        @keyframes snowFall {
+          0% {
+            transform: translateY(-20px) translateX(0);
+            opacity: 0;
+          }
+
+          15% {
+            opacity: .7;
+          }
+
+          50% {
+            transform: translateY(90px) translateX(15px);
+            opacity: .5;
+          }
+
+          100% {
+            transform: translateY(190px) translateX(-10px);
+            opacity: 0;
+          }
+        }
+
+        @keyframes fogDrift {
+          0%, 100% {
+            transform: translateX(-5%);
+            opacity: .25;
+          }
+
+          50% {
+            transform: translateX(5%);
+            opacity: .55;
+          }
+        }
+
+        @keyframes moonPulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: .7;
+          }
+
+          50% {
+            transform: scale(1.04);
+            opacity: 1;
+          }
+        }
+
+        @keyframes featherFloat {
+          0%, 100% {
+            transform: translateY(0) rotate(-10deg);
+          }
+
+          50% {
+            transform: translateY(-10px) rotate(8deg);
+          }
+        }
+
       `}</style>
     </section>
   );

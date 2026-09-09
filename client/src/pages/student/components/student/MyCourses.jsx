@@ -1,12 +1,16 @@
 import {
-  BookOpen,
-  Clock3,
   ArrowRight,
-  Play,
+  BookOpen,
+  Castle,
   CheckCircle2,
-  Flame,
+  Clock3,
   Crown,
-  Crosshair,
+  Feather,
+  Play,
+  Shield,
+  Sparkles,
+  Sword,
+  Trophy,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -48,51 +52,128 @@ function MyCourses({ courses = [] }) {
           overflow-hidden
           rounded-[28px]
           border
-          border-zinc-800
-          bg-[#090909]
-          shadow-2xl
+          border-[#2a2925]
+          bg-[#090b0d]
+          shadow-[0_25px_80px_rgba(0,0,0,0.45)]
         "
       >
-        {/* CINEMATIC GLOW */}
+        {/* =================================================
+            MEDIEVAL BACKGROUND
+        ================================================= */}
 
-        <div
-          className="
-            pointer-events-none
-            absolute
-            -right-24
-            -top-24
-            h-64
-            w-64
-            rounded-full
-            bg-red-600/10
-            blur-3xl
-          "
-        />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {/* Moon */}
+          <div
+            className="
+              absolute
+              right-10
+              top-8
+              h-24
+              w-24
+              rounded-full
+              bg-[#d8e8ee]/10
+              shadow-[0_0_50px_rgba(180,220,235,0.12)]
+            "
+          />
 
-        <div
-          className="
-            pointer-events-none
-            absolute
-            -bottom-24
-            -left-24
-            h-64
-            w-64
-            rounded-full
-            bg-orange-500/5
-            blur-3xl
-          "
-        />
+          <div
+            className="
+              absolute
+              right-16
+              top-14
+              h-20
+              w-20
+              rounded-full
+              bg-[#090b0d]
+            "
+          />
 
-        {/* HEADER */}
+          {/* Ice glow */}
+          <div
+            className="
+              absolute
+              -left-24
+              -top-24
+              h-72
+              w-72
+              rounded-full
+              bg-sky-500/8
+              blur-3xl
+            "
+          />
+
+          {/* Gold glow */}
+          <div
+            className="
+              absolute
+              -bottom-24
+              -right-24
+              h-72
+              w-72
+              rounded-full
+              bg-amber-500/8
+              blur-3xl
+            "
+          />
+
+          {/* Mountains */}
+          <div
+            className="
+              absolute
+              bottom-0
+              left-0
+              h-32
+              w-full
+              bg-gradient-to-t
+              from-black
+              via-[#111417]/90
+              to-transparent
+              opacity-90
+            "
+          />
+
+          {/* Castle silhouette */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 opacity-20">
+            <div className="relative h-20 w-40 bg-[#151719]">
+              <div className="absolute -left-5 bottom-0 h-28 w-8 bg-[#151719]" />
+              <div className="absolute -right-5 bottom-0 h-28 w-8 bg-[#151719]" />
+
+              <div className="absolute left-1/2 top-0 h-32 w-10 -translate-x-1/2 bg-[#151719]" />
+
+              <div className="absolute -left-5 top-0 h-3 w-8 bg-[#151719]" />
+              <div className="absolute right-[-20px] top-0 h-3 w-8 bg-[#151719]" />
+              <div className="absolute left-1/2 top-0 h-3 w-10 -translate-x-1/2 bg-[#151719]" />
+            </div>
+          </div>
+
+          {/* Snow particles */}
+          {[...Array(14)].map((_, i) => (
+            <span
+              key={i}
+              className="absolute h-1 w-1 rounded-full bg-sky-100/30"
+              style={{
+                left: `${8 + i * 7}%`,
+                top: `${12 + ((i * 17) % 65)}%`,
+                animation: `myCoursesSnow ${4 + (i % 4)}s linear infinite`,
+                animationDelay: `${i * 0.4}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
         <div
           className="
             relative
+            z-10
             flex
             items-center
             justify-between
             border-b
-            border-zinc-800
+            border-[#292a27]
             px-5
             py-5
             sm:px-7
@@ -100,9 +181,9 @@ function MyCourses({ courses = [] }) {
         >
           <div>
             <div className="mb-1 flex items-center gap-2">
-              <Crown
-                size={15}
-                className="text-red-500"
+              <Feather
+                size={14}
+                className="text-sky-300"
               />
 
               <span
@@ -110,11 +191,11 @@ function MyCourses({ courses = [] }) {
                   text-[10px]
                   font-bold
                   uppercase
-                  tracking-[0.25em]
-                  text-red-500
+                  tracking-[0.3em]
+                  text-sky-300
                 "
               >
-                The Collection
+                The Great Library
               </span>
             </div>
 
@@ -132,7 +213,7 @@ function MyCourses({ courses = [] }) {
             </h2>
 
             <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
-              Your missions in progress
+              The knowledge within your realm
             </p>
           </div>
 
@@ -146,8 +227,8 @@ function MyCourses({ courses = [] }) {
               gap-2
               rounded-lg
               border
-              border-zinc-700
-              bg-zinc-900
+              border-[#444039]
+              bg-[#121416]/80
               px-3
               py-2
               text-xs
@@ -156,13 +237,14 @@ function MyCourses({ courses = [] }) {
               tracking-wider
               text-zinc-300
               transition
-              hover:border-red-600
-              hover:bg-red-600/10
-              hover:text-red-500
+              hover:border-amber-500/50
+              hover:bg-amber-500/10
+              hover:text-amber-300
               sm:px-4
             "
           >
             View all
+
             <ArrowRight
               size={14}
               className="transition-transform group-hover:translate-x-1"
@@ -170,11 +252,14 @@ function MyCourses({ courses = [] }) {
           </button>
         </div>
 
-        {/* EMPTY STATE */}
+        {/* =================================================
+            EMPTY STATE
+        ================================================= */}
 
         <div
           className="
             relative
+            z-10
             flex
             min-h-[320px]
             flex-col
@@ -185,36 +270,54 @@ function MyCourses({ courses = [] }) {
             text-center
           "
         >
-          {/* TARGET */}
-
+          {/* Shield */}
           <div
             className="
               relative
               flex
-              h-20
-              w-20
+              h-24
+              w-24
               items-center
               justify-center
-              rounded-full
-              border
-              border-red-600/30
-              bg-red-600/5
-              shadow-[0_0_50px_rgba(220,38,38,0.12)]
             "
           >
             <div
               className="
                 absolute
-                inset-2
+                inset-0
                 rounded-full
                 border
-                border-red-600/20
+                border-amber-400/10
+                bg-amber-400/5
+                shadow-[0_0_60px_rgba(212,175,55,0.08)]
               "
             />
 
-            <Crosshair
-              size={30}
-              className="text-red-500"
+            <div
+              className="
+                absolute
+                inset-3
+                rounded-full
+                border
+                border-sky-300/10
+              "
+            />
+
+            <Shield
+              size={38}
+              strokeWidth={1.3}
+              className="text-amber-300"
+            />
+
+            <Sparkles
+              size={14}
+              className="
+                absolute
+                right-0
+                top-2
+                animate-pulse
+                text-sky-300
+              "
             />
           </div>
 
@@ -224,11 +327,11 @@ function MyCourses({ courses = [] }) {
               text-xl
               font-black
               uppercase
-              tracking-tight
+              tracking-[0.08em]
               text-white
             "
           >
-            No missions assigned
+            No courses in your realm
           </h3>
 
           <p
@@ -240,8 +343,8 @@ function MyCourses({ courses = [] }) {
               text-zinc-500
             "
           >
-            Choose your next mission. Build your skills.
-            Become the one they call when it matters.
+            The path awaits. Choose a course, sharpen your
+            skills, and begin your journey toward mastery.
           </p>
 
           <button
@@ -253,26 +356,59 @@ function MyCourses({ courses = [] }) {
               items-center
               gap-2
               rounded-xl
-              bg-red-600
+              border
+              border-amber-500/40
+              bg-amber-500/10
               px-5
               py-3
               text-sm
               font-black
               uppercase
               tracking-wide
-              text-white
-              shadow-lg
-              shadow-red-900/30
+              text-amber-300
+              shadow-[0_0_25px_rgba(212,175,55,0.08)]
               transition
-              hover:bg-red-500
-              hover:shadow-red-600/20
+              hover:border-amber-400
+              hover:bg-amber-400
+              hover:text-black
               active:scale-[0.98]
             "
           >
-            Choose Mission
+            Enter the Library
             <ArrowRight size={16} />
           </button>
         </div>
+
+        {/* Bottom realm line */}
+        <div
+          className="
+            absolute
+            bottom-0
+            left-0
+            h-px
+            w-full
+            bg-gradient-to-r
+            from-transparent
+            via-amber-400/40
+            to-transparent
+          "
+        />
+
+        <style>{`
+          @keyframes myCoursesSnow {
+            0% {
+              transform: translateY(-20px);
+              opacity: 0;
+            }
+            20% {
+              opacity: 1;
+            }
+            100% {
+              transform: translateY(340px);
+              opacity: 0;
+            }
+          }
+        `}</style>
       </section>
     );
   }
@@ -289,42 +425,107 @@ function MyCourses({ courses = [] }) {
         overflow-hidden
         rounded-[28px]
         border
-        border-zinc-800
-        bg-[#090909]
-        shadow-2xl
+        border-[#2a2925]
+        bg-[#090b0d]
+        shadow-[0_25px_80px_rgba(0,0,0,0.45)]
       "
     >
       {/* =================================================
-          BACKGROUND CINEMATIC GLOW
+          MEDIEVAL SCENE
       ================================================= */}
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -right-32
-          -top-32
-          h-80
-          w-80
-          rounded-full
-          bg-red-600/10
-          blur-3xl
-        "
-      />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Ice glow */}
+        <div
+          className="
+            absolute
+            -left-32
+            -top-32
+            h-80
+            w-80
+            rounded-full
+            bg-sky-500/7
+            blur-3xl
+          "
+        />
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -bottom-32
-          -left-32
-          h-80
-          w-80
-          rounded-full
-          bg-orange-600/5
-          blur-3xl
-        "
-      />
+        {/* Gold glow */}
+        <div
+          className="
+            absolute
+            -right-32
+            -top-32
+            h-80
+            w-80
+            rounded-full
+            bg-amber-500/7
+            blur-3xl
+          "
+        />
+
+        {/* Moon */}
+        <div
+          className="
+            absolute
+            right-[12%]
+            top-[-35px]
+            h-32
+            w-32
+            rounded-full
+            bg-slate-100/5
+            shadow-[0_0_70px_rgba(200,220,230,0.08)]
+          "
+        />
+
+        {/* Castle silhouette */}
+        <div
+          className="
+            absolute
+            bottom-0
+            right-[8%]
+            h-28
+            w-44
+            opacity-[0.08]
+          "
+        >
+          <div className="absolute bottom-0 left-0 h-20 w-12 bg-slate-300" />
+          <div className="absolute bottom-0 right-0 h-24 w-12 bg-slate-300" />
+          <div className="absolute bottom-0 left-1/2 h-28 w-14 -translate-x-1/2 bg-slate-300" />
+
+          <div className="absolute left-0 top-0 h-3 w-12 bg-slate-300" />
+          <div className="absolute right-0 top-0 h-3 w-12 bg-slate-300" />
+          <div className="absolute left-1/2 top-0 h-3 w-14 -translate-x-1/2 bg-slate-300" />
+        </div>
+
+        {/* Fog */}
+        <div
+          className="
+            absolute
+            bottom-0
+            left-0
+            h-20
+            w-full
+            bg-gradient-to-t
+            from-slate-400/[0.04]
+            to-transparent
+            blur-xl
+          "
+        />
+
+        {/* Snow */}
+        {[...Array(18)].map((_, i) => (
+          <span
+            key={i}
+            className="absolute h-1 w-1 rounded-full bg-sky-100/20"
+            style={{
+              left: `${3 + ((i * 13) % 94)}%`,
+              top: `${5 + ((i * 19) % 80)}%`,
+              animation: `myCoursesSnow ${5 + (i % 5)}s linear infinite`,
+              animationDelay: `${i * 0.35}s`,
+            }}
+          />
+        ))}
+      </div>
 
       {/* =================================================
           HEADER
@@ -333,11 +534,12 @@ function MyCourses({ courses = [] }) {
       <div
         className="
           relative
+          z-10
           flex
           items-center
           justify-between
           border-b
-          border-zinc-800
+          border-[#292a27]
           px-5
           py-5
           sm:px-7
@@ -345,9 +547,9 @@ function MyCourses({ courses = [] }) {
       >
         <div>
           <div className="mb-1 flex items-center gap-2">
-            <Flame
+            <Crown
               size={14}
-              className="text-red-500"
+              className="text-amber-300"
             />
 
             <span
@@ -356,10 +558,10 @@ function MyCourses({ courses = [] }) {
                 font-bold
                 uppercase
                 tracking-[0.3em]
-                text-red-500
+                text-amber-300
               "
             >
-              Active Missions
+              Your Realm
             </span>
           </div>
 
@@ -377,7 +579,7 @@ function MyCourses({ courses = [] }) {
           </h2>
 
           <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
-            Every course is another mission.
+            Knowledge earned. Skills forged.
           </p>
         </div>
 
@@ -391,8 +593,8 @@ function MyCourses({ courses = [] }) {
             gap-2
             rounded-lg
             border
-            border-zinc-700
-            bg-zinc-900
+            border-[#444039]
+            bg-[#121416]/80
             px-3
             py-2
             text-xs
@@ -401,13 +603,13 @@ function MyCourses({ courses = [] }) {
             tracking-wider
             text-zinc-300
             transition
-            hover:border-red-600
-            hover:bg-red-600/10
-            hover:text-red-500
+            hover:border-amber-500/50
+            hover:bg-amber-500/10
+            hover:text-amber-300
             sm:px-4
           "
         >
-          All missions
+          All courses
 
           <ArrowRight
             size={14}
@@ -426,10 +628,11 @@ function MyCourses({ courses = [] }) {
       <div
         className="
           relative
+          z-10
           grid
           grid-cols-1
           divide-y
-          divide-zinc-800
+          divide-[#292a27]
           xl:grid-cols-3
           xl:divide-x
           xl:divide-y-0
@@ -487,12 +690,14 @@ function MyCourses({ courses = [] }) {
                 relative
                 p-5
                 transition
-                duration-300
-                hover:bg-white/[0.02]
+                duration-500
+                hover:bg-white/[0.018]
                 sm:p-6
               "
             >
-              {/* SIDE RED LINE */}
+              {/* =================================================
+                  GOLD SIDE LINE
+              ================================================= */}
 
               <div
                 className="
@@ -503,7 +708,10 @@ function MyCourses({ courses = [] }) {
                   w-[2px]
                   origin-top
                   scale-y-0
-                  bg-red-600
+                  bg-gradient-to-b
+                  from-amber-300
+                  via-amber-500
+                  to-sky-400
                   transition-transform
                   duration-500
                   group-hover:scale-y-100
@@ -521,9 +729,9 @@ function MyCourses({ courses = [] }) {
                   overflow-hidden
                   rounded-2xl
                   border
-                  border-zinc-800
-                  bg-zinc-900
-                  shadow-xl
+                  border-[#302f2b]
+                  bg-[#111315]
+                  shadow-[0_15px_40px_rgba(0,0,0,0.35)]
                 "
               >
                 {thumbnail ? (
@@ -534,53 +742,84 @@ function MyCourses({ courses = [] }) {
                       h-full
                       w-full
                       object-cover
-                      opacity-80
-                      grayscale-[15%]
+                      opacity-75
                       transition
                       duration-700
                       group-hover:scale-110
-                      group-hover:opacity-100
+                      group-hover:opacity-95
                     "
                   />
                 ) : (
                   <>
+                    {/* Mountain background */}
                     <div
                       className="
                         absolute
                         inset-0
                         bg-gradient-to-br
-                        from-zinc-900
-                        via-red-950
-                        to-black
+                        from-[#15191c]
+                        via-[#101518]
+                        to-[#070809]
                       "
                     />
 
                     <div
                       className="
                         absolute
-                        -right-10
-                        -top-10
-                        h-32
-                        w-32
-                        rounded-full
-                        bg-red-600/10
-                        blur-2xl
+                        bottom-0
+                        left-0
+                        h-16
+                        w-28
+                        rotate-[-18deg]
+                        bg-slate-500/10
                       "
                     />
 
                     <div
                       className="
                         absolute
-                        -bottom-10
-                        -left-10
-                        h-32
-                        w-32
-                        rounded-full
-                        bg-orange-600/10
-                        blur-2xl
+                        bottom-0
+                        right-0
+                        h-20
+                        w-36
+                        rotate-[16deg]
+                        bg-slate-400/10
                       "
                     />
 
+                    {/* Moon */}
+                    <div
+                      className="
+                        absolute
+                        right-5
+                        top-4
+                        h-9
+                        w-9
+                        rounded-full
+                        bg-sky-100/10
+                        shadow-[0_0_25px_rgba(180,220,240,0.1)]
+                      "
+                    />
+
+                    {/* Castle */}
+                    <div
+                      className="
+                        absolute
+                        bottom-0
+                        left-1/2
+                        h-14
+                        w-24
+                        -translate-x-1/2
+                        bg-[#171a1c]
+                        opacity-80
+                      "
+                    >
+                      <div className="absolute -left-3 bottom-0 h-20 w-5 bg-[#171a1c]" />
+                      <div className="absolute -right-3 bottom-0 h-16 w-5 bg-[#171a1c]" />
+                      <div className="absolute left-1/2 bottom-0 h-24 w-5 -translate-x-1/2 bg-[#171a1c]" />
+                    </div>
+
+                    {/* Course icon */}
                     <div
                       className="
                         absolute
@@ -599,10 +838,11 @@ function MyCourses({ courses = [] }) {
                           justify-center
                           rounded-full
                           border
-                          border-red-500/30
+                          border-amber-400/25
                           bg-black/60
-                          text-red-500
-                          shadow-[0_0_30px_rgba(220,38,38,0.2)]
+                          text-amber-300
+                          shadow-[0_0_35px_rgba(212,175,55,0.1)]
+                          backdrop-blur-sm
                         "
                       >
                         <BookOpen size={23} />
@@ -611,37 +851,44 @@ function MyCourses({ courses = [] }) {
                   </>
                 )}
 
-                {/* CINEMATIC OVERLAY */}
-
+                {/* Medieval overlay */}
                 <div
                   className="
                     absolute
                     inset-0
                     bg-gradient-to-t
-                    from-black/80
-                    via-black/10
-                    to-black/20
+                    from-black/85
+                    via-black/20
+                    to-black/25
                   "
                 />
 
-                {/* MISSION NUMBER */}
+                {/* =================================================
+                    COURSE NUMBER
+                ================================================= */}
 
                 <div
                   className="
                     absolute
                     bottom-3
                     left-3
+                    flex
+                    items-center
+                    gap-1.5
                     text-[9px]
                     font-bold
                     uppercase
                     tracking-[0.25em]
-                    text-white/40
+                    text-white/45
                   "
                 >
-                  Mission {String(index + 1).padStart(2, "0")}
+                  <Sword size={10} />
+                  Quest {String(index + 1).padStart(2, "0")}
                 </div>
 
-                {/* LEVEL */}
+                {/* =================================================
+                    LEVEL
+                ================================================= */}
 
                 <span
                   className="
@@ -650,7 +897,7 @@ function MyCourses({ courses = [] }) {
                     top-3
                     rounded-md
                     border
-                    border-white/10
+                    border-sky-200/10
                     bg-black/60
                     px-2
                     py-1
@@ -658,14 +905,16 @@ function MyCourses({ courses = [] }) {
                     font-bold
                     uppercase
                     tracking-wider
-                    text-white
+                    text-sky-100
                     backdrop-blur-md
                   "
                 >
                   {level}
                 </span>
 
-                {/* COMPLETED */}
+                {/* =================================================
+                    COMPLETED
+                ================================================= */}
 
                 {isCompleted && (
                   <span
@@ -678,20 +927,20 @@ function MyCourses({ courses = [] }) {
                       gap-1
                       rounded-md
                       border
-                      border-green-500/30
-                      bg-green-950/80
+                      border-amber-400/30
+                      bg-black/70
                       px-2
                       py-1
                       text-[9px]
                       font-bold
                       uppercase
                       tracking-wider
-                      text-green-400
+                      text-amber-300
                       backdrop-blur-md
                     "
                   >
-                    <CheckCircle2 size={11} />
-                    Complete
+                    <Trophy size={11} />
+                    Mastered
                   </span>
                 )}
               </div>
@@ -701,7 +950,15 @@ function MyCourses({ courses = [] }) {
               ================================================= */}
 
               <div className="mt-5 flex items-center gap-2">
-                <span className="h-px w-5 bg-red-600" />
+                <span
+                  className="
+                    h-px
+                    w-5
+                    bg-gradient-to-r
+                    from-amber-400
+                    to-sky-400
+                  "
+                />
 
                 <p
                   className="
@@ -709,7 +966,7 @@ function MyCourses({ courses = [] }) {
                     font-black
                     uppercase
                     tracking-[0.25em]
-                    text-red-500
+                    text-amber-300
                   "
                 >
                   {category}
@@ -757,7 +1014,7 @@ function MyCourses({ courses = [] }) {
               ================================================= */}
 
               <p className="mt-2 text-xs text-zinc-600">
-                Operated by{" "}
+                Guided by{" "}
                 <span className="text-zinc-400">
                   {instructor}
                 </span>
@@ -778,14 +1035,14 @@ function MyCourses({ courses = [] }) {
                       text-zinc-600
                     "
                   >
-                    Mission Progress
+                    Journey Progress
                   </span>
 
                   <span
                     className="
                       text-xs
                       font-black
-                      text-red-500
+                      text-amber-300
                     "
                   >
                     {progress}%
@@ -798,7 +1055,7 @@ function MyCourses({ courses = [] }) {
                     h-1.5
                     overflow-hidden
                     rounded-full
-                    bg-zinc-800
+                    bg-[#292a27]
                   "
                 >
                   <div
@@ -806,10 +1063,10 @@ function MyCourses({ courses = [] }) {
                       h-full
                       rounded-full
                       bg-gradient-to-r
-                      from-red-700
-                      via-red-500
-                      to-orange-500
-                      shadow-[0_0_10px_rgba(239,68,68,0.4)]
+                      from-sky-600
+                      via-sky-400
+                      to-amber-400
+                      shadow-[0_0_12px_rgba(125,211,252,0.2)]
                       transition-all
                       duration-700
                     "
@@ -845,10 +1102,10 @@ function MyCourses({ courses = [] }) {
                   <Clock3 size={11} />
 
                   {isCompleted
-                    ? "Mission complete"
+                    ? "Quest complete"
                     : progress > 0
-                    ? "In operation"
-                    : "Awaiting start"}
+                    ? "Journey underway"
+                    : "Awaiting your blade"}
                 </span>
               </div>
 
@@ -871,8 +1128,8 @@ function MyCourses({ courses = [] }) {
                   gap-2
                   rounded-xl
                   border
-                  border-zinc-700
-                  bg-zinc-900
+                  border-[#45423a]
+                  bg-[#121416]
                   px-4
                   py-3
                   text-[10px]
@@ -882,10 +1139,10 @@ function MyCourses({ courses = [] }) {
                   text-zinc-300
                   transition
                   duration-300
-                  hover:border-red-600
-                  hover:bg-red-600
-                  hover:text-white
-                  hover:shadow-[0_0_25px_rgba(220,38,38,0.18)]
+                  hover:border-amber-400/60
+                  hover:bg-amber-400
+                  hover:text-black
+                  hover:shadow-[0_0_30px_rgba(212,175,55,0.12)]
                   active:scale-[0.98]
                 "
               >
@@ -893,22 +1150,28 @@ function MyCourses({ courses = [] }) {
                   <>
                     <CheckCircle2
                       size={14}
-                      className="transition-transform group-hover/btn:scale-110"
+                      className="
+                        transition-transform
+                        group-hover/btn:scale-110
+                      "
                     />
 
-                    Review Mission
+                    Review the Chronicle
                   </>
                 ) : (
                   <>
                     <Play
                       size={13}
                       fill="currentColor"
-                      className="transition-transform group-hover/btn:scale-110"
+                      className="
+                        transition-transform
+                        group-hover/btn:scale-110
+                      "
                     />
 
                     {progress > 0
-                      ? "Continue Mission"
-                      : "Begin Mission"}
+                      ? "Continue the Quest"
+                      : "Begin the Quest"}
                   </>
                 )}
               </button>
@@ -924,11 +1187,12 @@ function MyCourses({ courses = [] }) {
       <div
         className="
           relative
+          z-10
           flex
           items-center
           justify-center
           border-t
-          border-zinc-800
+          border-[#292a27]
           bg-black/20
           px-5
           py-3
@@ -936,6 +1200,9 @@ function MyCourses({ courses = [] }) {
       >
         <p
           className="
+            flex
+            items-center
+            gap-2
             text-[9px]
             font-bold
             uppercase
@@ -943,9 +1210,31 @@ function MyCourses({ courses = [] }) {
             text-zinc-700
           "
         >
-          Stay focused • Complete the mission • Become OG
+          <Castle size={11} />
+
+          Learn • Master • Earn Your Place
+
+          <Feather size={11} />
         </p>
       </div>
+
+      <style>{`
+        @keyframes myCoursesSnow {
+          0% {
+            transform: translateY(-30px);
+            opacity: 0;
+          }
+
+          20% {
+            opacity: 1;
+          }
+
+          100% {
+            transform: translateY(420px);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </section>
   );
 }

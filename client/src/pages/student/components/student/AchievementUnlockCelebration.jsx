@@ -1,25 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Award,
   Check,
+  ChevronRight,
+  Crown,
+  Feather,
+  Flame,
+  Shield,
   Sparkles,
+  Star,
+  Sword,
   Trophy,
   X,
+  Zap,
 } from "lucide-react";
 
 /**
  * =========================================================
- * Achievement Rarity
+ * ACHIEVEMENT RARITY
  * =========================================================
  *
- * Rarity is only responsible for the visual presentation.
+ * Rarity controls ONLY visual presentation.
  *
- * XP is now controlled by the backend:
+ * XP is controlled by the backend:
  *
  * achievement.xpReward
  *
  * Do NOT calculate XP here.
  */
+
 function getRarity(achievement) {
   const value = Number(
     achievement?.requirementValue || 0
@@ -39,9 +48,17 @@ function getRarity(achievement) {
   ) {
     return {
       name: "LEGENDARY",
-      badge:
-        "from-yellow-300 via-orange-400 to-red-500",
-      text: "text-orange-600",
+      gradient:
+        "from-yellow-200 via-amber-400 to-orange-600",
+      text: "text-amber-300",
+      border: "border-amber-400/40",
+      bg: "bg-amber-500/10",
+      glow: "bg-amber-400/30",
+      icon: Crown,
+      sound:
+        "/sounds/achievement-legendary.mp3",
+      particleCount: 40,
+      power: "legendary",
     };
   }
 
@@ -51,9 +68,17 @@ function getRarity(achievement) {
   ) {
     return {
       name: "EPIC",
-      badge:
-        "from-purple-400 via-fuchsia-500 to-pink-500",
-      text: "text-purple-600",
+      gradient:
+        "from-violet-300 via-purple-500 to-indigo-700",
+      text: "text-violet-300",
+      border: "border-violet-400/35",
+      bg: "bg-violet-500/10",
+      glow: "bg-violet-500/25",
+      icon: Zap,
+      sound:
+        "/sounds/achievement-epic.mp3",
+      particleCount: 32,
+      power: "epic",
     };
   }
 
@@ -63,55 +88,180 @@ function getRarity(achievement) {
   ) {
     return {
       name: "RARE",
-      badge:
-        "from-blue-400 via-indigo-500 to-purple-600",
-      text: "text-indigo-600",
+      gradient:
+        "from-sky-200 via-blue-400 to-indigo-600",
+      text: "text-sky-300",
+      border: "border-sky-400/35",
+      bg: "bg-sky-500/10",
+      glow: "bg-sky-400/25",
+      icon: Star,
+      sound:
+        "/sounds/achievement-rare.mp3",
+      particleCount: 25,
+      power: "rare",
     };
   }
 
   if (value >= 5) {
     return {
       name: "UNCOMMON",
-      badge:
-        "from-emerald-400 via-teal-500 to-cyan-600",
-      text: "text-emerald-600",
+      gradient:
+        "from-emerald-300 via-teal-500 to-cyan-600",
+      text: "text-emerald-300",
+      border: "border-emerald-400/30",
+      bg: "bg-emerald-500/10",
+      glow: "bg-emerald-400/20",
+      icon: Shield,
+      sound:
+        "/sounds/achievement-uncommon.mp3",
+      particleCount: 18,
+      power: "uncommon",
     };
   }
 
   return {
     name: "COMMON",
-    badge:
-      "from-yellow-300 via-yellow-400 to-orange-500",
-    text: "text-yellow-600",
+    gradient:
+      "from-stone-300 via-stone-400 to-zinc-500",
+    text: "text-stone-300",
+    border: "border-stone-400/25",
+    bg: "bg-stone-500/10",
+    glow: "bg-stone-400/15",
+    icon: Trophy,
+    sound:
+      "/sounds/achievement-common.mp3",
+    particleCount: 12,
+    power: "common",
   };
 }
 
 /**
  * =========================================================
- * Achievement Unlock Celebration
+ * SOUND
  * =========================================================
  */
+
+function playAchievementSound(
+  source,
+  volume = 0.65
+) {
+  if (!source) {
+    return;
+  }
+
+  try {
+    const audio = new Audio(source);
+
+    audio.volume = volume;
+
+    audio.play().catch(() => {
+      // Browser autoplay restrictions
+      // are intentionally ignored.
+    });
+  } catch {
+    // Ignore audio errors.
+  }
+}
+
+/**
+ * =========================================================
+ * ANIMATED XP NUMBER
+ * =========================================================
+ */
+
+function AnimatedNumber({
+  value = 0,
+  duration = 1000,
+}) {
+  const [displayValue, setDisplayValue] =
+    useState(0);
+
+  useEffect(() => {
+    const target = Number(value || 0);
+
+    let startTime = null;
+    let frameId;
+
+    const animate = (timestamp) => {
+      if (!startTime) {
+        startTime = timestamp;
+      }
+
+      const elapsed =
+        timestamp - startTime;
+
+      const progress = Math.min(
+        elapsed / duration,
+        1
+      );
+
+      // Ease-out
+      const eased =
+        1 -
+        Math.pow(
+          1 - progress,
+          4
+        );
+
+      setDisplayValue(
+        Math.floor(target * eased)
+      );
+
+      if (progress < 1) {
+        frameId =
+          requestAnimationFrame(
+            animate
+          );
+      }
+    };
+
+    frameId =
+      requestAnimationFrame(
+        animate
+      );
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
+  }, [value, duration]);
+
+  return displayValue.toLocaleString();
+}
+
+/**
+ * =========================================================
+ * ACHIEVEMENT UNLOCK CELEBRATION
+ * =========================================================
+ */
+
 export default function AchievementUnlockCelebration({
   achievements = [],
   onClose,
 }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [visible, setVisible] = useState(false);
+  const [currentIndex, setCurrentIndex] =
+    useState(0);
+
+  const [visible, setVisible] =
+    useState(false);
+
+  const [xpVisible, setXpVisible] =
+    useState(false);
+
+  const [flash, setFlash] =
+    useState(false);
+
+  const soundPlayedRef =
+    useRef(false);
 
   const achievement =
     achievements[currentIndex];
 
   /**
    * -------------------------------------------------------
-   * Real XP data from backend
+   * BACKEND XP DATA
    * -------------------------------------------------------
-   *
-   * The backend now sends:
-   *
-   * xpReward
-   * totalXP
-   * level
    */
+
   const xpReward = Number(
     achievement?.xpReward || 0
   );
@@ -124,70 +274,136 @@ export default function AchievementUnlockCelebration({
     achievement?.level || 1
   );
 
-  const rarity = getRarity(achievement);
+  const rarity =
+    getRarity(achievement);
+
+  const RarityIcon =
+    rarity.icon;
 
   /**
    * -------------------------------------------------------
-   * Reset popup when achievement list changes
+   * RESET
    * -------------------------------------------------------
    */
+
   useEffect(() => {
     setCurrentIndex(0);
   }, [achievements]);
 
   /**
    * -------------------------------------------------------
-   * Entry animation
+   * ENTRY ANIMATION + SOUND
    * -------------------------------------------------------
    */
+
   useEffect(() => {
     if (!achievement) {
       return;
     }
 
+    soundPlayedRef.current = false;
+
     setVisible(false);
+    setXpVisible(false);
+    setFlash(false);
 
-    const timer = setTimeout(() => {
-      setVisible(true);
-    }, 100);
+    const entryTimer =
+      setTimeout(() => {
+        setVisible(true);
+      }, 80);
 
-    return () => clearTimeout(timer);
-  }, [achievement]);
+    const flashTimer =
+      setTimeout(() => {
+        setFlash(true);
+      }, 180);
+
+    const flashEndTimer =
+      setTimeout(() => {
+        setFlash(false);
+      }, 450);
+
+    const soundTimer =
+      setTimeout(() => {
+        if (
+          !soundPlayedRef.current
+        ) {
+          playAchievementSound(
+            rarity.sound,
+            rarity.power ===
+              "legendary"
+              ? 0.85
+              : 0.6
+          );
+
+          soundPlayedRef.current =
+            true;
+        }
+      }, 250);
+
+    const xpTimer =
+      setTimeout(() => {
+        setXpVisible(true);
+
+        if (xpReward > 0) {
+          playAchievementSound(
+            "/sounds/xp-reward.mp3",
+            0.35
+          );
+        }
+      }, 850);
+
+    return () => {
+      clearTimeout(entryTimer);
+      clearTimeout(flashTimer);
+      clearTimeout(flashEndTimer);
+      clearTimeout(soundTimer);
+      clearTimeout(xpTimer);
+    };
+  }, [
+    achievement,
+    rarity.sound,
+    rarity.power,
+    xpReward,
+  ]);
 
   /**
    * -------------------------------------------------------
-   * Nothing to show
+   * NOTHING TO SHOW
    * -------------------------------------------------------
    */
+
   if (!achievement) {
     return null;
   }
 
   /**
    * -------------------------------------------------------
-   * Close celebration
+   * CLOSE
    * -------------------------------------------------------
    */
+
   const handleClose = () => {
     setVisible(false);
 
     setTimeout(() => {
       onClose?.();
-    }, 250);
+    }, 300);
   };
 
   /**
    * -------------------------------------------------------
-   * Next achievement
+   * NEXT
    * -------------------------------------------------------
    */
+
   const handleNext = () => {
     if (
       currentIndex <
       achievements.length - 1
     ) {
       setCurrentIndex(
-        (prev) => prev + 1
+        (previous) =>
+          previous + 1
       );
 
       return;
@@ -197,76 +413,436 @@ export default function AchievementUnlockCelebration({
   };
 
   /**
+   * -------------------------------------------------------
+   * PARTICLES
+   * -------------------------------------------------------
+   */
+
+  const particles = Array.from({
+    length: rarity.particleCount,
+  });
+
+  /**
    * =======================================================
    * RENDER
    * =======================================================
    */
+
   return (
     <div
       className={`
-        fixed inset-0 z-[9999]
-        flex items-center justify-center
+        fixed
+        inset-0
+        z-[9999]
+        flex
+        items-center
+        justify-center
+        overflow-hidden
         p-4
-        transition-all duration-300
+        transition-all
+        duration-500
+
         ${
           visible
-            ? "bg-slate-950/50 backdrop-blur-sm"
+            ? "bg-[#020406]/90 backdrop-blur-md"
             : "bg-transparent"
         }
       `}
       onClick={handleClose}
     >
-      {/* ==================================================
-          CONFETTI
-      ================================================== */}
+      {/* ===================================================
+          CINEMATIC FLASH
+      =================================================== */}
+
+      <div
+        className={`
+          pointer-events-none
+          absolute
+          inset-0
+          z-50
+          bg-gradient-to-b
+          from-amber-200/20
+          via-sky-200/10
+          to-transparent
+          transition-opacity
+          duration-300
+
+          ${
+            flash
+              ? "opacity-100"
+              : "opacity-0"
+          }
+        `}
+      />
+
+      {/* ===================================================
+          MEDIEVAL BACKGROUND
+      =================================================== */}
 
       <div
         className="
           pointer-events-none
-          absolute inset-0
+          absolute
+          inset-0
           overflow-hidden
         "
       >
-        {Array.from({ length: 28 }).map(
-          (_, index) => (
-            <span
-              key={index}
-              className={`
-                achievement-confetti
-                achievement-confetti-${index}
-              `}
-            />
-          )
-        )}
+        {/* ===============================================
+            MOON
+        ================================================ */}
+
+        <div
+          className="
+            absolute
+            right-[12%]
+            top-[8%]
+            h-32
+            w-32
+            rounded-full
+            bg-slate-100/[0.06]
+            shadow-[0_0_100px_rgba(210,230,240,0.08)]
+          "
+        />
+
+        <div
+          className="
+            absolute
+            right-[11%]
+            top-[7%]
+            h-32
+            w-32
+            rounded-full
+            border
+            border-slate-200/[0.04]
+          "
+        />
+
+        {/* ===============================================
+            NORTHERN BLUE GLOW
+        ================================================ */}
+
+        <div
+          className={`
+            absolute
+            left-1/2
+            top-1/2
+            h-[650px]
+            w-[650px]
+            -translate-x-1/2
+            -translate-y-1/2
+            rounded-full
+            ${rarity.glow}
+            blur-[150px]
+            achievement-main-glow
+          `}
+        />
+
+        {/* ===============================================
+            GOLD HORIZON
+        ================================================ */}
+
+        <div
+          className="
+            absolute
+            bottom-0
+            left-0
+            h-40
+            w-full
+            bg-gradient-to-t
+            from-amber-600/[0.04]
+            via-transparent
+            to-transparent
+          "
+        />
+
+        {/* ===============================================
+            MOUNTAINS
+        ================================================ */}
+
+        <div
+          className="
+            absolute
+            bottom-0
+            left-0
+            h-48
+            w-full
+            bg-gradient-to-t
+            from-black
+            via-[#080d10]/95
+            to-transparent
+          "
+        />
+
+        <div
+          className="
+            absolute
+            bottom-0
+            left-[5%]
+            h-28
+            w-52
+            rotate-[-12deg]
+            bg-[#0b1013]
+            opacity-90
+          "
+        />
+
+        <div
+          className="
+            absolute
+            bottom-0
+            right-[4%]
+            h-36
+            w-64
+            rotate-[12deg]
+            bg-[#080d10]
+            opacity-90
+          "
+        />
+
+        {/* ===============================================
+            CASTLE SILHOUETTE
+        ================================================ */}
+
+        <div
+          className="
+            absolute
+            bottom-0
+            left-1/2
+            h-36
+            w-56
+            -translate-x-1/2
+            opacity-[0.12]
+          "
+        >
+          {/* Main keep */}
+          <div
+            className="
+              absolute
+              bottom-0
+              left-1/2
+              h-28
+              w-16
+              -translate-x-1/2
+              bg-slate-300
+            "
+          />
+
+          {/* Left tower */}
+          <div
+            className="
+              absolute
+              bottom-0
+              left-3
+              h-20
+              w-10
+              bg-slate-300
+            "
+          />
+
+          {/* Right tower */}
+          <div
+            className="
+              absolute
+              bottom-0
+              right-3
+              h-24
+              w-10
+              bg-slate-300
+            "
+          />
+
+          {/* Battlements */}
+          <div
+            className="
+              absolute
+              bottom-[105px]
+              left-1/2
+              h-3
+              w-16
+              -translate-x-1/2
+              bg-slate-300
+            "
+          />
+
+          <div
+            className="
+              absolute
+              bottom-[76px]
+              left-3
+              h-3
+              w-10
+              bg-slate-300
+            "
+          />
+
+          <div
+            className="
+              absolute
+              bottom-[100px]
+              right-3
+              h-3
+              w-10
+              bg-slate-300
+            "
+          />
+
+          {/* Keep window */}
+          <div
+            className="
+              absolute
+              bottom-10
+              left-1/2
+              h-6
+              w-3
+              -translate-x-1/2
+              rounded-t-full
+              bg-amber-400/30
+            "
+          />
+        </div>
+
+        {/* ===============================================
+            FOG
+        ================================================ */}
+
+        <div
+          className="
+            absolute
+            bottom-10
+            left-[-10%]
+            h-20
+            w-[120%]
+            rounded-full
+            bg-slate-200/[0.035]
+            blur-2xl
+            achievement-fog
+          "
+        />
+
+        <div
+          className="
+            absolute
+            bottom-20
+            left-[-20%]
+            h-16
+            w-[120%]
+            rounded-full
+            bg-sky-200/[0.025]
+            blur-3xl
+            achievement-fog-two
+          "
+        />
+
+        {/* ===============================================
+            SNOW + EMBERS
+        ================================================ */}
+
+        {particles.map((_, index) => (
+          <span
+            key={index}
+            className={`
+              achievement-particle
+              achievement-particle-${index}
+            `}
+          />
+        ))}
+
+        {/* ===============================================
+            RAVEN FEATHERS
+        ================================================ */}
+
+        <Feather
+          size={25}
+          className="
+            absolute
+            left-[12%]
+            top-[22%]
+            rotate-[-25deg]
+            text-slate-400/10
+            achievement-feather-one
+          "
+        />
+
+        <Feather
+          size={18}
+          className="
+            absolute
+            right-[18%]
+            top-[34%]
+            rotate-[25deg]
+            text-slate-300/10
+            achievement-feather-two
+          "
+        />
+
+        {/* ===============================================
+            SCANLINES
+        ================================================ */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            opacity-[0.025]
+            [background-image:linear-gradient(rgba(255,255,255,.5)_1px,transparent_1px)]
+            [background-size:100%_5px]
+          "
+        />
+
+        {/* ===============================================
+            MEDIEVAL GRID
+        ================================================ */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            opacity-[0.018]
+            [background-image:linear-gradient(rgba(255,255,255,.4)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.4)_1px,transparent_1px)]
+            [background-size:60px_60px]
+          "
+        />
       </div>
 
-      {/* ==================================================
-          CARD
-      ================================================== */}
+      {/* ===================================================
+          MAIN CARD
+      =================================================== */}
 
       <div
         onClick={(event) =>
           event.stopPropagation()
         }
         className={`
+          achievement-card
           relative
+          z-20
           w-full
           max-w-md
           overflow-hidden
-          rounded-[32px]
-          bg-white
-          shadow-2xl
+          rounded-[30px]
+          border
+          border-[#37372f]
+          bg-[#090c0e]
+          shadow-[0_30px_100px_rgba(0,0,0,.75)]
           transition-all
           duration-500
+
           ${
             visible
               ? "translate-y-0 scale-100 opacity-100"
-              : "translate-y-8 scale-90 opacity-0"
+              : "translate-y-10 scale-90 opacity-0"
+          }
+
+          ${
+            rarity.power ===
+            "legendary"
+              ? "achievement-legendary"
+              : ""
           }
         `}
       >
         {/* =================================================
-            TOP GRADIENT
+            TOP GOLD / ICE LINE
         ================================================= */}
 
         <div
@@ -275,14 +851,70 @@ export default function AchievementUnlockCelebration({
             left-0
             right-0
             top-0
-            h-2
+            h-[3px]
             bg-gradient-to-r
-            ${rarity.badge}
+            ${rarity.gradient}
           `}
         />
 
         {/* =================================================
-            CLOSE BUTTON
+            CORNER DECORATIONS
+        ================================================= */}
+
+        <div
+          className="
+            absolute
+            left-3
+            top-3
+            h-8
+            w-8
+            border-l
+            border-t
+            border-amber-400/20
+          "
+        />
+
+        <div
+          className="
+            absolute
+            right-3
+            top-3
+            h-8
+            w-8
+            border-r
+            border-t
+            border-amber-400/20
+          "
+        />
+
+        <div
+          className="
+            absolute
+            bottom-3
+            left-3
+            h-8
+            w-8
+            border-b
+            border-l
+            border-amber-400/10
+          "
+        />
+
+        <div
+          className="
+            absolute
+            bottom-3
+            right-3
+            h-8
+            w-8
+            border-b
+            border-r
+            border-amber-400/10
+          "
+        />
+
+        {/* =================================================
+            CLOSE
         ================================================= */}
 
         <button
@@ -292,93 +924,214 @@ export default function AchievementUnlockCelebration({
             absolute
             right-5
             top-5
-            z-20
+            z-40
             flex
             h-9
             w-9
             items-center
             justify-center
             rounded-full
-            bg-slate-100
-            text-slate-500
+            border
+            border-white/[0.08]
+            bg-black/40
+            text-slate-600
+            backdrop-blur-md
             transition
-            hover:bg-slate-200
-            hover:text-slate-700
+            hover:border-red-500/30
+            hover:bg-red-500/10
+            hover:text-red-400
           "
           aria-label="Close achievement celebration"
         >
-          <X size={17} />
+          <X size={16} />
         </button>
 
         {/* =================================================
             CONTENT
         ================================================= */}
 
-        <div className="px-6 pb-6 pt-10 text-center">
+        <div
+          className="
+            relative
+            z-10
+            px-6
+            pb-7
+            pt-10
+            text-center
+          "
+        >
           {/* ===============================================
-              CELEBRATION HEADER
-          =============================================== */}
+              RAVEN'S MESSAGE
+          ================================================ */}
 
           <div
             className="
+              mx-auto
               inline-flex
               items-center
               gap-2
               rounded-full
-              bg-yellow-50
+              border
+              border-amber-400/20
+              bg-amber-400/[0.06]
               px-4
               py-2
-              text-xs
-              font-black
-              tracking-wider
-              text-yellow-600
             "
           >
-            <Sparkles
-              size={15}
-              className="animate-pulse"
+            <Feather
+              size={13}
+              className="text-amber-300"
             />
 
-            ACHIEVEMENT UNLOCKED
+            <span
+              className="
+                text-[9px]
+                font-black
+                uppercase
+                tracking-[0.28em]
+                text-amber-300
+              "
+            >
+              The Raven Brings News
+            </span>
 
-            <Sparkles
-              size={15}
-              className="animate-pulse"
+            <Feather
+              size={13}
+              className="text-amber-300"
+            />
+          </div>
+
+          {/* ===============================================
+              ACHIEVEMENT UNLOCKED
+          ================================================ */}
+
+          <div
+            className="
+              mt-4
+              flex
+              items-center
+              justify-center
+              gap-3
+            "
+          >
+            <span
+              className="
+                h-px
+                w-10
+                bg-gradient-to-r
+                from-transparent
+                to-sky-400/40
+              "
+            />
+
+            <span
+              className="
+                text-[10px]
+                font-black
+                uppercase
+                tracking-[0.35em]
+                text-sky-300/80
+              "
+            >
+              Achievement Unlocked
+            </span>
+
+            <span
+              className="
+                h-px
+                w-10
+                bg-gradient-to-l
+                from-transparent
+                to-sky-400/40
+              "
             />
           </div>
 
           {/* ===============================================
               BADGE
-          =============================================== */}
+          ================================================ */}
 
-          <div className="relative mx-auto mt-7 h-40 w-40">
+          <div
+            className="
+              relative
+              mx-auto
+              mt-7
+              h-48
+              w-48
+            "
+          >
+            {/* Outer rune circle */}
+
+            <div
+              className="
+                absolute
+                inset-1
+                rounded-full
+                border
+                border-dashed
+                border-slate-400/10
+                achievement-rune-ring
+              "
+            />
+
+            {/* Inner rune circle */}
+
+            <div
+              className={`
+                absolute
+                inset-7
+                rounded-full
+                border
+                ${rarity.border}
+                achievement-inner-ring
+              `}
+            />
+
             {/* Glow */}
 
             <div
               className={`
                 absolute
-                inset-4
+                inset-8
                 rounded-full
-                bg-gradient-to-br
-                ${rarity.badge}
-                opacity-30
-                blur-2xl
-                achievement-glow
+                ${rarity.glow}
+                blur-3xl
+                achievement-badge-glow
               `}
             />
 
-            {/* Orbit */}
+            {/* Shockwave */}
 
             <div
-              className="
+              className={`
                 absolute
-                inset-0
+                left-1/2
+                top-1/2
+                h-28
+                w-28
+                -translate-x-1/2
+                -translate-y-1/2
                 rounded-full
                 border
-                border-dashed
-                border-indigo-200
-                achievement-orbit
-              "
+                ${rarity.border}
+                achievement-shockwave
+              `}
+            />
+
+            <div
+              className={`
+                absolute
+                left-1/2
+                top-1/2
+                h-28
+                w-28
+                -translate-x-1/2
+                -translate-y-1/2
+                rounded-full
+                border
+                ${rarity.border}
+                achievement-shockwave-two
+              `}
             />
 
             {/* Badge */}
@@ -390,34 +1143,65 @@ export default function AchievementUnlockCelebration({
                 left-1/2
                 top-1/2
                 flex
-                h-28
-                w-28
+                h-32
+                w-32
                 -translate-x-1/2
                 -translate-y-1/2
                 items-center
                 justify-center
-                rounded-[32px]
+                rounded-[34px]
+                border
+                border-white/20
                 bg-gradient-to-br
-                ${rarity.badge}
-                shadow-2xl
+                ${rarity.gradient}
+                shadow-[0_20px_60px_rgba(0,0,0,.5)]
               `}
             >
+              {/* Inner metal border */}
+
               <div
                 className="
                   absolute
                   inset-2
-                  rounded-[27px]
+                  rounded-[29px]
                   border
-                  border-white/30
+                  border-white/25
                 "
               />
 
-              <Trophy
-                size={54}
-                strokeWidth={1.6}
+              {/* Corner engraving */}
+
+              <div
+                className="
+                  absolute
+                  inset-5
+                  rounded-[25px]
+                  border
+                  border-white/10
+                "
+              />
+
+              <RarityIcon
+                size={57}
+                strokeWidth={1.5}
                 className="
                   relative
+                  z-10
                   text-white
+                  drop-shadow-[0_4px_8px_rgba(0,0,0,.35)]
+                "
+              />
+
+              {/* Small sword */}
+
+              <Sword
+                size={22}
+                className="
+                  absolute
+                  bottom-5
+                  left-5
+                  rotate-[-25deg]
+                  text-white/25
                 "
               />
 
@@ -425,19 +1209,20 @@ export default function AchievementUnlockCelebration({
 
               <div
                 className="
+                  achievement-check
                   absolute
                   -bottom-2
                   -right-2
                   flex
-                  h-10
-                  w-10
+                  h-11
+                  w-11
                   items-center
                   justify-center
                   rounded-full
                   border-4
-                  border-white
+                  border-[#090c0e]
                   bg-emerald-500
-                  shadow-lg
+                  shadow-[0_5px_20px_rgba(16,185,129,.25)]
                 "
               >
                 <Check
@@ -450,16 +1235,55 @@ export default function AchievementUnlockCelebration({
           </div>
 
           {/* ===============================================
-              ACHIEVEMENT NAME
-          =============================================== */}
+              RARITY
+          ================================================ */}
+
+          <div
+            className={`
+              mx-auto
+              mt-2
+              inline-flex
+              items-center
+              gap-2
+              rounded-full
+              border
+              ${rarity.border}
+              ${rarity.bg}
+              px-4
+              py-1.5
+            `}
+          >
+            <Flame
+              size={12}
+              className={rarity.text}
+            />
+
+            <span
+              className={`
+                text-[9px]
+                font-black
+                uppercase
+                tracking-[0.28em]
+                ${rarity.text}
+              `}
+            >
+              {rarity.name}
+            </span>
+          </div>
+
+          {/* ===============================================
+              ACHIEVEMENT TITLE
+          ================================================ */}
 
           <h2
             className="
               mt-5
               text-2xl
               font-black
+              uppercase
               tracking-tight
-              text-slate-900
+              text-white
+              sm:text-3xl
             "
           >
             {achievement?.title ||
@@ -469,7 +1293,7 @@ export default function AchievementUnlockCelebration({
 
           {/* ===============================================
               DESCRIPTION
-          =============================================== */}
+          ================================================ */}
 
           <p
             className="
@@ -478,223 +1302,429 @@ export default function AchievementUnlockCelebration({
               max-w-sm
               text-sm
               leading-6
-              text-slate-500
+              text-zinc-500
             "
           >
             {achievement?.description ||
-              "You've reached a new milestone!"}
+              "You've reached a new milestone in your journey."}
           </p>
 
           {/* ===============================================
-              RARITY + REAL XP
-          =============================================== */}
+              XP REWARD
+          ================================================ */}
 
           <div
-            className="
-              mx-auto
+            className={`
               mt-6
-              flex
-              max-w-xs
-              items-center
-              justify-center
-              gap-3
-            "
+              transition-all
+              duration-700
+              ${
+                xpVisible
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-4 opacity-0"
+              }
+            `}
           >
-            {/* Rarity */}
-
-            <div
-              className={`
-                rounded-full
-                bg-slate-100
-                px-4
-                py-2
-                text-xs
-                font-black
-                tracking-wider
-                ${rarity.text}
-              `}
-            >
-              {rarity.name}
-            </div>
-
-            {/* XP */}
-
             <div
               className="
+                mx-auto
                 flex
+                max-w-[250px]
                 items-center
-                gap-1.5
-                rounded-full
-                bg-indigo-50
-                px-4
-                py-2
-                text-xs
-                font-black
-                text-indigo-600
+                justify-center
+                gap-3
+                rounded-2xl
+                border
+                border-amber-400/20
+                bg-amber-400/[0.04]
+                px-5
+                py-3
+                shadow-[inset_0_1px_0_rgba(255,255,255,.03)]
               "
             >
-              <Award size={14} />
+              <div
+                className="
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-xl
+                  border
+                  border-amber-400/20
+                  bg-amber-400/10
+                "
+              >
+                <Award
+                  size={17}
+                  className="text-amber-300"
+                />
+              </div>
 
-              +{xpReward} XP
+              <div className="text-left">
+                <p
+                  className="
+                    text-[8px]
+                    font-black
+                    uppercase
+                    tracking-[0.25em]
+                    text-zinc-600
+                  "
+                >
+                  Honor Reward
+                </p>
+
+                <p
+                  className="
+                    mt-0.5
+                    text-lg
+                    font-black
+                    text-amber-300
+                  "
+                >
+                  +{xpReward.toLocaleString()} XP
+                </p>
+              </div>
             </div>
           </div>
 
           {/* ===============================================
-              XP SUMMARY
-          =============================================== */}
+              XP / LEVEL
+          ================================================ */}
 
           <div
             className="
-              mx-auto
               mt-5
               grid
-              max-w-xs
               grid-cols-2
               gap-3
             "
           >
-            {/* Level */}
+            {/* LEVEL */}
 
             <div
               className="
+                relative
+                overflow-hidden
                 rounded-2xl
-                bg-slate-50
+                border
+                border-white/[0.06]
+                bg-white/[0.025]
                 px-4
-                py-3
+                py-4
               "
             >
-              <p
+              <div
                 className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-wider
-                  text-slate-400
+                  absolute
+                  right-2
+                  top-2
+                  opacity-[0.04]
                 "
               >
-                Level
+                <Shield
+                  size={48}
+                />
+              </div>
+
+              <p
+                className="
+                  text-[8px]
+                  font-black
+                  uppercase
+                  tracking-[0.2em]
+                  text-zinc-600
+                "
+              >
+                Current Rank
               </p>
 
               <p
                 className="
                   mt-1
-                  text-xl
+                  text-2xl
                   font-black
-                  text-slate-900
+                  text-white
                 "
               >
-                {level}
+                Level {level}
               </p>
             </div>
 
-            {/* Total XP */}
+            {/* TOTAL XP */}
 
             <div
               className="
+                relative
+                overflow-hidden
                 rounded-2xl
-                bg-indigo-50
+                border
+                border-sky-400/10
+                bg-sky-400/[0.025]
                 px-4
-                py-3
+                py-4
               "
             >
-              <p
+              <div
                 className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-wider
-                  text-indigo-400
+                  absolute
+                  right-2
+                  top-2
+                  opacity-[0.04]
                 "
               >
-                Total XP
+                <Crown
+                  size={48}
+                />
+              </div>
+
+              <p
+                className="
+                  text-[8px]
+                  font-black
+                  uppercase
+                  tracking-[0.2em]
+                  text-sky-400/50
+                "
+              >
+                Total Honor
               </p>
 
               <p
                 className="
                   mt-1
-                  text-xl
+                  text-2xl
                   font-black
-                  text-indigo-600
+                  text-sky-300
                 "
               >
-                {totalXP.toLocaleString()}
+                <AnimatedNumber
+                  value={totalXP}
+                />
               </p>
             </div>
           </div>
 
           {/* ===============================================
               NEXT BUTTON
-          =============================================== */}
+          ================================================ */}
 
           <button
             type="button"
             onClick={handleNext}
             className="
+              achievement-button
+              group/btn
+              relative
               mt-7
+              flex
               w-full
+              items-center
+              justify-center
+              gap-2
+              overflow-hidden
               rounded-2xl
+              border
+              border-amber-400/30
               bg-gradient-to-r
-              from-indigo-600
-              to-violet-600
+              from-[#6f531d]
+              via-[#a77c25]
+              to-[#654919]
               px-5
-              py-3.5
+              py-4
               text-sm
-              font-bold
-              text-white
-              shadow-lg
-              shadow-indigo-200
+              font-black
+              uppercase
+              tracking-[0.12em]
+              text-amber-50
+              shadow-[0_10px_35px_rgba(120,80,20,.2)]
               transition-all
               duration-300
               hover:-translate-y-0.5
-              hover:shadow-xl
+              hover:from-[#8b6925]
+              hover:via-[#c19535]
+              hover:to-[#79591d]
+              active:scale-[0.98]
             "
           >
-            {currentIndex <
-            achievements.length - 1
-              ? "Continue"
-              : "Awesome! 🎉"}
+            {/* Shine */}
+
+            <span
+              className="
+                pointer-events-none
+                absolute
+                inset-y-0
+                left-[-35%]
+                w-[25%]
+                skew-x-[-20deg]
+                bg-white/20
+                transition-all
+                duration-700
+                group-hover/btn:left-[120%]
+              "
+            />
+
+            {/* Sword icon */}
+
+            <Sword
+              size={15}
+              className="
+                relative
+                transition-transform
+                group-hover/btn:-rotate-12
+              "
+            />
+
+            <span className="relative">
+              {currentIndex <
+              achievements.length - 1
+                ? "Continue Your Journey"
+                : "Claim Your Honor"}
+            </span>
+
+            <ChevronRight
+              size={16}
+              className="
+                relative
+                transition-transform
+                group-hover/btn:translate-x-1
+              "
+            />
           </button>
 
           {/* ===============================================
-              COUNTER
-          =============================================== */}
+              ACHIEVEMENT COUNTER
+          ================================================ */}
 
           {achievements.length > 1 && (
-            <p
+            <div className="mt-5">
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-center
+                  gap-2
+                "
+              >
+                {achievements.map(
+                  (_, index) => (
+                    <span
+                      key={index}
+                      className={`
+                        h-1
+                        rounded-full
+                        transition-all
+                        duration-300
+                        ${
+                          index ===
+                          currentIndex
+                            ? "w-8 bg-amber-400"
+                            : "w-2 bg-white/10"
+                        }
+                      `}
+                    />
+                  )
+                )}
+              </div>
+
+              <p
+                className="
+                  mt-3
+                  text-[9px]
+                  font-bold
+                  uppercase
+                  tracking-[0.2em]
+                  text-zinc-700
+                "
+              >
+                Deed {currentIndex + 1}{" "}
+                of {achievements.length}
+              </p>
+            </div>
+          )}
+
+          {/* ===============================================
+              FOOTER
+          ================================================ */}
+
+          <div
+            className="
+              mt-5
+              flex
+              items-center
+              justify-center
+              gap-2
+            "
+          >
+            <span className="h-px w-8 bg-zinc-800" />
+
+            <span
               className="
-                mt-3
-                text-xs
-                font-medium
-                text-slate-400
+                text-[8px]
+                font-black
+                uppercase
+                tracking-[0.25em]
+                text-zinc-700
               "
             >
-              {currentIndex + 1} of{" "}
-              {achievements.length} achievements
-            </p>
-          )}
+              Your Chronicle Grows
+            </span>
+
+            <span className="h-px w-8 bg-zinc-800" />
+          </div>
         </div>
+
+        {/* =================================================
+            BOTTOM GOLD LINE
+        ================================================= */}
+
+        <div
+          className="
+            absolute
+            bottom-0
+            left-0
+            h-px
+            w-full
+            bg-gradient-to-r
+            from-transparent
+            via-amber-400/50
+            to-transparent
+          "
+        />
       </div>
 
-      {/* ==================================================
+      {/* ===================================================
           ANIMATION STYLES
-      ================================================== */}
+      =================================================== */}
 
       <style>{`
-        @keyframes badgePop {
+
+        /* ================================================
+           BADGE POP
+        ================================================= */
+
+        @keyframes achievementBadgePop {
           0% {
             transform:
               translate(-50%, -50%)
-              scale(0.3)
-              rotate(-20deg);
+              scale(0)
+              rotate(-25deg);
             opacity: 0;
           }
 
-          60% {
+          45% {
             transform:
               translate(-50%, -50%)
-              scale(1.12)
-              rotate(5deg);
+              scale(1.18)
+              rotate(8deg);
             opacity: 1;
+          }
+
+          70% {
+            transform:
+              translate(-50%, -50%)
+              scale(.94)
+              rotate(-2deg);
           }
 
           100% {
@@ -702,23 +1732,82 @@ export default function AchievementUnlockCelebration({
               translate(-50%, -50%)
               scale(1)
               rotate(0deg);
-            opacity: 1;
           }
         }
 
-        @keyframes glow {
-          0%, 100% {
-            transform: scale(0.9);
-            opacity: 0.2;
+        .achievement-badge-pop {
+          animation:
+            achievementBadgePop
+            .85s
+            cubic-bezier(
+              .175,
+              .885,
+              .32,
+              1.275
+            )
+            forwards;
+        }
+
+
+        /* ================================================
+           BADGE GLOW
+        ================================================= */
+
+        @keyframes achievementGlow {
+          0%,
+          100% {
+            transform: scale(.85);
+            opacity: .2;
           }
 
           50% {
-            transform: scale(1.15);
-            opacity: 0.45;
+            transform: scale(1.2);
+            opacity: .6;
           }
         }
 
-        @keyframes orbit {
+        .achievement-badge-glow {
+          animation:
+            achievementGlow
+            2.2s
+            ease-in-out
+            infinite;
+        }
+
+
+        /* ================================================
+           MAIN BACKGROUND GLOW
+        ================================================= */
+
+        @keyframes mainGlow {
+          0%,
+          100% {
+            transform:
+              translate(-50%, -50%)
+              scale(.9);
+          }
+
+          50% {
+            transform:
+              translate(-50%, -50%)
+              scale(1.15);
+          }
+        }
+
+        .achievement-main-glow {
+          animation:
+            mainGlow
+            4s
+            ease-in-out
+            infinite;
+        }
+
+
+        /* ================================================
+           RUNE RING
+        ================================================= */
+
+        @keyframes runeRotate {
           from {
             transform: rotate(0deg);
           }
@@ -728,240 +1817,356 @@ export default function AchievementUnlockCelebration({
           }
         }
 
-        @keyframes confettiFall {
+        .achievement-rune-ring {
+          animation:
+            runeRotate
+            18s
+            linear
+            infinite;
+        }
+
+
+        /* ================================================
+           INNER RING
+        ================================================= */
+
+        @keyframes innerRing {
+          from {
+            transform: rotate(360deg);
+          }
+
+          to {
+            transform: rotate(0deg);
+          }
+        }
+
+        .achievement-inner-ring {
+          animation:
+            innerRing
+            10s
+            linear
+            infinite;
+        }
+
+
+        /* ================================================
+           SHOCKWAVE
+        ================================================= */
+
+        @keyframes shockwave {
           0% {
             transform:
-              translateY(-20vh)
-              rotate(0deg);
+              translate(-50%, -50%)
+              scale(.45);
+            opacity: .8;
+          }
+
+          100% {
+            transform:
+              translate(-50%, -50%)
+              scale(2.4);
+            opacity: 0;
+          }
+        }
+
+        .achievement-shockwave {
+          animation:
+            shockwave
+            2.4s
+            ease-out
+            infinite;
+        }
+
+
+        .achievement-shockwave-two {
+          animation:
+            shockwave
+            2.4s
+            ease-out
+            1.2s
+            infinite;
+        }
+
+
+        /* ================================================
+           CHECK
+        ================================================= */
+
+        @keyframes checkPop {
+          0% {
+            transform: scale(0)
+              rotate(-30deg);
+            opacity: 0;
+          }
+
+          70% {
+            transform: scale(1.2)
+              rotate(5deg);
             opacity: 1;
+          }
+
+          100% {
+            transform: scale(1)
+              rotate(0);
+          }
+        }
+
+        .achievement-check {
+          animation:
+            checkPop
+            .5s
+            ease-out
+            .65s
+            backwards;
+        }
+
+
+        /* ================================================
+           FOG
+        ================================================= */
+
+        @keyframes fogDrift {
+          0% {
+            transform:
+              translateX(-8%);
+          }
+
+          50% {
+            transform:
+              translateX(5%);
+          }
+
+          100% {
+            transform:
+              translateX(-8%);
+          }
+        }
+
+        .achievement-fog {
+          animation:
+            fogDrift
+            12s
+            ease-in-out
+            infinite;
+        }
+
+
+        .achievement-fog-two {
+          animation:
+            fogDrift
+            17s
+            ease-in-out
+            reverse
+            infinite;
+        }
+
+
+        /* ================================================
+           FEATHERS
+        ================================================= */
+
+        @keyframes featherFloat {
+          0%,
+          100% {
+            transform:
+              translateY(0)
+              rotate(-25deg);
+            opacity: .1;
+          }
+
+          50% {
+            transform:
+              translateY(-25px)
+              rotate(10deg);
+            opacity: .22;
+          }
+        }
+
+        .achievement-feather-one {
+          animation:
+            featherFloat
+            5s
+            ease-in-out
+            infinite;
+        }
+
+
+        .achievement-feather-two {
+          animation:
+            featherFloat
+            7s
+            ease-in-out
+            reverse
+            infinite;
+        }
+
+
+        /* ================================================
+           LEGENDARY
+        ================================================= */
+
+        @keyframes legendaryPulse {
+          0%,
+          100% {
+            box-shadow:
+              0 30px 100px
+              rgba(0,0,0,.75),
+              0 0 0
+              rgba(245,158,11,0);
+          }
+
+          50% {
+            box-shadow:
+              0 30px 100px
+              rgba(0,0,0,.75),
+              0 0 70px
+              rgba(245,158,11,.12);
+          }
+        }
+
+        .achievement-legendary {
+          animation:
+            legendaryPulse
+            2.5s
+            ease-in-out
+            infinite;
+        }
+
+
+        /* ================================================
+           PARTICLES
+        ================================================= */
+
+        @keyframes particleFall {
+          0% {
+            transform:
+              translateY(-40px)
+              rotate(0deg)
+              scale(.5);
+            opacity: 0;
+          }
+
+          15% {
+            opacity: .8;
           }
 
           100% {
             transform:
               translateY(110vh)
-              rotate(720deg);
+              rotate(720deg)
+              scale(1);
             opacity: 0;
           }
         }
 
-        .achievement-badge-pop {
-          animation:
-            badgePop
-            0.7s
-            cubic-bezier(
-              0.175,
-              0.885,
-              0.32,
-              1.275
-            )
-            forwards;
-        }
-
-        .achievement-glow {
-          animation:
-            glow
-            2s
-            ease-in-out
-            infinite;
-        }
-
-        .achievement-orbit {
-          animation:
-            orbit
-            12s
-            linear
-            infinite;
-        }
-
-        .achievement-confetti {
+        .achievement-particle {
           position: absolute;
-          top: -20px;
-          width: 8px;
-          height: 14px;
-          border-radius: 2px;
+
+          top: -30px;
+
+          width: 4px;
+          height: 9px;
+
+          border-radius: 999px;
+
+          background:
+            linear-gradient(
+              to bottom,
+              rgba(226,232,240,.6),
+              rgba(148,163,184,.1)
+            );
+
+          box-shadow:
+            0 0 10px
+            rgba(186,230,253,.25);
+
           animation:
-            confettiFall
-            2.8s
+            particleFall
+            4s
             linear
             infinite;
         }
 
-        .achievement-confetti-0 {
-          left: 5%;
-          background: #6366f1;
-          animation-delay: 0s;
+
+        ${Array.from(
+          { length: 40 },
+          (_, index) => {
+            const left =
+              (index * 17) % 100;
+
+            const delay =
+              (index % 12) * .35;
+
+            const duration =
+              3.5 +
+              (index % 6) * .45;
+
+            const isEmber =
+              index % 5 === 0;
+
+            return `
+              .achievement-particle-${index} {
+                left: ${left}%;
+                animation-delay: ${delay}s;
+                animation-duration: ${duration}s;
+                ${
+                  isEmber
+                    ? `
+                      width: 3px;
+                      height: 7px;
+                      background:
+                        linear-gradient(
+                          to bottom,
+                          #fbbf24,
+                          #b45309
+                        );
+                      box-shadow:
+                        0 0 12px
+                        rgba(245,158,11,.5);
+                    `
+                    : ""
+                }
+              }
+            `;
+          }
+        ).join("")}
+
+
+        /* ================================================
+           BUTTON
+        ================================================= */
+
+        .achievement-button {
+          background-size:
+            200% 100%;
         }
 
-        .achievement-confetti-1 {
-          left: 10%;
-          background: #f59e0b;
-          animation-delay: .3s;
-        }
 
-        .achievement-confetti-2 {
-          left: 18%;
-          background: #ec4899;
-          animation-delay: .8s;
-        }
+        /* ================================================
+           REDUCE MOTION
+        ================================================= */
 
-        .achievement-confetti-3 {
-          left: 25%;
-          background: #10b981;
-          animation-delay: .5s;
-        }
+        @media
+        (prefers-reduced-motion: reduce) {
 
-        .achievement-confetti-4 {
-          left: 32%;
-          background: #8b5cf6;
-          animation-delay: 1.2s;
-        }
-
-        .achievement-confetti-5 {
-          left: 40%;
-          background: #06b6d4;
-          animation-delay: .2s;
-        }
-
-        .achievement-confetti-6 {
-          left: 47%;
-          background: #f97316;
-          animation-delay: .9s;
-        }
-
-        .achievement-confetti-7 {
-          left: 54%;
-          background: #6366f1;
-          animation-delay: .4s;
-        }
-
-        .achievement-confetti-8 {
-          left: 61%;
-          background: #ec4899;
-          animation-delay: 1.1s;
-        }
-
-        .achievement-confetti-9 {
-          left: 68%;
-          background: #10b981;
-          animation-delay: .7s;
-        }
-
-        .achievement-confetti-10 {
-          left: 75%;
-          background: #f59e0b;
-          animation-delay: .1s;
-        }
-
-        .achievement-confetti-11 {
-          left: 82%;
-          background: #8b5cf6;
-          animation-delay: .6s;
-        }
-
-        .achievement-confetti-12 {
-          left: 90%;
-          background: #06b6d4;
-          animation-delay: 1.3s;
-        }
-
-        .achievement-confetti-13 {
-          left: 15%;
-          background: #f97316;
-          animation-delay: 1.5s;
-        }
-
-        .achievement-confetti-14 {
-          left: 28%;
-          background: #6366f1;
-          animation-delay: 1.7s;
-        }
-
-        .achievement-confetti-15 {
-          left: 45%;
-          background: #ec4899;
-          animation-delay: 1.4s;
-        }
-
-        .achievement-confetti-16 {
-          left: 58%;
-          background: #10b981;
-          animation-delay: 1.8s;
-        }
-
-        .achievement-confetti-17 {
-          left: 73%;
-          background: #f59e0b;
-          animation-delay: 1.6s;
-        }
-
-        .achievement-confetti-18 {
-          left: 87%;
-          background: #8b5cf6;
-          animation-delay: 1.9s;
-        }
-
-        .achievement-confetti-19 {
-          left: 3%;
-          background: #06b6d4;
-          animation-delay: 2s;
-        }
-
-        .achievement-confetti-20 {
-          left: 22%;
-          background: #f97316;
-          animation-delay: 2.2s;
-        }
-
-        .achievement-confetti-21 {
-          left: 37%;
-          background: #6366f1;
-          animation-delay: 2.1s;
-        }
-
-        .achievement-confetti-22 {
-          left: 51%;
-          background: #ec4899;
-          animation-delay: 2.4s;
-        }
-
-        .achievement-confetti-23 {
-          left: 65%;
-          background: #10b981;
-          animation-delay: 2.3s;
-        }
-
-        .achievement-confetti-24 {
-          left: 79%;
-          background: #f59e0b;
-          animation-delay: 2.5s;
-        }
-
-        .achievement-confetti-25 {
-          left: 94%;
-          background: #8b5cf6;
-          animation-delay: 2.1s;
-        }
-
-        .achievement-confetti-26 {
-          left: 42%;
-          background: #06b6d4;
-          animation-delay: 2.6s;
-        }
-
-        .achievement-confetti-27 {
-          left: 8%;
-          background: #ec4899;
-          animation-delay: 2.4s;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
           .achievement-badge-pop,
-          .achievement-glow,
-          .achievement-orbit,
-          .achievement-confetti {
-            animation: none;
+          .achievement-badge-glow,
+          .achievement-main-glow,
+          .achievement-rune-ring,
+          .achievement-inner-ring,
+          .achievement-shockwave,
+          .achievement-shockwave-two,
+          .achievement-check,
+          .achievement-fog,
+          .achievement-fog-two,
+          .achievement-feather-one,
+          .achievement-feather-two,
+          .achievement-legendary,
+          .achievement-particle {
+            animation: none !important;
           }
         }
+
       `}</style>
     </div>
   );

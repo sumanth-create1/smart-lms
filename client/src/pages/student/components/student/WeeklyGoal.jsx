@@ -11,11 +11,21 @@ import {
   Shield,
   Swords,
   Activity,
+  Crown,
+  Castle,
+  Snowflake,
+  Sparkles,
+  Feather,
+  Sword,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import api from "../../../../services/api";
+
+// =====================================================
+// WEEKLY GOAL — GAME OF THRONES INSPIRED THEME
+// =====================================================
 
 function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
   const navigate = useNavigate();
@@ -59,7 +69,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
       );
 
       toast.error(
-        "Unable to refresh your weekly mission."
+        "Unable to refresh your weekly quest."
       );
     } finally {
       setLoading(false);
@@ -167,45 +177,45 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
   const motivation = useMemo(() => {
     if (percentage >= 100) {
       return {
-        title: "Contract complete.",
+        title: "The quest is complete.",
         description:
-          "Target eliminated. Operation successful.",
-        icon: "🏆",
+          "Your weekly oath has been fulfilled. Honor earned.",
+        icon: "👑",
       };
     }
 
     if (percentage >= 75) {
       return {
-        title: "Final operation.",
+        title: "The throne is within reach.",
         description:
-          "The target is within reach. Finish the job.",
-        icon: "🔥",
+          "The final battle approaches. Finish the quest.",
+        icon: "⚔️",
       };
     }
 
     if (percentage >= 50) {
       return {
-        title: "Momentum secured.",
+        title: "Your strength grows.",
         description:
-          "Half the fight is over. Stay disciplined.",
-        icon: "⚡",
+          "Half the journey is behind you. Hold the line.",
+        icon: "🔥",
       };
     }
 
     if (percentage > 0) {
       return {
-        title: "The fight has begun.",
+        title: "The journey has begun.",
         description:
-          "Keep moving. No distractions. No excuses.",
-        icon: "🎯",
+          "Every lesson strengthens your claim to the throne.",
+        icon: "🐺",
       };
     }
 
     return {
-      title: "Mission briefing.",
+      title: "The realm awaits.",
       description:
-        "Choose your target and enter the fight.",
-      icon: "🕴️",
+        "Choose your path and begin your journey.",
+      icon: "🏰",
     };
   }, [percentage]);
 
@@ -234,51 +244,132 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
           overflow-hidden
           rounded-[28px]
           border
-          border-zinc-800
-          bg-[#070707]
+          border-[#39352d]
+          bg-[#080a0c]
           shadow-2xl
-          shadow-black/50
+          shadow-black/60
         "
       >
-        {/* Background */}
+        {/* =================================================
+            MEDIEVAL BACKGROUND
+        ================================================= */}
 
-        <div
-          className="
-            absolute
-            inset-0
-            bg-gradient-to-br
-            from-[#030303]
-            via-[#0b0b0b]
-            to-[#190505]
-          "
-        />
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Stone base */}
 
-        {/* Red light */}
+          <div
+            className="
+              absolute
+              inset-0
+              bg-gradient-to-br
+              from-[#080a0c]
+              via-[#111417]
+              to-[#17130d]
+            "
+          />
 
-        <div
-          className="
-            absolute
-            -right-24
-            -top-24
-            h-72
-            w-72
-            rounded-full
-            bg-red-800/20
-            blur-[100px]
-          "
-        />
+          {/* Moon glow */}
 
-        {/* Grit */}
+          <div
+            className="
+              absolute
+              -right-24
+              -top-24
+              h-80
+              w-80
+              rounded-full
+              bg-[#d6c38a]/10
+              blur-[100px]
+              animate-[moonGlow_5s_ease-in-out_infinite]
+            "
+          />
 
-        <div
-          className="
-            absolute
-            inset-0
-            opacity-[0.035]
-            [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)]
-            [background-size:12px_12px]
-          "
-        />
+          {/* Ice glow */}
+
+          <div
+            className="
+              absolute
+              -bottom-28
+              -left-24
+              h-80
+              w-80
+              rounded-full
+              bg-[#8eb6c7]/10
+              blur-[110px]
+            "
+          />
+
+          {/* Stone texture */}
+
+          <div
+            className="
+              absolute
+              inset-0
+              opacity-[0.045]
+              [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)]
+              [background-size:14px_14px]
+            "
+          />
+
+          {/* Stone cracks */}
+
+          <div
+            className="
+              absolute
+              left-[12%]
+              top-0
+              h-full
+              w-px
+              rotate-[12deg]
+              bg-gradient-to-b
+              from-transparent
+              via-white/[0.04]
+              to-transparent
+            "
+          />
+
+          <div
+            className="
+              absolute
+              right-[20%]
+              top-0
+              h-full
+              w-px
+              -rotate-[18deg]
+              bg-gradient-to-b
+              from-transparent
+              via-[#d6c38a]/[0.05]
+              to-transparent
+            "
+          />
+
+          {/* Castle silhouette */}
+
+          <div
+            className="
+              absolute
+              bottom-0
+              right-0
+              opacity-[0.035]
+            "
+          >
+            <Castle
+              size={250}
+              strokeWidth={0.7}
+            />
+          </div>
+
+          {/* Snow particles */}
+
+          <div className="absolute inset-0 pointer-events-none">
+            <span className="absolute left-[15%] top-[20%] h-1 w-1 rounded-full bg-white/30 animate-[snowFall_5s_linear_infinite]" />
+            <span className="absolute left-[35%] top-[10%] h-1 w-1 rounded-full bg-white/20 animate-[snowFall_7s_linear_infinite]" />
+            <span className="absolute right-[25%] top-[25%] h-1 w-1 rounded-full bg-white/30 animate-[snowFall_6s_linear_infinite]" />
+            <span className="absolute right-[10%] top-[5%] h-1 w-1 rounded-full bg-white/20 animate-[snowFall_8s_linear_infinite]" />
+          </div>
+        </div>
+
+        {/* Loading */}
 
         <div
           className="
@@ -293,25 +384,40 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
           <div className="text-center">
             <div
               className="
+                relative
                 mx-auto
                 mb-5
                 flex
-                h-14
-                w-14
+                h-16
+                w-16
                 items-center
                 justify-center
                 rounded-2xl
                 border
-                border-red-900/60
-                bg-red-950/30
-                shadow-[0_0_25px_rgba(127,29,29,0.25)]
+                border-[#9c8350]/50
+                bg-[#17130d]/80
+                text-[#d6c38a]
+                shadow-[0_0_30px_rgba(156,131,80,0.15)]
+                backdrop-blur-md
               "
             >
-              <Crosshair
-                size={24}
+              <Crown
+                size={25}
                 className="
-                  animate-spin
-                  text-red-500
+                  animate-[crownPulse_2s_ease-in-out_infinite]
+                "
+              />
+
+              <span
+                className="
+                  absolute
+                  -right-1
+                  -top-1
+                  h-2
+                  w-2
+                  rounded-full
+                  bg-[#d6c38a]
+                  shadow-[0_0_10px_rgba(214,195,138,0.8)]
                 "
               />
             </div>
@@ -322,11 +428,11 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 text-sm
                 font-black
                 uppercase
-                tracking-[0.2em]
-                text-zinc-300
+                tracking-[0.22em]
+                text-[#d8d5cc]
               "
             >
-              Initializing operation
+              Summoning the Maester
             </p>
 
             <p
@@ -336,14 +442,56 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 text-[10px]
                 font-bold
                 uppercase
-                tracking-[0.12em]
-                text-zinc-700
+                tracking-[0.14em]
+                text-[#77746c]
               "
             >
-              Establishing combat record
+              Reading the weekly record
             </p>
           </div>
         </div>
+
+        <style>{`
+          @keyframes crownPulse {
+            0%, 100% {
+              transform: translateY(0) scale(1);
+              filter: drop-shadow(0 0 0px rgba(214,195,138,0));
+            }
+
+            50% {
+              transform: translateY(-4px) scale(1.06);
+              filter: drop-shadow(0 0 10px rgba(214,195,138,0.5));
+            }
+          }
+
+          @keyframes moonGlow {
+            0%, 100% {
+              opacity: 0.7;
+              transform: scale(1);
+            }
+
+            50% {
+              opacity: 1;
+              transform: scale(1.12);
+            }
+          }
+
+          @keyframes snowFall {
+            0% {
+              transform: translateY(-20px);
+              opacity: 0;
+            }
+
+            20% {
+              opacity: 0.8;
+            }
+
+            100% {
+              transform: translateY(500px);
+              opacity: 0;
+            }
+          }
+        `}</style>
       </section>
     );
   }
@@ -360,19 +508,19 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
         overflow-hidden
         rounded-[28px]
         border
-        border-zinc-800
-        bg-[#070707]
+        border-[#39352d]
+        bg-[#080a0c]
         shadow-2xl
-        shadow-black/50
+        shadow-black/60
         transition-all
-        duration-500
+        duration-700
         hover:-translate-y-1
-        hover:border-red-900/70
-        hover:shadow-[0_30px_80px_rgba(0,0,0,0.6)]
+        hover:border-[#8d7648]/70
+        hover:shadow-[0_30px_90px_rgba(0,0,0,0.65)]
       "
     >
       {/* =================================================
-          CINEMATIC BACKGROUND
+          REALM BACKGROUND
       ================================================= */}
 
       <div className="absolute inset-0 overflow-hidden">
@@ -383,95 +531,105 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
             absolute
             inset-0
             bg-gradient-to-br
-            from-[#030303]
-            via-[#0b0b0b]
-            to-[#190505]
+            from-[#07090b]
+            via-[#101316]
+            to-[#17120c]
           "
         />
 
-        {/* John Wick red light */}
+        {/* Golden moon */}
 
         <div
           className="
+            pointer-events-none
             absolute
             -right-32
             -top-32
             h-96
             w-96
             rounded-full
-            bg-red-800/20
+            bg-[#d6c38a]/10
             blur-[120px]
             transition-all
             duration-1000
             group-hover:scale-125
-            group-hover:bg-red-600/25
+            group-hover:bg-[#d6c38a]/15
           "
         />
 
-        {/* Fight Club red shadow */}
+        {/* Northern ice */}
 
         <div
           className="
+            pointer-events-none
             absolute
             -bottom-36
             -left-28
             h-96
             w-96
             rounded-full
-            bg-red-950/30
+            bg-[#8eb6c7]/10
             blur-[120px]
+            transition-all
+            duration-1000
+            group-hover:bg-[#8eb6c7]/15
           "
         />
 
-        {/* Concrete texture */}
+        {/* Fire glow */}
 
         <div
           className="
+            pointer-events-none
+            absolute
+            bottom-[20%]
+            right-[10%]
+            h-48
+            w-48
+            rounded-full
+            bg-[#8f2d20]/10
+            blur-[90px]
+            animate-[fireGlow_4s_ease-in-out_infinite]
+          "
+        />
+
+        {/* Stone texture */}
+
+        <div
+          className="
+            pointer-events-none
             absolute
             inset-0
-            opacity-[0.035]
+            opacity-[0.045]
             [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)]
-            [background-size:13px_13px]
+            [background-size:14px_14px]
           "
         />
 
-        {/* Diagonal scratches */}
+        {/* Stone diagonal texture */}
 
         <div
           className="
+            pointer-events-none
             absolute
             inset-0
             opacity-[0.025]
-            [background-image:linear-gradient(120deg,transparent_45%,white_46%,transparent_47%)]
-            [background-size:18px_18px]
+            [background-image:linear-gradient(125deg,transparent_45%,white_46%,transparent_47%)]
+            [background-size:24px_24px]
           "
         />
 
-        {/* Tactical lines */}
+        {/* Medieval vertical cracks */}
 
         <div
           className="
+            pointer-events-none
             absolute
-            right-[15%]
-            top-[-20%]
-            h-[140%]
+            left-[12%]
+            top-[-15%]
+            h-[130%]
             w-px
-            rotate-[17deg]
-            bg-gradient-to-b
-            from-transparent
-            via-red-500/20
-            to-transparent
-          "
-        />
-
-        <div
-          className="
-            absolute
-            left-[15%]
-            top-[-20%]
-            h-[140%]
-            w-px
-            -rotate-[14deg]
+            rotate-[13deg]
             bg-gradient-to-b
             from-transparent
             via-white/[0.04]
@@ -479,43 +637,88 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
           "
         />
 
-        {/* Red cinematic beam */}
-
         <div
           className="
+            pointer-events-none
             absolute
-            left-0
-            top-0
-            h-1/2
-            w-full
-            bg-gradient-to-r
+            right-[18%]
+            top-[-15%]
+            h-[130%]
+            w-px
+            -rotate-[16deg]
+            bg-gradient-to-b
             from-transparent
-            via-red-600/[0.035]
+            via-[#d6c38a]/[0.07]
             to-transparent
           "
         />
 
-        {/* Silhouette */}
+        {/* Castle silhouette */}
 
         <div
           className="
             pointer-events-none
             absolute
-            -bottom-16
-            -right-3
-            select-none
-            text-[175px]
-            leading-none
-            opacity-[0.025]
-            grayscale
+            bottom-[-35px]
+            right-[-10px]
+            opacity-[0.035]
             transition-all
-            duration-700
+            duration-1000
+            group-hover:opacity-[0.07]
             group-hover:scale-105
-            group-hover:opacity-[0.05]
           "
         >
-          🕴️
+          <Castle
+            size={280}
+            strokeWidth={0.55}
+          />
         </div>
+
+        {/* Mountains */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            bottom-0
+            left-0
+            right-0
+            h-28
+            opacity-[0.025]
+          "
+          style={{
+            clipPath:
+              "polygon(0 100%, 0 72%, 10% 58%, 18% 78%, 28% 42%, 39% 74%, 52% 48%, 63% 75%, 74% 40%, 86% 70%, 100% 50%, 100% 100%)",
+            background:
+              "linear-gradient(to top, #d6c38a, transparent)",
+          }}
+        />
+
+        {/* Snow particles */}
+
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <span className="absolute left-[8%] top-[15%] h-1 w-1 rounded-full bg-white/30 animate-[snowDrift_7s_linear_infinite]" />
+          <span className="absolute left-[20%] top-[5%] h-1 w-1 rounded-full bg-white/20 animate-[snowDrift_9s_linear_infinite]" />
+          <span className="absolute left-[42%] top-[22%] h-1 w-1 rounded-full bg-white/25 animate-[snowDrift_6s_linear_infinite]" />
+          <span className="absolute right-[28%] top-[8%] h-1 w-1 rounded-full bg-white/30 animate-[snowDrift_8s_linear_infinite]" />
+          <span className="absolute right-[12%] top-[30%] h-1 w-1 rounded-full bg-white/20 animate-[snowDrift_10s_linear_infinite]" />
+        </div>
+
+        {/* Golden atmospheric line */}
+
+        <div
+          className="
+            absolute
+            left-0
+            top-20
+            h-px
+            w-full
+            bg-gradient-to-r
+            from-transparent
+            via-[#9c8350]/25
+            to-transparent
+          "
+        />
       </div>
 
       {/* =================================================
@@ -530,14 +733,14 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
           items-center
           justify-between
           border-b
-          border-white/[0.08]
+          border-white/[0.07]
           px-5
           py-5
           sm:px-6
         "
       >
         <div className="flex items-center gap-3">
-          {/* Swords */}
+          {/* Crown emblem */}
 
           <div
             className="
@@ -549,21 +752,23 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
               justify-center
               rounded-xl
               border
-              border-red-900/60
-              bg-red-950/30
-              shadow-[0_0_25px_rgba(127,29,29,0.2)]
+              border-[#806a42]/60
+              bg-[#211b11]/70
+              text-[#d6c38a]
+              shadow-[0_0_25px_rgba(156,131,80,0.15)]
               backdrop-blur-md
               transition-all
-              duration-300
+              duration-500
               group-hover:scale-105
-              group-hover:border-red-700/70
+              group-hover:border-[#b69a5f]/80
+              group-hover:shadow-[0_0_30px_rgba(214,195,138,0.15)]
             "
           >
-            <Swords
-              size={20}
+            <Crown
+              size={21}
               className="
-                text-red-500
-                drop-shadow-[0_0_8px_rgba(239,68,68,0.7)]
+                drop-shadow-[0_0_8px_rgba(214,195,138,0.5)]
+                animate-[crownFloat_4s_ease-in-out_infinite]
               "
             />
 
@@ -575,8 +780,8 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 h-2
                 w-2
                 rounded-full
-                bg-red-500
-                shadow-[0_0_10px_rgba(239,68,68,0.9)]
+                bg-[#d6c38a]
+                shadow-[0_0_10px_rgba(214,195,138,0.8)]
               "
             />
           </div>
@@ -590,11 +795,11 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   font-black
                   uppercase
                   tracking-tight
-                  text-white
+                  text-[#eeeae0]
                   sm:text-lg
                 "
               >
-                Weekly Mission
+                Weekly Quest
               </h2>
 
               <span
@@ -602,15 +807,15 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   hidden
                   rounded
                   border
-                  border-red-900/50
-                  bg-red-950/30
+                  border-[#806a42]/50
+                  bg-[#211b11]/50
                   px-1.5
                   py-0.5
                   text-[8px]
                   font-black
                   uppercase
                   tracking-[0.15em]
-                  text-red-500
+                  text-[#c9ad70]
                   sm:inline-block
                 "
               >
@@ -626,11 +831,11 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 font-bold
                 uppercase
                 tracking-[0.14em]
-                text-zinc-600
+                text-[#77746c]
                 sm:text-[10px]
               "
             >
-              No excuses. No distractions.
+              Your oath. Your realm. Your progress.
             </p>
           </div>
         </div>
@@ -638,7 +843,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
         {/* Header controls */}
 
         <div className="flex items-center gap-2">
-          {/* Operation status */}
+          {/* Realm status */}
 
           <div
             className="
@@ -655,9 +860,12 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
               sm:flex
             "
           >
-            <Activity
+            <Feather
               size={12}
-              className="text-red-500"
+              className="
+                text-[#8eb6c7]
+                animate-[ravenFloat_3s_ease-in-out_infinite]
+              "
             />
 
             <span
@@ -666,10 +874,10 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 font-black
                 uppercase
                 tracking-[0.16em]
-                text-zinc-600
+                text-[#77746c]
               "
             >
-              Operation 01
+              Raven · Active
             </span>
           </div>
 
@@ -679,7 +887,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
             type="button"
             onClick={handleRefresh}
             disabled={refreshing}
-            aria-label="Refresh weekly mission"
+            aria-label="Refresh weekly quest"
             className="
               flex
               h-9
@@ -690,12 +898,12 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
               border
               border-white/[0.08]
               bg-white/[0.025]
-              text-zinc-600
+              text-[#77746c]
               transition-all
               duration-300
-              hover:border-red-900/60
-              hover:bg-red-950/30
-              hover:text-red-400
+              hover:border-[#806a42]/60
+              hover:bg-[#211b11]/50
+              hover:text-[#d6c38a]
               disabled:cursor-not-allowed
               disabled:opacity-50
             "
@@ -733,26 +941,39 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
           "
         >
           {/* =================================================
-              TARGET CIRCLE
+              QUEST CIRCLE
           ================================================= */}
 
           <div className="relative h-48 w-48">
-            {/* Red glow */}
+            {/* Gold aura */}
 
             <div
               className="
                 absolute
                 inset-3
                 rounded-full
-                bg-red-700/10
+                bg-[#d6c38a]/10
                 blur-2xl
                 transition-all
                 duration-700
-                group-hover:bg-red-600/20
+                group-hover:bg-[#d6c38a]/20
               "
             />
 
-            {/* Tactical outer ring */}
+            {/* Ice aura */}
+
+            <div
+              className="
+                absolute
+                inset-8
+                rounded-full
+                bg-[#8eb6c7]/5
+                blur-xl
+                animate-pulse
+              "
+            />
+
+            {/* Outer ring */}
 
             <div
               className="
@@ -760,11 +981,11 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 inset-0
                 rounded-full
                 border
-                border-red-900/20
+                border-[#806a42]/25
               "
             />
 
-            {/* Tactical inner ring */}
+            {/* Inner ring */}
 
             <div
               className="
@@ -776,6 +997,8 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
               "
             />
 
+            {/* Progress SVG */}
+
             <svg
               className="
                 relative
@@ -785,7 +1008,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
               "
               viewBox="0 0 120 120"
             >
-              {/* Outer tactical ring */}
+              {/* Outer decorative ring */}
 
               <circle
                 cx="60"
@@ -795,7 +1018,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 stroke="currentColor"
                 strokeWidth="0.6"
                 strokeDasharray="2 4"
-                className="text-red-500/20"
+                className="text-[#d6c38a]/25"
               />
 
               {/* Background */}
@@ -807,7 +1030,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="9"
-                className="text-zinc-800"
+                className="text-[#25272a]"
               />
 
               {/* Progress */}
@@ -817,7 +1040,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 cy="60"
                 r={radius}
                 fill="none"
-                stroke="url(#weeklyGoalGradient)"
+                stroke="url(#weeklyRealmGradient)"
                 strokeWidth="9"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -826,13 +1049,13 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   transition-all
                   duration-1000
                   ease-out
-                  drop-shadow-[0_0_8px_rgba(220,38,38,0.5)]
+                  drop-shadow-[0_0_8px_rgba(214,195,138,0.4)]
                 "
               />
 
               <defs>
                 <linearGradient
-                  id="weeklyGoalGradient"
+                  id="weeklyRealmGradient"
                   x1="0%"
                   y1="0%"
                   x2="100%"
@@ -840,28 +1063,28 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 >
                   <stop
                     offset="0%"
-                    stopColor="#450a0a"
+                    stopColor="#5f4b29"
                   />
 
                   <stop
-                    offset="45%"
-                    stopColor="#991b1b"
+                    offset="35%"
+                    stopColor="#8f7443"
                   />
 
                   <stop
-                    offset="75%"
-                    stopColor="#dc2626"
+                    offset="70%"
+                    stopColor="#d6c38a"
                   />
 
                   <stop
                     offset="100%"
-                    stopColor="#fca5a5"
+                    stopColor="#f1dfaa"
                   />
                 </linearGradient>
               </defs>
             </svg>
 
-            {/* Crosshair */}
+            {/* Medieval crosshair */}
 
             <div
               className="
@@ -877,7 +1100,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 className="
                   h-px
                   w-28
-                  bg-red-500/10
+                  bg-[#d6c38a]/10
                 "
               />
 
@@ -886,7 +1109,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   absolute
                   h-28
                   w-px
-                  bg-red-500/10
+                  bg-[#d6c38a]/10
                 "
               />
             </div>
@@ -908,8 +1131,8 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   text-4xl
                   font-black
                   tracking-tight
-                  text-white
-                  drop-shadow-[0_0_12px_rgba(255,255,255,0.12)]
+                  text-[#eeeae0]
+                  drop-shadow-[0_0_12px_rgba(255,255,255,0.1)]
                 "
               >
                 {percentage}%
@@ -922,14 +1145,14 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   font-black
                   uppercase
                   tracking-[0.22em]
-                  text-zinc-600
+                  text-[#77746c]
                 "
               >
-                Target Status
+                Quest Progress
               </span>
             </div>
 
-            {/* Status badge */}
+            {/* Motivation badge */}
 
             <div
               className="
@@ -943,32 +1166,41 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 justify-center
                 rounded-xl
                 border
-                border-red-900/60
-                bg-[#070707]/95
+                border-[#806a42]/60
+                bg-[#090b0d]/95
                 text-lg
                 shadow-xl
-                shadow-red-950/40
+                shadow-black/50
                 backdrop-blur-md
+                animate-[badgeFloat_4s_ease-in-out_infinite]
               "
             >
               {motivation.icon}
             </div>
 
-            {/* Target marker */}
+            {/* Crown marker */}
 
             <div
               className="
                 absolute
                 left-1/2
                 top-0
-                h-2
-                w-2
+                flex
+                h-5
+                w-5
                 -translate-x-1/2
+                items-center
+                justify-center
                 rounded-full
-                bg-red-500
-                shadow-[0_0_12px_rgba(239,68,68,0.9)]
+                border
+                border-[#d6c38a]/40
+                bg-[#211b11]
+                text-[#d6c38a]
+                shadow-[0_0_12px_rgba(214,195,138,0.4)]
               "
-            />
+            >
+              <Crown size={9} />
+            </div>
           </div>
 
           {/* =================================================
@@ -987,8 +1219,8 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
               <Clock3
                 size={17}
                 className="
-                  text-red-500
-                  drop-shadow-[0_0_7px_rgba(239,68,68,0.6)]
+                  text-[#d6c38a]
+                  drop-shadow-[0_0_7px_rgba(214,195,138,0.6)]
                 "
               />
 
@@ -997,7 +1229,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   text-2xl
                   font-black
                   tracking-tight
-                  text-white
+                  text-[#eeeae0]
                 "
               >
                 {completedHours.toFixed(1)}
@@ -1007,7 +1239,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 className="
                   text-sm
                   font-medium
-                  text-zinc-600
+                  text-[#77746c]
                 "
               >
                 / {targetHours} hrs
@@ -1022,14 +1254,14 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 font-black
                 uppercase
                 tracking-[0.12em]
-                text-zinc-700
+                text-[#66635d]
               "
             >
               {percentage >= 100
-                ? "Contract successfully completed"
+                ? "The oath has been fulfilled"
                 : `${remainingHours.toFixed(
                     1
-                  )} hours until extraction`}
+                  )} hours until the quest is complete`}
             </p>
           </div>
 
@@ -1050,12 +1282,12 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
               shadow-inner
               backdrop-blur-md
               transition-all
-              duration-300
-              group-hover:border-red-900/40
-              group-hover:bg-red-950/[0.05]
+              duration-500
+              group-hover:border-[#806a42]/40
+              group-hover:bg-[#211b11]/10
             "
           >
-            {/* Red edge */}
+            {/* Gold edge */}
 
             <div
               className="
@@ -1064,7 +1296,26 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 left-0
                 top-0
                 w-[2px]
-                bg-red-700
+                bg-gradient-to-b
+                from-[#d6c38a]
+                via-[#806a42]
+                to-transparent
+              "
+            />
+
+            {/* Raven line */}
+
+            <div
+              className="
+                absolute
+                right-0
+                top-0
+                h-px
+                w-1/2
+                bg-gradient-to-l
+                from-transparent
+                via-[#8eb6c7]/20
+                to-transparent
               "
             />
 
@@ -1082,20 +1333,17 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   justify-center
                   rounded-xl
                   border
-                  border-red-800/50
-                  bg-red-950/40
-                  text-red-500
+                  border-[#806a42]/50
+                  bg-[#211b11]/50
+                  text-[#d6c38a]
                   shadow-lg
-                  shadow-red-950/30
+                  shadow-black/30
                 "
               >
                 {percentage >= 100 ? (
                   <Trophy size={19} />
                 ) : (
-                  <Zap
-                    size={19}
-                    fill="currentColor"
-                  />
+                  <Crown size={19} />
                 )}
 
                 <span
@@ -1106,8 +1354,8 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                     h-2
                     w-2
                     rounded-full
-                    bg-red-500
-                    shadow-[0_0_8px_rgba(239,68,68,0.8)]
+                    bg-[#d6c38a]
+                    shadow-[0_0_8px_rgba(214,195,138,0.8)]
                   "
                 />
               </div>
@@ -1122,7 +1370,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                     font-black
                     uppercase
                     tracking-tight
-                    text-white
+                    text-[#eeeae0]
                   "
                 >
                   {motivation.title}
@@ -1134,7 +1382,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                     mt-1
                     text-xs
                     leading-5
-                    text-zinc-500
+                    text-[#85827a]
                   "
                 >
                   {motivation.description}
@@ -1145,12 +1393,12 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 size={18}
                 className="
                   shrink-0
-                  text-zinc-700
+                  text-[#55534e]
                   transition-all
                   duration-300
                   group-hover:-translate-y-0.5
                   group-hover:translate-x-0.5
-                  group-hover:text-red-500
+                  group-hover:text-[#d6c38a]
                 "
               />
             </div>
@@ -1168,7 +1416,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
               gap-3
             "
           >
-            {/* Fight Time */}
+            {/* Quest Time */}
 
             <div
               className="
@@ -1182,16 +1430,17 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 py-3
                 transition-all
                 duration-300
-                hover:border-red-900/50
-                hover:bg-red-950/[0.06]
+                hover:-translate-y-0.5
+                hover:border-[#806a42]/50
+                hover:bg-[#211b11]/10
               "
             >
               <div className="flex items-center gap-2">
                 <Flame
                   size={14}
                   className="
-                    text-red-500
-                    drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]
+                    text-[#b34b35]
+                    drop-shadow-[0_0_6px_rgba(179,75,53,0.7)]
                   "
                 />
 
@@ -1201,10 +1450,10 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                     font-black
                     uppercase
                     tracking-[0.15em]
-                    text-zinc-600
+                    text-[#77746c]
                   "
                 >
-                  Fight Time
+                  Quest Time
                 </span>
               </div>
 
@@ -1214,7 +1463,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   mt-1
                   text-sm
                   font-black
-                  text-white
+                  text-[#eeeae0]
                 "
               >
                 {completedHours.toFixed(1)} hrs
@@ -1226,7 +1475,9 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   bottom-0
                   left-0
                   h-[2px]
-                  bg-red-700
+                  bg-gradient-to-r
+                  from-[#806a42]
+                  to-[#d6c38a]
                   transition-all
                   duration-700
                 "
@@ -1236,7 +1487,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
               />
             </div>
 
-            {/* Contract */}
+            {/* Weekly Oath */}
 
             <div
               className="
@@ -1250,16 +1501,17 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 py-3
                 transition-all
                 duration-300
-                hover:border-red-900/50
-                hover:bg-red-950/[0.06]
+                hover:-translate-y-0.5
+                hover:border-[#8eb6c7]/40
+                hover:bg-[#8eb6c7]/[0.04]
               "
             >
               <div className="flex items-center gap-2">
-                <Target
+                <Shield
                   size={14}
                   className="
-                    text-red-400
-                    drop-shadow-[0_0_5px_rgba(248,113,113,0.5)]
+                    text-[#8eb6c7]
+                    drop-shadow-[0_0_5px_rgba(142,182,199,0.5)]
                   "
                 />
 
@@ -1269,10 +1521,10 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                     font-black
                     uppercase
                     tracking-[0.15em]
-                    text-zinc-600
+                    text-[#77746c]
                   "
                 >
-                  Contract
+                  Weekly Oath
                 </span>
               </div>
 
@@ -1282,7 +1534,7 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   mt-1
                   text-sm
                   font-black
-                  text-white
+                  text-[#eeeae0]
                 "
               >
                 {targetHours} hrs
@@ -1295,21 +1547,21 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                   left-0
                   h-[2px]
                   w-full
-                  bg-zinc-800
+                  bg-[#25282a]
                 "
               />
             </div>
           </div>
 
           {/* =================================================
-              CONTINUE
+              CONTINUE QUEST
           ================================================= */}
 
           <button
             type="button"
             onClick={handleContinueLearning}
             className="
-              group/mission
+              group/quest
               relative
               flex
               w-full
@@ -1319,32 +1571,32 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
               overflow-hidden
               rounded-xl
               border
-              border-red-700/50
+              border-[#8d7648]/60
               bg-gradient-to-r
-              from-red-950
-              via-red-800
-              to-red-950
+              from-[#3c2d17]
+              via-[#806a42]
+              to-[#3c2d17]
               px-4
               py-3
               text-xs
               font-black
               uppercase
               tracking-[0.17em]
-              text-white
+              text-[#fff8e5]
               shadow-lg
-              shadow-red-950/40
+              shadow-black/40
               transition-all
               duration-300
               hover:-translate-y-0.5
-              hover:border-red-500/60
-              hover:from-red-900
-              hover:via-red-700
-              hover:to-red-900
-              hover:shadow-[0_0_35px_rgba(220,38,38,0.25)]
+              hover:border-[#d6c38a]/70
+              hover:from-[#51401f]
+              hover:via-[#9c8350]
+              hover:to-[#51401f]
+              hover:shadow-[0_0_35px_rgba(156,131,80,0.25)]
               active:translate-y-0
             "
           >
-            {/* Scan light */}
+            {/* Moving light */}
 
             <span
               className="
@@ -1358,23 +1610,23 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 blur-md
                 transition-all
                 duration-700
-                group-hover/mission:left-[110%]
+                group-hover/quest:left-[110%]
               "
             />
 
-            <Crosshair
+            <Sword
               size={15}
               className="
                 relative
                 z-10
                 transition-transform
-                duration-300
-                group-hover/mission:rotate-90
+                duration-500
+                group-hover/quest:rotate-12
               "
             />
 
             <span className="relative z-10">
-              Enter The Fight
+              Continue The Quest
             </span>
 
             <ArrowUpRight
@@ -1384,8 +1636,8 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
                 z-10
                 transition-transform
                 duration-300
-                group-hover/mission:-translate-y-0.5
-                group-hover/mission:translate-x-0.5
+                group-hover/quest:-translate-y-0.5
+                group-hover/quest:translate-x-0.5
               "
             />
           </button>
@@ -1405,13 +1657,13 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
           w-full
           bg-gradient-to-r
           from-transparent
-          via-red-700
+          via-[#9c8350]
           to-transparent
           opacity-80
         "
       />
 
-      {/* Moving red scanner */}
+      {/* Moving golden scanner */}
 
       <div
         className="
@@ -1421,13 +1673,107 @@ function WeeklyGoal({ weeklyGoal: initialWeeklyGoal }) {
           -left-40
           w-24
           skew-x-[-20deg]
-          bg-red-500/10
+          bg-[#d6c38a]/10
           blur-xl
           transition-all
           duration-[1800ms]
           group-hover:left-[110%]
         "
       />
+
+      {/* =================================================
+          ANIMATIONS
+      ================================================= */}
+
+      <style>{`
+        @keyframes crownFloat {
+          0%, 100% {
+            transform: translateY(0) rotate(0deg);
+          }
+
+          50% {
+            transform: translateY(-3px) rotate(-2deg);
+          }
+        }
+
+        @keyframes ravenFloat {
+          0%, 100% {
+            transform: translateY(0) rotate(0deg);
+          }
+
+          50% {
+            transform: translateY(-2px) rotate(-4deg);
+          }
+        }
+
+        @keyframes badgeFloat {
+          0%, 100% {
+            transform: translateY(0) rotate(0deg);
+          }
+
+          50% {
+            transform: translateY(-5px) rotate(2deg);
+          }
+        }
+
+        @keyframes fireGlow {
+          0%, 100% {
+            opacity: 0.5;
+            transform: scale(1);
+          }
+
+          50% {
+            opacity: 0.85;
+            transform: scale(1.15);
+          }
+        }
+
+        @keyframes snowDrift {
+          0% {
+            transform: translate3d(0, -20px, 0);
+            opacity: 0;
+          }
+
+          15% {
+            opacity: 0.8;
+          }
+
+          50% {
+            transform: translate3d(25px, 250px, 0);
+          }
+
+          100% {
+            transform: translate3d(-15px, 550px, 0);
+            opacity: 0;
+          }
+        }
+
+        @keyframes crownPulse {
+          0%, 100% {
+            transform: scale(1);
+            filter: drop-shadow(0 0 0px rgba(214,195,138,0));
+          }
+
+          50% {
+            transform: scale(1.08);
+            filter: drop-shadow(
+              0 0 10px rgba(214,195,138,0.5)
+            );
+          }
+        }
+
+        @keyframes moonGlow {
+          0%, 100% {
+            opacity: 0.65;
+            transform: scale(1);
+          }
+
+          50% {
+            opacity: 1;
+            transform: scale(1.1);
+          }
+        }
+      `}</style>
     </section>
   );
 }

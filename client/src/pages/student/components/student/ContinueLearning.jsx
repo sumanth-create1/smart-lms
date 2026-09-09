@@ -12,12 +12,19 @@ import {
   Swords,
   Target,
   Zap,
+  Crown,
+  Shield,
+  Castle,
+  Feather,
+  Snowflake,
+  Mountain,
+  ScrollText,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 // =====================================================
-// CONTINUE LEARNING — FIGHT CLUB THEME
+// CONTINUE LEARNING — GAME OF THRONES INSPIRED THEME
 // =====================================================
 
 function ContinueLearning({ courses = [] }) {
@@ -50,99 +57,219 @@ function ContinueLearning({ courses = [] }) {
     return (
       <section
         className="
+          realm-card
           group
           relative
           min-w-0
           overflow-hidden
           rounded-[28px]
           border
-          border-zinc-800
-          bg-[#090909]
-          shadow-xl
-          shadow-black/30
+          border-[#3b4145]
+          bg-[#080b0d]
+          shadow-2xl
+          shadow-black/50
           transition-all
           duration-500
           hover:-translate-y-1
-          hover:border-red-900/60
-          hover:shadow-2xl
+          hover:border-[#9b7a38]/60
+          hover:shadow-[0_25px_80px_rgba(0,0,0,0.55)]
         "
       >
         {/* =================================================
-            CINEMATIC BACKGROUND
+            MEDIEVAL BACKGROUND
         ================================================= */}
 
         <div className="absolute inset-0 overflow-hidden">
+          {/* Stone gradient */}
           <div
             className="
               absolute
               inset-0
               bg-gradient-to-br
-              from-[#050505]
-              via-[#111111]
-              to-[#1a0505]
+              from-[#07090a]
+              via-[#101416]
+              to-[#15120d]
             "
           />
 
+          {/* North blue glow */}
           <div
             className="
               absolute
-              -right-24
+              -left-24
               -top-24
-              h-72
-              w-72
+              h-80
+              w-80
               rounded-full
-              bg-red-700/15
+              bg-sky-500/[0.07]
               blur-[100px]
-              transition-transform
+              transition-all
               duration-1000
               group-hover:scale-125
             "
           />
 
+          {/* Royal gold glow */}
           <div
             className="
               absolute
-              -bottom-24
-              -left-20
-              h-72
-              w-72
+              -bottom-32
+              -right-24
+              h-80
+              w-80
               rounded-full
-              bg-red-900/10
+              bg-amber-500/[0.08]
               blur-[100px]
+              transition-all
+              duration-1000
+              group-hover:scale-125
             "
           />
 
-          {/* Grit texture */}
-
-          <div
-            className="
-              absolute
-              inset-0
-              opacity-[0.035]
-              [background-image:linear-gradient(120deg,transparent_45%,white_46%,transparent_47%)]
-              [background-size:14px_14px]
-            "
-          />
-
-          {/* Silhouette */}
-
+          {/* Stone texture */}
           <div
             className="
               pointer-events-none
               absolute
-              -bottom-12
-              -right-2
-              text-[170px]
-              leading-none
-              opacity-[0.025]
+              inset-0
+              opacity-[0.08]
+            "
+            style={{
+              backgroundImage: `
+                linear-gradient(
+                  115deg,
+                  transparent 0%,
+                  rgba(255,255,255,0.06) 50%,
+                  transparent 100%
+                ),
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 31px,
+                  rgba(255,255,255,0.035) 32px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 47px,
+                  rgba(255,255,255,0.025) 48px
+                )
+              `,
+            }}
+          />
+
+          {/* Mountain silhouette */}
+          <div
+            className="
+              pointer-events-none
+              absolute
+              bottom-0
+              left-0
+              right-0
+              h-32
+              opacity-20
+            "
+            style={{
+              clipPath:
+                "polygon(0 100%,0 65%,12% 42%,21% 68%,34% 25%,46% 62%,58% 35%,72% 70%,83% 40%,100% 65%,100% 100%)",
+              background:
+                "linear-gradient(to top, #020405, #12181c)",
+            }}
+          />
+
+          {/* Moon */}
+          <div
+            className="
+              absolute
+              right-16
+              top-12
+              h-20
+              w-20
+              rounded-full
+              border
+              border-sky-100/10
+              bg-sky-100/[0.05]
+              shadow-[0_0_50px_rgba(186,230,253,0.08)]
+            "
+          />
+
+          {/* Raven */}
+          <div
+            className="
+              absolute
+              right-10
+              top-5
+              text-5xl
+              opacity-[0.035]
               grayscale
               transition-all
               duration-700
-              group-hover:opacity-[0.05]
+              group-hover:opacity-[0.08]
+              group-hover:-translate-x-2
             "
           >
-            🥊
+            🐦‍⬛
           </div>
+
+          {/* Castle */}
+          <div
+            className="
+              absolute
+              bottom-0
+              right-12
+              h-28
+              w-44
+              opacity-[0.08]
+            "
+          >
+            <div className="absolute bottom-0 left-0 h-20 w-16 bg-black" />
+            <div className="absolute bottom-0 right-0 h-24 w-14 bg-black" />
+            <div className="absolute bottom-0 left-14 h-28 w-20 bg-black" />
+
+            <div className="absolute -top-5 left-1 h-8 w-5 bg-black" />
+            <div className="absolute -top-7 left-14 h-10 w-6 bg-black" />
+            <div className="absolute -top-6 right-1 h-9 w-5 bg-black" />
+          </div>
+
+          {/* Snow particles */}
+          {[
+            "left-[8%] top-[20%]",
+            "left-[18%] top-[55%]",
+            "left-[31%] top-[14%]",
+            "left-[44%] top-[38%]",
+            "left-[57%] top-[18%]",
+            "left-[68%] top-[60%]",
+            "left-[79%] top-[28%]",
+            "left-[91%] top-[45%]",
+          ].map((position, index) => (
+            <span
+              key={index}
+              className={`
+                absolute
+                ${position}
+                h-1
+                w-1
+                rounded-full
+                bg-sky-100/30
+                animate-[snowFall_${3 + (index % 3)}s_linear_infinite]
+              `}
+            />
+          ))}
+
+          {/* Gold horizon */}
+          <div
+            className="
+              absolute
+              bottom-0
+              left-0
+              right-0
+              h-px
+              bg-gradient-to-r
+              from-transparent
+              via-amber-500/40
+              to-transparent
+            "
+          />
         </div>
 
         {/* =================================================
@@ -157,88 +284,127 @@ function ContinueLearning({ courses = [] }) {
             items-center
             justify-between
             border-b
-            border-zinc-800
+            border-[#30363a]
             px-5
             py-5
             sm:px-6
           "
         >
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div
                 className="
+                  relative
                   flex
-                  h-9
-                  w-9
+                  h-10
+                  w-10
                   items-center
                   justify-center
                   rounded-xl
                   border
-                  border-red-900/50
-                  bg-red-950/30
+                  border-amber-700/40
+                  bg-amber-950/20
+                  text-amber-500
+                  shadow-[0_0_20px_rgba(245,158,11,0.08)]
+                  transition-all
+                  duration-500
+                  group-hover:border-amber-500/60
+                  group-hover:shadow-[0_0_25px_rgba(245,158,11,0.15)]
                 "
               >
-                <Swords
-                  size={18}
-                  className="text-red-500"
+                <Crown
+                  size={19}
+                  className="transition-transform duration-500 group-hover:-translate-y-0.5"
+                />
+
+                <span
+                  className="
+                    absolute
+                    -right-1
+                    -top-1
+                    h-2
+                    w-2
+                    rounded-full
+                    bg-amber-400
+                    shadow-[0_0_8px_rgba(251,191,36,0.8)]
+                    animate-pulse
+                  "
                 />
               </div>
 
-              <h2
-                className="
-                  m-0
-                  text-base
-                  font-black
-                  tracking-tight
-                  text-white
-                  sm:text-lg
-                "
-              >
-                Fight Record
-              </h2>
-            </div>
+              <div>
+                <h2
+                  className="
+                    m-0
+                    text-base
+                    font-black
+                    uppercase
+                    tracking-[0.08em]
+                    text-[#e7e1d3]
+                    sm:text-lg
+                  "
+                >
+                  Your Quest
+                </h2>
 
-            <p
-              className="
-                m-0
-                mt-1
-                pl-11
-                text-xs
-                text-zinc-600
-                sm:text-sm
-              "
-            >
-              No excuses. Keep training.
-            </p>
+                <p
+                  className="
+                    m-0
+                    mt-1
+                    text-[10px]
+                    font-bold
+                    uppercase
+                    tracking-[0.18em]
+                    text-slate-600
+                    sm:text-xs
+                  "
+                >
+                  The realm awaits
+                </p>
+              </div>
+            </div>
           </div>
 
           <button
             type="button"
             onClick={handleViewAll}
             className="
+              group/all
               inline-flex
               items-center
-              gap-1
+              gap-1.5
               rounded-lg
-              px-2
-              py-1.5
+              border
+              border-transparent
+              px-2.5
+              py-2
               text-xs
-              font-bold
+              font-black
               uppercase
-              tracking-wider
-              text-red-500
+              tracking-[0.12em]
+              text-amber-500
               transition-all
-              hover:bg-red-950/30
+              duration-300
+              hover:border-amber-800/40
+              hover:bg-amber-950/20
               sm:text-sm
             "
           >
-            All fights
-            <ArrowRight size={15} />
+            All Quests
+
+            <ArrowRight
+              size={15}
+              className="
+                transition-transform
+                duration-300
+                group-hover/all:translate-x-1
+              "
+            />
           </button>
         </div>
 
         {/* =================================================
-            EMPTY STATE
+            EMPTY CONTENT
         ================================================= */}
 
         <div
@@ -246,22 +412,23 @@ function ContinueLearning({ courses = [] }) {
             relative
             z-10
             flex
-            min-h-[300px]
+            min-h-[330px]
             flex-col
             items-center
             justify-center
             px-5
-            py-10
+            py-12
             text-center
           "
         >
+          {/* Castle emblem */}
           <div className="relative">
             <div
               className="
                 absolute
-                inset-0
+                inset-[-20px]
                 rounded-full
-                bg-red-600/10
+                bg-sky-500/[0.06]
                 blur-3xl
                 animate-pulse
               "
@@ -271,42 +438,56 @@ function ContinueLearning({ courses = [] }) {
               className="
                 relative
                 flex
-                h-20
-                w-20
+                h-24
+                w-24
                 items-center
                 justify-center
-                rounded-[26px]
+                rounded-[28px]
                 border
-                border-red-900/40
-                bg-red-950/30
-                text-4xl
-                shadow-lg
-                shadow-red-950/30
-                animate-[fightFloat_4s_ease-in-out_infinite]
+                border-[#56616a]
+                bg-gradient-to-br
+                from-[#182126]
+                to-[#080b0d]
+                text-amber-500
+                shadow-[0_0_45px_rgba(245,158,11,0.08)]
+                animate-[realmFloat_5s_ease-in-out_infinite]
               "
             >
-              🥊
+              <Castle
+                size={42}
+                strokeWidth={1.4}
+              />
+
+              <div
+                className="
+                  absolute
+                  inset-2
+                  rounded-[22px]
+                  border
+                  border-amber-500/10
+                "
+              />
             </div>
 
             <Sparkles
               size={15}
               className="
                 absolute
-                -right-4
-                -top-2
-                text-red-500
+                -right-5
+                top-0
+                text-amber-400
                 animate-pulse
               "
             />
 
-            <Zap
-              size={13}
+            <Snowflake
+              size={15}
               className="
                 absolute
                 -bottom-3
-                -left-4
-                text-zinc-600
-                animate-pulse
+                -left-5
+                text-sky-400/70
+                animate-[spin_8s_linear_infinite]
               "
             />
           </div>
@@ -314,64 +495,77 @@ function ContinueLearning({ courses = [] }) {
           <h3
             className="
               m-0
-              mt-6
+              mt-7
               text-lg
               font-black
               uppercase
-              tracking-tight
-              text-white
+              tracking-[0.08em]
+              text-[#e7e1d3]
             "
           >
-            No fight has started
+            No Quest Has Begun
           </h3>
 
           <p
             className="
               m-0
-              mt-2
+              mt-3
               max-w-sm
               text-sm
               leading-6
-              text-zinc-600
+              text-slate-500
             "
           >
-            Pick a course, enter the arena, and start
-            sharpening your skills.
+            Choose a course, enter the realm, and begin
+            your journey toward mastery.
           </p>
 
           <button
             type="button"
             onClick={handleViewAll}
             className="
-              mt-6
+              group/quest
+              mt-7
               inline-flex
               items-center
               gap-2
               rounded-xl
               border
-              border-red-700/50
-              bg-red-700
-              px-5
+              border-amber-600/50
+              bg-gradient-to-r
+              from-amber-700
+              to-amber-600
+              px-6
               py-3
               text-sm
               font-black
               uppercase
-              tracking-wide
-              text-white
+              tracking-[0.08em]
+              text-black
               shadow-lg
-              shadow-red-950/40
+              shadow-amber-950/30
               transition-all
               duration-300
               hover:-translate-y-1
-              hover:bg-red-600
-              hover:shadow-[0_0_30px_rgba(220,38,38,0.25)]
+              hover:from-amber-500
+              hover:to-amber-400
+              hover:shadow-[0_0_35px_rgba(245,158,11,0.2)]
             "
           >
-            Enter The Fight
-            <ArrowRight size={16} />
+            Enter The Realm
+
+            <ArrowRight
+              size={16}
+              className="
+                transition-transform
+                duration-300
+                group-hover/quest:translate-x-1
+              "
+            />
           </button>
         </div>
 
+        {/* Bottom realm line */}
         <div
           className="
             absolute
@@ -381,20 +575,35 @@ function ContinueLearning({ courses = [] }) {
             w-full
             bg-gradient-to-r
             from-transparent
-            via-red-700
+            via-amber-600/70
             to-transparent
           "
         />
 
         <style>{`
-          @keyframes fightFloat {
-            0%,
-            100% {
-              transform: translateY(0);
+          @keyframes realmFloat {
+            0%, 100% {
+              transform: translateY(0px);
             }
 
             50% {
-              transform: translateY(-8px) rotate(-2deg);
+              transform: translateY(-9px) rotate(-1deg);
+            }
+          }
+
+          @keyframes snowFall {
+            0% {
+              transform: translateY(-20px) translateX(0);
+              opacity: 0;
+            }
+
+            20% {
+              opacity: 0.8;
+            }
+
+            100% {
+              transform: translateY(340px) translateX(25px);
+              opacity: 0;
             }
           }
         `}</style>
@@ -470,22 +679,22 @@ function ContinueLearning({ courses = [] }) {
 
   const getProgressMessage = () => {
     if (isCompleted) {
-      return "Fight won. But the training never ends.";
+      return "The quest is complete. Your journey continues.";
     }
 
     if (progress >= 75) {
-      return "Final round. Finish what you started.";
+      return "The final stretch lies ahead. Claim your victory.";
     }
 
     if (progress >= 50) {
-      return "Halfway through. Don't lose momentum.";
+      return "Halfway through the journey. Hold the line.";
     }
 
     if (progress > 0) {
-      return "You've entered the fight. Keep moving.";
+      return "You have entered the realm. Keep moving forward.";
     }
 
-    return "The first rule: you have to start.";
+    return "Every great journey begins with a single step.";
   };
 
   // =====================================================
@@ -495,125 +704,258 @@ function ContinueLearning({ courses = [] }) {
   return (
     <section
       className="
+        realm-card
         group
         relative
         min-w-0
         overflow-hidden
         rounded-[28px]
         border
-        border-zinc-800
-        bg-[#090909]
-        shadow-xl
-        shadow-black/30
+        border-[#343b40]
+        bg-[#080b0d]
+        shadow-2xl
+        shadow-black/50
         transition-all
         duration-500
         hover:-translate-y-1
-        hover:border-red-900/60
-        hover:shadow-2xl
+        hover:border-amber-700/50
+        hover:shadow-[0_25px_80px_rgba(0,0,0,0.55)]
       "
     >
       {/* =================================================
-          BACKGROUND
+          CINEMATIC BACKGROUND
       ================================================= */}
 
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Main gradient */}
-
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Base */}
         <div
           className="
             absolute
             inset-0
             bg-gradient-to-br
-            from-[#050505]
-            via-[#101010]
-            to-[#190606]
+            from-[#07090a]
+            via-[#101416]
+            to-[#15110c]
           "
         />
 
-        {/* Red glow */}
-
+        {/* Blue northern glow */}
         <div
           className="
-            pointer-events-none
             absolute
-            -right-24
-            -top-24
-            h-72
-            w-72
+            -left-32
+            -top-32
+            h-96
+            w-96
             rounded-full
-            bg-red-700/15
-            blur-[100px]
+            bg-sky-500/[0.06]
+            blur-[110px]
             transition-transform
-            duration-1000
+            duration-[1500ms]
             group-hover:scale-125
           "
         />
 
-        {/* Bottom glow */}
-
+        {/* Gold throne glow */}
         <div
           className="
-            pointer-events-none
             absolute
-            -bottom-28
-            left-1/3
-            h-72
-            w-72
+            -bottom-36
+            -right-28
+            h-96
+            w-96
             rounded-full
-            bg-red-900/10
-            blur-[100px]
+            bg-amber-500/[0.07]
+            blur-[110px]
+            transition-transform
+            duration-[1500ms]
+            group-hover:scale-125
           "
         />
 
-        {/* Grit */}
-
+        {/* Red war glow */}
         <div
           className="
-            pointer-events-none
+            absolute
+            right-[25%]
+            top-[15%]
+            h-44
+            w-44
+            rounded-full
+            bg-red-900/[0.04]
+            blur-[80px]
+          "
+        />
+
+        {/* Stone texture */}
+        <div
+          className="
             absolute
             inset-0
-            opacity-[0.035]
-            [background-image:linear-gradient(120deg,transparent_45%,white_46%,transparent_47%)]
-            [background-size:16px_16px]
+            opacity-[0.07]
           "
+          style={{
+            backgroundImage: `
+              linear-gradient(
+                115deg,
+                transparent 0%,
+                rgba(255,255,255,0.08) 50%,
+                transparent 100%
+              ),
+              repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 31px,
+                rgba(255,255,255,0.035) 32px
+              ),
+              repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 47px,
+                rgba(255,255,255,0.025) 48px
+              )
+            `,
+          }}
         />
 
-        {/* Horizontal fight-club line */}
-
+        {/* Medieval grid */}
         <div
           className="
             absolute
+            inset-0
+            opacity-[0.025]
+          "
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)",
+            backgroundSize: "42px 42px",
+          }}
+        />
+
+        {/* Moon */}
+        <div
+          className="
+            absolute
+            right-24
+            top-10
+            h-24
+            w-24
+            rounded-full
+            border
+            border-sky-100/10
+            bg-sky-100/[0.035]
+            shadow-[0_0_60px_rgba(186,230,253,0.06)]
+          "
+        />
+
+        {/* Mountains */}
+        <div
+          className="
+            absolute
+            bottom-0
             left-0
-            top-16
-            h-px
-            w-full
-            bg-gradient-to-r
-            from-transparent
-            via-red-900/30
-            to-transparent
+            right-0
+            h-36
+            opacity-[0.10]
           "
+          style={{
+            clipPath:
+              "polygon(0 100%,0 70%,10% 48%,18% 67%,29% 28%,40% 65%,52% 35%,63% 68%,74% 42%,84% 62%,93% 38%,100% 68%,100% 100%)",
+            background:
+              "linear-gradient(to top, #020405, #182126)",
+          }}
         />
 
-        {/* Silhouette */}
-
+        {/* Castle */}
         <div
           className="
-            pointer-events-none
             absolute
-            -bottom-16
-            -right-5
-            text-[190px]
-            leading-none
+            bottom-0
+            right-8
+            h-36
+            w-52
+            opacity-[0.055]
+            transition-all
+            duration-700
+            group-hover:opacity-[0.09]
+          "
+        >
+          <div className="absolute bottom-0 left-0 h-24 w-20 bg-black" />
+          <div className="absolute bottom-0 right-0 h-28 w-16 bg-black" />
+          <div className="absolute bottom-0 left-16 h-36 w-24 bg-black" />
+
+          <div className="absolute -top-7 left-2 h-11 w-6 bg-black" />
+          <div className="absolute -top-8 left-[76px] h-13 w-7 bg-black" />
+          <div className="absolute -top-7 right-1 h-11 w-6 bg-black" />
+
+          <div className="absolute bottom-6 left-[95px] h-10 w-6 rounded-t-full bg-amber-500/20" />
+        </div>
+
+        {/* Raven */}
+        <div
+          className="
+            absolute
+            right-16
+            top-8
+            text-6xl
             opacity-[0.025]
             grayscale
             transition-all
             duration-700
-            group-hover:scale-105
-            group-hover:opacity-[0.05]
+            group-hover:translate-x-2
+            group-hover:-translate-y-1
+            group-hover:opacity-[0.07]
           "
         >
-          🥊
+          🐦‍⬛
         </div>
+
+        {/* Snow */}
+        {[
+          "left-[4%] top-[22%]",
+          "left-[13%] top-[63%]",
+          "left-[23%] top-[12%]",
+          "left-[34%] top-[42%]",
+          "left-[47%] top-[18%]",
+          "left-[58%] top-[66%]",
+          "left-[69%] top-[31%]",
+          "left-[81%] top-[14%]",
+          "left-[93%] top-[50%]",
+        ].map((position, index) => (
+          <span
+            key={index}
+            className={`
+              absolute
+              ${position}
+              h-1
+              w-1
+              rounded-full
+              bg-sky-100/30
+              animate-[snowFall_${4 + (index % 3)}s_linear_infinite]
+            `}
+          />
+        ))}
+
+        {/* Gold particles */}
+        {[
+          "left-[15%] top-[80%]",
+          "left-[38%] top-[75%]",
+          "left-[63%] top-[82%]",
+          "left-[87%] top-[72%]",
+        ].map((position, index) => (
+          <span
+            key={index}
+            className={`
+              absolute
+              ${position}
+              h-1
+              w-1
+              rounded-full
+              bg-amber-400/30
+              animate-[emberFloat_${3 + index}s_ease-in-out_infinite]
+            `}
+          />
+        ))}
       </div>
 
       {/* =================================================
@@ -628,86 +970,125 @@ function ContinueLearning({ courses = [] }) {
           items-center
           justify-between
           border-b
-          border-zinc-800
+          border-[#30363a]
           px-5
           py-5
           sm:px-6
         "
       >
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <div
               className="
+                relative
                 flex
-                h-9
-                w-9
+                h-10
+                w-10
                 items-center
                 justify-center
                 rounded-xl
                 border
-                border-red-900/50
-                bg-red-950/30
-                text-red-500
+                border-amber-700/40
+                bg-amber-950/20
+                text-amber-500
                 transition-all
-                duration-300
-                group-hover:border-red-700/60
-                group-hover:shadow-[0_0_18px_rgba(220,38,38,0.15)]
+                duration-500
+                group-hover:border-amber-500/60
+                group-hover:shadow-[0_0_25px_rgba(245,158,11,0.13)]
               "
             >
-              <Swords size={18} />
+              <Crown
+                size={19}
+                className="
+                  transition-transform
+                  duration-500
+                  group-hover:-translate-y-0.5
+                "
+              />
+
+              <span
+                className="
+                  absolute
+                  -right-1
+                  -top-1
+                  h-2
+                  w-2
+                  rounded-full
+                  bg-amber-400
+                  shadow-[0_0_8px_rgba(251,191,36,0.8)]
+                  animate-pulse
+                "
+              />
             </div>
 
-            <h2
-              className="
-                m-0
-                text-base
-                font-black
-                uppercase
-                tracking-tight
-                text-white
-                sm:text-lg
-              "
-            >
-              Fight Record
-            </h2>
-          </div>
+            <div>
+              <h2
+                className="
+                  m-0
+                  text-base
+                  font-black
+                  uppercase
+                  tracking-[0.08em]
+                  text-[#e7e1d3]
+                  sm:text-lg
+                "
+              >
+                Continue Your Quest
+              </h2>
 
-          <p
-            className="
-              m-0
-              mt-1
-              pl-11
-              text-xs
-              text-zinc-600
-              sm:text-sm
-            "
-          >
-            Pick up where you left off
-          </p>
+              <p
+                className="
+                  m-0
+                  mt-1
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.16em]
+                  text-slate-600
+                  sm:text-xs
+                "
+              >
+                Pick up where you left off
+              </p>
+            </div>
+          </div>
         </div>
 
         <button
           type="button"
           onClick={handleViewAll}
           className="
+            group/all
             inline-flex
             items-center
-            gap-1
+            gap-1.5
             rounded-lg
-            px-2
-            py-1.5
+            border
+            border-transparent
+            px-2.5
+            py-2
             text-xs
-            font-bold
+            font-black
             uppercase
-            tracking-wider
-            text-red-500
+            tracking-[0.12em]
+            text-amber-500
             transition-all
-            hover:bg-red-950/30
+            duration-300
+            hover:border-amber-800/40
+            hover:bg-amber-950/20
             sm:text-sm
           "
         >
-          All fights
-          <ArrowRight size={15} />
+          All Quests
+
+          <ArrowRight
+            size={15}
+            className="
+              transition-transform
+              duration-300
+              group-hover/all:translate-x-1
+            "
+          />
         </button>
       </div>
 
@@ -732,7 +1113,7 @@ function ContinueLearning({ courses = [] }) {
           "
         >
           {/* =================================================
-              COURSE IMAGE / FIGHT POSTER
+              COURSE IMAGE / QUEST POSTER
           ================================================= */}
 
           <div
@@ -743,13 +1124,13 @@ function ContinueLearning({ courses = [] }) {
               overflow-hidden
               rounded-3xl
               border
-              border-zinc-800
+              border-[#3b4247]
               bg-gradient-to-br
-              from-zinc-900
-              via-[#111111]
-              to-red-950
-              shadow-xl
-              shadow-black/40
+              from-[#11181c]
+              via-[#0a0d0f]
+              to-[#19150e]
+              shadow-2xl
+              shadow-black/50
               sm:h-56
               xl:h-full
               xl:min-h-[330px]
@@ -763,94 +1144,133 @@ function ContinueLearning({ courses = [] }) {
                   h-full
                   w-full
                   object-cover
-                  grayscale-[15%]
+                  brightness-[0.75]
+                  saturate-[0.75]
                   transition-all
                   duration-700
                   group-hover:scale-105
-                  group-hover:grayscale-0
+                  group-hover:brightness-[0.9]
+                  group-hover:saturate-100
                 "
               />
             ) : (
               <>
-                {/* Background circles */}
-
-                <div
-                  className="
-                    absolute
-                    -right-12
-                    -top-12
-                    h-40
-                    w-40
-                    rounded-full
-                    bg-red-700/20
-                    blur-sm
-                  "
-                />
-
-                <div
-                  className="
-                    absolute
-                    -bottom-14
-                    -left-12
-                    h-44
-                    w-44
-                    rounded-full
-                    bg-red-900/20
-                  "
-                />
-
-                {/* Fight illustration */}
-
+                {/* Background sky */}
                 <div
                   className="
                     absolute
                     inset-0
-                    flex
-                    items-center
-                    justify-center
+                    bg-gradient-to-b
+                    from-[#18262e]
+                    via-[#10171b]
+                    to-[#050708]
+                  "
+                />
+
+                {/* Moon */}
+                <div
+                  className="
+                    absolute
+                    right-8
+                    top-8
+                    h-16
+                    w-16
+                    rounded-full
+                    bg-slate-100/[0.08]
+                    shadow-[0_0_45px_rgba(186,230,253,0.12)]
+                  "
+                />
+
+                {/* Mountains */}
+                <div
+                  className="
+                    absolute
+                    bottom-0
+                    left-0
+                    right-0
+                    h-40
+                    bg-[#070a0c]
+                  "
+                  style={{
+                    clipPath:
+                      "polygon(0 100%,0 68%,13% 42%,24% 72%,37% 22%,50% 70%,63% 37%,77% 72%,89% 40%,100% 65%,100% 100%)",
+                  }}
+                />
+
+                {/* Castle towers */}
+                <div
+                  className="
+                    absolute
+                    bottom-7
+                    left-1/2
+                    -translate-x-1/2
                   "
                 >
-                  <div
-                    className="
-                      flex
-                      h-28
-                      w-28
-                      items-center
-                      justify-center
-                      rounded-[32px]
-                      border
-                      border-red-800/40
-                      bg-black/40
-                      text-6xl
-                      shadow-2xl
-                      shadow-black
-                      backdrop-blur-sm
-                      animate-[fightFloat_4s_ease-in-out_infinite]
-                    "
-                  >
-                    🥊
+                  <div className="relative h-32 w-36">
+                    <div className="absolute bottom-0 left-7 h-24 w-24 bg-[#050607]" />
+
+                    <div className="absolute bottom-0 left-0 h-32 w-10 bg-[#050607]" />
+                    <div className="absolute bottom-0 right-0 h-28 w-10 bg-[#050607]" />
+
+                    <div className="absolute -top-6 left-0 h-9 w-10 bg-[#050607]" />
+                    <div className="absolute -top-5 right-0 h-8 w-10 bg-[#050607]" />
+
+                    <div
+                      className="
+                        absolute
+                        bottom-0
+                        left-[47px]
+                        h-12
+                        w-10
+                        rounded-t-full
+                        bg-amber-500/[0.13]
+                        shadow-[0_0_25px_rgba(245,158,11,0.15)]
+                      "
+                    />
                   </div>
+                </div>
+
+                {/* Raven */}
+                <div
+                  className="
+                    absolute
+                    right-8
+                    top-4
+                    text-3xl
+                    opacity-30
+                    grayscale
+                    animate-[ravenFly_6s_ease-in-out_infinite]
+                  "
+                >
+                  🐦‍⬛
                 </div>
               </>
             )}
 
-            {/* Dark overlay */}
-
+            {/* Image overlay */}
             <div
               className="
                 absolute
                 inset-0
                 bg-gradient-to-t
-                from-black/80
-                via-black/20
+                from-black/90
+                via-black/25
                 to-black/30
               "
             />
 
-            {/* =================================================
-                TOP BADGES
-            ================================================= */}
+            {/* Frost vignette */}
+            <div
+              className="
+                absolute
+                inset-0
+                ring-1
+                ring-inset
+                ring-sky-100/[0.08]
+              "
+            />
 
+            {/* Top badges */}
             <div
               className="
                 absolute
@@ -860,21 +1280,22 @@ function ContinueLearning({ courses = [] }) {
                 flex
                 items-center
                 justify-between
+                gap-2
               "
             >
               <span
                 className="
                   rounded-lg
                   border
-                  border-red-700/40
-                  bg-black/60
+                  border-amber-600/40
+                  bg-black/65
                   px-2.5
                   py-1.5
                   text-[10px]
                   font-black
                   uppercase
-                  tracking-wider
-                  text-red-400
+                  tracking-[0.12em]
+                  text-amber-400
                   backdrop-blur-md
                 "
               >
@@ -883,17 +1304,19 @@ function ContinueLearning({ courses = [] }) {
 
               <span
                 className="
+                  max-w-[55%]
+                  truncate
                   rounded-lg
                   border
-                  border-white/10
-                  bg-black/60
+                  border-sky-300/10
+                  bg-black/65
                   px-2.5
                   py-1.5
                   text-[10px]
                   font-bold
                   uppercase
                   tracking-wider
-                  text-zinc-300
+                  text-slate-300
                   backdrop-blur-md
                 "
               >
@@ -901,10 +1324,7 @@ function ContinueLearning({ courses = [] }) {
               </span>
             </div>
 
-            {/* =================================================
-                PLAY BUTTON
-            ================================================= */}
-
+            {/* Play */}
             <button
               type="button"
               onClick={handleContinueCourse}
@@ -921,7 +1341,18 @@ function ContinueLearning({ courses = [] }) {
                 justify-center
               "
             >
-              {/* Red pulse */}
+              {/* Outer ring */}
+              <div
+                className="
+                  absolute
+                  h-24
+                  w-24
+                  rounded-full
+                  border
+                  border-amber-400/20
+                  animate-[realmPulse_3s_ease-out_infinite]
+                "
+              />
 
               <div
                 className="
@@ -930,8 +1361,8 @@ function ContinueLearning({ courses = [] }) {
                   w-20
                   rounded-full
                   border
-                  border-red-500/40
-                  animate-ping
+                  border-sky-300/10
+                  animate-[realmPulse_3s_ease-out_1s_infinite]
                 "
               />
 
@@ -945,24 +1376,22 @@ function ContinueLearning({ courses = [] }) {
                   justify-center
                   rounded-full
                   border
-                  border-white/20
+                  border-amber-500/40
                   bg-black/80
-                  text-red-500
-                  shadow-2xl
-                  shadow-black
+                  text-amber-400
+                  shadow-[0_0_30px_rgba(245,158,11,0.12)]
                   backdrop-blur-md
                   transition-all
                   duration-300
                   group-hover:scale-110
-                  group-hover:border-red-500/60
-                  group-hover:shadow-[0_0_30px_rgba(220,38,38,0.3)]
+                  group-hover:border-amber-400/70
+                  group-hover:shadow-[0_0_40px_rgba(245,158,11,0.2)]
                 "
               >
                 {isCompleted ? (
                   <CheckCircle2
                     size={27}
-                    className="text-red-500"
-                    strokeWidth={2.5}
+                    strokeWidth={2}
                   />
                 ) : (
                   <Play
@@ -974,10 +1403,7 @@ function ContinueLearning({ courses = [] }) {
               </div>
             </button>
 
-            {/* =================================================
-                BOTTOM INFO
-            ================================================= */}
-
+            {/* Bottom info */}
             <div
               className="
                 absolute
@@ -987,6 +1413,7 @@ function ContinueLearning({ courses = [] }) {
                 flex
                 items-center
                 justify-between
+                gap-2
               "
             >
               <span
@@ -997,12 +1424,12 @@ function ContinueLearning({ courses = [] }) {
                   rounded-lg
                   border
                   border-white/10
-                  bg-black/60
+                  bg-black/65
                   px-2.5
                   py-1.5
                   text-[10px]
                   font-medium
-                  text-zinc-300
+                  text-slate-300
                   backdrop-blur-md
                 "
               >
@@ -1015,19 +1442,21 @@ function ContinueLearning({ courses = [] }) {
 
               {progress > 0 && (
                 <span
-                  className="
+                  className={`
                     rounded-lg
                     border
-                    border-red-700/40
-                    bg-red-950/80
                     px-2.5
                     py-1.5
                     text-[10px]
                     font-black
-                    text-red-400
                     shadow-lg
-                    shadow-black/30
-                  "
+                    backdrop-blur-md
+                    ${
+                      isCompleted
+                        ? "border-emerald-500/30 bg-emerald-950/70 text-emerald-400"
+                        : "border-amber-600/40 bg-amber-950/70 text-amber-400"
+                    }
+                  `}
                 >
                   {progress}% complete
                 </span>
@@ -1040,25 +1469,46 @@ function ContinueLearning({ courses = [] }) {
           ================================================= */}
 
           <div className="flex min-w-0 flex-col">
-            {/* Fight category */}
-
-            <div className="flex items-center gap-2">
+            {/* Category */}
+            <div className="flex flex-wrap items-center gap-2">
               <span
                 className="
                   rounded-full
                   border
-                  border-red-900/40
-                  bg-red-950/30
+                  border-amber-700/40
+                  bg-amber-950/20
                   px-2.5
                   py-1
                   text-[10px]
                   font-black
                   uppercase
-                  tracking-wider
-                  text-red-500
+                  tracking-[0.12em]
+                  text-amber-500
                 "
               >
                 {category}
+              </span>
+
+              <span
+                className="
+                  inline-flex
+                  items-center
+                  gap-1
+                  rounded-full
+                  border
+                  border-sky-900/40
+                  bg-sky-950/20
+                  px-2.5
+                  py-1
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-wider
+                  text-sky-400
+                "
+              >
+                <Feather size={10} />
+                Realm Training
               </span>
 
               {isCompleted && (
@@ -1075,17 +1525,18 @@ function ContinueLearning({ courses = [] }) {
                     py-1
                     text-[10px]
                     font-bold
-                    text-emerald-500
+                    uppercase
+                    tracking-wider
+                    text-emerald-400
                   "
                 >
                   <CheckCircle2 size={11} />
-                  Fight Won
+                  Quest Complete
                 </span>
               )}
             </div>
 
             {/* Title */}
-
             <h3
               className="
                 m-0
@@ -1095,8 +1546,8 @@ function ContinueLearning({ courses = [] }) {
                 font-black
                 uppercase
                 leading-tight
-                tracking-tight
-                text-white
+                tracking-[0.02em]
+                text-[#e8e2d5]
                 sm:text-2xl
               "
               title={title}
@@ -1105,7 +1556,6 @@ function ContinueLearning({ courses = [] }) {
             </h3>
 
             {/* Instructor */}
-
             <div
               className="
                 mt-2
@@ -1113,7 +1563,7 @@ function ContinueLearning({ courses = [] }) {
                 items-center
                 gap-2
                 text-xs
-                text-zinc-600
+                text-slate-600
               "
             >
               <div
@@ -1125,19 +1575,19 @@ function ContinueLearning({ courses = [] }) {
                   justify-center
                   rounded-full
                   border
-                  border-zinc-800
-                  bg-zinc-900
+                  border-[#343b40]
+                  bg-[#111619]
                 "
               >
                 <GraduationCap
                   size={13}
-                  className="text-zinc-500"
+                  className="text-slate-500"
                 />
               </div>
 
               <span>
-                Trained by{" "}
-                <span className="font-semibold text-zinc-400">
+                Taught by{" "}
+                <span className="font-semibold text-slate-400">
                   {instructor}
                 </span>
               </span>
@@ -1154,26 +1604,46 @@ function ContinueLearning({ courses = [] }) {
                 overflow-hidden
                 rounded-2xl
                 border
-                border-red-900/30
+                border-[#3a3d37]
                 bg-gradient-to-br
-                from-red-950/30
-                to-zinc-900
+                from-[#191710]
+                via-[#111416]
+                to-[#0b0e10]
                 p-4
+                shadow-lg
+                shadow-black/20
+                transition-all
+                duration-500
+                hover:border-amber-700/40
               "
             >
-              {/* Red glow */}
-
+              {/* Gold glow */}
               <div
                 className="
                   pointer-events-none
                   absolute
-                  -right-6
-                  -top-6
-                  h-20
-                  w-20
+                  -right-10
+                  -top-10
+                  h-28
+                  w-28
                   rounded-full
-                  bg-red-600/10
-                  blur-xl
+                  bg-amber-500/[0.08]
+                  blur-2xl
+                "
+              />
+
+              {/* Blue glow */}
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  -bottom-10
+                  -left-10
+                  h-24
+                  w-24
+                  rounded-full
+                  bg-sky-500/[0.05]
+                  blur-2xl
                 "
               />
 
@@ -1188,6 +1658,7 @@ function ContinueLearning({ courses = [] }) {
               >
                 <div
                   className="
+                    relative
                     flex
                     h-10
                     w-10
@@ -1196,12 +1667,27 @@ function ContinueLearning({ courses = [] }) {
                     justify-center
                     rounded-xl
                     border
-                    border-red-900/40
+                    border-amber-700/40
                     bg-black/50
-                    text-red-500
+                    text-amber-500
+                    shadow-[0_0_20px_rgba(245,158,11,0.06)]
                   "
                 >
-                  <BookOpen size={18} />
+                  <ScrollText size={18} />
+
+                  <span
+                    className="
+                      absolute
+                      -right-1
+                      -top-1
+                      h-1.5
+                      w-1.5
+                      rounded-full
+                      bg-sky-400
+                      shadow-[0_0_7px_rgba(56,189,248,0.8)]
+                      animate-pulse
+                    "
+                  />
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -1211,20 +1697,22 @@ function ContinueLearning({ courses = [] }) {
                         text-[10px]
                         font-black
                         uppercase
-                        tracking-wider
-                        text-red-500
+                        tracking-[0.15em]
+                        text-amber-500
                       "
                     >
-                      Current Round
+                      Current Quest
                     </span>
 
-                    <span className="h-1 w-1 rounded-full bg-zinc-700" />
+                    <span className="h-1 w-1 rounded-full bg-slate-700" />
 
                     <span
                       className="
                         text-[10px]
                         font-medium
-                        text-zinc-600
+                        uppercase
+                        tracking-wider
+                        text-slate-600
                       "
                     >
                       Training
@@ -1239,7 +1727,7 @@ function ContinueLearning({ courses = [] }) {
                       text-sm
                       font-bold
                       leading-5
-                      text-zinc-300
+                      text-slate-300
                     "
                   >
                     {currentLesson}
@@ -1251,14 +1739,33 @@ function ContinueLearning({ courses = [] }) {
                   className="
                     mt-2
                     shrink-0
-                    text-zinc-700
-                    transition-transform
+                    text-slate-700
+                    transition-all
                     duration-300
                     group-hover:translate-x-1
-                    group-hover:text-red-500
+                    group-hover:text-amber-500
                   "
                 />
               </div>
+
+              {/* Moving light */}
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  bottom-0
+                  left-[-30%]
+                  h-px
+                  w-1/3
+                  bg-gradient-to-r
+                  from-transparent
+                  via-amber-400/50
+                  to-transparent
+                  transition-all
+                  duration-[1800ms]
+                  group-hover:left-[100%]
+                "
+              />
             </div>
 
             {/* =================================================
@@ -1280,11 +1787,11 @@ function ContinueLearning({ courses = [] }) {
                       text-xs
                       font-black
                       uppercase
-                      tracking-wider
-                      text-zinc-500
+                      tracking-[0.12em]
+                      text-slate-500
                     "
                   >
-                    Fight Progress
+                    Quest Progress
                   </span>
 
                   {progress > 0 &&
@@ -1292,7 +1799,7 @@ function ContinueLearning({ courses = [] }) {
                       <Flame
                         size={14}
                         className="
-                          text-red-500
+                          text-amber-500
                           animate-pulse
                         "
                       />
@@ -1300,40 +1807,45 @@ function ContinueLearning({ courses = [] }) {
                 </div>
 
                 <span
-                  className="
+                  className={`
                     text-sm
                     font-black
-                    text-red-500
-                  "
+                    ${
+                      isCompleted
+                        ? "text-emerald-400"
+                        : "text-amber-500"
+                    }
+                  `}
                 >
                   {progress}%
                 </span>
               </div>
 
-              {/* Progress */}
-
+              {/* Progress bar */}
               <div
                 className="
                   relative
                   h-3
                   overflow-hidden
                   rounded-full
-                  bg-zinc-900
+                  border
+                  border-[#252b2f]
+                  bg-[#090c0e]
                 "
               >
                 <div
-                  className="
+                  className={`
                     relative
                     h-full
                     rounded-full
-                    bg-gradient-to-r
-                    from-red-950
-                    via-red-700
-                    to-red-500
-                    shadow-[0_0_14px_rgba(220,38,38,0.35)]
                     transition-all
                     duration-1000
-                  "
+                    ${
+                      isCompleted
+                        ? "bg-gradient-to-r from-emerald-950 via-emerald-700 to-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.3)]"
+                        : "bg-gradient-to-r from-amber-950 via-amber-700 to-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.3)]"
+                    }
+                  `}
                   style={{
                     width: `${progress}%`,
                   }}
@@ -1344,19 +1856,39 @@ function ContinueLearning({ courses = [] }) {
                         className="
                           absolute
                           inset-y-0
-                          -left-8
-                          w-8
-                          bg-white/25
+                          -left-10
+                          w-10
+                          bg-white/30
                           blur-sm
-                          animate-[progressShine_2s_infinite]
+                          animate-[progressShine_2.2s_linear_infinite]
                         "
                       />
                     )}
                 </div>
+
+                {/* Progress endpoint */}
+                {progress > 0 && (
+                  <span
+                    className="
+                      absolute
+                      top-1/2
+                      h-2
+                      w-2
+                      -translate-y-1/2
+                      rounded-full
+                      bg-white
+                      shadow-[0_0_8px_rgba(255,255,255,0.6)]
+                      transition-all
+                      duration-1000
+                    "
+                    style={{
+                      left: `calc(${progress}% - 4px)`,
+                    }}
+                  />
+                )}
               </div>
 
-              {/* Progress details */}
-
+              {/* Details */}
               <div
                 className="
                   mt-2.5
@@ -1369,13 +1901,18 @@ function ContinueLearning({ courses = [] }) {
               >
                 <span
                   className="
+                    inline-flex
+                    items-center
+                    gap-1.5
                     text-[11px]
                     font-medium
-                    text-zinc-600
+                    text-slate-600
                   "
                 >
+                  <Swords size={12} />
+
                   {completedLessons} of{" "}
-                  {totalLessons} rounds
+                  {totalLessons} lessons
                 </span>
 
                 <span
@@ -1385,7 +1922,7 @@ function ContinueLearning({ courses = [] }) {
                     gap-1
                     text-[11px]
                     font-medium
-                    text-zinc-600
+                    text-slate-600
                   "
                 >
                   <Clock3 size={12} />
@@ -1412,41 +1949,57 @@ function ContinueLearning({ courses = [] }) {
                 sm:justify-between
               "
             >
-              <div className="flex items-center gap-2">
+              {/* Message */}
+              <div className="flex min-w-0 items-center gap-2.5">
                 <div
                   className="
+                    relative
                     flex
-                    h-8
-                    w-8
+                    h-9
+                    w-9
                     shrink-0
                     items-center
                     justify-center
                     rounded-xl
                     border
-                    border-red-900/40
-                    bg-red-950/30
+                    border-amber-700/40
+                    bg-amber-950/20
                   "
                 >
                   {isCompleted ? (
                     <Trophy
-                      size={15}
-                      className="text-red-500"
+                      size={16}
+                      className="text-amber-400"
                     />
                   ) : (
                     <Target
-                      size={15}
-                      className="text-red-500"
+                      size={16}
+                      className="text-amber-500"
                     />
                   )}
+
+                  <span
+                    className="
+                      absolute
+                      -right-0.5
+                      -top-0.5
+                      h-1.5
+                      w-1.5
+                      rounded-full
+                      bg-sky-400
+                      animate-pulse
+                    "
+                  />
                 </div>
 
                 <p
                   className="
                     m-0
+                    max-w-md
                     text-xs
                     font-semibold
                     leading-5
-                    text-zinc-500
+                    text-slate-500
                   "
                 >
                   {getProgressMessage()}
@@ -1454,12 +2007,11 @@ function ContinueLearning({ courses = [] }) {
               </div>
 
               {/* Continue */}
-
               <button
                 type="button"
                 onClick={handleContinueCourse}
                 className="
-                  group/fight
+                  group/quest
                   inline-flex
                   shrink-0
                   items-center
@@ -1467,29 +2019,32 @@ function ContinueLearning({ courses = [] }) {
                   gap-2
                   rounded-xl
                   border
-                  border-red-700/50
-                  bg-red-700
+                  border-amber-600/50
+                  bg-gradient-to-r
+                  from-amber-700
+                  to-amber-600
                   px-5
                   py-3
                   text-sm
                   font-black
                   uppercase
-                  tracking-wide
-                  text-white
+                  tracking-[0.07em]
+                  text-black
                   shadow-lg
-                  shadow-red-950/40
+                  shadow-amber-950/30
                   transition-all
                   duration-300
                   hover:-translate-y-0.5
-                  hover:bg-red-600
-                  hover:shadow-[0_0_30px_rgba(220,38,38,0.25)]
+                  hover:from-amber-500
+                  hover:to-amber-400
+                  hover:shadow-[0_0_35px_rgba(245,158,11,0.18)]
                   active:translate-y-0
                 "
               >
                 {isCompleted ? (
                   <>
                     <CheckCircle2 size={16} />
-                    Review Fight
+                    Review Quest
                   </>
                 ) : (
                   <>
@@ -1499,8 +2054,8 @@ function ContinueLearning({ courses = [] }) {
                     />
 
                     {progress > 0
-                      ? "Continue Fight"
-                      : "Enter Fight"}
+                      ? "Continue Quest"
+                      : "Begin Quest"}
                   </>
                 )}
 
@@ -1509,7 +2064,7 @@ function ContinueLearning({ courses = [] }) {
                   className="
                     transition-transform
                     duration-300
-                    group-hover/fight:translate-x-1
+                    group-hover/quest:translate-x-1
                   "
                 />
               </button>
@@ -1519,7 +2074,87 @@ function ContinueLearning({ courses = [] }) {
       </div>
 
       {/* =================================================
-          CINEMATIC FOOTER
+          CORNER DECORATIONS
+      ================================================= */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          left-3
+          top-3
+          h-5
+          w-5
+          border-l
+          border-t
+          border-amber-600/30
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          right-3
+          top-3
+          h-5
+          w-5
+          border-r
+          border-t
+          border-amber-600/30
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          bottom-3
+          left-3
+          h-5
+          w-5
+          border-b
+          border-l
+          border-amber-600/30
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          bottom-3
+          right-3
+          h-5
+          w-5
+          border-b
+          border-r
+          border-amber-600/30
+        "
+      />
+
+      {/* =================================================
+          MOVING CINEMATIC LIGHT
+      ================================================= */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-y-0
+          -left-40
+          w-28
+          skew-x-[-20deg]
+          bg-amber-400/[0.06]
+          blur-xl
+          transition-all
+          duration-[2000ms]
+          group-hover:left-[110%]
+        "
+      />
+
+      {/* =================================================
+          FOOTER LINE
       ================================================= */}
 
       <div
@@ -1531,27 +2166,9 @@ function ContinueLearning({ courses = [] }) {
           w-full
           bg-gradient-to-r
           from-transparent
-          via-red-700
+          via-amber-600/70
           to-transparent
-          opacity-70
-        "
-      />
-
-      {/* Moving red light */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          inset-y-0
-          -left-40
-          w-24
-          skew-x-[-20deg]
-          bg-red-500/10
-          blur-xl
-          transition-all
-          duration-[1800ms]
-          group-hover:left-[110%]
+          opacity-80
         "
       />
 
@@ -1560,20 +2177,86 @@ function ContinueLearning({ courses = [] }) {
       ================================================= */}
 
       <style>{`
-        @keyframes fightFloat {
-          0%,
-          100% {
+        @keyframes realmFloat {
+          0%, 100% {
             transform: translateY(0px);
           }
 
           50% {
-            transform: translateY(-8px) rotate(-2deg);
+            transform: translateY(-8px) rotate(-1deg);
+          }
+        }
+
+        @keyframes ravenFly {
+          0%, 100% {
+            transform: translate(0, 0);
+          }
+
+          25% {
+            transform: translate(-12px, -5px);
+          }
+
+          50% {
+            transform: translate(-25px, 3px);
+          }
+
+          75% {
+            transform: translate(-12px, -4px);
+          }
+        }
+
+        @keyframes snowFall {
+          0% {
+            transform: translateY(-25px) translateX(0);
+            opacity: 0;
+          }
+
+          15% {
+            opacity: 0.7;
+          }
+
+          50% {
+            opacity: 0.5;
+          }
+
+          100% {
+            transform: translateY(360px) translateX(30px);
+            opacity: 0;
+          }
+        }
+
+        @keyframes emberFloat {
+          0%, 100% {
+            transform: translateY(0) scale(1);
+            opacity: 0.15;
+          }
+
+          50% {
+            transform: translateY(-18px) scale(1.5);
+            opacity: 0.6;
+          }
+        }
+
+        @keyframes realmPulse {
+          0% {
+            transform: scale(0.8);
+            opacity: 0.7;
+          }
+
+          70% {
+            transform: scale(1.25);
+            opacity: 0;
+          }
+
+          100% {
+            transform: scale(1.25);
+            opacity: 0;
           }
         }
 
         @keyframes progressShine {
           0% {
-            left: -32px;
+            left: -40px;
           }
 
           100% {
