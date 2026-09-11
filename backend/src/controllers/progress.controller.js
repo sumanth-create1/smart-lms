@@ -27,7 +27,7 @@ export const saveProgress = async (req, res) => {
     const { lectureId } = req.params;
     const studentId = req.user._id;
 
-    const watchedSeconds = Number(req.body.watchedSeconds);
+    let watchedSeconds = Number(req.body.watchedSeconds);
 
     // -------------------------------------------------
     // Validate watched time
@@ -54,6 +54,23 @@ export const saveProgress = async (req, res) => {
     }
 
     // -------------------------------------------------
+    // Get video duration
+    // -------------------------------------------------
+
+    const videoDuration = Number(lecture.videoDuration) || 0;
+
+    // -------------------------------------------------
+    // Never allow progress beyond video duration
+    // -------------------------------------------------
+
+    if (videoDuration > 0) {
+      watchedSeconds = Math.min(
+        watchedSeconds,
+        videoDuration,
+      );
+    }
+
+    // -------------------------------------------------
     // Find or create course progress
     // -------------------------------------------------
 
@@ -75,48 +92,81 @@ export const saveProgress = async (req, res) => {
     // -------------------------------------------------
 
     let lectureProgress = courseProgress.lectures.find(
-      (item) => String(item.lecture) === String(lectureId),
+      (item) =>
+        String(item.lecture) === String(lectureId),
     );
 
     let watchedDelta = 0;
 
-    // -------------------------------------------------
-    // Existing lecture progress
-    // -------------------------------------------------
+    // =================================================
+    // EXISTING LECTURE PROGRESS
+    // =================================================
 
     if (lectureProgress) {
       const previousWatchedSeconds = Number(
         lectureProgress.watchedSeconds || 0,
       );
 
-      // Prevent large jumps
-      if (watchedSeconds > previousWatchedSeconds + MAX_ALLOWED_JUMP) {
+      // -------------------------------------------------
+      // Prevent large forward jumps
+      // -------------------------------------------------
+
+      if (
+        watchedSeconds >
+        previousWatchedSeconds + MAX_ALLOWED_JUMP
+      ) {
         return res.status(400).json({
           success: false,
-          message: "Invalid watch progress detected.",
+          message:
+            "Invalid watch progress detected. You cannot skip more than 15 seconds ahead.",
+          previousWatchedSeconds,
+          requestedWatchedSeconds: watchedSeconds,
+          maxAllowedSeconds:
+            previousWatchedSeconds +
+            MAX_ALLOWED_JUMP,
         });
       }
 
-      watchedDelta = Math.max(0, watchedSeconds - previousWatchedSeconds);
+      // -------------------------------------------------
+      // Calculate actual progress delta
+      // -------------------------------------------------
 
+      watchedDelta = Math.max(
+        0,
+        watchedSeconds - previousWatchedSeconds,
+      );
+
+      // -------------------------------------------------
       // Never move progress backwards
+      // -------------------------------------------------
+
       lectureProgress.watchedSeconds = Math.max(
         previousWatchedSeconds,
         watchedSeconds,
       );
     }
 
-    // -------------------------------------------------
-    // First progress for lecture
-    // -------------------------------------------------
+    // =================================================
+    // FIRST PROGRESS FOR LECTURE
+    // =================================================
+
     else {
-      // Prevent starting with a large timestamp
+      // -------------------------------------------------
+      // Prevent starting at a large timestamp
+      // -------------------------------------------------
+
       if (watchedSeconds > MAX_ALLOWED_JUMP) {
         return res.status(400).json({
           success: false,
-          message: "Invalid watch progress detected.",
+          message:
+            "Invalid watch progress detected. You must start watching from the beginning.",
+          maxAllowedSeconds: MAX_ALLOWED_JUMP,
         });
       }
+
+      // -------------------------------------------------
+      // Initial watched time
+      // -------------------------------------------------
 
       watchedDelta = watchedSeconds;
 
@@ -126,7 +176,10 @@ export const saveProgress = async (req, res) => {
         completed: false,
       });
 
+      // -------------------------------------------------
       // Create lecture started activity
+      // -------------------------------------------------
+
       if (watchedSeconds > 0) {
         await Activity.create({
           student: studentId,
@@ -138,15 +191,15 @@ export const saveProgress = async (req, res) => {
       }
     }
 
-    // -------------------------------------------------
-    // Save course progress
-    // -------------------------------------------------
+    // =================================================
+    // SAVE COURSE PROGRESS
+    // =================================================
 
     await courseProgress.save();
 
-    // -------------------------------------------------
-    // Save study session
-    // -------------------------------------------------
+    // =================================================
+    // SAVE STUDY SESSION
+    // =================================================
 
     if (watchedDelta > 0) {
       await saveStudySession({
@@ -157,22 +210,24 @@ export const saveProgress = async (req, res) => {
       });
     }
 
-    // -------------------------------------------------
-    // Calculate course progress
-    // -------------------------------------------------
+    // =================================================
+    // CALCULATE COURSE PROGRESS
+    // =================================================
 
-    const totalLectures = await Lecture.countDocuments({
-      course: lecture.course,
-    });
+    const totalLectures =
+      await Lecture.countDocuments({
+        course: lecture.course,
+      });
 
-    const completionPercentage = calculateProgress(
-      courseProgress,
-      totalLectures,
-    );
+    const completionPercentage =
+      calculateProgress(
+        courseProgress,
+        totalLectures,
+      );
 
-    // -------------------------------------------------
-    // Response
-    // -------------------------------------------------
+    // =================================================
+    // RESPONSE
+    // =================================================
 
     return res.status(200).json({
       success: true,
@@ -181,7 +236,10 @@ export const saveProgress = async (req, res) => {
       completionPercentage,
     });
   } catch (error) {
-    console.error("Save progress error:", error);
+    console.error(
+      "Save progress error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
@@ -204,18 +262,20 @@ export const getCourseProgress = async (req, res) => {
     // Count lectures
     // -------------------------------------------------
 
-    const totalLectures = await Lecture.countDocuments({
-      course: courseId,
-    });
+    const totalLectures =
+      await Lecture.countDocuments({
+        course: courseId,
+      });
 
     // -------------------------------------------------
     // Find progress
     // -------------------------------------------------
 
-    const courseProgress = await CourseProgress.findOne({
-      student: studentId,
-      course: courseId,
-    }).populate("lectures.lecture");
+    const courseProgress =
+      await CourseProgress.findOne({
+        student: studentId,
+        course: courseId,
+      }).populate("lectures.lecture");
 
     // -------------------------------------------------
     // No progress yet
@@ -224,11 +284,13 @@ export const getCourseProgress = async (req, res) => {
     if (!courseProgress) {
       return res.status(200).json({
         success: true,
+
         progress: {
           student: studentId,
           course: courseId,
           lectures: [],
         },
+
         completionPercentage: 0,
       });
     }
@@ -237,10 +299,15 @@ export const getCourseProgress = async (req, res) => {
     // Calculate progress
     // -------------------------------------------------
 
-    const completionPercentage = calculateProgress(
-      courseProgress,
-      totalLectures,
-    );
+    const completionPercentage =
+      calculateProgress(
+        courseProgress,
+        totalLectures,
+      );
+
+    // -------------------------------------------------
+    // Response
+    // -------------------------------------------------
 
     return res.status(200).json({
       success: true,
@@ -248,7 +315,10 @@ export const getCourseProgress = async (req, res) => {
       completionPercentage,
     });
   } catch (error) {
-    console.error("Get course progress error:", error);
+    console.error(
+      "Get course progress error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
@@ -262,7 +332,10 @@ export const getCourseProgress = async (req, res) => {
 // PATCH /api/v1/progress/complete/:lectureId
 // =====================================================
 
-export const markLectureCompleted = async (req, res) => {
+export const markLectureCompleted = async (
+  req,
+  res,
+) => {
   try {
     const { lectureId } = req.params;
     const studentId = req.user._id;
@@ -271,7 +344,8 @@ export const markLectureCompleted = async (req, res) => {
     // Find lecture
     // -------------------------------------------------
 
-    const lecture = await Lecture.findById(lectureId);
+    const lecture =
+      await Lecture.findById(lectureId);
 
     if (!lecture) {
       return res.status(404).json({
@@ -284,15 +358,17 @@ export const markLectureCompleted = async (req, res) => {
     // Find course progress
     // -------------------------------------------------
 
-    const courseProgress = await CourseProgress.findOne({
-      student: studentId,
-      course: lecture.course,
-    });
+    const courseProgress =
+      await CourseProgress.findOne({
+        student: studentId,
+        course: lecture.course,
+      });
 
     if (!courseProgress) {
       return res.status(400).json({
         success: false,
-        message: "Start watching the lecture before completing it.",
+        message:
+          "Start watching the lecture before completing it.",
       });
     }
 
@@ -300,14 +376,18 @@ export const markLectureCompleted = async (req, res) => {
     // Find lecture progress
     // -------------------------------------------------
 
-    const lectureProgress = courseProgress.lectures.find(
-      (item) => String(item.lecture) === String(lectureId),
-    );
+    const lectureProgress =
+      courseProgress.lectures.find(
+        (item) =>
+          String(item.lecture) ===
+          String(lectureId),
+      );
 
     if (!lectureProgress) {
       return res.status(400).json({
         success: false,
-        message: "Start watching this lecture before marking it as completed.",
+        message:
+          "Start watching this lecture before marking it as completed.",
       });
     }
 
@@ -324,38 +404,58 @@ export const markLectureCompleted = async (req, res) => {
       });
     }
 
-    // -------------------------------------------------
-    // Check minimum watch requirement
-    // -------------------------------------------------
+    // =================================================
+    // CHECK MINIMUM WATCH REQUIREMENT
+    // =================================================
 
-    const videoDuration = Number(lecture.videoDuration) || 0;
+    const videoDuration =
+      Number(lecture.videoDuration) || 0;
 
-    const watchedSeconds = Number(lectureProgress.watchedSeconds) || 0;
+    const watchedSeconds =
+      Number(
+        lectureProgress.watchedSeconds,
+      ) || 0;
 
     if (videoDuration > 0) {
-      const requiredSeconds = Math.ceil(videoDuration * COMPLETION_THRESHOLD);
+      const requiredSeconds =
+        Math.ceil(
+          videoDuration *
+            COMPLETION_THRESHOLD,
+        );
 
       if (watchedSeconds < requiredSeconds) {
         return res.status(400).json({
           success: false,
-          message: "Watch at least 95% of the lecture before completing it.",
+
+          message:
+            "Watch at least 95% of the lecture before completing it.",
+
           watchedSeconds,
+
           requiredSeconds,
+
+          completionPercentage: Number(
+            (
+              (watchedSeconds /
+                videoDuration) *
+              100
+            ).toFixed(1),
+          ),
         });
       }
     }
 
-    // -------------------------------------------------
-    // Mark completed
-    // -------------------------------------------------
+    // =================================================
+    // MARK COMPLETED
+    // =================================================
 
     lectureProgress.completed = true;
 
     await courseProgress.save();
 
-    // -------------------------------------------------
-    // Create completion activity
-    // -------------------------------------------------
+    // =================================================
+    // CREATE COMPLETION ACTIVITY
+    // =================================================
 
     await Activity.create({
       student: studentId,
@@ -375,54 +475,72 @@ export const markLectureCompleted = async (req, res) => {
     };
 
     try {
-      achievementResult = await checkAndUnlockAchievements(studentId);
+      achievementResult =
+        await checkAndUnlockAchievements(
+          studentId,
+        );
 
       console.log(
         "🏆 ACHIEVEMENT RESULT:",
-        JSON.stringify(achievementResult, null, 2),
+        JSON.stringify(
+          achievementResult,
+          null,
+          2,
+        ),
       );
     } catch (achievementError) {
-      console.error("❌ Achievement check failed:", achievementError);
+      console.error(
+        "❌ Achievement check failed:",
+        achievementError,
+      );
 
-      // Achievement failure should not
+      // Achievement failure must not
       // break lecture completion.
     }
 
-    // -------------------------------------------------
-    // Calculate course progress
-    // -------------------------------------------------
+    // =================================================
+    // CALCULATE COURSE PROGRESS
+    // =================================================
 
-    const totalLectures = await Lecture.countDocuments({
-      course: lecture.course,
-    });
+    const totalLectures =
+      await Lecture.countDocuments({
+        course: lecture.course,
+      });
 
-    const completionPercentage = calculateProgress(
-      courseProgress,
-      totalLectures,
-    );
+    const completionPercentage =
+      calculateProgress(
+        courseProgress,
+        totalLectures,
+      );
 
-    // -------------------------------------------------
-    // Final response
-    // -------------------------------------------------
+    // =================================================
+    // FINAL RESPONSE
+    // =================================================
 
     return res.status(200).json({
       success: true,
 
-      message: "Lecture marked as completed.",
+      message:
+        "Lecture marked as completed.",
 
       progress: courseProgress,
 
       completionPercentage,
 
-      // ⭐ VERY IMPORTANT
-      newlyUnlocked: achievementResult.newlyUnlocked || [],
+      newlyUnlocked:
+        achievementResult.newlyUnlocked ||
+        [],
     });
   } catch (error) {
-    console.error("Mark lecture completed error:", error);
+    console.error(
+      "Mark lecture completed error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Unable to mark lecture as completed.",
+      message:
+        "Unable to mark lecture as completed.",
     });
   }
 };
@@ -432,10 +550,17 @@ export const markLectureCompleted = async (req, res) => {
 // PATCH /api/v1/progress/uncomplete/:lectureId
 // =====================================================
 
-export const unmarkLectureCompleted = async (req, res) => {
+export const unmarkLectureCompleted = async (
+  req,
+  res,
+) => {
   try {
     const { lectureId } = req.params;
     const studentId = req.user._id;
+
+    // -------------------------------------------------
+    // Validate lecture ID
+    // -------------------------------------------------
 
     if (!lectureId) {
       return res.status(400).json({
@@ -448,15 +573,17 @@ export const unmarkLectureCompleted = async (req, res) => {
     // Find course progress
     // -------------------------------------------------
 
-    const courseProgress = await CourseProgress.findOne({
-      student: studentId,
-      "lectures.lecture": lectureId,
-    });
+    const courseProgress =
+      await CourseProgress.findOne({
+        student: studentId,
+        "lectures.lecture": lectureId,
+      });
 
     if (!courseProgress) {
       return res.status(404).json({
         success: false,
-        message: "Course progress not found.",
+        message:
+          "Course progress not found.",
       });
     }
 
@@ -464,14 +591,18 @@ export const unmarkLectureCompleted = async (req, res) => {
     // Find lecture progress
     // -------------------------------------------------
 
-    const lectureProgress = courseProgress.lectures.find(
-      (item) => String(item.lecture) === String(lectureId),
-    );
+    const lectureProgress =
+      courseProgress.lectures.find(
+        (item) =>
+          String(item.lecture) ===
+          String(lectureId),
+      );
 
     if (!lectureProgress) {
       return res.status(404).json({
         success: false,
-        message: "Lecture progress not found.",
+        message:
+          "Lecture progress not found.",
       });
     }
 
@@ -483,17 +614,26 @@ export const unmarkLectureCompleted = async (req, res) => {
 
     await courseProgress.save();
 
+    // -------------------------------------------------
+    // Response
+    // -------------------------------------------------
+
     return res.status(200).json({
       success: true,
-      message: "Lecture marked as incomplete.",
+      message:
+        "Lecture marked as incomplete.",
       progress: courseProgress,
     });
   } catch (error) {
-    console.error("Unmark lecture completed error:", error);
+    console.error(
+      "Unmark lecture completed error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Unable to mark lecture as incomplete.",
+      message:
+        "Unable to mark lecture as incomplete.",
     });
   }
 };
@@ -503,7 +643,10 @@ export const unmarkLectureCompleted = async (req, res) => {
 // GET /api/v1/progress/lecture/:lectureId
 // =====================================================
 
-export const getLectureProgress = async (req, res) => {
+export const getLectureProgress = async (
+  req,
+  res,
+) => {
   try {
     const { lectureId } = req.params;
     const studentId = req.user._id;
@@ -512,7 +655,8 @@ export const getLectureProgress = async (req, res) => {
     // Find lecture
     // -------------------------------------------------
 
-    const lecture = await Lecture.findById(lectureId);
+    const lecture =
+      await Lecture.findById(lectureId);
 
     if (!lecture) {
       return res.status(404).json({
@@ -525,10 +669,11 @@ export const getLectureProgress = async (req, res) => {
     // Find course progress
     // -------------------------------------------------
 
-    const courseProgress = await CourseProgress.findOne({
-      student: studentId,
-      course: lecture.course,
-    });
+    const courseProgress =
+      await CourseProgress.findOne({
+        student: studentId,
+        course: lecture.course,
+      });
 
     // -------------------------------------------------
     // No course progress
@@ -537,7 +682,10 @@ export const getLectureProgress = async (req, res) => {
     if (!courseProgress) {
       return res.status(200).json({
         success: true,
-        progress: createEmptyLectureProgress(lectureId),
+        progress:
+          createEmptyLectureProgress(
+            lectureId,
+          ),
       });
     }
 
@@ -545,9 +693,12 @@ export const getLectureProgress = async (req, res) => {
     // Find lecture progress
     // -------------------------------------------------
 
-    const lectureProgress = courseProgress.lectures.find(
-      (item) => String(item.lecture) === String(lectureId),
-    );
+    const lectureProgress =
+      courseProgress.lectures.find(
+        (item) =>
+          String(item.lecture) ===
+          String(lectureId),
+      );
 
     // -------------------------------------------------
     // No lecture progress
@@ -556,7 +707,10 @@ export const getLectureProgress = async (req, res) => {
     if (!lectureProgress) {
       return res.status(200).json({
         success: true,
-        progress: createEmptyLectureProgress(lectureId),
+        progress:
+          createEmptyLectureProgress(
+            lectureId,
+          ),
       });
     }
 
@@ -566,18 +720,30 @@ export const getLectureProgress = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+
       progress: {
         lecture: lectureId,
-        watchedSeconds: Number(lectureProgress.watchedSeconds || 0),
-        completed: Boolean(lectureProgress.completed),
+
+        watchedSeconds: Number(
+          lectureProgress.watchedSeconds ||
+            0,
+        ),
+
+        completed: Boolean(
+          lectureProgress.completed,
+        ),
       },
     });
   } catch (error) {
-    console.error("Get lecture progress error:", error);
+    console.error(
+      "Get lecture progress error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Unable to fetch lecture progress.",
+      message:
+        "Unable to fetch lecture progress.",
     });
   }
 };
@@ -587,59 +753,76 @@ export const getLectureProgress = async (req, res) => {
 // GET /api/v1/progress/student
 // =====================================================
 
-export const getStudentProgress = async (req, res) => {
+export const getStudentProgress = async (
+  req,
+  res,
+) => {
   try {
     const studentId = req.user._id;
 
-    // -------------------------------------------------
-    // Get enrollments
-    // -------------------------------------------------
+    // =================================================
+    // GET ENROLLMENTS
+    // =================================================
 
-    const enrollments = await Enrollment.find({
-      student: studentId,
-    })
-      .populate({
-        path: "course",
-        select: "courseTitle thumbnail",
+    const enrollments =
+      await Enrollment.find({
+        student: studentId,
       })
-      .sort({ enrolledAt: -1 })
-      .lean();
+        .populate({
+          path: "course",
+          select: "courseTitle thumbnail",
+        })
+        .sort({ enrolledAt: -1 })
+        .lean();
 
-    // -------------------------------------------------
-    // No enrollments
-    // -------------------------------------------------
+    // =================================================
+    // NO ENROLLMENTS
+    // =================================================
 
     if (!enrollments.length) {
       return res.status(200).json({
         success: true,
-        data: createEmptyStudentProgress(),
+        data:
+          createEmptyStudentProgress(),
       });
     }
 
-    // -------------------------------------------------
-    // Course IDs
-    // -------------------------------------------------
+    // =================================================
+    // COURSE IDS
+    // =================================================
 
     const courseIds = enrollments
-      .map((enrollment) => enrollment.course?._id)
+      .map(
+        (enrollment) =>
+          enrollment.course?._id,
+      )
       .filter(Boolean);
 
-    // -------------------------------------------------
-    // Fetch all required data in parallel
-    // -------------------------------------------------
+    // =================================================
+    // FETCH DATA IN PARALLEL
+    // =================================================
 
-    const [progressRecords, lectureCounts, studySessions] = await Promise.all([
+    const [
+      progressRecords,
+      lectureCounts,
+      studySessions,
+    ] = await Promise.all([
       CourseProgress.find({
         student: studentId,
-        course: { $in: courseIds },
+        course: {
+          $in: courseIds,
+        },
       }).lean(),
 
       Lecture.aggregate([
         {
           $match: {
-            course: { $in: courseIds },
+            course: {
+              $in: courseIds,
+            },
           },
         },
+
         {
           $group: {
             _id: "$course",
@@ -655,95 +838,155 @@ export const getStudentProgress = async (req, res) => {
       }).lean(),
     ]);
 
-    // -------------------------------------------------
-    // Create lookup maps
-    // -------------------------------------------------
+    // =================================================
+    // CREATE LOOKUP MAPS
+    // =================================================
 
-    const progressMap = new Map(
-      progressRecords.map((progress) => [String(progress.course), progress]),
-    );
+    const progressMap =
+      new Map(
+        progressRecords.map(
+          (progress) => [
+            String(progress.course),
+            progress,
+          ],
+        ),
+      );
 
-    const lectureCountMap = new Map(
-      lectureCounts.map((item) => [String(item._id), item.count]),
-    );
+    const lectureCountMap =
+      new Map(
+        lectureCounts.map(
+          (item) => [
+            String(item._id),
+            item.count,
+          ],
+        ),
+      );
 
-    // -------------------------------------------------
-    // Build course progress
-    // -------------------------------------------------
+    // =================================================
+    // BUILD COURSE PROGRESS
+    // =================================================
 
     let totalLectures = 0;
     let completedLectures = 0;
     let totalWatchedSeconds = 0;
 
     const courses = enrollments
-      .filter((enrollment) => enrollment.course)
+      .filter(
+        (enrollment) =>
+          enrollment.course,
+      )
       .map((enrollment) => {
-        const course = enrollment.course;
-        const courseId = String(course._id);
+        const course =
+          enrollment.course;
 
-        const totalCourseLectures = lectureCountMap.get(courseId) || 0;
+        const courseId =
+          String(course._id);
 
-        const courseProgress = progressMap.get(courseId);
+        const totalCourseLectures =
+          lectureCountMap.get(
+            courseId,
+          ) || 0;
 
-        const lectureProgress = courseProgress?.lectures || [];
+        const courseProgress =
+          progressMap.get(
+            courseId,
+          );
 
-        // ---------------------------------------------
+        const lectureProgress =
+          courseProgress?.lectures ||
+          [];
+
+        // -------------------------------------------------
         // Completed lectures
-        // ---------------------------------------------
+        // -------------------------------------------------
 
-        const completedCourseLectures = lectureProgress.filter(
-          (lecture) => lecture.completed === true,
-        ).length;
+        const completedCourseLectures =
+          lectureProgress.filter(
+            (lecture) =>
+              lecture.completed ===
+              true,
+          ).length;
 
-        // ---------------------------------------------
+        // -------------------------------------------------
         // Watched time
-        // ---------------------------------------------
+        // -------------------------------------------------
 
-        const watchedSeconds = lectureProgress.reduce(
-          (total, lecture) => total + Number(lecture.watchedSeconds || 0),
-          0,
-        );
+        const watchedSeconds =
+          lectureProgress.reduce(
+            (
+              total,
+              lecture,
+            ) =>
+              total +
+              Number(
+                lecture.watchedSeconds ||
+                  0,
+              ),
+            0,
+          );
 
-        // ---------------------------------------------
+        // -------------------------------------------------
         // Progress percentage
-        // ---------------------------------------------
+        // -------------------------------------------------
 
         const progressPercentage =
           totalCourseLectures > 0
-            ? Math.round((completedCourseLectures / totalCourseLectures) * 100)
+            ? Math.round(
+                (completedCourseLectures /
+                  totalCourseLectures) *
+                  100,
+              )
             : 0;
 
-        // ---------------------------------------------
+        // -------------------------------------------------
         // Course status
-        // ---------------------------------------------
+        // -------------------------------------------------
 
-        const status = getCourseStatus({
-          totalLectures: totalCourseLectures,
-          completedLectures: completedCourseLectures,
-          watchedSeconds,
-          progressPercentage,
-        });
+        const status =
+          getCourseStatus({
+            totalLectures:
+              totalCourseLectures,
 
-        // ---------------------------------------------
+            completedLectures:
+              completedCourseLectures,
+
+            watchedSeconds,
+
+            progressPercentage,
+          });
+
+        // -------------------------------------------------
         // Global counters
-        // ---------------------------------------------
+        // -------------------------------------------------
 
-        totalLectures += totalCourseLectures;
-        completedLectures += completedCourseLectures;
-        totalWatchedSeconds += watchedSeconds;
+        totalLectures +=
+          totalCourseLectures;
 
-        // ---------------------------------------------
+        completedLectures +=
+          completedCourseLectures;
+
+        totalWatchedSeconds +=
+          watchedSeconds;
+
+        // -------------------------------------------------
         // Course result
-        // ---------------------------------------------
+        // -------------------------------------------------
 
         return {
           courseId: course._id,
-          courseTitle: course.courseTitle,
-          thumbnail: course.thumbnail || null,
 
-          totalLectures: totalCourseLectures,
+          courseTitle:
+            course.courseTitle,
 
-          completedLectures: completedCourseLectures,
+          thumbnail:
+            course.thumbnail ||
+            null,
+
+          totalLectures:
+            totalCourseLectures,
+
+          completedLectures:
+            completedCourseLectures,
 
           watchedSeconds,
 
@@ -753,56 +996,78 @@ export const getStudentProgress = async (req, res) => {
         };
       });
 
-    // -------------------------------------------------
-    // Course counts
-    // -------------------------------------------------
+    // =================================================
+    // COURSE COUNTS
+    // =================================================
 
-    const totalCourses = courses.length;
+    const totalCourses =
+      courses.length;
 
-    const completedCourses = courses.filter(
-      (course) => course.status === "completed",
-    ).length;
+    const completedCourses =
+      courses.filter(
+        (course) =>
+          course.status ===
+          "completed",
+      ).length;
 
-    const inProgressCourses = courses.filter(
-      (course) => course.status === "in-progress",
-    ).length;
+    const inProgressCourses =
+      courses.filter(
+        (course) =>
+          course.status ===
+          "in-progress",
+      ).length;
 
-    const notStartedCourses = courses.filter(
-      (course) => course.status === "not-started",
-    ).length;
+    const notStartedCourses =
+      courses.filter(
+        (course) =>
+          course.status ===
+          "not-started",
+      ).length;
 
-    // -------------------------------------------------
-    // Overall progress
-    // -------------------------------------------------
+    // =================================================
+    // OVERALL PROGRESS
+    // =================================================
 
     const overallProgress =
       totalLectures > 0
-        ? Math.round((completedLectures / totalLectures) * 100)
+        ? Math.round(
+            (completedLectures /
+              totalLectures) *
+              100,
+          )
         : 0;
 
-    // -------------------------------------------------
-    // Weekly activity
-    // -------------------------------------------------
+    // =================================================
+    // WEEKLY ACTIVITY
+    // =================================================
 
-    const weeklyActivity = buildWeeklyActivity(studySessions);
+    const weeklyActivity =
+      buildWeeklyActivity(
+        studySessions,
+      );
 
-    // -------------------------------------------------
-    // Response
-    // -------------------------------------------------
+    // =================================================
+    // RESPONSE
+    // =================================================
 
     return res.status(200).json({
       success: true,
 
       data: {
         totalCourses,
+
         completedCourses,
+
         inProgressCourses,
+
         notStartedCourses,
 
         totalLectures,
+
         completedLectures,
 
         overallProgress,
+
         totalWatchedSeconds,
 
         courses,
@@ -811,11 +1076,15 @@ export const getStudentProgress = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get student progress error:", error);
+    console.error(
+      "Get student progress error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Unable to load student progress.",
+      message:
+        "Unable to load student progress.",
     });
   }
 };
@@ -830,11 +1099,17 @@ const getCourseStatus = ({
   watchedSeconds,
   progressPercentage,
 }) => {
-  if (totalLectures > 0 && progressPercentage === 100) {
+  if (
+    totalLectures > 0 &&
+    progressPercentage === 100
+  ) {
     return "completed";
   }
 
-  if (completedLectures > 0 || watchedSeconds > 0) {
+  if (
+    completedLectures > 0 ||
+    watchedSeconds > 0
+  ) {
     return "in-progress";
   }
 
@@ -845,8 +1120,11 @@ const getCourseStatus = ({
 // HELPER: BUILD WEEKLY ACTIVITY
 // =====================================================
 
-const buildWeeklyActivity = (sessions = []) => {
-  const activity = createEmptyWeeklyActivity();
+const buildWeeklyActivity = (
+  sessions = [],
+) => {
+  const activity =
+    createEmptyWeeklyActivity();
 
   // -------------------------------------------------
   // Current week boundaries
@@ -854,49 +1132,86 @@ const buildWeeklyActivity = (sessions = []) => {
 
   const now = new Date();
 
-  const startOfWeek = new Date(now);
+  const startOfWeek =
+    new Date(now);
 
-  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setDate(
+    now.getDate() -
+      now.getDay(),
+  );
 
-  startOfWeek.setHours(0, 0, 0, 0);
+  startOfWeek.setHours(
+    0,
+    0,
+    0,
+    0,
+  );
 
-  const endOfWeek = new Date(startOfWeek);
+  const endOfWeek =
+    new Date(startOfWeek);
 
-  endOfWeek.setDate(startOfWeek.getDate() + 7);
+  endOfWeek.setDate(
+    startOfWeek.getDate() +
+      7,
+  );
 
   // -------------------------------------------------
   // Process study sessions
   // -------------------------------------------------
 
-  sessions.forEach((session) => {
-    if (!session.startedAt) {
-      return;
-    }
+  sessions.forEach(
+    (session) => {
+      if (!session.startedAt) {
+        return;
+      }
 
-    const sessionDate = new Date(session.startedAt);
+      const sessionDate =
+        new Date(
+          session.startedAt,
+        );
 
-    if (
-      Number.isNaN(sessionDate.getTime()) ||
-      sessionDate < startOfWeek ||
-      sessionDate >= endOfWeek
-    ) {
-      return;
-    }
+      if (
+        Number.isNaN(
+          sessionDate.getTime(),
+        ) ||
+        sessionDate <
+          startOfWeek ||
+        sessionDate >=
+          endOfWeek
+      ) {
+        return;
+      }
 
-    const dayIndex = sessionDate.getDay();
+      const dayIndex =
+        sessionDate.getDay();
 
-    const durationSeconds = Number(session.durationSeconds || 0);
+      const durationSeconds =
+        Number(
+          session.durationSeconds ||
+            0,
+        );
 
-    activity[dayIndex].seconds += durationSeconds;
-  });
+      activity[
+        dayIndex
+      ].seconds +=
+        durationSeconds;
+    },
+  );
 
   // -------------------------------------------------
   // Convert seconds to hours
   // -------------------------------------------------
 
-  activity.forEach((item) => {
-    item.hours = Number((item.seconds / 3600).toFixed(2));
-  });
+  activity.forEach(
+    (item) => {
+      item.hours = Number(
+        (
+          item.seconds /
+          3600
+        ).toFixed(2),
+      );
+    },
+  );
 
   return activity;
 };
@@ -905,19 +1220,24 @@ const buildWeeklyActivity = (sessions = []) => {
 // HELPER: CREATE EMPTY WEEKLY ACTIVITY
 // =====================================================
 
-const createEmptyWeeklyActivity = () => {
-  return WEEK_DAYS.map((day) => ({
-    day,
-    seconds: 0,
-    hours: 0,
-  }));
-};
+const createEmptyWeeklyActivity =
+  () => {
+    return WEEK_DAYS.map(
+      (day) => ({
+        day,
+        seconds: 0,
+        hours: 0,
+      }),
+    );
+  };
 
 // =====================================================
 // HELPER: EMPTY LECTURE PROGRESS
 // =====================================================
 
-const createEmptyLectureProgress = (lectureId) => {
+const createEmptyLectureProgress = (
+  lectureId,
+) => {
   return {
     lecture: lectureId,
     watchedSeconds: 0,
@@ -929,24 +1249,31 @@ const createEmptyLectureProgress = (lectureId) => {
 // HELPER: EMPTY STUDENT PROGRESS
 // =====================================================
 
-const createEmptyStudentProgress = () => {
-  return {
-    totalCourses: 0,
-    completedCourses: 0,
-    inProgressCourses: 0,
-    notStartedCourses: 0,
+const createEmptyStudentProgress =
+  () => {
+    return {
+      totalCourses: 0,
 
-    totalLectures: 0,
-    completedLectures: 0,
+      completedCourses: 0,
 
-    overallProgress: 0,
-    totalWatchedSeconds: 0,
+      inProgressCourses: 0,
 
-    courses: [],
+      notStartedCourses: 0,
 
-    weeklyActivity: createEmptyWeeklyActivity(),
+      totalLectures: 0,
+
+      completedLectures: 0,
+
+      overallProgress: 0,
+
+      totalWatchedSeconds: 0,
+
+      courses: [],
+
+      weeklyActivity:
+        createEmptyWeeklyActivity(),
+    };
   };
-};
 
 // =====================================================
 // SAVE STUDY SESSION
@@ -960,51 +1287,77 @@ const saveStudySession = async ({
 }) => {
   const now = new Date();
 
-  const startOfDay = new Date(now);
-  startOfDay.setHours(0, 0, 0, 0);
+  const startOfDay =
+    new Date(now);
 
-  const endOfDay = new Date(now);
-  endOfDay.setHours(23, 59, 59, 999);
+  startOfDay.setHours(
+    0,
+    0,
+    0,
+    0,
+  );
 
-  // -------------------------------------------------
-  // Find today's session for this lecture
-  // -------------------------------------------------
+  const endOfDay =
+    new Date(now);
 
-  let session = await StudySession.findOne({
-    student: studentId,
-    course: courseId,
-    lecture: lectureId,
+  endOfDay.setHours(
+    23,
+    59,
+    59,
+    999,
+  );
 
-    startedAt: {
-      $gte: startOfDay,
-      $lte: endOfDay,
-    },
-  });
+  // =================================================
+  // FIND TODAY'S SESSION
+  // =================================================
 
-  // -------------------------------------------------
-  // Create new session
-  // -------------------------------------------------
+  let session =
+    await StudySession.findOne({
+      student: studentId,
+
+      course: courseId,
+
+      lecture: lectureId,
+
+      startedAt: {
+        $gte: startOfDay,
+
+        $lte: endOfDay,
+      },
+    });
+
+  // =================================================
+  // CREATE NEW SESSION
+  // =================================================
 
   if (!session) {
     await StudySession.create({
       student: studentId,
+
       course: courseId,
+
       lecture: lectureId,
 
-      durationSeconds: watchedDelta,
+      durationSeconds:
+        watchedDelta,
 
       startedAt: now,
+
       endedAt: now,
     });
 
     return;
   }
 
-  // -------------------------------------------------
-  // Update existing session
-  // -------------------------------------------------
+  // =================================================
+  // UPDATE EXISTING SESSION
+  // =================================================
 
-  session.durationSeconds = Number(session.durationSeconds || 0) + watchedDelta;
+  session.durationSeconds =
+    Number(
+      session.durationSeconds ||
+        0,
+    ) + watchedDelta;
 
   session.endedAt = now;
 

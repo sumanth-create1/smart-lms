@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   Crown,
   Shield,
-  Flame,
 } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
@@ -35,6 +34,54 @@ function StudentHeader() {
   const notificationRef = useRef(null);
   const profileRef = useRef(null);
   const headerRef = useRef(null);
+
+  // =====================================================
+  // DYNAMIC USER DATA
+  // =====================================================
+
+  const roleLabels = {
+    student: "Learner",
+    instructor: "Instructor",
+    admin: "Administrator",
+  };
+
+  const displayRole = roleLabels[user?.role] || "Learner";
+
+  const displayName = user?.name || "Student";
+
+  const displayEmail = user?.email || "student@example.com";
+
+  const avatarInitial =
+    user?.name?.charAt(0)?.toUpperCase() || "S";
+
+  // =====================================================
+  // TEMPORARY NOTIFICATIONS
+  // =====================================================
+  // These are currently UI mock data.
+  // Later you can replace this with API data.
+
+  const notifications = [
+    {
+      id: 1,
+      type: "completed",
+      title: "Mission completed",
+      message:
+        "You completed a lecture. Your knowledge grows stronger.",
+      unread: true,
+    },
+    {
+      id: 2,
+      type: "course",
+      title: "New learning mission",
+      message:
+        "Continue your current course and strengthen your skills.",
+      unread: true,
+    },
+  ];
+
+  const unreadNotificationCount = notifications.filter(
+    (notification) => notification.unread
+  ).length;
 
   // =====================================================
   // SEARCH
@@ -354,8 +401,6 @@ function StudentHeader() {
               "
             />
 
-            {/* Corner marks */}
-
             <span
               className="
                 absolute
@@ -555,26 +600,31 @@ function StudentHeader() {
                 "
               />
 
-              {/* Notification flame */}
+              {/* Dynamic unread indicator */}
 
-              <span
-                className="
-                  absolute
-                  right-1.5
-                  top-1.5
-                  flex
-                  h-3
-                  w-3
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-amber-600
-                  shadow-[0_0_10px_rgba(217,167,75,.55)]
-                  animate-pulse
-                "
-              >
-                <span className="h-1 w-1 rounded-full bg-[#fff4cf]" />
-              </span>
+              {unreadNotificationCount > 0 && (
+                <span
+                  className="
+                    absolute
+                    right-1.5
+                    top-1.5
+                    flex
+                    h-3
+                    min-w-3
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-amber-600
+                    px-0.5
+                    text-[7px]
+                    font-black
+                    text-black
+                    shadow-[0_0_10px_rgba(217,167,75,.55)]
+                  "
+                >
+                  {unreadNotificationCount}
+                </span>
+              )}
             </button>
 
             {/* =================================================
@@ -644,126 +694,140 @@ function StudentHeader() {
                         Raven Scrolls
                       </p>
 
-                      <p className="mt-0.5 text-[10px] text-[#615c52]">
+                      <p
+                        className="
+                          mt-0.5
+                          text-[10px]
+                          text-[#615c52]
+                        "
+                      >
                         Messages from the realm
                       </p>
                     </div>
                   </div>
 
-                  <span
+                  {unreadNotificationCount > 0 && (
+                    <span
+                      className="
+                        border
+                        border-amber-800/30
+                        bg-amber-950/20
+                        px-2
+                        py-1
+                        text-[8px]
+                        font-black
+                        uppercase
+                        tracking-wider
+                        text-amber-600
+                      "
+                    >
+                      {unreadNotificationCount} New
+                    </span>
+                  )}
+                </div>
+
+                {/* Notifications */}
+
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="
+                        group/notification
+                        relative
+                        flex
+                        gap-3
+                        border-b
+                        border-[#292722]
+                        px-4
+                        py-4
+                        transition-all
+                        duration-300
+                        hover:bg-amber-950/[0.08]
+                      "
+                    >
+                      <div
+                        className={`
+                          flex
+                          h-9
+                          w-9
+                          shrink-0
+                          items-center
+                          justify-center
+                          border
+                          transition-transform
+                          duration-300
+                          group-hover/notification:scale-110
+                          ${
+                            notification.type ===
+                            "completed"
+                              ? "border-emerald-900/40 bg-emerald-950/20 text-emerald-500"
+                              : "border-[#38342c] bg-[#171613] text-amber-600"
+                          }
+                        `}
+                      >
+                        {notification.type ===
+                        "completed" ? (
+                          <CheckCircle2 size={16} />
+                        ) : (
+                          <BookOpen size={16} />
+                        )}
+                      </div>
+
+                      <div>
+                        <p
+                          className="
+                            text-xs
+                            font-bold
+                            text-[#d7d0c2]
+                          "
+                        >
+                          {notification.title}
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-[10px]
+                            leading-4
+                            text-[#615c52]
+                          "
+                        >
+                          {notification.message}
+                        </p>
+                      </div>
+
+                      {notification.unread && (
+                        <span
+                          className="
+                            absolute
+                            right-3
+                            top-4
+                            h-1.5
+                            w-1.5
+                            rounded-full
+                            bg-amber-500
+                            shadow-[0_0_8px_rgba(217,167,75,.6)]
+                          "
+                        />
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div
                     className="
-                      border
-                      border-amber-800/30
-                      bg-amber-950/20
-                      px-2
-                      py-1
-                      text-[8px]
-                      font-black
+                      px-4
+                      py-8
+                      text-center
+                      text-[10px]
                       uppercase
                       tracking-wider
-                      text-amber-600
+                      text-[#615c52]
                     "
                   >
-                    2 New
-                  </span>
-                </div>
-
-                {/* Notification 1 */}
-
-                <div
-                  className="
-                    group/notification
-                    relative
-                    flex
-                    gap-3
-                    border-b
-                    border-[#292722]
-                    px-4
-                    py-4
-                    transition-all
-                    duration-300
-                    hover:bg-amber-950/[0.08]
-                  "
-                >
-                  <div
-                    className="
-                      flex
-                      h-9
-                      w-9
-                      shrink-0
-                      items-center
-                      justify-center
-                      border
-                      border-emerald-900/40
-                      bg-emerald-950/20
-                      text-emerald-500
-                      transition-transform
-                      duration-300
-                      group-hover/notification:scale-110
-                    "
-                  >
-                    <CheckCircle2 size={16} />
+                    No new scrolls
                   </div>
-
-                  <div>
-                    <p className="text-xs font-bold text-[#d7d0c2]">
-                      Mission completed
-                    </p>
-
-                    <p className="mt-1 text-[10px] leading-4 text-[#615c52]">
-                      You completed a lecture.
-                      Your knowledge grows stronger.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Notification 2 */}
-
-                <div
-                  className="
-                    group/notification
-                    flex
-                    gap-3
-                    border-b
-                    border-[#292722]
-                    px-4
-                    py-4
-                    transition-all
-                    duration-300
-                    hover:bg-amber-950/[0.08]
-                  "
-                >
-                  <div
-                    className="
-                      flex
-                      h-9
-                      w-9
-                      shrink-0
-                      items-center
-                      justify-center
-                      border
-                      border-[#38342c]
-                      bg-[#171613]
-                      text-amber-600
-                      transition-transform
-                      duration-300
-                      group-hover/notification:scale-110
-                    "
-                  >
-                    <BookOpen size={16} />
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-bold text-[#d7d0c2]">
-                      New learning mission
-                    </p>
-
-                    <p className="mt-1 text-[10px] leading-4 text-[#615c52]">
-                      Continue your current course
-                      and strengthen your skills.
-                    </p>
-                  </div>
-                </div>
+                )}
 
                 {/* Footer */}
 
@@ -871,13 +935,11 @@ function StudentHeader() {
                 {user?.avatar ? (
                   <img
                     src={user.avatar}
-                    alt={user?.name || "Student"}
+                    alt={displayName}
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  user?.name
-                    ?.charAt(0)
-                    ?.toUpperCase() || "S"
+                  avatarInitial
                 )}
 
                 {/* Online */}
@@ -911,7 +973,7 @@ function StudentHeader() {
                     text-[#d7d0c2]
                   "
                 >
-                  {user?.name || "Student"}
+                  {displayName}
                 </p>
 
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -929,7 +991,7 @@ function StudentHeader() {
                       text-amber-600
                     "
                   >
-                    Learner
+                    {displayRole}
                   </p>
                 </div>
               </div>
@@ -1018,6 +1080,7 @@ function StudentHeader() {
                         w-11
                         items-center
                         justify-center
+                        overflow-hidden
                         border
                         border-amber-800/40
                         bg-[#171613]
@@ -1026,9 +1089,15 @@ function StudentHeader() {
                         text-amber-500
                       "
                     >
-                      {user?.name
-                        ?.charAt(0)
-                        ?.toUpperCase() || "S"}
+                      {user?.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={displayName}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        avatarInitial
+                      )}
                     </div>
 
                     <div className="min-w-0">
@@ -1042,7 +1111,7 @@ function StudentHeader() {
                           text-[#e0d8c8]
                         "
                       >
-                        {user?.name || "Student"}
+                        {displayName}
                       </p>
 
                       <p
@@ -1053,8 +1122,20 @@ function StudentHeader() {
                           text-[#625d53]
                         "
                       >
-                        {user?.email ||
-                          "student@example.com"}
+                        {displayEmail}
+                      </p>
+
+                      <p
+                        className="
+                          mt-1
+                          text-[8px]
+                          font-bold
+                          uppercase
+                          tracking-[0.15em]
+                          text-amber-700
+                        "
+                      >
+                        {displayRole}
                       </p>
                     </div>
                   </div>
@@ -1282,7 +1363,6 @@ function StudentHeader() {
       ===================================================== */}
 
       <style>{`
-
         @keyframes dropdown {
           from {
             opacity: 0;
@@ -1316,6 +1396,13 @@ function StudentHeader() {
           animation: goldPulse 3s ease-in-out infinite;
         }
 
+        @media (prefers-reduced-motion: reduce) {
+          .animate-dropdown,
+          .animate-goldPulse,
+          .animate-pulse {
+            animation: none !important;
+          }
+        }
       `}</style>
     </header>
   );

@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import {
   ArrowLeft,
   BookOpen,
@@ -7,11 +13,27 @@ import {
   ChevronRight,
   Clock3,
   FileText,
+  Flame,
+  Info,
+  Keyboard,
   LoaderCircle,
   Lock,
+  Maximize2,
+  Minimize2,
+  Pause,
+  Play,
   PlayCircle,
+  Search,
+  Shield,
+  SkipBack,
+  SkipForward,
+  Sparkles,
+  Sword,
   Trophy,
+  Volume2,
+  X,
 } from "lucide-react";
+
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -26,6 +48,7 @@ import AchievementUnlockCelebration from "./components/student/AchievementUnlock
 
 const PROGRESS_SYNC_INTERVAL = 5;
 const SEEK_TOLERANCE = 1;
+const MAX_FORWARD_SEEK = 15;
 const COMPLETION_PERCENTAGE = 95;
 
 const getVideoStorageKey = (courseId, lectureId) =>
@@ -38,22 +61,35 @@ const getVideoStorageKey = (courseId, lectureId) =>
 const StudentCourseLearning = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+
+  const {
+    user,
+    loading: authLoading,
+  } = useAuth();
 
   const [course, setCourse] = useState(null);
   const [lectures, setLectures] = useState([]);
   const [progress, setProgress] = useState(null);
-  const [selectedLecture, setSelectedLecture] = useState(null);
+  const [selectedLecture, setSelectedLecture] =
+    useState(null);
 
   const [loading, setLoading] = useState(true);
-  const [lectureLoading, setLectureLoading] = useState(true);
-  const [enrollmentLoading, setEnrollmentLoading] = useState(true);
-  const [progressLoading, setProgressLoading] = useState(false);
+  const [lectureLoading, setLectureLoading] =
+    useState(true);
+  const [enrollmentLoading, setEnrollmentLoading] =
+    useState(true);
+  const [progressLoading, setProgressLoading] =
+    useState(false);
 
   const [isEnrolled, setIsEnrolled] = useState(false);
 
-  // Achievement celebration
-  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
+  const [unlockedAchievements, setUnlockedAchievements] =
+    useState([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [theaterMode, setTheaterMode] = useState(false);
+  const [showShortcuts, setShowShortcuts] =
+    useState(false);
 
   // ===================================================
   // INITIALIZE
@@ -79,7 +115,9 @@ const StudentCourseLearning = () => {
     }
 
     if (user.role !== "student") {
-      toast.error("Only students can access the learning page.");
+      toast.error(
+        "Only students can access the learning page."
+      );
       navigate("/courses", { replace: true });
       return;
     }
@@ -301,7 +339,9 @@ const StudentCourseLearning = () => {
             ? item.lecture?._id
             : item.lecture;
 
-        return String(id) === String(lectureId);
+        return (
+          String(id) === String(lectureId)
+        );
       }) || null
     );
   };
@@ -344,7 +384,32 @@ const StudentCourseLearning = () => {
         100
       )
     );
-  }, [lectures.length, completedLectureIds]);
+  }, [
+    lectures.length,
+    completedLectureIds,
+  ]);
+
+  // ===================================================
+  // SEARCHED LECTURES
+  // ===================================================
+
+  const filteredLectures = useMemo(() => {
+    const query =
+      searchTerm.trim().toLowerCase();
+
+    if (!query) return lectures;
+
+    return lectures.filter((lecture) => {
+      const title =
+        lecture.title ||
+        lecture.lectureTitle ||
+        "";
+
+      return title
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [lectures, searchTerm]);
 
   // ===================================================
   // CURRENT LECTURE
@@ -362,7 +427,9 @@ const StudentCourseLearning = () => {
 
   const isLectureCompleted = (lectureId) =>
     Boolean(lectureId) &&
-    completedLectureIds.has(String(lectureId));
+    completedLectureIds.has(
+      String(lectureId)
+    );
 
   // ===================================================
   // SELECT LECTURE
@@ -380,15 +447,22 @@ const StudentCourseLearning = () => {
   };
 
   // ===================================================
-  // ACHIEVEMENT CELEBRATION
+  // ACHIEVEMENT
   // ===================================================
 
-  const showAchievementCelebration = (newlyUnlocked = []) => {
-    if (!Array.isArray(newlyUnlocked) || newlyUnlocked.length === 0) {
+  const showAchievementCelebration = (
+    newlyUnlocked = []
+  ) => {
+    if (
+      !Array.isArray(newlyUnlocked) ||
+      newlyUnlocked.length === 0
+    ) {
       return;
     }
 
-    setUnlockedAchievements(newlyUnlocked);
+    setUnlockedAchievements(
+      newlyUnlocked
+    );
   };
 
   // ===================================================
@@ -396,7 +470,8 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   const handleMarkComplete = async () => {
-    const lectureId = selectedLecture?._id;
+    const lectureId =
+      selectedLecture?._id;
 
     if (!lectureId) {
       toast.error("No lecture selected.");
@@ -421,24 +496,30 @@ const StudentCourseLearning = () => {
       );
 
       const duration =
-        getLectureDuration(selectedLecture);
+        getLectureDuration(
+          selectedLecture
+        );
 
       if (duration > 0) {
         const watchedPercentage =
-          (watchedSeconds / duration) * 100;
+          (watchedSeconds / duration) *
+          100;
 
         if (
           watchedPercentage <
           COMPLETION_PERCENTAGE
         ) {
           toast.error(
-            `Watch at least ${COMPLETION_PERCENTAGE}% of the lecture before completing it.`
+            `Watch at least ${COMPLETION_PERCENTAGE}% before completing this lecture.`
           );
 
           return;
         }
       }
 
+      // IMPORTANT:
+      // Completion endpoint is different
+      // from progress save endpoint.
       const response = await api.patch(
         `/progress/complete/${lectureId}`
       );
@@ -453,7 +534,9 @@ const StudentCourseLearning = () => {
       }
 
       if (response.data.progress) {
-        setProgress(response.data.progress);
+        setProgress(
+          response.data.progress
+        );
       }
 
       clearSavedVideoPosition(
@@ -461,20 +544,19 @@ const StudentCourseLearning = () => {
         lectureId
       );
 
-      // Normal completion toast
       toast.success(
         response.data.message ||
           "Lecture completed!"
       );
 
-      // Show animated achievement celebration
       showAchievementCelebration(
-        response.data.newlyUnlocked || []
+        response.data.newlyUnlocked ||
+          []
       );
     } catch (error) {
       console.error(
         "Mark lecture complete error:",
-        error
+        error.response?.data || error
       );
 
       toast.error(
@@ -492,7 +574,8 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   const handleUnmarkComplete = async () => {
-    const lectureId = selectedLecture?._id;
+    const lectureId =
+      selectedLecture?._id;
 
     if (!lectureId) {
       toast.error("No lecture selected.");
@@ -516,31 +599,35 @@ const StudentCourseLearning = () => {
       if (!response.data?.success) {
         toast.error(
           response.data?.message ||
-            "Unable to mark lecture as incomplete."
+            "Unable to mark lecture incomplete."
         );
 
         return;
       }
 
       if (response.data.progress) {
-        setProgress(response.data.progress);
+        setProgress(
+          response.data.progress
+        );
 
-        const updatedLectureProgress =
+        const updated =
           response.data.progress.lectures?.find(
             (item) => {
               const id =
-                typeof item.lecture === "object"
+                typeof item.lecture ===
+                "object"
                   ? item.lecture?._id
                   : item.lecture;
 
               return (
-                String(id) === String(lectureId)
+                String(id) ===
+                String(lectureId)
               );
             }
           );
 
         if (
-          updatedLectureProgress?.watchedSeconds !==
+          updated?.watchedSeconds !==
           undefined
         ) {
           localStorage.setItem(
@@ -549,7 +636,7 @@ const StudentCourseLearning = () => {
               lectureId
             ),
             String(
-              updatedLectureProgress.watchedSeconds
+              updated.watchedSeconds
             )
           );
         }
@@ -557,18 +644,18 @@ const StudentCourseLearning = () => {
 
       toast.success(
         response.data.message ||
-          "Lecture marked as incomplete."
+          "Lecture marked incomplete."
       );
     } catch (error) {
       console.error(
-        "Unmark lecture complete error:",
+        "Unmark lecture error:",
         error
       );
 
       toast.error(
         error.response?.data?.message ||
           error.message ||
-          "Unable to mark lecture as incomplete."
+          "Unable to update lecture."
       );
     } finally {
       setProgressLoading(false);
@@ -580,7 +667,8 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   const handleVideoCompleted = async () => {
-    const lectureId = selectedLecture?._id;
+    const lectureId =
+      selectedLecture?._id;
 
     if (
       !lectureId ||
@@ -597,14 +685,15 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   const handleNextLecture = () => {
-    if (currentLectureIndex === -1) return;
+    if (currentLectureIndex === -1)
+      return;
 
     if (
       currentLectureIndex >=
       lectures.length - 1
     ) {
       toast.success(
-        "You have reached the last lecture."
+        "You have reached the final lecture."
       );
 
       return;
@@ -672,7 +761,7 @@ const StudentCourseLearning = () => {
     lectures.length === 0
   ) {
     return (
-      <div className="min-h-screen bg-[#F7F6F2]">
+      <div className="min-h-screen bg-[#090b0d] text-slate-200">
         <LearningHeader
           course={course}
           onBack={handleBack}
@@ -692,36 +781,202 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   return (
-    <div className="min-h-screen bg-[#F7F6F2]">
+    <div className="min-h-screen overflow-x-hidden bg-[#080a0c] text-slate-200">
+
+      {/* WINTER ATMOSPHERE */}
+
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute -left-32 top-20 h-96 w-96 rounded-full bg-cyan-950/20 blur-[120px]" />
+
+        <div className="absolute right-0 top-1/3 h-96 w-96 rounded-full bg-red-950/20 blur-[130px]" />
+
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-amber-950/10 blur-[120px]" />
+
+        <div
+          className="absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px)",
+            backgroundSize: "50px 50px",
+          }}
+        />
+      </div>
+
       <LearningHeader
         course={course}
         onBack={handleBack}
       />
 
-      <div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 lg:px-8">
-        <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
+      <div
+        className={`relative z-10 mx-auto px-4 py-6 sm:px-6 lg:px-8 ${
+          theaterMode
+            ? "max-w-[1800px]"
+            : "max-w-[1550px]"
+        }`}
+      >
+
+        {/* TOP TITLE */}
+
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500">
+              <Sword size={13} />
+              The Seven Paths of Knowledge
+            </div>
+
+            <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+              {course.courseTitle}
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm text-slate-500">
+              Continue your journey through the
+              realm of knowledge.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowShortcuts(
+                  (value) => !value
+                )
+              }
+              className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:border-amber-700 hover:text-amber-400"
+            >
+              <Keyboard size={15} />
+              Shortcuts
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setTheaterMode(
+                  (value) => !value
+                )
+              }
+              className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:border-cyan-700 hover:text-cyan-400"
+            >
+              {theaterMode ? (
+                <Minimize2 size={15} />
+              ) : (
+                <Maximize2 size={15} />
+              )}
+
+              {theaterMode
+                ? "Exit Theater"
+                : "Theater Mode"}
+            </button>
+          </div>
+        </div>
+
+        {/* SHORTCUT PANEL */}
+
+        {showShortcuts && (
+          <div className="mb-5 rounded-2xl border border-amber-900/50 bg-[#111417] p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Keyboard
+                  size={17}
+                  className="text-amber-500"
+                />
+
+                <h3 className="font-bold text-white">
+                  Battle Commands
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowShortcuts(false)
+                }
+                className="text-slate-500 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Shortcut
+                keys="Space"
+                label="Play / Pause"
+              />
+
+              <Shortcut
+                keys="←"
+                label="Rewind 10 sec"
+              />
+
+              <Shortcut
+                keys="→"
+                label="Forward up to 15 sec"
+              />
+
+              <Shortcut
+                keys="F"
+                label="Fullscreen"
+              />
+
+              <Shortcut
+                keys="N"
+                label="Next lecture"
+              />
+
+              <Shortcut
+                keys="P"
+                label="Previous lecture"
+              />
+            </div>
+          </div>
+        )}
+
+        <div
+          className={`grid gap-6 ${
+            theaterMode
+              ? "grid-cols-1"
+              : "lg:grid-cols-[330px_minmax(0,1fr)]"
+          }`}
+        >
 
           {/* SIDEBAR */}
-          <LectureSidebar
-            course={course}
-            lectures={lectures}
-            selectedLecture={selectedLecture}
-            progressPercentage={
-              progressPercentage
-            }
-            completedLectureIds={
-              completedLectureIds
-            }
-            onSelectLecture={
-              handleSelectLecture
-            }
-          />
 
-          {/* MAIN CONTENT */}
+          {!theaterMode && (
+            <LectureSidebar
+              course={course}
+              lectures={filteredLectures}
+              allLecturesCount={
+                lectures.length
+              }
+              selectedLecture={
+                selectedLecture
+              }
+              progressPercentage={
+                progressPercentage
+              }
+              completedLectureIds={
+                completedLectureIds
+              }
+              searchTerm={searchTerm}
+              setSearchTerm={
+                setSearchTerm
+              }
+              onSelectLecture={
+                handleSelectLecture
+              }
+            />
+          )}
+
+          {/* MAIN */}
+
           <main className="min-w-0">
 
             {/* VIDEO */}
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+
+            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-black shadow-[0_20px_80px_rgba(0,0,0,.5)]">
+
               <LectureViewer
                 lecture={selectedLecture}
                 courseId={courseId}
@@ -744,7 +999,26 @@ const StudentCourseLearning = () => {
               />
             </div>
 
+            {/* VIDEO STATUS */}
+
+            {selectedLecture && (
+              <VideoStatusBar
+                lecture={
+                  selectedLecture
+                }
+                progress={
+                  getLectureProgress(
+                    selectedLecture._id
+                  )
+                }
+                isCompleted={isLectureCompleted(
+                  selectedLecture._id
+                )}
+              />
+            )}
+
             {/* INFORMATION */}
+
             <LectureInformation
               lecture={selectedLecture}
               lectureIndex={
@@ -769,6 +1043,7 @@ const StudentCourseLearning = () => {
             />
 
             {/* NAVIGATION */}
+
             <LectureNavigation
               currentLectureIndex={
                 currentLectureIndex
@@ -779,10 +1054,13 @@ const StudentCourseLearning = () => {
               onPrevious={
                 handlePreviousLecture
               }
-              onNext={handleNextLecture}
+              onNext={
+                handleNextLecture
+              }
             />
 
             {/* COURSE COMPLETED */}
+
             {progressPercentage === 100 && (
               <CourseCompleted />
             )}
@@ -790,10 +1068,17 @@ const StudentCourseLearning = () => {
         </div>
       </div>
 
-      {unlockedAchievements.length > 0 && (
+      {/* ACHIEVEMENT */}
+
+      {unlockedAchievements.length >
+        0 && (
         <AchievementUnlockCelebration
-          achievements={unlockedAchievements}
-          onClose={() => setUnlockedAchievements([])}
+          achievements={
+            unlockedAchievements
+          }
+          onClose={() =>
+            setUnlockedAchievements([])
+          }
         />
       )}
     </div>
@@ -801,164 +1086,267 @@ const StudentCourseLearning = () => {
 };
 
 // =====================================================
-// LECTURE SIDEBAR
+// SIDEBAR
 // =====================================================
 
 const LectureSidebar = ({
   course,
   lectures,
+  allLecturesCount,
   selectedLecture,
   progressPercentage,
   completedLectureIds,
+  searchTerm,
+  setSearchTerm,
   onSelectLecture,
 }) => {
   return (
-    <aside className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:sticky lg:top-5 lg:h-[calc(100vh-120px)]">
-      <div className="border-b border-gray-100 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          Course Content
-        </p>
+    <aside className="overflow-hidden rounded-2xl border border-slate-800 bg-[#0d1012] shadow-2xl lg:sticky lg:top-[90px] lg:h-[calc(100vh-115px)]">
 
-        <h2 className="mt-2 line-clamp-2 text-base font-bold text-gray-900">
+      {/* HEADER */}
+
+      <div className="border-b border-slate-800 p-5">
+
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
+          <Shield size={13} />
+          Course Chronicle
+        </div>
+
+        <h2 className="mt-3 line-clamp-2 text-sm font-bold text-white">
           {course?.courseTitle}
         </h2>
 
+        {/* PROGRESS */}
+
         <div className="mt-5">
+
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-500">
-              Your Progress
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              Realm Progress
             </span>
 
-            <span className="text-xs font-bold text-gray-900">
+            <span className="text-sm font-black text-amber-400">
               {progressPercentage}%
             </span>
           </div>
 
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
             <div
-              className="h-full rounded-full bg-gray-900 transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-amber-700 via-amber-500 to-yellow-300 transition-all duration-700"
               style={{
                 width: `${progressPercentage}%`,
               }}
             />
           </div>
 
-          <p className="mt-2 text-xs text-gray-400">
-            {completedLectureIds.size} of{" "}
-            {lectures.length} lectures completed
-          </p>
+          <div className="mt-2 flex items-center justify-between text-[10px] text-slate-600">
+            <span>
+              {completedLectureIds.size} completed
+            </span>
+
+            <span>
+              {allLecturesCount} total
+            </span>
+          </div>
+        </div>
+
+        {/* SEARCH */}
+
+        <div className="relative mt-5">
+          <Search
+            size={15}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
+          />
+
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(event) =>
+              setSearchTerm(
+                event.target.value
+              )
+            }
+            placeholder="Search lectures..."
+            className="w-full rounded-xl border border-slate-800 bg-[#080a0c] py-2.5 pl-9 pr-3 text-xs text-slate-200 outline-none placeholder:text-slate-600 focus:border-amber-700"
+          />
         </div>
       </div>
 
-      <div className="max-h-[500px] overflow-y-auto lg:max-h-[calc(100vh-350px)]">
-        {lectures.map((lecture, index) => {
-          const completed =
-            completedLectureIds.has(
-              String(lecture._id)
-            );
+      {/* LECTURES */}
 
-          const active =
-            String(selectedLecture?._id) ===
-            String(lecture._id);
+      <div className="max-h-[calc(100vh-340px)] overflow-y-auto">
 
-          return (
-            <button
-              key={lecture._id}
-              type="button"
-              onClick={() =>
-                onSelectLecture(lecture)
-              }
-              className={`
-                flex w-full items-start gap-3
-                border-b border-gray-100
-                px-5 py-4 text-left transition
-                ${
-                  active
-                    ? "bg-gray-900 text-white"
-                    : "bg-white hover:bg-gray-50"
-                }
-              `}
-            >
-              <div className="mt-0.5 shrink-0">
-                {completed ? (
-                  <CheckCircle2
-                    size={19}
-                    className={
-                      active
-                        ? "text-white"
-                        : "text-green-600"
-                    }
-                  />
-                ) : (
-                  <PlayCircle
-                    size={19}
-                    className={
-                      active
-                        ? "text-white"
-                        : "text-gray-400"
-                    }
-                  />
-                )}
-              </div>
+        {lectures.length === 0 ? (
+          <div className="p-6 text-center text-xs text-slate-600">
+            No lectures found.
+          </div>
+        ) : (
+          lectures.map(
+            (lecture, index) => {
+              const completed =
+                completedLectureIds.has(
+                  String(lecture._id)
+                );
 
-              <div className="min-w-0 flex-1">
-                <p
-                  className={`
-                    text-[11px] font-semibold uppercase
-                    tracking-wide
-                    ${
-                      active
-                        ? "text-gray-300"
-                        : "text-gray-400"
-                    }
-                  `}
+              const active =
+                String(
+                  selectedLecture?._id
+                ) ===
+                String(lecture._id);
+
+              return (
+                <button
+                  key={lecture._id}
+                  type="button"
+                  onClick={() =>
+                    onSelectLecture(
+                      lecture
+                    )
+                  }
+                  className={`group flex w-full items-start gap-3 border-b border-slate-800/70 px-5 py-4 text-left transition ${
+                    active
+                      ? "bg-gradient-to-r from-amber-950/40 to-transparent"
+                      : "hover:bg-slate-900/70"
+                  }`}
                 >
-                  Lecture {index + 1}
-                </p>
-
-                <p
-                  className={`
-                    mt-1 line-clamp-2 text-sm
-                    font-semibold
-                    ${
-                      active
-                        ? "text-white"
-                        : "text-gray-800"
-                    }
-                  `}
-                >
-                  {lecture.title ||
-                    lecture.lectureTitle ||
-                    "Untitled Lecture"}
-                </p>
-
-                {lecture.duration && (
-                  <div
-                    className={`
-                      mt-2 flex items-center gap-1
-                      text-xs
-                      ${
-                        active
-                          ? "text-gray-300"
-                          : "text-gray-400"
-                      }
-                    `}
-                  >
-                    <Clock3 size={13} />
-                    {lecture.duration}
+                  <div className="mt-0.5 shrink-0">
+                    {completed ? (
+                      <CheckCircle2
+                        size={19}
+                        className="text-emerald-500"
+                      />
+                    ) : (
+                      <PlayCircle
+                        size={19}
+                        className={
+                          active
+                            ? "text-amber-400"
+                            : "text-slate-600 group-hover:text-slate-400"
+                        }
+                      />
+                    )}
                   </div>
-                )}
-              </div>
-            </button>
-          );
-        })}
+
+                  <div className="min-w-0 flex-1">
+
+                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                      Chapter {index + 1}
+                    </p>
+
+                    <p
+                      className={`mt-1 line-clamp-2 text-sm font-semibold ${
+                        active
+                          ? "text-amber-300"
+                          : "text-slate-300"
+                      }`}
+                    >
+                      {lecture.title ||
+                        lecture.lectureTitle ||
+                        "Untitled Lecture"}
+                    </p>
+
+                    {lecture.duration && (
+                      <div className="mt-2 flex items-center gap-1 text-[10px] text-slate-600">
+                        <Clock3 size={12} />
+                        {lecture.duration}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            }
+          )
+        )}
       </div>
     </aside>
   );
 };
 
 // =====================================================
-// LECTURE INFORMATION
+// VIDEO STATUS
+// =====================================================
+
+const VideoStatusBar = ({
+  lecture,
+  progress,
+  isCompleted,
+}) => {
+  const duration =
+    getLectureDuration(lecture);
+
+  const watched =
+    Number(
+      progress?.watchedSeconds || 0
+    );
+
+  const percentage =
+    duration > 0
+      ? Math.min(
+          Math.round(
+            (watched / duration) * 100
+          ),
+          100
+        )
+      : 0;
+
+  return (
+    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+
+      <StatusCard
+        icon={Clock3}
+        label="Watched"
+        value={`${formatTime(watched)} / ${formatTime(duration)}`}
+      />
+
+      <StatusCard
+        icon={Flame}
+        label="Lecture Progress"
+        value={`${percentage}%`}
+      />
+
+      <StatusCard
+        icon={
+          isCompleted
+            ? Trophy
+            : Sword
+        }
+        label="Status"
+        value={
+          isCompleted
+            ? "Conquered"
+            : "In Progress"
+        }
+      />
+    </div>
+  );
+};
+
+const StatusCard = ({
+  icon: Icon,
+  label,
+  value,
+}) => {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-slate-800 bg-[#0d1012] px-4 py-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-950/30 text-amber-500">
+        <Icon size={16} />
+      </div>
+
+      <div>
+        <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-600">
+          {label}
+        </p>
+
+        <p className="mt-0.5 text-xs font-bold text-slate-300">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// =====================================================
+// INFORMATION
 // =====================================================
 
 const LectureInformation = ({
@@ -970,17 +1358,21 @@ const LectureInformation = ({
   onUnmarkComplete,
 }) => {
   return (
-    <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+    <section className="mt-5 rounded-2xl border border-slate-800 bg-[#0d1012] p-6 shadow-2xl sm:p-8">
+
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-            Lecture{" "}
+
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
+            <Sparkles size={12} />
+            Chapter{" "}
             {lectureIndex >= 0
               ? lectureIndex + 1
               : ""}
-          </p>
+          </div>
 
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900">
+          <h1 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">
             {lecture?.title ||
               lecture?.lectureTitle ||
               "Untitled Lecture"}
@@ -990,9 +1382,13 @@ const LectureInformation = ({
         {isCompleted ? (
           <button
             type="button"
-            onClick={onUnmarkComplete}
-            disabled={progressLoading}
-            className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-green-50 px-5 py-3 text-sm font-semibold text-green-700 transition hover:bg-red-50 hover:text-red-700 disabled:cursor-wait disabled:opacity-70"
+            onClick={
+              onUnmarkComplete
+            }
+            disabled={
+              progressLoading
+            }
+            className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-900 bg-emerald-950/30 px-5 py-3 text-sm font-bold text-emerald-400 transition hover:border-red-900 hover:bg-red-950/30 hover:text-red-400 disabled:opacity-50"
           >
             {progressLoading ? (
               <>
@@ -1004,19 +1400,24 @@ const LectureInformation = ({
               </>
             ) : (
               <>
-                <CheckCircle2 size={17} />
-                Completed
+                <CheckCircle2
+                  size={17}
+                />
+                Conquered
               </>
             )}
           </button>
         ) : (
           <button
             type="button"
-            onClick={onMarkComplete}
-            disabled={
-              progressLoading || !lecture
+            onClick={
+              onMarkComplete
             }
-            className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-wait disabled:opacity-70"
+            disabled={
+              progressLoading ||
+              !lecture
+            }
+            className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-amber-700/50 bg-gradient-to-r from-amber-800 to-amber-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-amber-950/20 transition hover:from-amber-700 hover:to-amber-500 disabled:cursor-wait disabled:opacity-50"
           >
             {progressLoading ? (
               <>
@@ -1028,7 +1429,9 @@ const LectureInformation = ({
               </>
             ) : (
               <>
-                <CheckCircle2 size={17} />
+                <CheckCircle2
+                  size={17}
+                />
                 Mark Complete
               </>
             )}
@@ -1038,12 +1441,20 @@ const LectureInformation = ({
 
       {(lecture?.description ||
         lecture?.content) && (
-        <div className="mt-7 border-t border-gray-100 pt-6">
-          <h2 className="text-base font-bold text-gray-900">
-            About this lecture
-          </h2>
+        <div className="mt-7 border-t border-slate-800 pt-6">
 
-          <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-600">
+          <div className="flex items-center gap-2">
+            <FileText
+              size={16}
+              className="text-amber-500"
+            />
+
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">
+              Maester's Notes
+            </h2>
+          </div>
+
+          <p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-500">
             {lecture.description ||
               lecture.content}
           </p>
@@ -1054,7 +1465,7 @@ const LectureInformation = ({
 };
 
 // =====================================================
-// LECTURE NAVIGATION
+// NAVIGATION
 // =====================================================
 
 const LectureNavigation = ({
@@ -1072,24 +1483,31 @@ const LectureNavigation = ({
 
   return (
     <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
       <button
         type="button"
         onClick={onPrevious}
         disabled={isFirst}
-        className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="group flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-[#0d1012] px-5 py-3 text-sm font-bold text-slate-400 transition hover:border-slate-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
       >
-        <ChevronLeft size={18} />
-        Previous Lecture
+        <ChevronLeft
+          size={18}
+          className="transition group-hover:-translate-x-1"
+        />
+        Previous Chapter
       </button>
 
       <button
         type="button"
         onClick={onNext}
         disabled={isLast}
-        className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+        className="group flex items-center justify-center gap-2 rounded-xl border border-amber-800/50 bg-amber-950/20 px-5 py-3 text-sm font-bold text-amber-400 transition hover:bg-amber-900/30 disabled:cursor-not-allowed disabled:opacity-30"
       >
-        Next Lecture
-        <ChevronRight size={18} />
+        Next Chapter
+        <ChevronRight
+          size={18}
+          className="transition group-hover:translate-x-1"
+        />
       </button>
     </div>
   );
@@ -1101,21 +1519,31 @@ const LectureNavigation = ({
 
 const CourseCompleted = () => {
   return (
-    <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 p-6">
-      <div className="flex items-start gap-4">
-        <CheckCircle2
-          size={26}
-          className="mt-0.5 shrink-0 text-green-600"
-        />
+    <div className="relative mt-5 overflow-hidden rounded-2xl border border-amber-800/50 bg-gradient-to-r from-amber-950/40 via-[#15110b] to-red-950/30 p-6">
+
+      <div className="absolute right-5 top-5 opacity-10">
+        <Trophy size={80} />
+      </div>
+
+      <div className="relative flex items-start gap-4">
+
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-amber-700/40 bg-amber-950/40 text-amber-400">
+          <Trophy size={24} />
+        </div>
 
         <div>
-          <h3 className="font-bold text-green-900">
-            Course Completed!
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
+            The Realm Remembers
+          </p>
+
+          <h3 className="mt-1 text-lg font-black text-white">
+            Course Conquered
           </h3>
 
-          <p className="mt-1 text-sm leading-6 text-green-700">
-            Congratulations! You have completed
-            all lectures in this course.
+          <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
+            You have completed every chapter
+            in this course. Your knowledge has
+            been forged through every lesson.
           </p>
         </div>
       </div>
@@ -1137,15 +1565,15 @@ const LectureViewer = ({
 }) => {
   if (!lecture) {
     return (
-      <div className="flex aspect-video items-center justify-center bg-gray-100">
+      <div className="flex aspect-video items-center justify-center bg-[#0d1012]">
         <div className="text-center">
           <BookOpen
             size={40}
-            className="mx-auto text-gray-300"
+            className="mx-auto text-slate-700"
           />
 
-          <p className="mt-3 text-sm text-gray-500">
-            Select a lecture to begin learning.
+          <p className="mt-3 text-sm text-slate-500">
+            Choose a chapter to begin.
           </p>
         </div>
       </div>
@@ -1185,16 +1613,13 @@ const LectureViewer = ({
 
   if (content) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center bg-gray-50 p-6 sm:p-10">
+      <div className="flex min-h-[400px] items-center justify-center bg-[#0d1012] p-6 sm:p-10">
         <div className="max-w-3xl">
-          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-            <FileText
-              size={25}
-              className="text-gray-600"
-            />
+          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900 text-amber-500">
+            <FileText size={25} />
           </div>
 
-          <p className="whitespace-pre-line text-sm leading-7 text-gray-600">
+          <p className="whitespace-pre-line text-sm leading-7 text-slate-500">
             {content}
           </p>
         </div>
@@ -1203,15 +1628,15 @@ const LectureViewer = ({
   }
 
   return (
-    <div className="flex aspect-video items-center justify-center bg-gray-100">
+    <div className="flex aspect-video items-center justify-center bg-[#0d1012]">
       <div className="text-center">
         <Lock
           size={38}
-          className="mx-auto text-gray-300"
+          className="mx-auto text-slate-700"
         />
 
-        <p className="mt-3 text-sm font-medium text-gray-500">
-          Lecture content is not available yet.
+        <p className="mt-3 text-sm font-medium text-slate-500">
+          This chapter has not been unlocked yet.
         </p>
       </div>
     </div>
@@ -1233,20 +1658,65 @@ const VideoPlayer = ({
 }) => {
   const videoRef = useRef(null);
 
-  const watchedTimeRef = useRef(0);
-  const lastSyncedTimeRef = useRef(0);
+  // ---------------------------------------------------
+  // LEGITIMATE WATCHED POSITION
+  // ---------------------------------------------------
 
-  const restoringSeekRef = useRef(false);
+  const furthestWatchedRef =
+    useRef(0);
+
+  const serverWatchedRef =
+    useRef(0);
+
+  const previousTimeRef =
+    useRef(0);
+
+  // ---------------------------------------------------
+  // FORWARD SEEK STATE
+  // ---------------------------------------------------
+
+  const forwardSeekActiveRef =
+    useRef(false);
+
+  const forwardSeekStartRef =
+    useRef(0);
+
+  const forwardSeekTargetRef =
+    useRef(0);
+
+  const forwardSeekRequiredRef =
+    useRef(0);
+
+  const forwardSeekAccumulatedRef =
+    useRef(0);
+
+  // ---------------------------------------------------
+  // CONTROL REFS
+  // ---------------------------------------------------
+
+  const restoringSeekRef =
+    useRef(false);
+
   const completionTriggeredRef =
     useRef(false);
-  const savingProgressRef = useRef(false);
-  const isPlayingRef = useRef(false);
-  const lastProgressUpdateRef = useRef(0);
 
-  const storageKey = getVideoStorageKey(
-    courseId,
-    lectureId
-  );
+  const savingProgressRef =
+    useRef(false);
+
+  const isPlayingRef =
+    useRef(false);
+
+  const lastSyncedTimeRef =
+    useRef(0);
+
+  const lastProgressUpdateRef =
+    useRef(0);
+
+  const storageKey =
+    getVideoStorageKey(
+      courseId,
+      lectureId
+    );
 
   // ===================================================
   // INITIAL POSITION
@@ -1261,12 +1731,28 @@ const VideoPlayer = ({
     );
 
     const localTime = Number(
-      localStorage.getItem(storageKey) || 0
+      localStorage.getItem(
+        storageKey
+      ) || 0
     );
 
-    return Math.max(
-      backendTime,
-      localTime
+    /*
+      Backend is authoritative.
+
+      If local storage is ahead by a large
+      amount, don't trust it because the user
+      could have manipulated localStorage.
+    */
+
+    if (backendTime > 0) {
+      return backendTime;
+    }
+
+    // New lecture: only trust a small
+    // local resume position.
+    return Math.min(
+      localTime,
+      MAX_FORWARD_SEEK
     );
   };
 
@@ -1277,12 +1763,26 @@ const VideoPlayer = ({
   const handleLoadedMetadata = (
     event
   ) => {
-    const video = event.currentTarget;
+    const video =
+      event.currentTarget;
 
     if (!video) return;
 
+    const backendProgress =
+      getLectureProgress(lectureId);
+
+    const backendTime = Number(
+      backendProgress?.watchedSeconds || 0
+    );
+
+    serverWatchedRef.current =
+      backendTime;
+
     if (isCompleted) {
-      watchedTimeRef.current =
+      furthestWatchedRef.current =
+        video.duration || 0;
+
+      previousTimeRef.current =
         video.duration || 0;
 
       return;
@@ -1293,7 +1793,8 @@ const VideoPlayer = ({
 
     const maxSafeTime = Math.max(
       0,
-      (video.duration || initialTime) -
+      (video.duration ||
+        initialTime) -
         SEEK_TOLERANCE
     );
 
@@ -1302,18 +1803,28 @@ const VideoPlayer = ({
       maxSafeTime
     );
 
-    watchedTimeRef.current =
+    furthestWatchedRef.current =
+      resumeTime;
+
+    previousTimeRef.current =
       resumeTime;
 
     lastSyncedTimeRef.current =
-      Math.floor(resumeTime);
+      backendTime;
 
     lastProgressUpdateRef.current =
-      Math.floor(resumeTime);
+      resumeTime;
+
+    forwardSeekActiveRef.current =
+      false;
+
+    forwardSeekAccumulatedRef.current =
+      0;
 
     if (resumeTime > 0) {
       try {
-        video.currentTime = resumeTime;
+        video.currentTime =
+          resumeTime;
       } catch (error) {
         console.error(
           "Unable to restore video position:",
@@ -1341,35 +1852,106 @@ const VideoPlayer = ({
     const requestedTime =
       video.currentTime;
 
-    const allowedTime =
-      watchedTimeRef.current;
+    const furthest =
+      furthestWatchedRef.current;
 
-    // Backward seeking is allowed.
+    // -----------------------------------------------
+    // BACKWARD SEEK
+    // -----------------------------------------------
+
     if (
       requestedTime <=
-      allowedTime + SEEK_TOLERANCE
+      furthest + SEEK_TOLERANCE
     ) {
+      forwardSeekActiveRef.current =
+        false;
+
+      forwardSeekAccumulatedRef.current =
+        0;
+
       return;
     }
 
-    // Forward seeking is blocked.
-    restoringSeekRef.current = true;
+    // -----------------------------------------------
+    // FORWARD SEEK
+    // -----------------------------------------------
+
+    const maximumAllowed =
+      furthest +
+      MAX_FORWARD_SEEK;
+
+    if (
+      requestedTime <=
+      maximumAllowed
+    ) {
+      /*
+        Allow up to 15 seconds forward.
+
+        BUT:
+
+        The skipped section becomes "debt".
+
+        Example:
+
+        watched = 100
+        seek = 115
+
+        User can move to 115,
+        but must actually watch
+        100 -> 115 before progress
+        can move beyond 115.
+      */
+
+      forwardSeekActiveRef.current =
+        true;
+
+      forwardSeekStartRef.current =
+        furthest;
+
+      forwardSeekTargetRef.current =
+        requestedTime;
+
+      forwardSeekRequiredRef.current =
+        requestedTime - furthest;
+
+      forwardSeekAccumulatedRef.current =
+        0;
+
+      previousTimeRef.current =
+        requestedTime;
+
+      toast(
+        "15-second jump allowed. Watch the skipped section to continue.",
+        {
+          icon: "⚔️",
+          duration: 2500,
+        }
+      );
+
+      return;
+    }
+
+    // -----------------------------------------------
+    // TOO LARGE
+    // -----------------------------------------------
+
+    restoringSeekRef.current =
+      true;
 
     try {
       video.currentTime =
-        allowedTime;
+        furthest;
+
+      previousTimeRef.current =
+        furthest;
 
       toast.error(
-        "You cannot skip ahead. Please watch the video."
-      );
-    } catch (error) {
-      console.error(
-        "Seek restoration error:",
-        error
+        `Forward jumps are limited to ${MAX_FORWARD_SEEK} seconds.`
       );
     } finally {
       setTimeout(() => {
-        restoringSeekRef.current = false;
+        restoringSeekRef.current =
+          false;
       }, 100);
     }
   };
@@ -1381,72 +1963,159 @@ const VideoPlayer = ({
   const handleTimeUpdate = () => {
     const video = videoRef.current;
 
-    if (!video || isCompleted) return;
+    if (
+      !video ||
+      isCompleted
+    ) {
+      return;
+    }
 
     const currentTime =
       video.currentTime;
 
-    // Extra protection against forward seeking.
+    const previousTime =
+      previousTimeRef.current;
+
+    // -----------------------------------------------
+    // BACKWARD / NORMAL PLAYBACK
+    // -----------------------------------------------
+
     if (
-      currentTime >
-      watchedTimeRef.current +
-        SEEK_TOLERANCE
+      currentTime <
+      previousTime - SEEK_TOLERANCE
     ) {
-      if (!restoringSeekRef.current) {
-        restoringSeekRef.current = true;
+      previousTimeRef.current =
+        currentTime;
 
-        video.currentTime =
-          watchedTimeRef.current;
+      return;
+    }
 
-        setTimeout(() => {
-          restoringSeekRef.current = false;
-        }, 100);
+    // -----------------------------------------------
+    // FORWARD SEEK DEBT
+    // -----------------------------------------------
+
+    if (
+      forwardSeekActiveRef.current
+    ) {
+      if (isPlayingRef.current) {
+        const delta =
+          currentTime -
+          previousTime;
+
+        if (
+          delta > 0 &&
+          delta < 2
+        ) {
+          forwardSeekAccumulatedRef.current +=
+            delta;
+        }
       }
 
+      const required =
+        forwardSeekRequiredRef.current;
+
+      const accumulated =
+        forwardSeekAccumulatedRef.current;
+
+      /*
+        Once the user has watched the skipped
+        section, unlock the new position.
+      */
+
+      if (
+        accumulated >=
+        required - SEEK_TOLERANCE
+      ) {
+        furthestWatchedRef.current =
+          Math.max(
+            furthestWatchedRef.current,
+            forwardSeekTargetRef.current
+          );
+
+        forwardSeekActiveRef.current =
+          false;
+
+        forwardSeekAccumulatedRef.current =
+          0;
+      }
+
+      previousTimeRef.current =
+        currentTime;
+
       return;
     }
 
-    // Only count time while playing.
-    if (!isPlayingRef.current) {
-      return;
-    }
+    // -----------------------------------------------
+    // NORMAL PLAYBACK
+    // -----------------------------------------------
 
     if (
+      isPlayingRef.current &&
       currentTime >
-      watchedTimeRef.current
+        furthestWatchedRef.current
     ) {
-      watchedTimeRef.current =
-        currentTime;
+      const delta =
+        currentTime -
+        previousTime;
+
+      /*
+        Prevent abnormal jumps from being
+        counted as watched.
+      */
+
+      if (
+        delta >= 0 &&
+        delta < 2
+      ) {
+        furthestWatchedRef.current =
+          currentTime;
+      }
     }
 
-    const watchedSeconds = Math.floor(
-      watchedTimeRef.current
-    );
+    previousTimeRef.current =
+      currentTime;
+
+    // -----------------------------------------------
+    // SAVE LOCAL POSITION
+    // -----------------------------------------------
+
+    const watchedSeconds =
+      Math.floor(
+        furthestWatchedRef.current
+      );
 
     localStorage.setItem(
       storageKey,
       String(watchedSeconds)
     );
 
+    // -----------------------------------------------
+    // PERIODIC BACKEND SYNC
+    // -----------------------------------------------
+
     if (
-      watchedTimeRef.current -
+      furthestWatchedRef.current -
         lastProgressUpdateRef.current >=
       PROGRESS_SYNC_INTERVAL
     ) {
       lastProgressUpdateRef.current =
-        watchedTimeRef.current;
+        furthestWatchedRef.current;
 
       syncProgress();
     }
   };
 
   // ===================================================
-  // PLAY / PAUSE
+  // PLAY
   // ===================================================
 
   const handlePlay = () => {
     isPlayingRef.current = true;
   };
+
+  // ===================================================
+  // PAUSE
+  // ===================================================
 
   const handlePause = () => {
     isPlayingRef.current = false;
@@ -1461,45 +2130,73 @@ const VideoPlayer = ({
   const syncProgress = async (
     force = false
   ) => {
-    const video = videoRef.current;
-
-    if (!video || isCompleted) {
-      return;
-    }
-
-    const watchedTime = Math.floor(
-      watchedTimeRef.current
-    );
-
-    const previousTime = Math.floor(
-      lastSyncedTimeRef.current
-    );
-
-    if (watchedTime <= 0) return;
+    const video =
+      videoRef.current;
 
     if (
-      !force &&
-      watchedTime <= previousTime
+      !video ||
+      isCompleted
     ) {
       return;
     }
 
-    if (savingProgressRef.current) {
+    const watchedTime =
+      Math.floor(
+        furthestWatchedRef.current
+      );
+
+    const previousSynced =
+      Math.floor(
+        lastSyncedTimeRef.current
+      );
+
+    if (watchedTime <= 0) {
+      return;
+    }
+
+    if (
+      !force &&
+      watchedTime <=
+        previousSynced
+    ) {
+      return;
+    }
+
+    if (
+      savingProgressRef.current
+    ) {
       return;
     }
 
     try {
-      savingProgressRef.current = true;
+      savingProgressRef.current =
+        true;
 
-      const response = await api.patch(
-        `/progress/${lectureId}`,
-        {
-          watchedSeconds: watchedTime,
-        }
-      );
+      /*
+        IMPORTANT:
 
-      if (response.data?.success) {
+        Only send the legitimate watched
+        position.
+
+        Never send video.currentTime directly.
+      */
+
+      const response =
+        await api.patch(
+          `/progress/${lectureId}`,
+          {
+            watchedSeconds:
+              watchedTime,
+          }
+        );
+
+      if (
+        response.data?.success
+      ) {
         lastSyncedTimeRef.current =
+          watchedTime;
+
+        serverWatchedRef.current =
           watchedTime;
 
         localStorage.setItem(
@@ -1507,7 +2204,9 @@ const VideoPlayer = ({
           String(watchedTime)
         );
 
-        if (response.data.progress) {
+        if (
+          response.data.progress
+        ) {
           onProgressSaved(
             response.data.progress
           );
@@ -1516,8 +2215,14 @@ const VideoPlayer = ({
     } catch (error) {
       console.error(
         "Video progress sync error:",
-        error
+        error.response?.data ||
+          error
       );
+
+      /*
+        Don't spam the user with a toast
+        every 5 seconds.
+      */
     } finally {
       savingProgressRef.current =
         false;
@@ -1529,51 +2234,90 @@ const VideoPlayer = ({
   // ===================================================
 
   const handleEnded = async () => {
-    if (completionTriggeredRef.current) {
+    if (
+      completionTriggeredRef.current
+    ) {
+      return;
+    }
+
+    const video =
+      videoRef.current;
+
+    if (!video) return;
+
+    const duration =
+      video.duration || 0;
+
+    const furthest =
+      furthestWatchedRef.current;
+
+    const percentage =
+      duration > 0
+        ? (furthest / duration) *
+          100
+        : 100;
+
+    /*
+      VERY IMPORTANT:
+
+      Never blindly set watchedTime = duration.
+
+      Otherwise dragging the progress bar
+      to the end would create fake progress.
+    */
+
+    if (
+      duration > 0 &&
+      percentage <
+        COMPLETION_PERCENTAGE
+    ) {
+      completionTriggeredRef.current =
+        false;
+
+      video.currentTime =
+        furthest;
+
+      previousTimeRef.current =
+        furthest;
+
+      toast.error(
+        `You still need to watch ${COMPLETION_PERCENTAGE}% of this lecture.`
+      );
+
       return;
     }
 
     completionTriggeredRef.current =
       true;
 
-    const video = videoRef.current;
-
     try {
-      if (video) {
-        const duration =
-          video.duration || 0;
+      const finalSeconds =
+        Math.floor(
+          Math.max(
+            furthest,
+            duration *
+              (COMPLETION_PERCENTAGE /
+                100)
+          )
+        );
 
-        watchedTimeRef.current =
-          duration;
+      /*
+        Sync legitimate progress first.
+      */
 
-        const finalSeconds = Math.floor(
+      furthestWatchedRef.current =
+        Math.min(
+          finalSeconds,
           duration
         );
 
-        lastSyncedTimeRef.current =
-          finalSeconds;
+      await syncProgress(true);
 
-        localStorage.setItem(
-          storageKey,
-          String(finalSeconds)
-        );
+      /*
+        Only after progress has been saved
+        do we request completion.
+      */
 
-        const response = await api.patch(
-          `/progress/${lectureId}`,
-          {
-            watchedSeconds: finalSeconds,
-          }
-        );
-
-        if (response.data?.progress) {
-          onProgressSaved(
-            response.data.progress
-          );
-        }
-      }
-
-      // This triggers handleMarkComplete()
-      // which also checks achievements.
       await onCompleted();
 
       clearSavedVideoPosition(
@@ -1583,7 +2327,8 @@ const VideoPlayer = ({
     } catch (error) {
       console.error(
         "Video completion error:",
-        error
+        error.response?.data ||
+          error
       );
     } finally {
       completionTriggeredRef.current =
@@ -1597,34 +2342,78 @@ const VideoPlayer = ({
 
   useEffect(() => {
     const lectureProgress =
-      getLectureProgress(lectureId);
-
-    const backendTime = Number(
-      lectureProgress?.watchedSeconds || 0
-    );
-
-    const localTime = Number(
-      localStorage.getItem(storageKey) || 0
-    );
-
-    watchedTimeRef.current =
-      Math.max(
-        backendTime,
-        localTime
+      getLectureProgress(
+        lectureId
       );
+
+    const backendTime =
+      Number(
+        lectureProgress?.watchedSeconds ||
+          0
+      );
+
+    const localTime =
+      Number(
+        localStorage.getItem(
+          storageKey
+        ) || 0
+      );
+
+    serverWatchedRef.current =
+      backendTime;
+
+    /*
+      Backend is authoritative when
+      progress already exists.
+    */
+
+    const initial =
+      backendTime > 0
+        ? backendTime
+        : Math.min(
+            localTime,
+            MAX_FORWARD_SEEK
+          );
+
+    furthestWatchedRef.current =
+      initial;
+
+    previousTimeRef.current =
+      initial;
 
     lastSyncedTimeRef.current =
       backendTime;
 
     lastProgressUpdateRef.current =
-      watchedTimeRef.current;
+      initial;
 
-    restoringSeekRef.current = false;
+    restoringSeekRef.current =
+      false;
+
     completionTriggeredRef.current =
       false;
-    isPlayingRef.current = false;
-    savingProgressRef.current = false;
-  }, [lectureId, storageKey]);
+
+    isPlayingRef.current =
+      false;
+
+    savingProgressRef.current =
+      false;
+
+    forwardSeekActiveRef.current =
+      false;
+
+    forwardSeekAccumulatedRef.current =
+      0;
+
+    forwardSeekRequiredRef.current =
+      0;
+
+    forwardSeekTargetRef.current =
+      initial;
+  }, [
+    lectureId,
+    storageKey,
+  ]);
 
   // ===================================================
   // PAGE UNLOAD
@@ -1632,9 +2421,10 @@ const VideoPlayer = ({
 
   useEffect(() => {
     const saveBeforeUnload = () => {
-      const watchedTime = Math.floor(
-        watchedTimeRef.current
-      );
+      const watchedTime =
+        Math.floor(
+          furthestWatchedRef.current
+        );
 
       if (watchedTime > 0) {
         localStorage.setItem(
@@ -1658,33 +2448,55 @@ const VideoPlayer = ({
   }, [storageKey]);
 
   // ===================================================
-  // KEYBOARD SEEK PROTECTION
+  // KEYBOARD CONTROLS
   // ===================================================
 
   useEffect(() => {
-    const handleKeyDown = (event) => {
-      const video = videoRef.current;
+    const handleKeyDown = (
+      event
+    ) => {
+      const video =
+        videoRef.current;
 
-      if (!video || isCompleted) {
+      if (
+        !video ||
+        isCompleted
+      ) {
         return;
       }
 
-      // Disable forward keyboard seeking.
+      const target =
+        event.target;
+
       if (
-        event.key === "ArrowRight" ||
-        event.key === "l" ||
-        event.key === "L"
+        target instanceof
+          HTMLInputElement ||
+        target instanceof
+          HTMLTextAreaElement
       ) {
+        return;
+      }
+
+      // ---------------------------------------------
+      // SPACE
+      // ---------------------------------------------
+
+      if (event.code === "Space") {
         event.preventDefault();
 
-        toast.error(
-          "Forward seeking is disabled."
-        );
+        if (video.paused) {
+          video.play();
+        } else {
+          video.pause();
+        }
 
         return;
       }
 
-      // Allow 10-second backward seeking.
+      // ---------------------------------------------
+      // ARROW LEFT
+      // ---------------------------------------------
+
       if (
         event.key === "ArrowLeft" ||
         event.key === "j" ||
@@ -1692,10 +2504,58 @@ const VideoPlayer = ({
       ) {
         event.preventDefault();
 
-        video.currentTime = Math.max(
-          0,
-          video.currentTime - 10
-        );
+        video.currentTime =
+          Math.max(
+            0,
+            video.currentTime - 10
+          );
+
+        previousTimeRef.current =
+          video.currentTime;
+
+        return;
+      }
+
+      // ---------------------------------------------
+      // ARROW RIGHT
+      // ---------------------------------------------
+
+      if (
+        event.key === "ArrowRight" ||
+        event.key === "l" ||
+        event.key === "L"
+      ) {
+        event.preventDefault();
+
+        const furthest =
+          furthestWatchedRef.current;
+
+        const targetTime =
+          Math.min(
+            video.duration || Infinity,
+            furthest +
+              MAX_FORWARD_SEEK
+          );
+
+        if (
+          targetTime <=
+          furthest +
+            SEEK_TOLERANCE
+        ) {
+          toast(
+            "Watch the current section before moving forward.",
+            {
+              icon: "⚔️",
+            }
+          );
+
+          return;
+        }
+
+        video.currentTime =
+          targetTime;
+
+        return;
       }
     };
 
@@ -1713,32 +2573,126 @@ const VideoPlayer = ({
   }, [isCompleted]);
 
   // ===================================================
+  // RATE PROTECTION
+  // ===================================================
+
+  const handleRateChange = () => {
+    const video =
+      videoRef.current;
+
+    if (!video) return;
+
+    if (video.playbackRate !== 1) {
+      video.playbackRate = 1;
+
+      toast(
+        "Playback speed is locked for progress tracking.",
+        {
+          icon: "🛡️",
+          duration: 2000,
+        }
+      );
+    }
+  };
+
+  // ===================================================
+  // CONTEXT MENU
+  // ===================================================
+
+  const handleContextMenu = (
+    event
+  ) => {
+    event.preventDefault();
+
+    toast(
+      "This realm is protected.",
+      {
+        icon: "🛡️",
+        duration: 1500,
+      }
+    );
+  };
+
+  // ===================================================
   // RENDER
   // ===================================================
 
   return (
     <div className="relative bg-black">
+
+      {/* CINEMATIC TOP BORDER */}
+
+      <div className="absolute left-0 right-0 top-0 z-10 h-[2px] bg-gradient-to-r from-transparent via-amber-500/70 to-transparent" />
+
       <video
         ref={videoRef}
         src={videoUrl}
         controls
-        controlsList="nodownload"
+        controlsList="nodownload noplaybackrate noremoteplayback"
         disablePictureInPicture
+        disableRemotePlayback
         playsInline
         preload="metadata"
         onLoadedMetadata={
           handleLoadedMetadata
         }
         onSeeking={handleSeeking}
-        onTimeUpdate={handleTimeUpdate}
+        onTimeUpdate={
+          handleTimeUpdate
+        }
         onPlay={handlePlay}
         onPause={handlePause}
         onEnded={handleEnded}
+        onRateChange={
+          handleRateChange
+        }
+        onContextMenu={
+          handleContextMenu
+        }
         className="aspect-video h-auto w-full bg-black object-contain"
       >
-        Your browser does not support the
-        video element.
+        Your browser does not support
+        the video element.
       </video>
+
+      {/* ANTI-SKIP NOTICE */}
+
+      {!isCompleted && (
+        <div className="absolute bottom-14 left-3 flex items-center gap-2 rounded-lg border border-slate-700/70 bg-black/80 px-3 py-2 text-[10px] font-semibold text-slate-400 backdrop-blur">
+          <Shield
+            size={12}
+            className="text-cyan-500"
+          />
+
+          Forward jumps limited to{" "}
+          {MAX_FORWARD_SEEK}s
+        </div>
+      )}
+
+      {/* CINEMATIC BOTTOM BORDER */}
+
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-900/70 to-transparent" />
+    </div>
+  );
+};
+
+// =====================================================
+// SHORTCUT
+// =====================================================
+
+const Shortcut = ({
+  keys,
+  label,
+}) => {
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-[#0a0c0e] px-4 py-3">
+      <span className="text-xs text-slate-500">
+        {label}
+      </span>
+
+      <kbd className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] font-bold text-amber-400">
+        {keys}
+      </kbd>
     </div>
   );
 };
@@ -1768,11 +2722,50 @@ const getLectureDuration = (
     : 0;
 };
 
+const formatTime = (
+  seconds
+) => {
+  const value = Math.max(
+    0,
+    Math.floor(
+      Number(seconds) || 0
+    )
+  );
+
+  const hours = Math.floor(
+    value / 3600
+  );
+
+  const minutes = Math.floor(
+    (value % 3600) / 60
+  );
+
+  const secs = value % 60;
+
+  if (hours > 0) {
+    return `${String(
+      hours
+    ).padStart(2, "0")}:${String(
+      minutes
+    ).padStart(2, "0")}:${String(
+      secs
+    ).padStart(2, "0")}`;
+  }
+
+  return `${String(
+    minutes
+  ).padStart(2, "0")}:${String(
+    secs
+  ).padStart(2, "0")}`;
+};
+
 const clearSavedVideoPosition = (
   courseId,
   lectureId
 ) => {
-  if (!courseId || !lectureId) return;
+  if (!courseId || !lectureId) {
+    return;
+  }
 
   localStorage.removeItem(
     getVideoStorageKey(
@@ -1783,36 +2776,34 @@ const clearSavedVideoPosition = (
 };
 
 // =====================================================
-// EMPTY LECTURES
+// EMPTY
 // =====================================================
 
 const EmptyLectures = ({
   onBack,
 }) => {
   return (
-    <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
-        <BookOpen
-          size={26}
-          className="text-gray-500"
-        />
+    <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-[#0d1012] p-8 text-center shadow-2xl">
+
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-amber-500">
+        <BookOpen size={26} />
       </div>
 
-      <h2 className="mt-5 text-xl font-bold text-gray-900">
-        No lectures available
+      <h2 className="mt-5 text-xl font-black text-white">
+        No chapters available
       </h2>
 
-      <p className="mt-2 text-sm leading-6 text-gray-500">
-        The instructor hasn't added any
-        lectures to this course yet.
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        The instructor has not added any
+        chapters to this course yet.
       </p>
 
       <button
         type="button"
         onClick={onBack}
-        className="mt-6 rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+        className="mt-6 rounded-xl border border-amber-800/50 bg-amber-950/30 px-5 py-3 text-sm font-bold text-amber-400 transition hover:bg-amber-900/30"
       >
-        Back to Dashboard
+        Return to the Great Hall
       </button>
     </div>
   );
@@ -1827,25 +2818,50 @@ const LearningHeader = ({
   onBack,
 }) => {
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex min-h-[70px] max-w-[1500px] items-center gap-4 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-slate-800 bg-[#090b0d]/95 backdrop-blur-xl">
+
+      <div className="mx-auto flex min-h-[72px] max-w-[1550px] items-center gap-4 px-4 sm:px-6 lg:px-8">
+
         <button
           type="button"
           onClick={onBack}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+          className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/60 text-slate-500 transition hover:border-amber-800/50 hover:text-amber-400"
         >
-          <ArrowLeft size={19} />
+          <ArrowLeft
+            size={18}
+            className="transition group-hover:-translate-x-0.5"
+          />
         </button>
 
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-            Learning
-          </p>
 
-          <h1 className="truncate text-sm font-bold text-gray-900 sm:text-base">
+          <div className="flex items-center gap-2">
+            <Sword
+              size={13}
+              className="text-amber-500"
+            />
+
+            <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-amber-500">
+              The Learning Realm
+            </p>
+          </div>
+
+          <h1 className="mt-1 truncate text-sm font-black text-white sm:text-base">
             {course?.courseTitle ||
               "Course"}
           </h1>
+        </div>
+
+        <div className="ml-auto hidden items-center gap-2 sm:flex">
+
+          <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,.8)]" />
+
+            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+              Chronicle Active
+            </span>
+          </div>
+
         </div>
       </div>
     </header>
@@ -1858,15 +2874,25 @@ const LearningHeader = ({
 
 const LearningLoading = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F7F6F2]">
-      <div className="text-center">
-        <LoaderCircle
-          size={40}
-          className="mx-auto animate-spin text-gray-900"
-        />
+    <div className="flex min-h-screen items-center justify-center bg-[#080a0c] text-slate-200">
 
-        <p className="mt-4 text-sm text-gray-500">
-          Loading your course...
+      <div className="text-center">
+
+        <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-800/50 bg-amber-950/20">
+          <Sword
+            size={25}
+            className="text-amber-500"
+          />
+
+          <div className="absolute inset-0 animate-ping rounded-full border border-amber-700/20" />
+        </div>
+
+        <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500">
+          Summoning the Chronicle
+        </p>
+
+        <p className="mt-2 text-sm text-slate-600">
+          Preparing your learning realm...
         </p>
       </div>
     </div>
