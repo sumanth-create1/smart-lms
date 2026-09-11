@@ -3,9 +3,16 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   BookOpen,
+  Check,
   CheckCircle2,
   Clock3,
+  Crown,
+  Flame,
   LoaderCircle,
+  LockKeyhole,
+  ShieldCheck,
+  Sparkles,
+  Sword,
   UserRound,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -23,6 +30,7 @@ import { useAuth } from "../../context/AuthContext";
 // - Free course enrollment
 // - Paid course Razorpay payment
 // - Payment verification
+// - Premium medieval fantasy UI
 // - React Hot Toast notifications
 // =====================================================
 
@@ -183,8 +191,6 @@ const StudentCourseDetails = () => {
     } catch (error) {
       console.error("Check enrollment error:", error);
 
-      // Don't show toast here because this is only
-      // a background enrollment check.
       setIsEnrolled(false);
     }
   };
@@ -372,7 +378,8 @@ const StudentCourseDetails = () => {
         name: "Smart LMS",
 
         description:
-          course?.courseTitle || "Course Enrollment",
+          course?.courseTitle ||
+          "Course Enrollment",
 
         order_id: payment.orderId,
 
@@ -386,7 +393,7 @@ const StudentCourseDetails = () => {
         },
 
         theme: {
-          color: "#111827",
+          color: "#7f1d1d",
         },
 
         // ===============================================
@@ -510,7 +517,6 @@ const StudentCourseDetails = () => {
         return;
       }
 
-      // Payment verified
       setIsEnrolled(true);
 
       toast.success(
@@ -567,7 +573,8 @@ const StudentCourseDetails = () => {
   const thumbnailUrl = course.courseThumbnail?.url;
 
   const instructorName =
-    course.instructor?.name || "Unknown Instructor";
+    course.instructor?.name ||
+    "Unknown Instructor";
 
   const instructorEmail =
     course.instructor?.email || "";
@@ -582,59 +589,150 @@ const StudentCourseDetails = () => {
   // =====================================================
 
   return (
-    <div className="min-h-screen bg-[#F7F6F2] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#090909] text-stone-200">
 
-        {/* BACK BUTTON */}
+      {/* =================================================
+          CINEMATIC BACKGROUND
+      ================================================= */}
+
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+
+        {/* Crimson glow */}
+        <div
+          className="
+            absolute
+            -left-40
+            top-20
+            h-[500px]
+            w-[500px]
+            rounded-full
+            bg-red-900/10
+            blur-[120px]
+            animate-pulse
+          "
+        />
+
+        {/* Gold glow */}
+        <div
+          className="
+            absolute
+            -right-40
+            top-[35%]
+            h-[550px]
+            w-[550px]
+            rounded-full
+            bg-amber-700/10
+            blur-[140px]
+          "
+        />
+
+        {/* Moon */}
+        <div
+          className="
+            absolute
+            right-[8%]
+            top-10
+            h-24
+            w-24
+            rounded-full
+            bg-gradient-to-br
+            from-stone-100/30
+            to-stone-400/5
+            shadow-[0_0_80px_rgba(255,255,255,0.08)]
+          "
+        />
+
+        {/* Ambient particles */}
+        <div className="absolute left-[12%] top-[22%] h-1 w-1 rounded-full bg-amber-300/50 animate-pulse" />
+        <div className="absolute left-[28%] top-[65%] h-1 w-1 rounded-full bg-red-300/40 animate-pulse" />
+        <div className="absolute right-[22%] top-[42%] h-1 w-1 rounded-full bg-amber-200/40 animate-pulse" />
+        <div className="absolute right-[12%] top-[75%] h-1 w-1 rounded-full bg-red-300/30 animate-pulse" />
+      </div>
+
+      {/* =================================================
+          TOP BORDER
+      ================================================= */}
+
+      <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+
+        {/* =================================================
+            BACK BUTTON
+        ================================================= */}
 
         <button
           type="button"
           onClick={handleBackToCourses}
           className="
-            mb-6
+            group
+            mb-7
             flex
             items-center
             gap-2
-            rounded-xl
-            px-3
-            py-2
+            rounded-lg
+            border
+            border-stone-800
+            bg-stone-950/70
+            px-4
+            py-2.5
             text-sm
             font-medium
-            text-gray-600
-            transition
-            hover:bg-white
-            hover:text-gray-900
+            text-stone-400
+            backdrop-blur-xl
+            transition-all
+            duration-300
+            hover:border-amber-600/40
+            hover:bg-stone-900
+            hover:text-amber-300
+            hover:shadow-[0_0_25px_rgba(180,120,30,0.08)]
           "
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft
+            size={17}
+            className="
+              transition-transform
+              duration-300
+              group-hover:-translate-x-1
+            "
+          />
 
-          Back to Courses
+          Return to Courses
         </button>
 
-        {/* HERO */}
+        {/* =================================================
+            HERO CARD
+        ================================================= */}
 
         <div
           className="
+            group
             overflow-hidden
-            rounded-3xl
+            rounded-2xl
             border
-            border-gray-200
-            bg-white
-            shadow-sm
+            border-stone-800
+            bg-[#101010]/90
+            shadow-[0_30px_100px_rgba(0,0,0,0.55)]
+            backdrop-blur-xl
           "
         >
-          <div className="grid lg:grid-cols-[1.25fr_1fr]">
 
-            {/* THUMBNAIL */}
+          <div className="grid lg:grid-cols-[1.2fr_1fr]">
+
+            {/* =================================================
+                THUMBNAIL
+            ================================================= */}
 
             <div
               className="
                 relative
-                min-h-[280px]
-                bg-gray-100
-                lg:min-h-[480px]
+                min-h-[300px]
+                overflow-hidden
+                bg-stone-950
+                lg:min-h-[560px]
               "
             >
+
               {thumbnailUrl ? (
                 <img
                   src={thumbnailUrl}
@@ -645,6 +743,10 @@ const StudentCourseDetails = () => {
                     h-full
                     w-full
                     object-cover
+                    transition-transform
+                    duration-[1200ms]
+                    ease-out
+                    group-hover:scale-105
                   "
                 />
               ) : (
@@ -652,67 +754,214 @@ const StudentCourseDetails = () => {
                   className="
                     flex
                     h-full
-                    min-h-[280px]
+                    min-h-[300px]
                     items-center
                     justify-center
-                    lg:min-h-[480px]
+                    bg-gradient-to-br
+                    from-stone-900
+                    via-[#120909]
+                    to-black
+                    lg:min-h-[560px]
                   "
                 >
                   <BookOpen
-                    size={70}
-                    className="text-gray-300"
+                    size={90}
+                    strokeWidth={1}
+                    className="text-stone-700"
                   />
                 </div>
               )}
 
+              {/* Image dark overlay */}
+
+              <div
+                className="
+                  absolute
+                  inset-0
+                  bg-gradient-to-t
+                  from-black
+                  via-black/30
+                  to-transparent
+                "
+              />
+
+              <div
+                className="
+                  absolute
+                  inset-0
+                  bg-gradient-to-r
+                  from-black/30
+                  via-transparent
+                  to-red-950/20
+                "
+              />
+
+              {/* Top golden line */}
+
+              <div
+                className="
+                  absolute
+                  left-0
+                  right-0
+                  top-0
+                  h-px
+                  bg-gradient-to-r
+                  from-transparent
+                  via-amber-400/70
+                  to-transparent
+                "
+              />
+
+              {/* Level badge */}
+
               <div className="absolute left-5 top-5">
-                <span
+                <div
                   className="
-                    rounded-xl
-                    bg-white/95
+                    flex
+                    items-center
+                    gap-2
+                    rounded-lg
+                    border
+                    border-amber-500/30
+                    bg-black/70
                     px-4
                     py-2
                     text-xs
                     font-bold
-                    text-gray-800
-                    shadow-sm
-                    backdrop-blur
+                    uppercase
+                    tracking-[0.15em]
+                    text-amber-300
+                    shadow-lg
+                    backdrop-blur-xl
                   "
                 >
+                  <Crown size={14} />
+
                   {course.courseLevel || "Beginner"}
-                </span>
+                </div>
+              </div>
+
+              {/* Bottom image content */}
+
+              <div
+                className="
+                  absolute
+                  bottom-6
+                  left-6
+                  right-6
+                "
+              >
+                <div
+                  className="
+                    mb-3
+                    flex
+                    items-center
+                    gap-2
+                    text-[10px]
+                    font-semibold
+                    uppercase
+                    tracking-[0.3em]
+                    text-amber-300/80
+                  "
+                >
+                  <Sword size={13} />
+
+                  Knowledge • Power • Mastery
+                </div>
+
+                <div className="h-px w-24 bg-gradient-to-r from-amber-500 to-transparent" />
               </div>
             </div>
 
-            {/* COURSE INFORMATION */}
+            {/* =================================================
+                COURSE INFORMATION
+            ================================================= */}
 
             <div
               className="
+                relative
                 flex
                 flex-col
                 justify-center
+                overflow-hidden
+                bg-gradient-to-br
+                from-[#151515]
+                via-[#101010]
+                to-[#0a0a0a]
                 p-6
                 sm:p-8
-                lg:p-10
+                lg:p-11
               "
             >
+
+              {/* Decorative glow */}
+
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  -right-24
+                  -top-24
+                  h-72
+                  w-72
+                  rounded-full
+                  bg-red-900/10
+                  blur-[80px]
+                "
+              />
+
+              {/* Decorative corner */}
+
+              <div
+                className="
+                  absolute
+                  right-5
+                  top-5
+                  h-16
+                  w-16
+                  border-r
+                  border-t
+                  border-amber-500/20
+                "
+              />
+
+              <div
+                className="
+                  absolute
+                  bottom-5
+                  left-5
+                  h-16
+                  w-16
+                  border-b
+                  border-l
+                  border-red-500/10
+                "
+              />
+
               {/* CATEGORY */}
 
               {course.category && (
-                <div className="mb-4">
+                <div className="relative z-10 mb-5">
                   <span
                     className="
-                      rounded-lg
-                      bg-gray-100
+                      inline-flex
+                      items-center
+                      gap-2
+                      rounded-md
+                      border
+                      border-red-900/50
+                      bg-red-950/30
                       px-3
                       py-1.5
-                      text-xs
-                      font-semibold
+                      text-[10px]
+                      font-bold
                       uppercase
-                      tracking-wide
-                      text-gray-600
+                      tracking-[0.2em]
+                      text-red-300
                     "
                   >
+                    <Sparkles size={12} />
+
                     {course.category}
                   </span>
                 </div>
@@ -722,26 +971,43 @@ const StudentCourseDetails = () => {
 
               <h1
                 className="
+                  relative
+                  z-10
+                  max-w-2xl
                   text-3xl
                   font-bold
-                  leading-tight
+                  leading-[1.1]
                   tracking-tight
-                  text-gray-900
+                  text-stone-100
                   sm:text-4xl
+                  lg:text-[42px]
                 "
               >
                 {course.courseTitle}
               </h1>
+
+              {/* Golden divider */}
+
+              <div className="relative z-10 mt-5 flex items-center gap-3">
+                <div className="h-px w-16 bg-amber-500/70" />
+
+                <div className="h-1.5 w-1.5 rotate-45 bg-amber-500/70" />
+
+                <div className="h-px w-8 bg-amber-500/30" />
+              </div>
 
               {/* SUBTITLE */}
 
               {course.subTitle && (
                 <p
                   className="
-                    mt-4
-                    text-base
+                    relative
+                    z-10
+                    mt-5
+                    text-sm
                     leading-7
-                    text-gray-500
+                    text-stone-400
+                    sm:text-base
                   "
                 >
                   {course.subTitle}
@@ -752,40 +1018,67 @@ const StudentCourseDetails = () => {
 
               <div
                 className="
+                  relative
+                  z-10
                   mt-7
                   flex
                   items-center
-                  gap-3
+                  gap-4
                 "
               >
                 <div
                   className="
+                    relative
                     flex
-                    h-11
-                    w-11
+                    h-12
+                    w-12
                     shrink-0
                     items-center
                     justify-center
                     rounded-full
-                    bg-gray-100
+                    border
+                    border-amber-500/20
+                    bg-gradient-to-br
+                    from-stone-800
+                    to-black
+                    shadow-[0_0_25px_rgba(180,120,30,0.08)]
                   "
                 >
                   <UserRound
                     size={21}
-                    className="text-gray-500"
+                    className="text-amber-400/80"
+                  />
+
+                  <div
+                    className="
+                      absolute
+                      inset-0
+                      rounded-full
+                      border
+                      border-amber-400/10
+                    "
                   />
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-xs text-gray-400">
-                    Created by
+                  <p
+                    className="
+                      text-[10px]
+                      uppercase
+                      tracking-[0.2em]
+                      text-stone-600
+                    "
+                  >
+                    Crafted by
                   </p>
 
                   <p
                     className="
+                      mt-0.5
                       truncate
+                      text-sm
                       font-semibold
-                      text-gray-900
+                      text-stone-200
                     "
                   >
                     {instructorName}
@@ -796,7 +1089,7 @@ const StudentCourseDetails = () => {
                       className="
                         truncate
                         text-xs
-                        text-gray-400
+                        text-stone-500
                       "
                     >
                       {instructorEmail}
@@ -809,6 +1102,8 @@ const StudentCourseDetails = () => {
 
               <div
                 className="
+                  relative
+                  z-10
                   mt-7
                   grid
                   grid-cols-2
@@ -816,16 +1111,17 @@ const StudentCourseDetails = () => {
                 "
               >
                 <InfoCard
-                  icon={<BookOpen size={19} />}
+                  icon={<BookOpen size={17} />}
                   label="Level"
                   value={
-                    course.courseLevel || "Beginner"
+                    course.courseLevel ||
+                    "Beginner"
                   }
                 />
 
                 <InfoCard
-                  icon={<Clock3 size={19} />}
-                  label="Course Type"
+                  icon={<Clock3 size={17} />}
+                  label="Learning"
                   value="Self Paced"
                 />
               </div>
@@ -834,28 +1130,69 @@ const StudentCourseDetails = () => {
 
               <div
                 className="
+                  relative
+                  z-10
                   mt-7
                   border-t
-                  border-gray-100
+                  border-stone-800
                   pt-6
                 "
               >
-                <p className="text-xs text-gray-400">
-                  Course Price
-                </p>
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <p
+                      className="
+                        text-[10px]
+                        font-semibold
+                        uppercase
+                        tracking-[0.2em]
+                        text-stone-600
+                      "
+                    >
+                      Claim your knowledge
+                    </p>
 
-                <p
-                  className="
-                    mt-1
-                    text-3xl
-                    font-bold
-                    text-gray-900
-                  "
-                >
-                  {price === 0
-                    ? "Free"
-                    : `₹${price.toLocaleString("en-IN")}`}
-                </p>
+                    <p
+                      className="
+                        mt-1
+                        text-3xl
+                        font-bold
+                        tracking-tight
+                        text-stone-100
+                      "
+                    >
+                      {price === 0
+                        ? "Free"
+                        : `₹${price.toLocaleString(
+                            "en-IN"
+                          )}`}
+                    </p>
+                  </div>
+
+                  <div
+                    className="
+                      hidden
+                      items-center
+                      gap-1.5
+                      rounded-full
+                      border
+                      border-green-900/40
+                      bg-green-950/20
+                      px-3
+                      py-1.5
+                      text-[10px]
+                      font-semibold
+                      uppercase
+                      tracking-wide
+                      text-green-400
+                      sm:flex
+                    "
+                  >
+                    <ShieldCheck size={13} />
+
+                    Secure
+                  </div>
+                </div>
               </div>
 
               {/* ENROLL BUTTON */}
@@ -868,24 +1205,47 @@ const StudentCourseDetails = () => {
                 }
                 onClick={handleEnrollment}
                 className={`
+                  group/button
+                  relative
+                  z-10
                   mt-6
                   flex
                   w-full
                   items-center
                   justify-center
                   gap-2
+                  overflow-hidden
                   rounded-xl
+                  border
                   px-6
-                  py-3.5
+                  py-4
                   text-sm
-                  font-semibold
-                  text-white
-                  transition
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+                  transition-all
+                  duration-300
 
                   ${
                     isNonStudent
-                      ? "cursor-not-allowed bg-gray-400"
-                      : "bg-gray-900 hover:bg-gray-800"
+                      ? `
+                        cursor-not-allowed
+                        border-stone-700
+                        bg-stone-800
+                        text-stone-500
+                      `
+                      : `
+                        border-amber-600/40
+                        bg-gradient-to-r
+                        from-red-950
+                        via-red-900
+                        to-red-950
+                        text-amber-100
+                        shadow-[0_10px_35px_rgba(120,20,20,0.2)]
+                        hover:-translate-y-0.5
+                        hover:border-amber-500/70
+                        hover:shadow-[0_15px_45px_rgba(150,30,20,0.3)]
+                      `
                   }
 
                   ${
@@ -895,6 +1255,26 @@ const StudentCourseDetails = () => {
                   }
                 `}
               >
+                {/* Button shine */}
+
+                {!isNonStudent &&
+                  !enrollmentLoading && (
+                    <span
+                      className="
+                        pointer-events-none
+                        absolute
+                        inset-y-0
+                        -left-20
+                        w-16
+                        skew-x-[-20deg]
+                        bg-white/10
+                        transition-all
+                        duration-700
+                        group-hover/button:left-[110%]
+                      "
+                    />
+                  )}
+
                 <EnrollmentButtonContent
                   loading={enrollmentLoading}
                   isEnrolled={isEnrolled}
@@ -907,106 +1287,304 @@ const StudentCourseDetails = () => {
               {/* ENROLLED MESSAGE */}
 
               {isEnrolled && (
-                <p
+                <div
                   className="
+                    relative
+                    z-10
                     mt-3
+                    flex
+                    items-center
+                    justify-center
+                    gap-2
                     text-center
                     text-xs
                     font-medium
-                    text-green-600
+                    text-green-400
                   "
                 >
-                  ✓ You are already enrolled
-                  in this course.
-                </p>
+                  <CheckCircle2 size={14} />
+
+                  You already hold access to this course
+                </div>
               )}
+
+              {/* PAYMENT SECURITY */}
+
+              {!isEnrolled &&
+                user?.role === "student" &&
+                price > 0 && (
+                  <div
+                    className="
+                      relative
+                      z-10
+                      mt-4
+                      flex
+                      items-center
+                      justify-center
+                      gap-2
+                      text-[10px]
+                      uppercase
+                      tracking-[0.15em]
+                      text-stone-600
+                    "
+                  >
+                    <LockKeyhole size={12} />
+
+                    Secure payment powered by Razorpay
+                  </div>
+                )}
             </div>
           </div>
         </div>
 
-        {/* DESCRIPTION */}
+        {/* =================================================
+            LOWER CONTENT
+        ================================================= */}
 
         <div
           className="
             mt-6
             grid
             gap-6
-            lg:grid-cols-[1fr_320px]
+            lg:grid-cols-[1fr_340px]
           "
         >
-          {/* ABOUT */}
+
+          {/* =================================================
+              ABOUT COURSE
+          ================================================= */}
 
           <div
             className="
+              relative
+              overflow-hidden
               rounded-2xl
               border
-              border-gray-200
-              bg-white
+              border-stone-800
+              bg-[#101010]/90
               p-6
-              shadow-sm
+              shadow-[0_20px_60px_rgba(0,0,0,0.25)]
+              backdrop-blur-xl
               sm:p-8
             "
           >
-            <h2
-              className="
-                text-xl
-                font-bold
-                text-gray-900
-              "
-            >
-              About This Course
-            </h2>
+            {/* Decorative top line */}
 
-            <div className="mt-5">
+            <div
+              className="
+                absolute
+                left-8
+                right-8
+                top-0
+                h-px
+                bg-gradient-to-r
+                from-transparent
+                via-amber-500/40
+                to-transparent
+              "
+            />
+
+            <div className="flex items-center gap-3">
+              <div
+                className="
+                  flex
+                  h-10
+                  w-10
+                  items-center
+                  justify-center
+                  rounded-lg
+                  border
+                  border-amber-500/20
+                  bg-amber-950/20
+                "
+              >
+                <Sword
+                  size={19}
+                  className="text-amber-400"
+                />
+              </div>
+
+              <div>
+                <p
+                  className="
+                    text-[10px]
+                    uppercase
+                    tracking-[0.2em]
+                    text-amber-500/70
+                  "
+                >
+                  The Chronicle
+                </p>
+
+                <h2
+                  className="
+                    mt-0.5
+                    text-xl
+                    font-bold
+                    text-stone-100
+                  "
+                >
+                  About This Course
+                </h2>
+              </div>
+            </div>
+
+            <div className="mt-6">
               {course.description ? (
                 <p
                   className="
                     whitespace-pre-line
                     text-sm
-                    leading-7
-                    text-gray-600
+                    leading-8
+                    text-stone-400
                   "
                 >
                   {course.description}
                 </p>
               ) : (
-                <p className="text-sm text-gray-400">
-                  No course description has
-                  been added yet.
+                <p
+                  className="
+                    text-sm
+                    italic
+                    text-stone-600
+                  "
+                >
+                  The chronicles of this course
+                  have yet to be written.
                 </p>
               )}
             </div>
           </div>
 
-          {/* WHAT YOU GET */}
+          {/* =================================================
+              WHAT YOU GET
+          ================================================= */}
 
           <div
             className="
+              relative
+              overflow-hidden
               rounded-2xl
               border
-              border-gray-200
-              bg-white
+              border-stone-800
+              bg-gradient-to-br
+              from-[#151515]
+              to-[#0d0d0d]
               p-6
-              shadow-sm
+              shadow-[0_20px_60px_rgba(0,0,0,0.25)]
+              backdrop-blur-xl
             "
           >
-            <h2
-              className="
-                text-lg
-                font-bold
-                text-gray-900
-              "
-            >
-              What You'll Get
-            </h2>
+            {/* Glow */}
 
-            <div className="mt-5 space-y-4">
-              <Feature text="Learn at your own pace" />
-              <Feature text="Access course content" />
-              <Feature text="Track your learning progress" />
-              <Feature text="Learn from an instructor" />
+            <div
+              className="
+                pointer-events-none
+                absolute
+                -right-16
+                -top-16
+                h-40
+                w-40
+                rounded-full
+                bg-amber-800/10
+                blur-3xl
+              "
+            />
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-3">
+                <div
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    items-center
+                    justify-center
+                    rounded-lg
+                    border
+                    border-red-500/20
+                    bg-red-950/20
+                  "
+                >
+                  <Crown
+                    size={18}
+                    className="text-red-300"
+                  />
+                </div>
+
+                <div>
+                  <p
+                    className="
+                      text-[10px]
+                      uppercase
+                      tracking-[0.2em]
+                      text-red-400/70
+                    "
+                  >
+                    Your Reward
+                  </p>
+
+                  <h2
+                    className="
+                      mt-0.5
+                      text-lg
+                      font-bold
+                      text-stone-100
+                    "
+                  >
+                    What You'll Gain
+                  </h2>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <Feature text="Learn at your own pace" />
+                <Feature text="Access course content" />
+                <Feature text="Track your learning progress" />
+                <Feature text="Learn from an instructor" />
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* =================================================
+            FOOTER MOTTO
+        ================================================= */}
+
+        <div
+          className="
+            flex
+            items-center
+            justify-center
+            gap-3
+            py-10
+            text-center
+          "
+        >
+          <div className="h-px w-12 bg-stone-800" />
+
+          <Flame
+            size={14}
+            className="text-amber-600/60"
+          />
+
+          <p
+            className="
+              text-[10px]
+              uppercase
+              tracking-[0.3em]
+              text-stone-700
+            "
+          >
+            Knowledge is the sharpest weapon
+          </p>
+
+          <Flame
+            size={14}
+            className="text-amber-600/60"
+          />
+
+          <div className="h-px w-12 bg-stone-800" />
         </div>
       </div>
     </div>
@@ -1021,29 +1599,84 @@ const LoadingState = () => {
   return (
     <div
       className="
+        relative
         flex
         min-h-screen
         items-center
         justify-center
-        bg-[#F7F6F2]
+        overflow-hidden
+        bg-[#090909]
       "
     >
+      {/* Background glow */}
+
       <div
         className="
-          flex
-          flex-col
-          items-center
-          gap-3
+          absolute
+          h-72
+          w-72
+          rounded-full
+          bg-red-900/10
+          blur-[100px]
+          animate-pulse
         "
-      >
-        <LoaderCircle
-          size={38}
-          className="animate-spin text-gray-900"
-        />
+      />
 
-        <p className="text-sm text-gray-500">
-          Loading course...
-        </p>
+      <div className="relative z-10 flex flex-col items-center gap-5">
+
+        <div
+          className="
+            relative
+            flex
+            h-20
+            w-20
+            items-center
+            justify-center
+            rounded-full
+            border
+            border-amber-500/20
+            bg-stone-950
+            shadow-[0_0_50px_rgba(180,120,30,0.08)]
+          "
+        >
+          <LoaderCircle
+            size={32}
+            className="animate-spin text-amber-500"
+          />
+
+          <div
+            className="
+              absolute
+              inset-2
+              rounded-full
+              border
+              border-red-500/10
+            "
+          />
+        </div>
+
+        <div className="text-center">
+          <p
+            className="
+              text-[10px]
+              uppercase
+              tracking-[0.3em]
+              text-amber-500/60
+            "
+          >
+            Summoning the archives
+          </p>
+
+          <p
+            className="
+              mt-2
+              text-sm
+              text-stone-500
+            "
+          >
+            Loading course...
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -1078,7 +1711,7 @@ const EnrollmentButtonContent = ({
       <>
         <CheckCircle2 size={18} />
 
-        Go to Dashboard
+        Continue Learning
       </>
     );
   }
@@ -1086,9 +1719,12 @@ const EnrollmentButtonContent = ({
   if (!user) {
     return (
       <>
-        Enroll in Course
+        Enter the Realm
 
-        <CheckCircle2 size={18} />
+        <ArrowLeft
+          size={18}
+          className="rotate-180"
+        />
       </>
     );
   }
@@ -1098,16 +1734,27 @@ const EnrollmentButtonContent = ({
   }
 
   if (price > 0 && !razorpayLoaded) {
-    return <>Loading Payment...</>;
+    return (
+      <>
+        <LoaderCircle
+          size={17}
+          className="animate-spin"
+        />
+
+        Preparing Payment
+      </>
+    );
   }
 
   return (
     <>
       {price > 0
-        ? `Buy Course • ₹${price.toLocaleString("en-IN")}`
-        : "Enroll for Free"}
+        ? `Acquire Course • ₹${price.toLocaleString(
+            "en-IN"
+          )}`
+        : "Claim This Course"}
 
-      <CheckCircle2 size={18} />
+      <Check size={18} />
     </>
   );
 };
@@ -1124,18 +1771,38 @@ const InfoCard = ({
   return (
     <div
       className="
+        group/info
         rounded-xl
         border
-        border-gray-100
-        bg-gray-50
+        border-stone-800
+        bg-stone-950/70
         p-4
+        transition-all
+        duration-300
+        hover:border-amber-600/20
+        hover:bg-stone-900
       "
     >
-      <div className="mb-2 text-gray-500">
+      <div
+        className="
+          mb-2
+          text-amber-500/70
+          transition-transform
+          duration-300
+          group-hover/info:scale-110
+        "
+      >
         {icon}
       </div>
 
-      <p className="text-xs text-gray-400">
+      <p
+        className="
+          text-[9px]
+          uppercase
+          tracking-[0.18em]
+          text-stone-600
+        "
+      >
         {label}
       </p>
 
@@ -1144,7 +1811,7 @@ const InfoCard = ({
           mt-1
           text-sm
           font-semibold
-          text-gray-800
+          text-stone-300
         "
       >
         {value}
@@ -1161,25 +1828,46 @@ const Feature = ({ text }) => {
   return (
     <div
       className="
+        group/feature
         flex
         items-start
         gap-3
       "
     >
-      <CheckCircle2
-        size={18}
+      <div
         className="
           mt-0.5
+          flex
+          h-6
+          w-6
           shrink-0
-          text-gray-700
+          items-center
+          justify-center
+          rounded-md
+          border
+          border-amber-500/20
+          bg-amber-950/20
+          transition-all
+          duration-300
+          group-hover/feature:border-amber-500/40
+          group-hover/feature:bg-amber-950/40
         "
-      />
+      >
+        <CheckCircle2
+          size={14}
+          className="text-amber-500/80"
+        />
+      </div>
 
       <p
         className="
+          pt-0.5
           text-sm
           leading-6
-          text-gray-600
+          text-stone-400
+          transition-colors
+          duration-300
+          group-hover/feature:text-stone-300
         "
       >
         {text}

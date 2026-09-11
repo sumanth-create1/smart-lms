@@ -1,33 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import {
   BookOpen,
   ChevronRight,
+  Crown,
   Flame,
-  Gauge,
   LayoutDashboard,
   LogOut,
-  Radio,
   Settings,
   Shield,
   ShieldCheck,
-  Sparkles,
-  Target,
+  Sword,
   TrendingUp,
   Trophy,
   UserRound,
-  Users,
   Zap,
-  Crown,
   Castle,
-  Sword,
-  Snowflake,
 } from "lucide-react";
 
 import { useAuth } from "../../../../context/AuthContext";
 
-function StudentSidebar() {
+function StudentSidebar({ stats = {} }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -83,6 +77,148 @@ function StudentSidebar() {
   ];
 
   // ============================================================
+  // USER
+  // ============================================================
+
+  const userName = user?.name || "Student";
+
+  const initials =
+    userName
+      ?.split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0))
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "ST";
+
+  // ============================================================
+  // DYNAMIC STATS
+  // ============================================================
+
+  /*
+    These values come from the parent dashboard.
+
+    Example expected object:
+
+    {
+      xp: 680,
+      nextLevelXp: 1000,
+      studyStreak: 2,
+      streakGoal: 7
+    }
+
+    The fallbacks keep the UI working even if your backend
+    doesn't provide these values yet.
+  */
+
+  const xp = Number(
+    stats?.xp ??
+      stats?.kingdomXP ??
+      stats?.totalXP ??
+      0
+  );
+
+  const nextLevelXp = Number(
+    stats?.nextLevelXp ??
+      stats?.requiredXp ??
+      stats?.levelTarget ??
+      1000
+  );
+
+  const studyStreak = Number(
+    stats?.studyStreak ??
+      stats?.streak ??
+      0
+  );
+
+  const streakGoal = Number(
+    stats?.streakGoal ??
+      7
+  );
+
+  // ============================================================
+  // LEVEL CALCULATION
+  // ============================================================
+
+  const levelData = useMemo(() => {
+    /*
+      Simple XP progression.
+
+      0 - 499      → Level 1
+      500 - 999    → Level 2
+      1000 - 1499  → Level 3
+      etc.
+
+      Change this later if you build a proper XP system.
+    */
+
+    const calculatedLevel =
+      Math.floor(xp / 500) + 1;
+
+    const currentLevelStart =
+      (calculatedLevel - 1) * 500;
+
+    const levelProgress =
+      ((xp - currentLevelStart) / 500) * 100;
+
+    return {
+      level: calculatedLevel,
+      progress: Math.min(
+        Math.max(levelProgress, 0),
+        100
+      ),
+    };
+  }, [xp]);
+
+  // ============================================================
+  // RANK TITLE
+  // ============================================================
+
+  const rankTitle = useMemo(() => {
+    if (xp >= 5000) return "Grand Maester";
+    if (xp >= 3000) return "Lord Scholar";
+    if (xp >= 2000) return "Knight Scholar";
+    if (xp >= 1500) return "Master";
+    if (xp >= 1000) return "Scholar";
+    if (xp >= 500) return "Apprentice";
+
+    return "Novice";
+  }, [xp]);
+
+  // ============================================================
+  // XP PROGRESS
+  // ============================================================
+
+  const xpProgress = useMemo(() => {
+    if (!nextLevelXp || nextLevelXp <= 0) {
+      return 0;
+    }
+
+    return Math.min(
+      Math.max((xp / nextLevelXp) * 100, 0),
+      100
+    );
+  }, [xp, nextLevelXp]);
+
+  // ============================================================
+  // STREAK PROGRESS
+  // ============================================================
+
+  const streakProgress = useMemo(() => {
+    if (!streakGoal || streakGoal <= 0) {
+      return 0;
+    }
+
+    return Math.min(
+      Math.max(
+        (studyStreak / streakGoal) * 100,
+        0
+      ),
+      100
+    );
+  }, [studyStreak, streakGoal]);
+
+  // ============================================================
   // MOUSE FOLLOW
   // ============================================================
 
@@ -100,7 +236,10 @@ function StudentSidebar() {
       });
     };
 
-    sidebar.addEventListener("mousemove", handleMouseMove);
+    sidebar.addEventListener(
+      "mousemove",
+      handleMouseMove
+    );
 
     return () => {
       sidebar.removeEventListener(
@@ -131,18 +270,8 @@ function StudentSidebar() {
   };
 
   // ============================================================
-  // USER
+  // RENDER
   // ============================================================
-
-  const userName = user?.name || "Student";
-
-  const initials =
-    userName
-      ?.split(" ")
-      .map((word) => word.charAt(0))
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "ST";
 
   return (
     <aside
@@ -311,8 +440,6 @@ function StudentSidebar() {
           px-5
         "
       >
-        {/* Castle emblem */}
-
         <div
           className="
             relative
@@ -342,8 +469,6 @@ function StudentSidebar() {
             strokeWidth={1.5}
           />
 
-          {/* Crown dot */}
-
           <span
             className="
               absolute
@@ -359,8 +484,6 @@ function StudentSidebar() {
             "
           />
 
-          {/* Bottom line */}
-
           <span
             className="
               absolute
@@ -373,8 +496,6 @@ function StudentSidebar() {
             "
           />
         </div>
-
-        {/* Brand */}
 
         <div className="ml-3">
           <h1
@@ -408,8 +529,6 @@ function StudentSidebar() {
             </p>
           </div>
         </div>
-
-        {/* Status */}
 
         <div className="ml-auto">
           <div
@@ -463,8 +582,6 @@ function StudentSidebar() {
             hover:shadow-[0_0_35px_rgba(245,158,11,.06)]
           "
         >
-          {/* Decorative corner */}
-
           <span
             className="
               absolute
@@ -523,7 +640,12 @@ function StudentSidebar() {
                 <img
                   src={user.avatar}
                   alt={userName}
-                  className="h-full w-full rounded-full object-cover"
+                  className="
+                    h-full
+                    w-full
+                    rounded-full
+                    object-cover
+                  "
                 />
               ) : (
                 initials
@@ -569,7 +691,7 @@ function StudentSidebar() {
                   text-amber-600
                 "
               >
-                Apprentice
+                {rankTitle}
               </p>
             </div>
 
@@ -586,7 +708,9 @@ function StudentSidebar() {
             />
           </div>
 
-          {/* Level */}
+          {/* ====================================================
+              LEVEL
+          ==================================================== */}
 
           <div className="relative mt-4">
             <div className="flex justify-between">
@@ -602,8 +726,14 @@ function StudentSidebar() {
                 House Rank
               </span>
 
-              <span className="text-[8px] font-black text-amber-500">
-                LEVEL I
+              <span
+                className="
+                  text-[8px]
+                  font-black
+                  text-amber-500
+                "
+              >
+                LEVEL {levelData.level}
               </span>
             </div>
 
@@ -611,23 +741,27 @@ function StudentSidebar() {
               <div
                 className="
                   h-full
-                  w-[68%]
                   bg-gradient-to-r
                   from-amber-800
                   via-amber-500
                   to-yellow-300
                   shadow-[0_0_10px_rgba(245,158,11,.4)]
+                  transition-all
+                  duration-1000
                 "
+                style={{
+                  width: `${levelData.progress}%`,
+                }}
               />
             </div>
 
             <div className="mt-2 flex justify-between">
               <span className="text-[7px] text-zinc-700">
-                680 XP
+                {xp.toLocaleString()} XP
               </span>
 
               <span className="text-[7px] text-zinc-700">
-                1,000 XP
+                {nextLevelXp.toLocaleString()} XP
               </span>
             </div>
           </div>
@@ -649,8 +783,6 @@ function StudentSidebar() {
           sidebar-scroll
         "
       >
-        {/* Section heading */}
-
         <div className="mb-4 flex items-center gap-2 px-2">
           <Sword
             size={13}
@@ -671,8 +803,6 @@ function StudentSidebar() {
 
           <div className="h-px flex-1 bg-zinc-900" />
         </div>
-
-        {/* Nav */}
 
         <div className="flex flex-col gap-1">
           {navigation.map((item) => {
@@ -719,10 +849,6 @@ function StudentSidebar() {
               >
                 {({ isActive }) => (
                   <>
-                    {/* =================================================
-                        MOVING HOVER LIGHT
-                    ================================================= */}
-
                     <span
                       className="
                         pointer-events-none
@@ -740,10 +866,6 @@ function StudentSidebar() {
                         group-hover/nav:left-[130%]
                       "
                     />
-
-                    {/* =================================================
-                        ACTIVE GLOW
-                    ================================================= */}
 
                     {isActive && (
                       <>
@@ -778,8 +900,6 @@ function StudentSidebar() {
                       </>
                     )}
 
-                    {/* Roman number */}
-
                     <span
                       className={`
                         w-6
@@ -787,6 +907,7 @@ function StudentSidebar() {
                         font-black
                         tracking-widest
                         transition-colors
+
                         ${
                           isActive
                             ? "text-amber-700"
@@ -796,8 +917,6 @@ function StudentSidebar() {
                     >
                       {item.code}
                     </span>
-
-                    {/* Icon */}
 
                     <span
                       className={`
@@ -845,8 +964,6 @@ function StudentSidebar() {
                       />
                     </span>
 
-                    {/* Text */}
-
                     <div className="min-w-0 flex-1">
                       <p
                         className={`
@@ -883,8 +1000,6 @@ function StudentSidebar() {
                         {item.description}
                       </p>
                     </div>
-
-                    {/* Arrow */}
 
                     <ChevronRight
                       size={13}
@@ -927,7 +1042,7 @@ function StudentSidebar() {
             </span>
           </div>
 
-          {/* Streak */}
+          {/* STREAK */}
 
           <div
             className="
@@ -1006,7 +1121,10 @@ function StudentSidebar() {
                     text-zinc-300
                   "
                 >
-                  2 Days
+                  {studyStreak}{" "}
+                  {studyStreak === 1
+                    ? "Day"
+                    : "Days"}
                 </p>
               </div>
 
@@ -1015,19 +1133,33 @@ function StudentSidebar() {
               </span>
             </div>
 
-            {/* Mini progress */}
+            {/* Dynamic streak progress */}
 
             <div className="relative mt-4 h-1 bg-zinc-900">
               <div
                 className="
                   h-full
-                  w-[35%]
                   bg-gradient-to-r
                   from-orange-800
                   to-orange-400
                   shadow-[0_0_8px_rgba(249,115,22,.4)]
+                  transition-all
+                  duration-1000
                 "
+                style={{
+                  width: `${streakProgress}%`,
+                }}
               />
+            </div>
+
+            <div className="mt-2 flex justify-between">
+              <span className="text-[6px] text-zinc-800">
+                CURRENT
+              </span>
+
+              <span className="text-[6px] text-zinc-800">
+                {streakGoal} DAY GOAL
+              </span>
             </div>
           </div>
 
@@ -1084,7 +1216,7 @@ function StudentSidebar() {
                 text-amber-700
               "
             >
-              680
+              {xp.toLocaleString()}
             </span>
           </div>
         </div>
@@ -1105,8 +1237,6 @@ function StudentSidebar() {
           p-4
         "
       >
-        {/* User */}
-
         <div
           className="
             group/user
@@ -1141,8 +1271,6 @@ function StudentSidebar() {
           />
 
           <div className="relative flex items-center gap-3">
-            {/* Avatar */}
-
             <div
               className="
                 relative
@@ -1172,7 +1300,12 @@ function StudentSidebar() {
                 <img
                   src={user.avatar}
                   alt={userName}
-                  className="h-full w-full rounded-full object-cover"
+                  className="
+                    h-full
+                    w-full
+                    rounded-full
+                    object-cover
+                  "
                 />
               ) : (
                 initials
@@ -1217,7 +1350,7 @@ function StudentSidebar() {
                     text-amber-700
                   "
                 >
-                  STUDENT
+                  {user?.role || "student"}
                 </span>
 
                 <span className="h-1 w-1 rounded-full bg-zinc-800" />

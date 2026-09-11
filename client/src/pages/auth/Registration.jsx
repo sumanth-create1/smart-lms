@@ -1,19 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Check,
+  Crown,
   Eye,
   EyeOff,
+  Flame,
   GraduationCap,
   Lock,
+  Mail,
   Shield,
   ShieldCheck,
   Sparkles,
-  Target,
+  Sword,
   UserRound,
   Users,
-  Zap,
+  WandSparkles,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -31,12 +34,67 @@ function Register() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [mouse, setMouse] = useState({
+    x: 0,
+    y: 0,
+  });
+
+  const [cardTilt, setCardTilt] = useState({
+    x: 0,
+    y: 0,
+  });
+
   // =====================================================
-  // INPUT CHANGE
+  // MOUSE / CURSOR EFFECT
+  // =====================================================
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const x = e.clientX;
+      const y = e.clientY;
+
+      setMouse({ x, y });
+
+      const card = document.querySelector(".register-card");
+
+      if (!card) return;
+
+      const rect = card.getBoundingClientRect();
+
+      const cardX = x - (rect.left + rect.width / 2);
+      const cardY = y - (rect.top + rect.height / 2);
+
+      const rotateY = Math.max(
+        -4,
+        Math.min(4, cardX / 35)
+      );
+
+      const rotateX = Math.max(
+        -4,
+        Math.min(4, -cardY / 35)
+      );
+
+      setCardTilt({
+        x: rotateX,
+        y: rotateY,
+      });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      window.removeEventListener(
+        "mousemove",
+        handleMouseMove
+      );
+    };
+  }, []);
+
+  // =====================================================
+  // INPUT
   // =====================================================
 
   const handleChange = (e) => {
@@ -66,11 +124,15 @@ function Register() {
     }
 
     if (formData.password.length < 6) {
-      toast.error("Password must contain at least 6 characters.");
+      toast.error(
+        "Password must contain at least 6 characters."
+      );
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (
+      formData.password !== formData.confirmPassword
+    ) {
       toast.error("Passwords do not match.");
       return;
     }
@@ -85,15 +147,23 @@ function Register() {
         role: formData.role,
       });
 
-      console.log("Registration successful:", response.data);
+      console.log(
+        "Registration successful:",
+        response.data
+      );
 
-      toast.success("Account created successfully!");
+      toast.success(
+        "Account created! Check your email to verify your account."
+      );
 
       setTimeout(() => {
         navigate("/login");
-      }, 800);
+      }, 1800);
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error(
+        "Registration error:",
+        error
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -104,200 +174,313 @@ function Register() {
     }
   };
 
+  // =====================================================
+  // PASSWORD STATUS
+  // =====================================================
+
   const passwordsMatch =
     formData.confirmPassword &&
-    formData.password === formData.confirmPassword;
+    formData.password ===
+      formData.confirmPassword;
+
+  const passwordStrength =
+    formData.password.length === 0
+      ? 0
+      : formData.password.length < 6
+      ? 1
+      : formData.password.length < 10
+      ? 2
+      : 3;
 
   return (
-    <div className="register-page">
+    <div className="got-register-page">
 
-      {/* =====================================================
-          CINEMATIC BACKGROUND
-      ===================================================== */}
+      {/* =================================================
+          CURSOR LIGHT
+      ================================================= */}
 
-      <div className="background">
+      <div
+        className="cursor-light"
+        style={{
+          left: mouse.x,
+          top: mouse.y,
+        }}
+      />
 
-        <div className="ambient ambient-one" />
-        <div className="ambient ambient-two" />
-        <div className="ambient ambient-three" />
+      {/* =================================================
+          BACKGROUND
+      ================================================= */}
 
-        <div className="grid-overlay" />
+      <div className="got-background">
 
-        <div className="scan-line" />
+        <div className="moon">
+          <div className="moon-glow" />
+        </div>
 
-        {/* Floating particles */}
-        <span className="particle p1" />
-        <span className="particle p2" />
-        <span className="particle p3" />
-        <span className="particle p4" />
-        <span className="particle p5" />
-        <span className="particle p6" />
-        <span className="particle p7" />
+        <div className="mountains mountains-back" />
+        <div className="mountains mountains-front" />
+
+        <div className="castle">
+          <div className="tower tower-left">
+            <span />
+            <span />
+            <span />
+          </div>
+
+          <div className="castle-center">
+            <div className="castle-door" />
+          </div>
+
+          <div className="tower tower-right">
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+
+        {/* Stars */}
+
+        <span className="star s1" />
+        <span className="star s2" />
+        <span className="star s3" />
+        <span className="star s4" />
+        <span className="star s5" />
+        <span className="star s6" />
+        <span className="star s7" />
+        <span className="star s8" />
+
+        {/* Snow */}
+
+        <div className="snow-field">
+          {Array.from({ length: 35 }).map(
+            (_, index) => (
+              <span
+                key={index}
+                className={`snow snow-${index}`}
+              />
+            )
+          )}
+        </div>
+
+        {/* Embers */}
+
+        <div className="ember-field">
+          {Array.from({ length: 18 }).map(
+            (_, index) => (
+              <span
+                key={index}
+                className={`ember ember-${index}`}
+              />
+            )
+          )}
+        </div>
+
+        <div className="fog fog-one" />
+        <div className="fog fog-two" />
+
+        <div className="vignette" />
 
       </div>
 
-      {/* =====================================================
+      {/* =================================================
           HEADER
-      ===================================================== */}
+      ================================================= */}
 
-      <header className="topbar">
+      <header className="got-header">
 
-        <Link to="/" className="brand">
+        <Link to="/" className="got-brand">
 
-          <div className="brand-mark">
-            <Target size={21} strokeWidth={2.2} />
-
-            <span className="brand-dot" />
+          <div className="sigil">
+            <Crown size={21} />
           </div>
 
           <div>
-            <div className="brand-name">
-              Smart<span>LMS</span>
+            <div className="brand-title">
+              SMART<span>LMS</span>
             </div>
 
             <div className="brand-subtitle">
-              LEARNING INTELLIGENCE SYSTEM
+              THE REALM OF KNOWLEDGE
             </div>
           </div>
 
         </Link>
 
-        <Link to="/" className="back-home">
-          ← Back to home
+        <Link
+          to="/"
+          className="return-home"
+        >
+          RETURN TO THE REALM
         </Link>
 
       </header>
 
-      {/* =====================================================
+      {/* =================================================
           MAIN
-      ===================================================== */}
+      ================================================= */}
 
-      <main className="main-container">
+      <main className="got-main">
 
         {/* =================================================
-            LEFT CINEMATIC PANEL
+            LEFT SIDE
         ================================================= */}
 
-        <section className="visual-panel">
+        <section className="realm-section">
 
-          <div className="classified">
-            <span className="classified-dot" />
-            ACCESS PROTOCOL
+          <div className="realm-label">
+            <span className="realm-line" />
+            THE SEVEN REALMS OF LEARNING
+            <span className="realm-line" />
           </div>
 
-          <div className="visual-title">
+          <h2 className="realm-title">
 
-            <span>BUILD YOUR</span>
+            KNOWLEDGE
 
             <strong>
-              NEXT <em>LEVEL.</em>
+              IS <span>POWER.</span>
             </strong>
 
-          </div>
+          </h2>
 
-          <p className="visual-description">
-            One account. One mission.
+          <p className="realm-description">
+            Choose your path. Forge your skills.
             <br />
-            Unlimited learning potential.
+            Build a kingdom of knowledge.
           </p>
 
-          {/* Tactical circle */}
+          {/* Sword */}
 
-          <div className="target-system">
+          <div className="sword-display">
 
-            <div className="target-ring ring-one" />
-            <div className="target-ring ring-two" />
-            <div className="target-ring ring-three" />
+            <div className="sword-glow" />
 
-            <div className="crosshair horizontal" />
-            <div className="crosshair vertical" />
+            <div className="sword">
 
-            <div className="target-core">
-              <Shield size={28} />
+              <div className="blade">
+                <div className="blade-highlight" />
+              </div>
+
+              <div className="guard">
+                <span />
+                <span />
+              </div>
+
+              <div className="handle" />
+
+              <div className="pommel" />
+
             </div>
 
           </div>
 
-          {/* Floating info cards */}
+          {/* House cards */}
 
-          <div className="intel-card intel-one">
-            <Sparkles size={14} />
-            <div>
-              <span>MISSION</span>
-              <strong>LEARN</strong>
+          <div className="realm-cards">
+
+            <div className="realm-card">
+              <Shield size={16} />
+
+              <div>
+                <small>HOUSE</small>
+                <strong>KNOWLEDGE</strong>
+              </div>
             </div>
+
+            <div className="realm-card">
+              <Flame size={16} />
+
+              <div>
+                <small>FORGE</small>
+                <strong>YOUR SKILLS</strong>
+              </div>
+            </div>
+
+            <div className="realm-card">
+              <Crown size={16} />
+
+              <div>
+                <small>DESTINY</small>
+                <strong>YOUR FUTURE</strong>
+              </div>
+            </div>
+
           </div>
 
-          <div className="intel-card intel-two">
-            <Zap size={14} />
-            <div>
-              <span>STATUS</span>
-              <strong>READY</strong>
-            </div>
-          </div>
-
-          <div className="intel-card intel-three">
-            <ShieldCheck size={14} />
-            <div>
-              <span>SECURITY</span>
-              <strong>ACTIVE</strong>
-            </div>
-          </div>
-
-          <div className="vertical-text">
-            SMART LMS // 2026
+          <div className="realm-quote">
+            "A mind needs books as a sword needs a whetstone."
           </div>
 
         </section>
 
         {/* =================================================
-            REGISTRATION CARD
+            REGISTER CARD
         ================================================= */}
 
-        <section className="register-card">
+        <section
+          className="register-card"
+          style={{
+            transform: `
+              perspective(1200px)
+              rotateX(${cardTilt.x}deg)
+              rotateY(${cardTilt.y}deg)
+            `,
+          }}
+        >
 
-          {/* Card top decoration */}
+          {/* Metal corners */}
 
-          <div className="card-top-line" />
+          <div className="corner corner-tl" />
+          <div className="corner corner-tr" />
+          <div className="corner corner-bl" />
+          <div className="corner corner-br" />
 
-          <div className="card-header">
+          <div className="card-fire-line" />
 
-            <div className="access-badge">
-              <span />
-              NEW OPERATIVE
+          {/* HEADER */}
+
+          <div className="register-header">
+
+            <div className="oath">
+
+              <span className="oath-dot" />
+
+              TAKE THE OATH
+
+              <span className="oath-dot" />
+
             </div>
 
             <h1>
-              Create your
+              Join the
               <br />
-              <span>SmartLMS account.</span>
+              <span>Realm.</span>
             </h1>
 
             <p>
-              Enter your details and begin your learning mission.
+              Create your account and begin your
+              journey through the realm of knowledge.
             </p>
 
           </div>
 
-          {/* =================================================
-              FORM
-          ================================================= */}
+          {/* FORM */}
 
           <form onSubmit={handleSubmit}>
 
             {/* NAME */}
 
-            <div className="field">
+            <div className="got-field">
 
               <label htmlFor="name">
-                FULL NAME
+                YOUR NAME
               </label>
 
-              <div className="input-container">
+              <div className="got-input">
 
                 <UserRound
                   size={17}
-                  className="input-icon"
+                  className="field-icon"
                 />
 
                 <input
@@ -306,7 +489,7 @@ function Register() {
                   type="text"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="Enter your full name"
+                  placeholder="Enter your name"
                   autoComplete="name"
                   required
                 />
@@ -317,17 +500,17 @@ function Register() {
 
             {/* EMAIL */}
 
-            <div className="field">
+            <div className="got-field">
 
               <label htmlFor="email">
-                EMAIL ADDRESS
+                RAVEN ADDRESS
               </label>
 
-              <div className="input-container">
+              <div className="got-input">
 
-                <Target
+                <Mail
                   size={17}
-                  className="input-icon"
+                  className="field-icon"
                 />
 
                 <input
@@ -336,7 +519,7 @@ function Register() {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="you@example.com"
+                  placeholder="your@email.com"
                   autoComplete="email"
                   required
                 />
@@ -347,29 +530,35 @@ function Register() {
 
             {/* ROLE */}
 
-            <div className="field">
+            <div className="got-field">
 
               <label>
-                SELECT YOUR ROLE
+                CHOOSE YOUR PATH
               </label>
 
-              <div className="role-grid">
+              <div className="path-grid">
 
                 <RoleButton
-                  active={formData.role === "student"}
+                  active={
+                    formData.role === "student"
+                  }
                   onClick={() =>
                     setFormData((prev) => ({
                       ...prev,
                       role: "student",
                     }))
                   }
-                  icon={<GraduationCap size={19} />}
+                  icon={
+                    <GraduationCap size={19} />
+                  }
                   title="Student"
-                  subtitle="Learn & track"
+                  subtitle="Walk the path"
                 />
 
                 <RoleButton
-                  active={formData.role === "instructor"}
+                  active={
+                    formData.role === "instructor"
+                  }
                   onClick={() =>
                     setFormData((prev) => ({
                       ...prev,
@@ -377,31 +566,29 @@ function Register() {
                     }))
                   }
                   icon={<Users size={19} />}
-                  title="Instructor"
-                  subtitle="Teach & manage"
+                  title="Maester"
+                  subtitle="Teach the realm"
                 />
 
               </div>
 
             </div>
 
-            {/* PASSWORD ROW */}
+            {/* PASSWORD */}
 
-            <div className="password-grid">
+            <div className="password-row">
 
-              {/* PASSWORD */}
-
-              <div className="field">
+              <div className="got-field">
 
                 <label htmlFor="password">
-                  PASSWORD
+                  SECRET WORD
                 </label>
 
-                <div className="input-container">
+                <div className="got-input">
 
                   <Lock
                     size={16}
-                    className="input-icon"
+                    className="field-icon"
                   />
 
                   <input
@@ -438,27 +625,72 @@ function Register() {
 
                 </div>
 
+                {/* Strength */}
+
+                {formData.password && (
+                  <div className="strength">
+
+                    <div className="strength-bars">
+
+                      <span
+                        className={
+                          passwordStrength >= 1
+                            ? "active"
+                            : ""
+                        }
+                      />
+
+                      <span
+                        className={
+                          passwordStrength >= 2
+                            ? "active"
+                            : ""
+                        }
+                      />
+
+                      <span
+                        className={
+                          passwordStrength >= 3
+                            ? "active"
+                            : ""
+                        }
+                      />
+
+                    </div>
+
+                    <small>
+                      {passwordStrength === 1 &&
+                        "WEAK"}
+                      {passwordStrength === 2 &&
+                        "STRONG"}
+                      {passwordStrength === 3 &&
+                        "MIGHTY"}
+                    </small>
+
+                  </div>
+                )}
+
               </div>
 
               {/* CONFIRM */}
 
-              <div className="field">
+              <div className="got-field">
 
                 <label htmlFor="confirmPassword">
-                  CONFIRM PASSWORD
+                  CONFIRM OATH
                 </label>
 
                 <div
-                  className={`input-container ${
+                  className={`got-input ${
                     passwordsMatch
-                      ? "password-valid"
+                      ? "input-valid"
                       : ""
                   }`}
                 >
 
                   <Lock
                     size={16}
-                    className="input-icon"
+                    className="field-icon"
                   />
 
                   <input
@@ -469,7 +701,9 @@ function Register() {
                         ? "text"
                         : "password"
                     }
-                    value={formData.confirmPassword}
+                    value={
+                      formData.confirmPassword
+                    }
                     onChange={handleChange}
                     placeholder="Confirm password"
                     autoComplete="new-password"
@@ -498,47 +732,50 @@ function Register() {
 
             </div>
 
-            {/* PASSWORD STATUS */}
+            {/* PASSWORD MATCH */}
 
             {formData.confirmPassword && (
               <div
-                className={
+                className={`oath-status ${
                   passwordsMatch
-                    ? "password-status valid"
-                    : "password-status invalid"
-                }
+                    ? "valid"
+                    : "invalid"
+                }`}
               >
+
                 {passwordsMatch ? (
                   <>
-                    <Check size={12} />
-                    PASSWORDS MATCH
+                    <Check size={13} />
+                    OATH ACCEPTED — PASSWORDS MATCH
                   </>
                 ) : (
                   <>
                     <span>!</span>
-                    PASSWORDS DO NOT MATCH
+                    OATH REJECTED — PASSWORDS DIFFER
                   </>
                 )}
+
               </div>
             )}
 
             {/* TERMS */}
 
-            <label className="terms">
+            <label className="realm-terms">
 
               <input
                 type="checkbox"
                 required
               />
 
-              <span className="custom-check">
+              <span className="terms-check">
                 <Check size={10} />
               </span>
 
               <span>
-                I agree to the SmartLMS{" "}
-                <b>terms and conditions</b>{" "}
-                and acknowledge the privacy policy.
+                I swear to uphold the
+                <b> terms of the realm</b> and
+                acknowledge the privacy laws of
+                SmartLMS.
               </span>
 
             </label>
@@ -548,20 +785,20 @@ function Register() {
             <button
               type="submit"
               disabled={loading}
-              className={`register-button ${
+              className={`join-button ${
                 loading ? "loading" : ""
               }`}
             >
 
               {loading ? (
                 <>
-                  <span className="loader" />
-                  CREATING ACCOUNT...
+                  <span className="button-loader" />
+                  FORGING YOUR ACCOUNT...
                 </>
               ) : (
                 <>
-                  CREATE ACCOUNT
-                  <ArrowRight size={17} />
+                  ENTER THE REALM
+                  <ArrowRight size={18} />
                 </>
               )}
 
@@ -569,37 +806,37 @@ function Register() {
 
           </form>
 
-          {/* =================================================
-              LOGIN
-          ================================================= */}
+          {/* LOGIN */}
 
-          <div className="login-section">
+          <div className="already-member">
 
             <span>
-              Already have an account?
+              Already sworn to the realm?
             </span>
 
             <Link to="/login">
-              Sign in
+              RETURN TO THE THRONE
               <ArrowRight size={12} />
             </Link>
 
           </div>
 
-          {/* SECURITY */}
+          {/* FOOTER */}
 
-          <div className="security-footer">
+          <div className="card-footer">
 
             <ShieldCheck size={13} />
 
             <span>
-              ENCRYPTED ACCOUNT CREATION
+              PROTECTED BY THE NIGHT'S WATCH
             </span>
 
             <i />
 
+            <WandSparkles size={12} />
+
             <span>
-              SMARTLMS SECURE
+              SECURE REALM
             </span>
 
           </div>
@@ -608,9 +845,9 @@ function Register() {
 
       </main>
 
-      {/* =====================================================
-          STYLES
-      ===================================================== */}
+      {/* =================================================
+          STYLE
+      ================================================= */}
 
       <style>{`
 
@@ -618,19 +855,29 @@ function Register() {
           box-sizing: border-box;
         }
 
-        .register-page {
+        body {
+          margin: 0;
+          background: #050607;
+        }
+
+        .got-register-page {
           min-height: 100vh;
           width: 100%;
-          background:
-            radial-gradient(
-              circle at 75% 45%,
-              rgba(110, 10, 20, 0.12),
-              transparent 35%
-            ),
-            #070707;
-          color: #fff;
           position: relative;
           overflow-x: hidden;
+          color: #eee;
+          background:
+            radial-gradient(
+              circle at 72% 35%,
+              rgba(116, 20, 23, .18),
+              transparent 32%
+            ),
+            radial-gradient(
+              circle at 20% 60%,
+              rgba(31, 48, 62, .15),
+              transparent 35%
+            ),
+            #050607;
           font-family:
             Inter,
             ui-sans-serif,
@@ -642,227 +889,490 @@ function Register() {
         }
 
         /* =================================================
+           CURSOR
+        ================================================= */
+
+        .cursor-light {
+          position: fixed;
+          width: 320px;
+          height: 320px;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          pointer-events: none;
+          z-index: 50;
+          background:
+            radial-gradient(
+              circle,
+              rgba(182, 137, 72, .08),
+              rgba(120, 20, 25, .025) 35%,
+              transparent 70%
+            );
+          filter: blur(8px);
+          mix-blend-mode: screen;
+        }
+
+        /* =================================================
            BACKGROUND
         ================================================= */
 
-        .background {
+        .got-background {
           position: fixed;
           inset: 0;
           pointer-events: none;
           overflow: hidden;
+          z-index: 0;
         }
 
-        .ambient {
+        .moon {
           position: absolute;
+          width: 180px;
+          height: 180px;
+          right: 13%;
+          top: 12%;
           border-radius: 50%;
-          filter: blur(100px);
-          opacity: .28;
-        }
-
-        .ambient-one {
-          width: 500px;
-          height: 500px;
-          background: rgba(128, 12, 22, .25);
-          left: -180px;
-          top: 20%;
-        }
-
-        .ambient-two {
-          width: 420px;
-          height: 420px;
-          background: rgba(150, 18, 28, .18);
-          right: -160px;
-          bottom: -100px;
-        }
-
-        .ambient-three {
-          width: 250px;
-          height: 250px;
-          background: rgba(255, 255, 255, .025);
-          top: 8%;
-          right: 25%;
-        }
-
-        .grid-overlay {
-          position: absolute;
-          inset: 0;
-          opacity: .055;
-          background-image:
-            linear-gradient(
-              rgba(255,255,255,.4) 1px,
-              transparent 1px
-            ),
-            linear-gradient(
-              90deg,
-              rgba(255,255,255,.4) 1px,
-              transparent 1px
-            );
-          background-size: 55px 55px;
-        }
-
-        .scan-line {
-          position: absolute;
-          left: 0;
-          right: 0;
-          height: 1px;
           background:
-            linear-gradient(
-              90deg,
-              transparent,
-              rgba(180,20,35,.4),
-              transparent
+            radial-gradient(
+              circle at 35% 30%,
+              #f4f0df,
+              #d9d3bd 52%,
+              #a9a38f
             );
           box-shadow:
-            0 0 18px rgba(180,20,35,.3);
-          animation: scan 8s linear infinite;
+            0 0 30px rgba(220, 215, 190, .15),
+            0 0 100px rgba(220, 215, 190, .07);
+          opacity: .75;
+          animation: moonFloat 8s ease-in-out infinite;
         }
 
-        @keyframes scan {
-          0% {
-            top: -5%;
-          }
-
-          100% {
-            top: 105%;
-          }
-        }
-
-        .particle {
+        .moon::before,
+        .moon::after {
+          content: "";
           position: absolute;
-          width: 2px;
-          height: 2px;
-          background: rgba(255,255,255,.45);
           border-radius: 50%;
-          animation: particleFloat 6s ease-in-out infinite;
+          background: rgba(80, 76, 65, .12);
         }
 
-        .p1 { left: 12%; top: 22%; }
-        .p2 { left: 27%; top: 70%; animation-delay: 1s; }
-        .p3 { left: 51%; top: 15%; animation-delay: 2s; }
-        .p4 { left: 74%; top: 30%; animation-delay: 3s; }
-        .p5 { left: 88%; top: 65%; animation-delay: 1.5s; }
-        .p6 { left: 63%; top: 82%; animation-delay: 2.5s; }
-        .p7 { left: 8%; top: 85%; animation-delay: 4s; }
+        .moon::before {
+          width: 30px;
+          height: 22px;
+          left: 35px;
+          top: 42px;
+        }
 
-        @keyframes particleFloat {
+        .moon::after {
+          width: 20px;
+          height: 15px;
+          right: 40px;
+          bottom: 42px;
+        }
+
+        .moon-glow {
+          position: absolute;
+          inset: -70px;
+          border-radius: 50%;
+          background:
+            radial-gradient(
+              circle,
+              rgba(220,215,190,.08),
+              transparent 65%
+            );
+        }
+
+        @keyframes moonFloat {
           0%, 100% {
             transform: translateY(0);
-            opacity: .2;
           }
 
           50% {
-            transform: translateY(-18px);
+            transform: translateY(-10px);
+          }
+        }
+
+        /* =================================================
+           STARS
+        ================================================= */
+
+        .star {
+          position: absolute;
+          width: 2px;
+          height: 2px;
+          border-radius: 50%;
+          background: #ddd;
+          box-shadow: 0 0 8px rgba(255,255,255,.5);
+          animation: twinkle 3s ease-in-out infinite;
+        }
+
+        .s1 { left: 9%; top: 17%; }
+        .s2 { left: 20%; top: 28%; animation-delay: .5s; }
+        .s3 { left: 34%; top: 13%; animation-delay: 1s; }
+        .s4 { left: 53%; top: 20%; animation-delay: 1.5s; }
+        .s5 { left: 70%; top: 10%; animation-delay: 2s; }
+        .s6 { left: 84%; top: 25%; animation-delay: 1.2s; }
+        .s7 { left: 92%; top: 48%; animation-delay: .7s; }
+        .s8 { left: 43%; top: 34%; animation-delay: 2.2s; }
+
+        @keyframes twinkle {
+          0%, 100% {
+            opacity: .15;
+          }
+
+          50% {
+            opacity: 1;
+          }
+        }
+
+        /* =================================================
+           MOUNTAINS
+        ================================================= */
+
+        .mountains {
+          position: absolute;
+          left: -5%;
+          right: -5%;
+          bottom: 0;
+          height: 34%;
+          clip-path: polygon(
+            0 100%,
+            0 65%,
+            8% 45%,
+            15% 67%,
+            23% 35%,
+            30% 63%,
+            39% 28%,
+            47% 60%,
+            56% 38%,
+            65% 68%,
+            75% 32%,
+            83% 59%,
+            91% 40%,
+            100% 64%,
+            100% 100%
+          );
+        }
+
+        .mountains-back {
+          background: #0a0d10;
+          opacity: .8;
+        }
+
+        .mountains-front {
+          bottom: -2%;
+          height: 26%;
+          background: #050607;
+          opacity: .95;
+        }
+
+        /* =================================================
+           CASTLE
+        ================================================= */
+
+        .castle {
+          position: absolute;
+          bottom: 8%;
+          left: 13%;
+          width: 310px;
+          height: 190px;
+          opacity: .25;
+          filter: blur(.2px);
+        }
+
+        .castle-center {
+          position: absolute;
+          bottom: 0;
+          left: 70px;
+          width: 170px;
+          height: 120px;
+          background: #050607;
+          border-top: 8px solid #090b0c;
+        }
+
+        .castle-door {
+          position: absolute;
+          bottom: 0;
+          left: 65px;
+          width: 40px;
+          height: 75px;
+          border-radius: 40px 40px 0 0;
+          background: #020304;
+        }
+
+        .tower {
+          position: absolute;
+          bottom: 0;
+          width: 65px;
+          height: 170px;
+          background: #050607;
+        }
+
+        .tower-left {
+          left: 20px;
+        }
+
+        .tower-right {
+          right: 20px;
+        }
+
+        .tower::before {
+          content: "";
+          position: absolute;
+          left: -6px;
+          top: -15px;
+          width: 77px;
+          height: 20px;
+          background:
+            repeating-linear-gradient(
+              90deg,
+              #050607 0 10px,
+              transparent 10px 18px
+            );
+        }
+
+        .tower span {
+          display: block;
+          width: 18px;
+          height: 27px;
+          margin: 23px auto;
+          background: #010203;
+          border-radius: 10px 10px 0 0;
+        }
+
+        /* =================================================
+           SNOW
+        ================================================= */
+
+        .snow-field,
+        .ember-field {
+          position: absolute;
+          inset: 0;
+        }
+
+        .snow {
+          position: absolute;
+          width: 2px;
+          height: 2px;
+          border-radius: 50%;
+          background: rgba(230,235,240,.65);
+          animation: snowFall linear infinite;
+        }
+
+        ${Array.from({ length: 35 }).map((_, i) => `
+          .snow-${i} {
+            left: ${(i * 17) % 100}%;
+            top: ${(i * 13) % 100}%;
+            animation-duration: ${6 + (i % 6)}s;
+            animation-delay: -${i % 5}s;
+          }
+        `).join("")}
+
+        @keyframes snowFall {
+          from {
+            transform: translateY(-30px) translateX(0);
+            opacity: 0;
+          }
+
+          20% {
+            opacity: .7;
+          }
+
+          100% {
+            transform:
+              translateY(110vh)
+              translateX(40px);
+            opacity: 0;
+          }
+        }
+
+        /* =================================================
+           EMBERS
+        ================================================= */
+
+        .ember {
+          position: absolute;
+          width: 3px;
+          height: 3px;
+          border-radius: 50%;
+          background: #b83b2d;
+          box-shadow: 0 0 10px rgba(190,50,30,.6);
+          animation: emberRise linear infinite;
+        }
+
+        ${Array.from({ length: 18 }).map((_, i) => `
+          .ember-${i} {
+            left: ${(i * 23) % 100}%;
+            bottom: ${(i * 11) % 40}%;
+            animation-duration: ${5 + (i % 5)}s;
+            animation-delay: -${i % 4}s;
+          }
+        `).join("")}
+
+        @keyframes emberRise {
+          from {
+            transform:
+              translateY(0)
+              translateX(0)
+            scale(.5);
+            opacity: 0;
+          }
+
+          25% {
             opacity: .8;
           }
+
+          100% {
+            transform:
+              translateY(-70vh)
+              translateX(80px)
+              scale(1.3);
+            opacity: 0;
+          }
+        }
+
+        /* =================================================
+           FOG
+        ================================================= */
+
+        .fog {
+          position: absolute;
+          width: 70%;
+          height: 160px;
+          border-radius: 50%;
+          filter: blur(45px);
+          background: rgba(120,130,135,.035);
+          animation: fogMove 18s ease-in-out infinite;
+        }
+
+        .fog-one {
+          bottom: 14%;
+          left: -20%;
+        }
+
+        .fog-two {
+          bottom: 25%;
+          right: -20%;
+          animation-delay: 5s;
+        }
+
+        @keyframes fogMove {
+          0%, 100% {
+            transform: translateX(0);
+          }
+
+          50% {
+            transform: translateX(120px);
+          }
+        }
+
+        .vignette {
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(
+              circle,
+              transparent 35%,
+              rgba(0,0,0,.75) 100%
+            );
         }
 
         /* =================================================
            HEADER
         ================================================= */
 
-        .topbar {
-          height: 76px;
-          width: 100%;
-          padding: 0 42px;
+        .got-header {
+          position: relative;
+          z-index: 10;
+          height: 78px;
+          padding: 0 48px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          position: relative;
-          z-index: 10;
-          border-bottom: 1px solid rgba(255,255,255,.06);
-          background: rgba(5,5,5,.72);
+          border-bottom: 1px solid rgba(191,155,92,.14);
+          background: rgba(4,5,6,.82);
           backdrop-filter: blur(18px);
         }
 
-        .brand {
+        .got-brand {
           display: flex;
           align-items: center;
           gap: 12px;
+          color: #eee;
           text-decoration: none;
-          color: white;
         }
 
-        .brand-mark {
-          width: 40px;
-          height: 40px;
-          border: 1px solid rgba(190,25,40,.65);
-          background:
-            linear-gradient(
-              145deg,
-              #19090b,
-              #090909
-            );
+        .sigil {
+          width: 42px;
+          height: 42px;
           display: flex;
           align-items: center;
           justify-content: center;
-          position: relative;
-          color: #d51e35;
+          color: #c09a58;
+          border: 1px solid rgba(192,154,88,.45);
+          background:
+            linear-gradient(
+              145deg,
+              #171512,
+              #080909
+            );
           box-shadow:
-            0 0 25px rgba(170,15,30,.14);
+            inset 0 0 15px rgba(190,150,80,.06),
+            0 0 25px rgba(170,120,50,.06);
         }
 
-        .brand-dot {
-          width: 4px;
-          height: 4px;
-          position: absolute;
-          top: 5px;
-          right: 5px;
-          border-radius: 50%;
-          background: #d51e35;
-          box-shadow:
-            0 0 8px #d51e35;
-        }
-
-        .brand-name {
+        .brand-title {
           font-size: 18px;
-          font-weight: 800;
+          font-weight: 900;
           letter-spacing: -.5px;
         }
 
-        .brand-name span {
-          color: #c51b31;
+        .brand-title span {
+          color: #b68b4f;
         }
 
         .brand-subtitle {
+          margin-top: 3px;
           font-size: 7px;
-          letter-spacing: 1.8px;
-          color: #686868;
-          margin-top: 4px;
+          letter-spacing: 2px;
+          color: #666;
         }
 
-        .back-home {
+        .return-home {
           color: #777;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 1.5px;
           text-decoration: none;
-          font-size: 12px;
-          transition: .2s;
+          transition: .3s;
         }
 
-        .back-home:hover {
-          color: #ddd;
+        .return-home:hover {
+          color: #c6a36b;
+          text-shadow:
+            0 0 15px rgba(198,163,107,.3);
         }
 
         /* =================================================
            MAIN
         ================================================= */
 
-        .main-container {
-          min-height: calc(100vh - 76px);
-          display: grid;
-          grid-template-columns: minmax(300px, .9fr) minmax(440px, 560px);
-          max-width: 1250px;
-          margin: 0 auto;
-          padding: 55px 45px 70px;
-          gap: 65px;
-          align-items: center;
+        .got-main {
           position: relative;
-          z-index: 2;
+          z-index: 5;
+          max-width: 1250px;
+          min-height: calc(100vh - 78px);
+          margin: auto;
+          padding: 50px 45px 70px;
+          display: grid;
+          grid-template-columns:
+            minmax(350px, 1fr)
+            minmax(460px, 540px);
+          gap: 75px;
+          align-items: center;
         }
 
         /* =================================================
-           VISUAL PANEL
+           REALM SECTION
         ================================================= */
 
-        .visual-panel {
+        .realm-section {
           position: relative;
           min-height: 610px;
           display: flex;
@@ -870,250 +1380,253 @@ function Register() {
           justify-content: center;
         }
 
-        .classified {
+        .realm-label {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #76694f;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: 2.5px;
+          margin-bottom: 25px;
+        }
+
+        .realm-line {
+          width: 35px;
+          height: 1px;
+          background:
+            linear-gradient(
+              90deg,
+              transparent,
+              #9d7c48
+            );
+        }
+
+        .realm-line:last-child {
+          background:
+            linear-gradient(
+              90deg,
+              #9d7c48,
+              transparent
+            );
+        }
+
+        .realm-title {
+          margin: 0;
+          font-size: clamp(50px, 5vw, 74px);
+          line-height: .9;
+          letter-spacing: -4px;
+          font-weight: 300;
+          color: #b7b7b7;
+        }
+
+        .realm-title strong {
+          display: block;
+          color: #eee;
+          font-weight: 900;
+        }
+
+        .realm-title span {
+          color: #a87943;
+          text-shadow:
+            0 0 35px rgba(170,110,50,.18);
+        }
+
+        .realm-description {
+          margin-top: 28px;
+          color: #686868;
+          line-height: 1.8;
+          font-size: 13px;
+        }
+
+        /* =================================================
+           SWORD
+        ================================================= */
+
+        .sword-display {
+          position: absolute;
+          right: 3%;
+          bottom: 12%;
+          width: 250px;
+          height: 280px;
+          display: flex;
+          justify-content: center;
+          opacity: .72;
+          transform: rotate(12deg);
+        }
+
+        .sword {
+          position: relative;
+          width: 50px;
+          height: 270px;
+          animation: swordFloat 5s ease-in-out infinite;
+        }
+
+        @keyframes swordFloat {
+          0%, 100% {
+            transform: translateY(0) rotate(0deg);
+          }
+
+          50% {
+            transform: translateY(-10px) rotate(2deg);
+          }
+        }
+
+        .blade {
+          position: absolute;
+          top: 0;
+          left: 16px;
+          width: 20px;
+          height: 190px;
+          background:
+            linear-gradient(
+              90deg,
+              #51575b,
+              #d6d8d6 45%,
+              #70767a
+            );
+          clip-path: polygon(
+            0 0,
+            100% 0,
+            100% 85%,
+            50% 100%,
+            0 85%
+          );
+          box-shadow:
+            0 0 20px rgba(200,205,205,.1);
+        }
+
+        .blade-highlight {
+          position: absolute;
+          width: 2px;
+          height: 160px;
+          left: 8px;
+          top: 10px;
+          background: rgba(255,255,255,.35);
+        }
+
+        .guard {
+          position: absolute;
+          top: 180px;
+          left: 0;
+          width: 52px;
+          height: 15px;
+          border-radius: 4px;
+          background:
+            linear-gradient(
+              90deg,
+              #6c522f,
+              #c7a260,
+              #6c522f
+            );
+          box-shadow:
+            0 0 15px rgba(180,130,60,.2);
+        }
+
+        .handle {
+          position: absolute;
+          top: 193px;
+          left: 19px;
+          width: 13px;
+          height: 55px;
+          background:
+            repeating-linear-gradient(
+              0deg,
+              #241a12 0 8px,
+              #5e4329 8px 12px
+            );
+        }
+
+        .pommel {
+          position: absolute;
+          top: 243px;
+          left: 15px;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background:
+            radial-gradient(
+              circle,
+              #d2ad68,
+              #684d2d
+            );
+        }
+
+        .sword-glow {
+          position: absolute;
+          width: 170px;
+          height: 270px;
+          background:
+            radial-gradient(
+              ellipse,
+              rgba(195,160,95,.08),
+              transparent 65%
+            );
+          filter: blur(15px);
+        }
+
+        /* =================================================
+           REALM CARDS
+        ================================================= */
+
+        .realm-cards {
+          position: absolute;
+          left: 0;
+          bottom: 3%;
+          display: flex;
+          gap: 10px;
+        }
+
+        .realm-card {
           display: flex;
           align-items: center;
           gap: 8px;
-          font-size: 9px;
-          font-weight: 800;
-          letter-spacing: 2.5px;
-          color: #8d8d8d;
-          margin-bottom: 22px;
-        }
-
-        .classified-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #c51b31;
-          box-shadow:
-            0 0 10px rgba(197,27,49,.8);
-          animation: pulse 1.8s infinite;
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            opacity: .45;
-            transform: scale(.8);
-          }
-
-          50% {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        .visual-title {
-          font-size: clamp(42px, 5vw, 67px);
-          line-height: .94;
-          letter-spacing: -3px;
-          font-weight: 300;
-          position: relative;
-          z-index: 3;
-        }
-
-        .visual-title span {
-          display: block;
-          color: #a5a5a5;
-        }
-
-        .visual-title strong {
-          display: block;
-          color: #f3f3f3;
-          font-weight: 800;
-        }
-
-        .visual-title em {
-          color: #bd1b30;
-          font-style: normal;
-          text-shadow:
-            0 0 30px rgba(190,25,45,.25);
-        }
-
-        .visual-description {
-          color: #777;
-          line-height: 1.7;
-          font-size: 13px;
-          margin-top: 25px;
-        }
-
-        /* =================================================
-           TARGET
-        ================================================= */
-
-        .target-system {
-          width: 270px;
-          height: 270px;
-          position: absolute;
-          right: 5%;
-          bottom: 5%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          opacity: .7;
-        }
-
-        .target-ring {
-          position: absolute;
-          border-radius: 50%;
-          border: 1px solid rgba(170,25,40,.3);
-        }
-
-        .ring-one {
-          width: 270px;
-          height: 270px;
-          animation: rotate 20s linear infinite;
-        }
-
-        .ring-two {
-          width: 205px;
-          height: 205px;
-          border-style: dashed;
-          animation: rotateReverse 14s linear infinite;
-        }
-
-        .ring-three {
-          width: 130px;
-          height: 130px;
-          border-color: rgba(255,255,255,.12);
-        }
-
-        @keyframes rotate {
-          from {
-            transform: rotate(0deg);
-          }
-
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes rotateReverse {
-          from {
-            transform: rotate(360deg);
-          }
-
-          to {
-            transform: rotate(0deg);
-          }
-        }
-
-        .crosshair {
-          position: absolute;
-          background: rgba(190,25,40,.2);
-        }
-
-        .horizontal {
-          width: 100%;
-          height: 1px;
-        }
-
-        .vertical {
-          height: 100%;
-          width: 1px;
-        }
-
-        .target-core {
-          width: 65px;
-          height: 65px;
-          border-radius: 50%;
-          border: 1px solid rgba(190,25,40,.6);
-          background: rgba(10,10,10,.8);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #c51b31;
-          box-shadow:
-            0 0 35px rgba(180,20,35,.16);
-          animation: corePulse 3s ease-in-out infinite;
-        }
-
-        @keyframes corePulse {
-          0%, 100% {
-            box-shadow:
-              0 0 20px rgba(180,20,35,.1);
-          }
-
-          50% {
-            box-shadow:
-              0 0 45px rgba(180,20,35,.25);
-          }
-        }
-
-        /* =================================================
-           INTEL CARDS
-        ================================================= */
-
-        .intel-card {
-          position: absolute;
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          padding: 9px 12px;
-          background: rgba(10,10,10,.65);
-          border: 1px solid rgba(255,255,255,.07);
-          backdrop-filter: blur(10px);
           min-width: 115px;
-          animation: cardFloat 5s ease-in-out infinite;
+          padding: 9px 11px;
+          border: 1px solid rgba(255,255,255,.07);
+          background: rgba(8,9,10,.6);
+          backdrop-filter: blur(12px);
+          transition: .3s;
         }
 
-        .intel-card svg {
-          color: #bd1b30;
+        .realm-card:hover {
+          transform: translateY(-5px);
+          border-color: rgba(190,150,80,.35);
+          box-shadow:
+            0 10px 30px rgba(0,0,0,.4),
+            0 0 25px rgba(170,120,50,.06);
         }
 
-        .intel-card span,
-        .intel-card strong {
+        .realm-card svg {
+          color: #ad8145;
+        }
+
+        .realm-card small,
+        .realm-card strong {
           display: block;
         }
 
-        .intel-card span {
-          color: #5f5f5f;
+        .realm-card small {
+          color: #555;
           font-size: 6px;
-          letter-spacing: 1.5px;
+          letter-spacing: 1.4px;
         }
 
-        .intel-card strong {
-          margin-top: 2px;
-          color: #ddd;
-          font-size: 9px;
-          letter-spacing: 1px;
-        }
-
-        .intel-one {
-          right: 0;
-          top: 28%;
-        }
-
-        .intel-two {
-          left: 4%;
-          bottom: 18%;
-          animation-delay: 1.5s;
-        }
-
-        .intel-three {
-          right: 15%;
-          bottom: 2%;
-          animation-delay: 3s;
-        }
-
-        @keyframes cardFloat {
-          0%, 100% {
-            transform: translateY(0);
-          }
-
-          50% {
-            transform: translateY(-7px);
-          }
-        }
-
-        .vertical-text {
-          position: absolute;
-          left: -15px;
-          top: 50%;
-          transform: rotate(-90deg);
-          color: #303030;
+        .realm-card strong {
+          color: #aaa;
           font-size: 8px;
-          letter-spacing: 3px;
+          margin-top: 3px;
+          letter-spacing: .8px;
+        }
+
+        .realm-quote {
+          position: absolute;
+          left: 0;
+          bottom: -5%;
+          color: #454545;
+          font-size: 9px;
+          font-style: italic;
+          letter-spacing: .5px;
         }
 
         /* =================================================
@@ -1122,423 +1635,567 @@ function Register() {
 
         .register-card {
           position: relative;
+          padding: 39px 40px 28px;
           background:
             linear-gradient(
               145deg,
-              rgba(27,27,27,.97),
-              rgba(12,12,12,.98)
+              rgba(25,25,23,.98),
+              rgba(9,10,10,.98)
             );
-          border: 1px solid rgba(255,255,255,.09);
-          padding: 37px 39px 27px;
+          border:
+            1px solid
+            rgba(191,155,91,.22);
           box-shadow:
-            0 30px 100px rgba(0,0,0,.6),
-            0 0 70px rgba(120,10,20,.07);
-          overflow: hidden;
+            0 40px 100px rgba(0,0,0,.7),
+            inset 0 0 50px rgba(255,255,255,.015),
+            0 0 60px rgba(110,20,20,.04);
+          transition:
+            transform .15s ease-out,
+            box-shadow .3s;
+          transform-style: preserve-3d;
         }
 
-        .card-top-line {
+        .register-card:hover {
+          box-shadow:
+            0 45px 110px rgba(0,0,0,.75),
+            inset 0 0 50px rgba(255,255,255,.02),
+            0 0 80px rgba(140,25,25,.06);
+        }
+
+        .card-fire-line {
           position: absolute;
           top: 0;
-          left: 0;
-          width: 100%;
+          left: 8%;
+          right: 8%;
           height: 2px;
           background:
             linear-gradient(
               90deg,
               transparent,
-              #c51b31,
+              #9d2a25,
+              #c39a57,
+              #9d2a25,
               transparent
             );
           box-shadow:
-            0 0 20px rgba(197,27,49,.4);
+            0 0 20px rgba(180,50,30,.35);
+          animation: fireLine 4s linear infinite;
         }
 
-        .register-card::before {
-          content: "";
+        @keyframes fireLine {
+          0% {
+            opacity: .4;
+          }
+
+          50% {
+            opacity: 1;
+          }
+
+          100% {
+            opacity: .4;
+          }
+        }
+
+        .corner {
           position: absolute;
-          inset: 0;
-          pointer-events: none;
-          opacity: .025;
-          background-image:
-            repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 3px,
-              white 4px
-            );
+          width: 20px;
+          height: 20px;
+          border-color: rgba(190,150,80,.55);
+          border-style: solid;
         }
 
-        .card-header {
-          position: relative;
-          margin-bottom: 28px;
+        .corner-tl {
+          top: 10px;
+          left: 10px;
+          border-width: 1px 0 0 1px;
         }
 
-        .access-badge {
-          display: inline-flex;
+        .corner-tr {
+          top: 10px;
+          right: 10px;
+          border-width: 1px 1px 0 0;
+        }
+
+        .corner-bl {
+          bottom: 10px;
+          left: 10px;
+          border-width: 0 0 1px 1px;
+        }
+
+        .corner-br {
+          bottom: 10px;
+          right: 10px;
+          border-width: 0 1px 1px 0;
+        }
+
+        /* =================================================
+           HEADER
+        ================================================= */
+
+        .register-header {
+          margin-bottom: 27px;
+        }
+
+        .oath {
+          display: flex;
           align-items: center;
-          gap: 7px;
-          color: #a4a4a4;
+          gap: 8px;
+          color: #88734f;
           font-size: 8px;
-          font-weight: 800;
+          font-weight: 900;
           letter-spacing: 2px;
-          margin-bottom: 14px;
+          margin-bottom: 15px;
         }
 
-        .access-badge span {
+        .oath-dot {
           width: 5px;
           height: 5px;
-          background: #c51b31;
           border-radius: 50%;
-          box-shadow: 0 0 8px #c51b31;
+          background: #9b3028;
+          box-shadow:
+            0 0 10px rgba(180,40,30,.7);
+          animation: pulseOath 2s infinite;
         }
 
-        .card-header h1 {
+        @keyframes pulseOath {
+          0%, 100% {
+            opacity: .4;
+          }
+
+          50% {
+            opacity: 1;
+          }
+        }
+
+        .register-header h1 {
           margin: 0;
-          color: #eee;
-          font-size: 30px;
-          line-height: 1.1;
-          letter-spacing: -1px;
-          font-weight: 700;
+          font-size: 31px;
+          line-height: 1.05;
+          letter-spacing: -1.5px;
+          color: #e5e2dc;
         }
 
-        .card-header h1 span {
-          color: #b7192f;
+        .register-header h1 span {
+          color: #ad8248;
           text-shadow:
-            0 0 25px rgba(183,25,47,.18);
+            0 0 25px rgba(170,120,60,.15);
         }
 
-        .card-header p {
-          color: #777;
+        .register-header p {
+          margin: 12px 0 0;
+          color: #6c6c68;
           font-size: 11px;
-          line-height: 1.6;
-          margin: 11px 0 0;
+          line-height: 1.65;
         }
 
         /* =================================================
            FORM
         ================================================= */
 
-        .field {
-          margin-bottom: 16px;
+        .got-field {
+          margin-bottom: 15px;
         }
 
-        .field label {
+        .got-field label {
           display: block;
-          color: #777;
-          font-size: 8px;
-          font-weight: 800;
-          letter-spacing: 1.7px;
           margin-bottom: 7px;
+          color: #77736b;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: 1.8px;
         }
 
-        .input-container {
-          height: 45px;
+        .got-input {
+          position: relative;
+          height: 46px;
           display: flex;
           align-items: center;
-          position: relative;
-          border: 1px solid #292929;
-          background: #0b0b0b;
-          transition: .25s;
+          border: 1px solid #292927;
+          background:
+            linear-gradient(
+              90deg,
+              #0b0c0c,
+              #0d0e0e
+            );
+          transition: .3s;
         }
 
-        .input-container:focus-within {
-          border-color: rgba(184,26,47,.7);
+        .got-input:hover {
+          border-color: #454039;
+        }
+
+        .got-input:focus-within {
+          border-color:
+            rgba(172,126,66,.7);
           box-shadow:
-            0 0 0 1px rgba(184,26,47,.12),
-            0 0 25px rgba(150,15,30,.06);
+            0 0 0 1px
+            rgba(172,126,66,.12),
+            0 0 30px
+            rgba(170,110,40,.06);
         }
 
-        .input-icon {
+        .field-icon {
           margin-left: 13px;
-          color: #575757;
+          color: #55524d;
           flex-shrink: 0;
-          transition: .25s;
+          transition: .3s;
         }
 
-        .input-container:focus-within .input-icon {
-          color: #b7192f;
+        .got-input:focus-within
+        .field-icon {
+          color: #b78a4e;
         }
 
-        .input-container input {
+        .got-input input {
           width: 100%;
           height: 100%;
           border: none;
           outline: none;
           background: transparent;
-          color: #eee;
-          padding: 0 13px 0 10px;
+          color: #e5e3dd;
+          padding: 0 12px 0 10px;
           font-size: 12px;
         }
 
-        .input-container input::placeholder {
-          color: #444;
+        .got-input input::placeholder {
+          color: #44443f;
         }
 
-        .input-container input:-webkit-autofill,
-        .input-container input:-webkit-autofill:hover,
-        .input-container input:-webkit-autofill:focus {
+        .got-input input:-webkit-autofill,
+        .got-input input:-webkit-autofill:hover,
+        .got-input input:-webkit-autofill:focus {
           -webkit-text-fill-color: #eee;
-          -webkit-box-shadow: 0 0 0 1000px #0b0b0b inset;
-          transition: background-color 5000s ease-in-out 0s;
+          -webkit-box-shadow:
+            0 0 0 1000px
+            #0b0c0c inset;
         }
 
         .eye-button {
-          width: 36px;
+          width: 38px;
           height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           border: none;
           background: transparent;
           color: #555;
           cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
+          transition: .2s;
         }
 
         .eye-button:hover {
-          color: #b7192f;
+          color: #bc914f;
         }
 
         /* =================================================
-           ROLE
+           PATH
         ================================================= */
 
-        .role-grid {
+        .path-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 10px;
         }
 
-        .role-button {
-          height: 66px;
-          border: 1px solid #292929;
-          background: #0b0b0b;
-          color: white;
+        .path-button {
+          position: relative;
+          height: 70px;
           display: flex;
           align-items: center;
-          gap: 11px;
+          gap: 10px;
           padding: 0 12px;
-          cursor: pointer;
+          border: 1px solid #292927;
+          background: #0b0c0c;
+          color: #eee;
           text-align: left;
-          position: relative;
+          cursor: pointer;
           overflow: hidden;
-          transition: .25s;
+          transition: .3s;
         }
 
-        .role-button:hover {
-          border-color: #454545;
-          transform: translateY(-1px);
+        .path-button::before {
+          content: "";
+          position: absolute;
+          left: -100%;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          background:
+            linear-gradient(
+              90deg,
+              transparent,
+              rgba(180,140,80,.06),
+              transparent
+            );
+          transition: .5s;
         }
 
-        .role-button.active {
-          border-color: rgba(190,25,45,.8);
+        .path-button:hover::before {
+          left: 100%;
+        }
+
+        .path-button:hover {
+          transform: translateY(-2px);
+          border-color: #49453d;
+        }
+
+        .path-button.active {
+          border-color:
+            rgba(171,126,65,.75);
           background:
             linear-gradient(
               135deg,
-              rgba(100,10,20,.2),
-              rgba(15,15,15,.95)
+              rgba(105,65,25,.16),
+              #0c0d0d
             );
           box-shadow:
-            inset 3px 0 0 #bd1b30,
-            0 0 25px rgba(170,15,30,.06);
+            inset 3px 0 0 #a87a42,
+            0 0 25px
+            rgba(160,110,50,.05);
         }
 
-        .role-icon {
+        .path-icon {
           width: 38px;
           height: 38px;
-          border: 1px solid #2c2c2c;
-          background: #151515;
-          color: #6b6b6b;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+          border: 1px solid #33322e;
+          background: #151514;
+          color: #66635c;
+          transition: .3s;
         }
 
-        .role-button.active .role-icon {
-          color: #d31e37;
-          border-color: rgba(190,25,45,.4);
-          background: rgba(120,10,20,.14);
+        .path-button.active
+        .path-icon {
+          color: #c09555;
+          border-color:
+            rgba(180,130,60,.45);
+          background:
+            rgba(120,80,30,.12);
         }
 
-        .role-title {
+        .path-title {
           color: #ddd;
           font-size: 11px;
-          font-weight: 700;
+          font-weight: 800;
         }
 
-        .role-subtitle {
-          color: #555;
-          font-size: 8px;
-          margin-top: 3px;
+        .path-subtitle {
+          margin-top: 4px;
+          color: #55544f;
+          font-size: 7px;
+          letter-spacing: .5px;
         }
 
-        .role-status {
+        .path-mark {
           position: absolute;
-          right: 8px;
           top: 8px;
+          right: 8px;
           width: 6px;
           height: 6px;
-          border: 1px solid #555;
           border-radius: 50%;
+          border: 1px solid #4c4b46;
         }
 
-        .role-button.active .role-status {
-          background: #bd1b30;
-          border-color: #bd1b30;
-          box-shadow: 0 0 8px #bd1b30;
+        .path-button.active
+        .path-mark {
+          background: #b88a4d;
+          border-color: #b88a4d;
+          box-shadow:
+            0 0 10px rgba(190,140,60,.7);
         }
 
         /* =================================================
-           PASSWORDS
+           PASSWORD
         ================================================= */
 
-        .password-grid {
+        .password-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 12px;
         }
 
-        .password-valid {
-          border-color: rgba(20,140,90,.55);
-        }
-
-        .password-status {
+        .strength {
+          margin-top: 6px;
           display: flex;
           align-items: center;
-          gap: 5px;
-          margin-top: -7px;
-          margin-bottom: 11px;
+          justify-content: space-between;
+        }
+
+        .strength-bars {
+          display: flex;
+          gap: 3px;
+        }
+
+        .strength-bars span {
+          width: 25px;
+          height: 2px;
+          background: #282825;
+          transition: .3s;
+        }
+
+        .strength-bars span.active {
+          background: #a67b44;
+          box-shadow:
+            0 0 8px rgba(170,120,60,.4);
+        }
+
+        .strength small {
+          color: #625b4e;
+          font-size: 6px;
+          font-weight: 900;
+          letter-spacing: 1px;
+        }
+
+        .input-valid {
+          border-color:
+            rgba(70,150,105,.45);
+        }
+
+        .oath-status {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: -4px;
+          margin-bottom: 10px;
           font-size: 7px;
-          font-weight: 800;
-          letter-spacing: 1.2px;
+          font-weight: 900;
+          letter-spacing: 1px;
         }
 
-        .password-status.valid {
-          color: #4bc58a;
+        .oath-status.valid {
+          color: #55ad80;
         }
 
-        .password-status.invalid {
-          color: #d53a4d;
+        .oath-status.invalid {
+          color: #b74b43;
         }
 
-        .password-status.invalid span {
+        .oath-status.invalid span {
           width: 12px;
           height: 12px;
-          border: 1px solid #d53a4d;
-          border-radius: 50%;
-          display: inline-flex;
+          display: flex;
           align-items: center;
           justify-content: center;
+          border: 1px solid #9d423c;
+          border-radius: 50%;
         }
 
         /* =================================================
            TERMS
         ================================================= */
 
-        .terms {
+        .realm-terms {
+          position: relative;
           display: flex;
           align-items: flex-start;
           gap: 9px;
           padding: 11px;
-          border: 1px solid #252525;
-          background: rgba(255,255,255,.015);
-          cursor: pointer;
-          color: #5e5e5e;
+          border: 1px solid #272724;
+          background: rgba(255,255,255,.012);
+          color: #5e5d58;
           font-size: 8px;
-          line-height: 1.6;
-          margin-top: 5px;
+          line-height: 1.65;
+          cursor: pointer;
         }
 
-        .terms input {
+        .realm-terms input {
           position: absolute;
           opacity: 0;
           pointer-events: none;
         }
 
-        .custom-check {
+        .terms-check {
           width: 14px;
           height: 14px;
-          border: 1px solid #414141;
-          background: #090909;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+          border: 1px solid #41413d;
           color: transparent;
+          background: #090a0a;
         }
 
-        .terms input:checked + .custom-check {
-          background: #b7192f;
-          border-color: #b7192f;
+        .realm-terms input:checked
+        + .terms-check {
           color: white;
+          background: #9c3029;
+          border-color: #9c3029;
+          box-shadow:
+            0 0 12px
+            rgba(160,40,30,.25);
         }
 
-        .terms b {
-          color: #a9a9a9;
-          font-weight: 700;
+        .realm-terms b {
+          color: #9d8766;
         }
 
         /* =================================================
-           REGISTER BUTTON
+           BUTTON
         ================================================= */
 
-        .register-button {
+        .join-button {
           position: relative;
           width: 100%;
-          height: 48px;
-          border: 1px solid #c21b32;
+          height: 50px;
           margin-top: 15px;
-          background:
-            linear-gradient(
-              100deg,
-              #8e1225,
-              #bd1b30,
-              #8e1225
-            );
-          background-size: 200% 100%;
-          color: white;
-          font-size: 9px;
-          font-weight: 900;
-          letter-spacing: 1.8px;
-          cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 9px;
-          box-shadow:
-            0 8px 30px rgba(150,15,30,.16);
-          transition: .25s;
+          gap: 10px;
           overflow: hidden;
-          animation: buttonGradient 5s linear infinite;
+          border: 1px solid #a1352e;
+          background:
+            linear-gradient(
+              100deg,
+              #651d1b,
+              #9b3029,
+              #71301f,
+              #9b3029
+            );
+          background-size: 300% 100%;
+          color: #f5eee3;
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 2px;
+          cursor: pointer;
+          box-shadow:
+            0 10px 35px
+            rgba(100,25,20,.18);
+          animation:
+            buttonFlow 6s linear infinite;
+          transition: .3s;
         }
 
-        @keyframes buttonGradient {
-          0% {
+        @keyframes buttonFlow {
+          from {
             background-position: 0% 50%;
           }
 
-          100% {
-            background-position: 200% 50%;
+          to {
+            background-position: 300% 50%;
           }
         }
 
-        .register-button::after {
+        .join-button::before {
           content: "";
           position: absolute;
           top: 0;
           left: -100%;
-          width: 60%;
+          width: 55%;
           height: 100%;
           background:
             linear-gradient(
               90deg,
               transparent,
-              rgba(255,255,255,.15),
+              rgba(255,255,255,.14),
               transparent
             );
-          transform: skewX(-20deg);
-          animation: buttonShine 3.5s infinite;
+          transform: skewX(-25deg);
+          animation: buttonShine 4s infinite;
         }
 
         @keyframes buttonShine {
@@ -1546,28 +2203,31 @@ function Register() {
             left: -100%;
           }
 
-          45%, 100% {
+          40%, 100% {
             left: 140%;
           }
         }
 
-        .register-button:hover:not(:disabled) {
-          transform: translateY(-2px);
+        .join-button:hover:not(:disabled) {
+          transform: translateY(-3px);
           box-shadow:
-            0 12px 40px rgba(170,15,30,.28);
+            0 15px 45px
+            rgba(130,30,25,.3),
+            0 0 25px
+            rgba(180,100,50,.08);
         }
 
-        .register-button:active:not(:disabled) {
+        .join-button:active:not(:disabled) {
           transform: translateY(0);
         }
 
-        .register-button.loading {
-          opacity: .7;
+        .join-button.loading {
+          opacity: .65;
           cursor: not-allowed;
           animation: none;
         }
 
-        .loader {
+        .button-loader {
           width: 15px;
           height: 15px;
           border: 2px solid rgba(255,255,255,.3);
@@ -1586,122 +2246,110 @@ function Register() {
            LOGIN
         ================================================= */
 
-        .login-section {
+        .already-member {
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 5px;
-          margin-top: 20px;
-          padding-top: 18px;
-          border-top: 1px solid #222;
+          margin-top: 19px;
+          padding-top: 17px;
+          border-top: 1px solid #22221f;
+          color: #55544f;
           font-size: 9px;
-          color: #555;
         }
 
-        .login-section a {
-          color: #bd1b30;
-          text-decoration: none;
-          font-weight: 800;
+        .already-member a {
           display: inline-flex;
           align-items: center;
-          gap: 3px;
-          transition: .2s;
+          gap: 4px;
+          color: #b4874d;
+          font-weight: 900;
+          text-decoration: none;
+          transition: .25s;
         }
 
-        .login-section a:hover {
-          color: #e42b43;
+        .already-member a:hover {
+          color: #d0a76b;
+          text-shadow:
+            0 0 12px
+            rgba(190,140,70,.25);
         }
 
         /* =================================================
-           SECURITY
+           FOOTER
         ================================================= */
 
-        .security-footer {
+        .card-footer {
           display: flex;
-          justify-content: center;
           align-items: center;
+          justify-content: center;
           gap: 7px;
-          margin-top: 19px;
-          color: #414141;
-          font-size: 7px;
-          letter-spacing: 1.3px;
-          font-weight: 700;
+          margin-top: 17px;
+          color: #3f3e3a;
+          font-size: 6px;
+          font-weight: 900;
+          letter-spacing: 1.2px;
         }
 
-        .security-footer svg {
-          color: #555;
+        .card-footer svg {
+          color: #5d5548;
         }
 
-        .security-footer i {
+        .card-footer i {
           width: 3px;
           height: 3px;
-          background: #5a5a5a;
           border-radius: 50%;
+          background: #555047;
         }
 
         /* =================================================
            RESPONSIVE
         ================================================= */
 
-        @media (max-width: 950px) {
+        @media (max-width: 1000px) {
 
-          .main-container {
+          .got-main {
             grid-template-columns: 1fr;
-            max-width: 620px;
-            gap: 20px;
-            padding-top: 35px;
+            max-width: 650px;
+            gap: 30px;
           }
 
-          .visual-panel {
-            min-height: 250px;
-            text-align: center;
+          .realm-section {
+            min-height: 390px;
             align-items: center;
+            text-align: center;
           }
 
-          .visual-title {
-            font-size: 45px;
+          .realm-label {
+            justify-content: center;
           }
 
-          .visual-description {
-            margin-top: 15px;
-          }
-
-          .target-system {
-            width: 180px;
-            height: 180px;
+          .realm-cards {
             position: relative;
-            right: auto;
             bottom: auto;
             margin-top: 25px;
           }
 
-          .ring-one {
-            width: 180px;
-            height: 180px;
+          .realm-quote {
+            position: relative;
+            bottom: auto;
+            margin-top: 20px;
           }
 
-          .ring-two {
-            width: 135px;
-            height: 135px;
-          }
-
-          .ring-three {
-            width: 85px;
-            height: 85px;
-          }
-
-          .intel-card {
+          .sword-display {
             display: none;
           }
 
-          .vertical-text {
-            display: none;
+          .castle {
+            left: 50%;
+            transform: translateX(-50%);
           }
+
         }
 
-        @media (max-width: 620px) {
+        @media (max-width: 650px) {
 
-          .topbar {
+          .got-header {
             height: 68px;
             padding: 0 18px;
           }
@@ -1710,90 +2358,88 @@ function Register() {
             display: none;
           }
 
-          .back-home {
-            font-size: 10px;
+          .return-home {
+            font-size: 7px;
           }
 
-          .main-container {
-            min-height: auto;
-            padding: 30px 14px 45px;
+          .got-main {
+            padding:
+              30px
+              14px
+              50px;
           }
 
-          .visual-panel {
-            min-height: 205px;
+          .realm-section {
+            min-height: 300px;
           }
 
-          .visual-title {
-            font-size: 37px;
-            letter-spacing: -2px;
+          .realm-title {
+            font-size: 46px;
+            letter-spacing: -3px;
           }
 
-          .target-system {
-            width: 130px;
-            height: 130px;
-            margin-top: 18px;
+          .realm-cards {
+            width: 100%;
+            justify-content: center;
           }
 
-          .ring-one {
-            width: 130px;
-            height: 130px;
+          .realm-card {
+            min-width: 0;
+            flex: 1;
           }
 
-          .ring-two {
-            width: 98px;
-            height: 98px;
-          }
-
-          .ring-three {
-            width: 60px;
-            height: 60px;
-          }
-
-          .target-core {
-            width: 42px;
-            height: 42px;
-          }
-
-          .target-core svg {
-            width: 18px;
+          .realm-card strong {
+            font-size: 7px;
           }
 
           .register-card {
-            padding: 28px 20px 22px;
+            padding:
+              30px
+              20px
+              23px;
           }
 
-          .card-header h1 {
-            font-size: 27px;
-          }
-
-          .password-grid {
+          .password-row {
             grid-template-columns: 1fr;
             gap: 0;
           }
 
-          .role-grid {
-            grid-template-columns: 1fr 1fr;
+          .register-header h1 {
+            font-size: 28px;
           }
 
         }
 
-        @media (max-width: 400px) {
+        @media (max-width: 420px) {
 
-          .brand-name {
-            font-size: 16px;
+          .realm-cards {
+            gap: 5px;
           }
 
-          .role-grid {
+          .realm-card {
+            padding: 8px 6px;
+          }
+
+          .realm-card svg {
+            display: none;
+          }
+
+          .path-grid {
             grid-template-columns: 1fr;
           }
 
-          .register-card {
-            padding: 25px 16px 20px;
+          .got-header {
+            padding: 0 12px;
+          }
+
+          .brand-title {
+            font-size: 16px;
           }
 
         }
 
       `}</style>
+
     </div>
   );
 }
@@ -1813,26 +2459,26 @@ function RoleButton({
     <button
       type="button"
       onClick={onClick}
-      className={`role-button ${
+      className={`path-button ${
         active ? "active" : ""
       }`}
     >
 
-      <div className="role-icon">
+      <div className="path-icon">
         {icon}
       </div>
 
       <div>
-        <div className="role-title">
+        <div className="path-title">
           {title}
         </div>
 
-        <div className="role-subtitle">
+        <div className="path-subtitle">
           {subtitle}
         </div>
       </div>
 
-      <span className="role-status" />
+      <span className="path-mark" />
 
     </button>
   );
