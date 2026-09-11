@@ -1,35 +1,44 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import {
   ArrowRight,
+  Bird,
   BookOpen,
+  Check,
+  CircleDot,
+  Crown,
   Eye,
   EyeOff,
+  Fingerprint,
+  Flame,
   GraduationCap,
+  LockKeyhole,
+  MailCheck,
+  Moon,
   ShieldCheck,
   Sparkles,
+  Sword,
   Users,
-  Crosshair,
-  Target,
-  ScanLine,
-  Activity,
-  LockKeyhole,
-  Fingerprint,
-  Radio,
-  CircleDot,
-  ChevronRight,
-  Crown,
+  X,
   Zap,
-  Orbit,
-  BadgeCheck,
 } from "lucide-react";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import toast from "react-hot-toast";
 
 import { useAuth } from "../../context/AuthContext";
+import api from "../../services/api";
 
 function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  const cardRef = useRef(null);
+
+  // ============================================================
+  // FORM STATE
+  // ============================================================
 
   const [formData, setFormData] = useState({
     email: "",
@@ -38,44 +47,240 @@ function Login() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  // ============================================================
+  // EMAIL VERIFICATION STATE
+  // ============================================================
 
-    setFormData((prev) => ({
-      ...prev,
+  const [showResendVerification, setShowResendVerification] =
+    useState(false);
+
+  const [resendingVerification, setResendingVerification] =
+    useState(false);
+
+  // ============================================================
+  // CURSOR STATE
+  // ============================================================
+
+  const [cursor, setCursor] = useState({
+    x: 50,
+    y: 50,
+  });
+
+  const [mousePosition, setMousePosition] = useState({
+    x: 0,
+    y: 0,
+  });
+
+  // ============================================================
+  // CURSOR EFFECT
+  // ============================================================
+
+  useEffect(() => {
+    const handleMouseMove = (event) => {
+      const x =
+        (event.clientX / window.innerWidth) * 100;
+
+      const y =
+        (event.clientY / window.innerHeight) * 100;
+
+      setMousePosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      setCursor({
+        x,
+        y,
+      });
+    };
+
+    window.addEventListener(
+      "mousemove",
+      handleMouseMove
+    );
+
+    return () => {
+      window.removeEventListener(
+        "mousemove",
+        handleMouseMove
+      );
+    };
+  }, []);
+
+  // ============================================================
+  // CARD TILT EFFECT
+  // ============================================================
+
+  const handleCardMouseMove = (event) => {
+    if (!cardRef.current) return;
+
+    const rect =
+      cardRef.current.getBoundingClientRect();
+
+    const x =
+      event.clientX - rect.left;
+
+    const y =
+      event.clientY - rect.top;
+
+    const rotateX =
+      ((y / rect.height) - 0.5) * -2;
+
+    const rotateY =
+      ((x / rect.width) - 0.5) * 2;
+
+    cardRef.current.style.transform = `
+      perspective(1600px)
+      rotateX(${rotateX}deg)
+      rotateY(${rotateY}deg)
+      translateY(-2px)
+    `;
+  };
+
+  const handleCardMouseLeave = () => {
+    if (!cardRef.current) return;
+
+    cardRef.current.style.transform = `
+      perspective(1600px)
+      rotateX(0deg)
+      rotateY(0deg)
+      translateY(0)
+    `;
+  };
+
+  // ============================================================
+  // INPUT CHANGE
+  // ============================================================
+
+  const handleChange = (event) => {
+    const {
+      name,
+      value,
+    } = event.target;
+
+    setFormData((previous) => ({
+      ...previous,
       [name]: value,
     }));
+
+    // Hide resend box when user changes email
+    if (name === "email") {
+      setShowResendVerification(false);
+    }
   };
+
+  // ============================================================
+  // ROLE CHANGE
+  // ============================================================
 
   const handleRoleChange = (role) => {
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((previous) => ({
+      ...previous,
       role,
     }));
+
+    setShowResendVerification(false);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // ============================================================
+  // RESEND VERIFICATION EMAIL
+  // ============================================================
 
-    const email = formData.email.trim();
-    const password = formData.password.trim();
+  const handleResendVerification = async () => {
+    const email =
+      formData.email.trim().toLowerCase();
 
     if (!email) {
-      toast.error("Please enter your email.");
+      toast.error(
+        "Please enter your email address first."
+      );
+      return;
+    }
+
+    try {
+      setResendingVerification(true);
+
+      const response = await api.post(
+        "/auth/resend-verification",
+        {
+          email,
+        }
+      );
+
+      toast.success(
+        response.data?.message ||
+          "Verification email sent successfully."
+      );
+
+      setShowResendVerification(false);
+    } catch (error) {
+      console.error(
+        "Resend verification error:",
+        error
+      );
+
+      toast.error(
+        error?.response?.data?.message ||
+          "Unable to resend verification email."
+      );
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
+  // ============================================================
+  // LOGIN
+  // ============================================================
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const email =
+      formData.email.trim();
+
+    const password =
+      formData.password.trim();
+
+    // ----------------------------------------------------------
+    // VALIDATION
+    // ----------------------------------------------------------
+
+    if (!email) {
+      toast.error(
+        "Please enter your email."
+      );
       return;
     }
 
     if (!password) {
-      toast.error("Please enter your password.");
+      toast.error(
+        "Please enter your password."
+      );
       return;
     }
 
-    setLoading(true);
+    if (!formData.role) {
+      toast.error(
+        "Please select your role."
+      );
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // LOGIN
+    // ----------------------------------------------------------
 
     try {
-      await login(email, password, formData.role);
+      setLoading(true);
+
+      await login(
+        email,
+        password,
+        formData.role
+      );
 
       toast.success(
         `Welcome back, ${
@@ -85,20 +290,58 @@ function Login() {
         }!`
       );
 
-      if (formData.role === "instructor") {
-        navigate("/instructor/dashboard", {
-          replace: true,
-        });
+      // --------------------------------------------------------
+      // REDIRECT
+      // --------------------------------------------------------
+
+      if (
+        formData.role === "instructor"
+      ) {
+        navigate(
+          "/instructor/dashboard",
+          {
+            replace: true,
+          }
+        );
       } else {
-        navigate("/dashboard", {
-          replace: true,
-        });
+        navigate(
+          "/dashboard",
+          {
+            replace: true,
+          }
+        );
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error(
+        "Login error:",
+        error
+      );
+
+      const responseData =
+        error?.response?.data;
+
+      // --------------------------------------------------------
+      // EMAIL VERIFICATION REQUIRED
+      // --------------------------------------------------------
+
+      if (
+        responseData?.requiresVerification
+      ) {
+        setShowResendVerification(true);
+
+        toast.error(
+          "Please verify your email before logging in."
+        );
+
+        return;
+      }
+
+      // --------------------------------------------------------
+      // NORMAL LOGIN ERROR
+      // --------------------------------------------------------
 
       toast.error(
-        error?.response?.data?.message ||
+        responseData?.message ||
           error?.message ||
           "Login failed. Please try again."
       );
@@ -107,67 +350,173 @@ function Login() {
     }
   };
 
+  // ============================================================
+  // UI
+  // ============================================================
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050505] text-white">
-      {/* =====================================================
-          GLOBAL CINEMATIC BACKGROUND
-      ===================================================== */}
+    <div
+      className="
+        relative
+        min-h-screen
+        overflow-hidden
+        bg-[#050403]
+        text-white
+      "
+      style={{
+        "--cursor-x": `${cursor.x}%`,
+        "--cursor-y": `${cursor.y}%`,
+      }}
+    >
+      {/* ========================================================
+          CUSTOM CURSOR
+      ======================================================== */}
+
+      <div
+        className="
+          pointer-events-none
+          fixed
+          z-[100]
+          hidden
+          h-5
+          w-5
+          rounded-full
+          border
+          border-[#d6b36a]/70
+          md:block
+        "
+        style={{
+          left: mousePosition.x - 10,
+          top: mousePosition.y - 10,
+        }}
+      />
+
+      <div
+        className="
+          pointer-events-none
+          fixed
+          z-[99]
+          hidden
+          h-[350px]
+          w-[350px]
+          -translate-x-1/2
+          -translate-y-1/2
+          rounded-full
+          bg-[#7f0000]/10
+          blur-[90px]
+          md:block
+        "
+        style={{
+          left: mousePosition.x,
+          top: mousePosition.y,
+        }}
+      />
+
+      {/* ========================================================
+          BACKGROUND
+      ======================================================== */}
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Red cinematic glow */}
 
-        <div
-          className="
-            absolute
-            -left-40
-            top-1/4
-            h-[500px]
-            w-[500px]
-            rounded-full
-            bg-red-950/30
-            blur-[120px]
-            animate-[ambientGlow_8s_ease-in-out_infinite]
-          "
-        />
-
-        <div
-          className="
-            absolute
-            -right-40
-            bottom-0
-            h-[500px]
-            w-[500px]
-            rounded-full
-            bg-red-950/20
-            blur-[120px]
-            animate-[ambientGlow_10s_ease-in-out_infinite_reverse]
-          "
-        />
-
-        {/* Tactical grid */}
+        {/* Cursor glow */}
 
         <div
           className="
             absolute
             inset-0
-            opacity-[0.055]
-            [background-image:linear-gradient(#ffffff_1px,transparent_1px),linear-gradient(90deg,#ffffff_1px,transparent_1px)]
-            [background-size:45px_45px]
+            opacity-70
+          "
+          style={{
+            background: `
+              radial-gradient(
+                500px circle at
+                var(--cursor-x)
+                var(--cursor-y),
+                rgba(139,0,0,0.13),
+                transparent 70%
+              )
+            `,
+          }}
+        />
+
+        {/* Red glow */}
+
+        <div
+          className="
+            absolute
+            -left-48
+            top-1/4
+            h-[600px]
+            w-[600px]
+            rounded-full
+            bg-[#680000]/20
+            blur-[140px]
+            animate-[ambientGlow_9s_ease-in-out_infinite]
           "
         />
 
-        {/* Diagonal cinematic pattern */}
+        {/* Gold glow */}
+
+        <div
+          className="
+            absolute
+            -right-48
+            bottom-0
+            h-[550px]
+            w-[550px]
+            rounded-full
+            bg-[#9b732f]/10
+            blur-[130px]
+            animate-[ambientGlow_12s_ease-in-out_infinite_reverse]
+          "
+        />
+
+        {/* Medieval grid */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            opacity-[0.035]
+          "
+          style={{
+            backgroundImage: `
+              linear-gradient(
+                rgba(255,255,255,0.3) 1px,
+                transparent 1px
+              ),
+              linear-gradient(
+                90deg,
+                rgba(255,255,255,0.3) 1px,
+                transparent 1px
+              )
+            `,
+            backgroundSize: "55px 55px",
+          }}
+        />
+
+        {/* Diagonal pattern */}
 
         <div
           className="
             absolute
             inset-0
             opacity-[0.025]
-            [background-image:repeating-linear-gradient(135deg,#ffffff_0px,#ffffff_1px,transparent_1px,transparent_18px)]
           "
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(
+                135deg,
+                rgba(255,255,255,0.3) 0px,
+                rgba(255,255,255,0.3) 1px,
+                transparent 1px,
+                transparent 18px
+              )
+            `,
+          }}
         />
 
-        {/* Horizontal scan */}
+        {/* Scan line */}
 
         <div
           className="
@@ -178,33 +527,33 @@ function Login() {
             h-px
             bg-gradient-to-r
             from-transparent
-            via-red-500
+            via-[#9b111e]
             to-transparent
-            shadow-[0_0_15px_rgba(239,68,68,0.8)]
-            animate-[scan_7s_linear_infinite]
+            shadow-[0_0_20px_rgba(139,0,0,0.9)]
+            animate-[scan_8s_linear_infinite]
           "
         />
 
-        {/* Small floating particles */}
+        {/* Floating particles */}
 
         <CircleDot
-          size={8}
+          size={7}
           className="
             absolute
             left-[12%]
             top-[25%]
-            text-red-500/60
-            animate-[particle_5s_ease-in-out_infinite]
+            text-[#a51c30]/60
+            animate-[particle_6s_ease-in-out_infinite]
           "
         />
 
         <CircleDot
-          size={6}
+          size={5}
           className="
             absolute
-            left-[42%]
-            top-[15%]
-            text-zinc-500/50
+            left-[40%]
+            top-[16%]
+            text-[#b49a67]/50
             animate-[particle_7s_ease-in-out_infinite_1s]
           "
         />
@@ -213,36 +562,149 @@ function Login() {
           size={7}
           className="
             absolute
-            right-[20%]
+            right-[15%]
             top-[35%]
-            text-red-500/50
+            text-[#a51c30]/50
             animate-[particle_6s_ease-in-out_infinite_2s]
           "
         />
 
         <Sparkles
-          size={13}
+          size={14}
           className="
             absolute
-            right-[12%]
+            right-[10%]
             bottom-[20%]
-            text-amber-500/40
+            text-[#b8863d]/50
             animate-[sparkFloat_4s_ease-in-out_infinite]
           "
         />
+
+        {/* Embers */}
+
+        <span
+          className="
+            absolute
+            left-[8%]
+            top-[65%]
+            h-1
+            w-1
+            rounded-full
+            bg-[#b8863d]
+            shadow-[0_0_12px_rgba(184,134,61,0.8)]
+            animate-[ember_5s_linear_infinite]
+          "
+        />
+
+        <span
+          className="
+            absolute
+            left-[24%]
+            top-[30%]
+            h-1
+            w-1
+            rounded-full
+            bg-[#9f1d35]
+            shadow-[0_0_12px_rgba(159,29,53,0.8)]
+            animate-[ember_7s_linear_infinite_1s]
+          "
+        />
+
+        <span
+          className="
+            absolute
+            right-[25%]
+            top-[72%]
+            h-1
+            w-1
+            rounded-full
+            bg-[#b8863d]
+            shadow-[0_0_12px_rgba(184,134,61,0.8)]
+            animate-[ember_6s_linear_infinite_2s]
+          "
+        />
+
+        <span
+          className="
+            absolute
+            right-[8%]
+            top-[25%]
+            h-1
+            w-1
+            rounded-full
+            bg-[#9f1d35]
+            shadow-[0_0_12px_rgba(159,29,53,0.8)]
+            animate-[ember_8s_linear_infinite]
+          "
+        />
+
+        {/* Moon */}
+
+        <div
+          className="
+            absolute
+            right-[8%]
+            top-[13%]
+            hidden
+            h-28
+            w-28
+            rounded-full
+            border
+            border-[#b8863d]/20
+            bg-[#b8863d]/5
+            shadow-[0_0_80px_rgba(184,134,61,0.08)]
+            lg:block
+          "
+        >
+          <div
+            className="
+              absolute
+              right-2
+              top-2
+              h-24
+              w-24
+              rounded-full
+              bg-[#d6b36a]/10
+              blur-sm
+            "
+          />
+        </div>
+
+        {/* Castle silhouette */}
+
+        <div
+          className="
+            absolute
+            bottom-0
+            left-0
+            right-0
+            h-36
+            opacity-20
+          "
+        >
+          <div className="absolute bottom-0 left-[4%] h-28 w-20 bg-black" />
+          <div className="absolute bottom-0 left-[8%] h-44 w-9 bg-black" />
+          <div className="absolute bottom-0 left-[12%] h-24 w-24 bg-black" />
+
+          <div className="absolute bottom-0 left-[42%] h-32 w-28 bg-black" />
+          <div className="absolute bottom-0 left-[47%] h-48 w-10 bg-black" />
+
+          <div className="absolute bottom-0 right-[12%] h-44 w-16 bg-black" />
+          <div className="absolute bottom-0 right-[7%] h-28 w-28 bg-black" />
+        </div>
       </div>
 
-      {/* =====================================================
+      {/* ========================================================
           HEADER
-      ===================================================== */}
+      ======================================================== */}
 
       <header
         className="
           relative
-          z-20
+          z-30
           border-b
-          border-zinc-900
-          bg-black/60
+          border-[#2b251e]
+          bg-black/70
           backdrop-blur-xl
         "
       >
@@ -259,8 +721,6 @@ function Login() {
             lg:px-10
           "
         >
-          {/* Logo */}
-
           <Link
             to="/"
             className="
@@ -280,20 +740,26 @@ function Login() {
                 justify-center
                 rounded-xl
                 border
-                border-red-800/70
+                border-[#76101c]
                 bg-gradient-to-br
-                from-red-700
+                from-[#5e0713]
                 to-black
-                shadow-[0_0_20px_rgba(220,38,38,0.2)]
+                shadow-[0_0_25px_rgba(139,0,0,0.2)]
                 transition-all
-                duration-300
-                group-hover:scale-105
-                group-hover:shadow-[0_0_30px_rgba(220,38,38,0.35)]
+                duration-500
+                group-hover:scale-110
+                group-hover:rotate-3
+                group-hover:shadow-[0_0_40px_rgba(139,0,0,0.45)]
               "
             >
               <BookOpen
                 size={19}
-                className="text-red-100"
+                className="
+                  text-[#d6b36a]
+                  transition-transform
+                  duration-500
+                  group-hover:scale-110
+                "
               />
 
               <span
@@ -303,24 +769,20 @@ function Login() {
                   -top-1
                   h-2
                   w-2
-                  animate-pulse
                   rounded-full
-                  bg-red-500
-                  shadow-[0_0_8px_rgba(239,68,68,0.9)]
+                  bg-[#b8863d]
+                  shadow-[0_0_10px_rgba(184,134,61,0.9)]
+                  animate-pulse
                 "
               />
             </div>
 
             <div>
-              <h1
-                className="
-                  text-lg
-                  font-black
-                  tracking-tight
-                  text-white
-                "
-              >
-                Smart<span className="text-red-500">LMS</span>
+              <h1 className="text-lg font-black tracking-tight text-white">
+                Smart
+                <span className="text-[#a51c30]">
+                  LMS
+                </span>
               </h1>
 
               <p
@@ -329,15 +791,13 @@ function Login() {
                   font-black
                   uppercase
                   tracking-[0.3em]
-                  text-zinc-600
+                  text-[#665b50]
                 "
               >
                 Learning Intelligence
               </p>
             </div>
           </Link>
-
-          {/* Security status */}
 
           <div
             className="
@@ -346,10 +806,10 @@ function Login() {
               gap-2
               rounded-full
               border
-              border-zinc-800
-              bg-zinc-950/80
-              px-3
-              py-1.5
+              border-[#2e2923]
+              bg-[#0b0907]/90
+              px-4
+              py-2
               sm:flex
             "
           >
@@ -357,10 +817,10 @@ function Login() {
               className="
                 h-1.5
                 w-1.5
-                animate-pulse
                 rounded-full
                 bg-emerald-500
-                shadow-[0_0_8px_rgba(16,185,129,0.7)]
+                shadow-[0_0_10px_rgba(16,185,129,0.8)]
+                animate-pulse
               "
             />
 
@@ -369,29 +829,29 @@ function Login() {
                 text-[9px]
                 font-black
                 uppercase
-                tracking-[0.18em]
-                text-zinc-500
+                tracking-[0.2em]
+                text-[#6d6256]
               "
             >
-              System Secure
+              The realm is secure
             </span>
 
             <ShieldCheck
               size={12}
-              className="text-emerald-500"
+              className="text-emerald-600"
             />
           </div>
         </div>
       </header>
 
-      {/* =====================================================
+      {/* ========================================================
           MAIN
-      ===================================================== */}
+      ======================================================== */}
 
       <main
         className="
           relative
-          z-10
+          z-20
           flex
           min-h-[calc(100vh-74px)]
           items-center
@@ -404,113 +864,130 @@ function Login() {
         "
       >
         <div
+          ref={cardRef}
+          onMouseMove={handleCardMouseMove}
+          onMouseLeave={handleCardMouseLeave}
           className="
+            relative
             mx-auto
             grid
             w-full
-            max-w-[1180px]
+            max-w-[1200px]
             overflow-hidden
-            rounded-[30px]
+            rounded-[28px]
             border
-            border-zinc-800
-            bg-[#0a0a0a]/95
-            shadow-[0_30px_100px_rgba(0,0,0,0.65)]
+            border-[#342d25]
+            bg-[#090806]/95
+            shadow-[0_40px_120px_rgba(0,0,0,0.85)]
+            transition-transform
+            duration-300
+            ease-out
             lg:grid-cols-[1.05fr_0.95fr]
           "
         >
-          {/* =================================================
-              LEFT CINEMATIC PANEL
-          ================================================= */}
 
-          <div
+          {/* ====================================================
+              LEFT PANEL
+          ==================================================== */}
+
+          <section
             className="
               relative
               hidden
-              min-h-[680px]
+              min-h-[700px]
               overflow-hidden
               border-r
-              border-zinc-800
-              bg-[#080808]
+              border-[#302820]
+              bg-[#080706]
               lg:block
             "
           >
-            {/* Cinematic red glow */}
-
             <div
               className="
                 absolute
-                -left-32
+                -left-40
                 top-1/4
-                h-[500px]
-                w-[500px]
+                h-[600px]
+                w-[600px]
                 rounded-full
-                bg-red-950/40
-                blur-[130px]
+                bg-[#680000]/20
+                blur-[140px]
               "
             />
-
-            {/* Vertical light */}
 
             <div
               className="
                 absolute
-                bottom-0
-                left-[18%]
-                top-0
-                w-px
-                bg-gradient-to-b
-                from-transparent
-                via-red-900/60
-                to-transparent
+                bottom-[-180px]
+                right-[-120px]
+                h-[450px]
+                w-[450px]
+                rounded-full
+                bg-[#a67c32]/10
+                blur-[120px]
               "
             />
 
-            {/* Tactical HUD */}
+            {/* Corner decorations */}
 
-            <div className="absolute inset-0">
-              <div
+            <div
+              className="
+                absolute
+                left-8
+                top-8
+                h-16
+                w-16
+                border-l
+                border-t
+                border-[#7c1520]/70
+              "
+            />
+
+            <div
+              className="
+                absolute
+                bottom-8
+                right-8
+                h-16
+                w-16
+                border-b
+                border-r
+                border-[#7c1520]/70
+              "
+            />
+
+            {/* Top label */}
+
+            <div
+              className="
+                absolute
+                left-10
+                top-10
+                flex
+                items-center
+                gap-2
+              "
+            >
+              <Bird
+                size={17}
                 className="
-                  absolute
-                  left-10
-                  top-10
-                  h-16
-                  w-16
-                  border-l
-                  border-t
-                  border-red-800/70
+                  text-[#a51c30]
+                  animate-[birdFloat_3s_ease-in-out_infinite]
                 "
               />
 
-              <div
+              <span
                 className="
-                  absolute
-                  bottom-10
-                  right-10
-                  h-16
-                  w-16
-                  border-b
-                  border-r
-                  border-red-800/70
-                "
-              />
-
-              <div
-                className="
-                  absolute
-                  right-12
-                  top-12
-                  text-[8px]
+                  text-[9px]
                   font-black
                   uppercase
-                  tracking-[0.25em]
-                  text-zinc-700
+                  tracking-[0.3em]
+                  text-[#807466]
                 "
               >
-                INTELLIGENCE // 01
-              </div>
+                The learning realm
+              </span>
             </div>
-
-            {/* Main content */}
 
             <div
               className="
@@ -524,49 +1001,45 @@ function Login() {
                 xl:p-12
               "
             >
-              {/* Top */}
+              {/* Hero */}
 
-              <div>
-                <div
+              <div className="pt-12">
+                <p
                   className="
-                    mb-8
-                    flex
-                    items-center
-                    gap-2
-                    text-red-500
+                    mb-4
+                    text-[9px]
+                    font-black
+                    uppercase
+                    tracking-[0.3em]
+                    text-[#b8863d]
                   "
                 >
-                  <Crosshair
-                    size={16}
-                    className="animate-pulse"
-                  />
-
-                  <span
-                    className="
-                      text-[9px]
-                      font-black
-                      uppercase
-                      tracking-[0.3em]
-                    "
-                  >
-                    Mission Control
-                  </span>
-                </div>
+                  Hear the ravens
+                </p>
 
                 <h2
                   className="
-                    max-w-lg
                     text-5xl
                     font-black
-                    leading-[0.98]
-                    tracking-[-0.04em]
-                    text-white
+                    leading-[0.92]
+                    tracking-[-0.05em]
+                    text-[#eee6da]
                     xl:text-6xl
                   "
                 >
                   MASTER
                   <br />
-                  <span className="text-red-600">
+
+                  <span
+                    className="
+                      bg-gradient-to-r
+                      from-[#8c101f]
+                      via-[#b82035]
+                      to-[#d6b36a]
+                      bg-clip-text
+                      text-transparent
+                    "
+                  >
                     YOUR CRAFT.
                   </span>
                 </h2>
@@ -577,29 +1050,32 @@ function Login() {
                     max-w-md
                     text-sm
                     leading-7
-                    text-zinc-500
+                    text-[#756b5f]
                   "
                 >
-                  Enter the learning network. Build your
-                  skills, complete your missions, and move
-                  one level closer to mastery.
+                  Enter the realm of Smart LMS.
+                  Sharpen your skills, complete
+                  your quests, and move closer to
+                  mastery.
                 </p>
               </div>
 
-              {/* Central tactical graphic */}
+              {/* ==================================================
+                  THRONE
+              ================================================== */}
 
               <div
                 className="
                   relative
                   mx-auto
                   flex
-                  h-[290px]
-                  w-[290px]
+                  h-[300px]
+                  w-[300px]
                   items-center
                   justify-center
                 "
               >
-                {/* Outer rotating ring */}
+                {/* Outer ring */}
 
                 <div
                   className="
@@ -608,174 +1084,295 @@ function Login() {
                     rounded-full
                     border
                     border-dashed
-                    border-red-900/50
-                    animate-[rotate_18s_linear_infinite]
+                    border-[#75111e]/60
+                    animate-[rotate_20s_linear_infinite]
                   "
                 />
 
-                {/* Middle ring */}
+                {/* Inner ring */}
 
                 <div
                   className="
                     absolute
-                    inset-7
+                    inset-8
                     rounded-full
                     border
-                    border-zinc-800
-                    animate-[rotateReverse_25s_linear_infinite]
+                    border-[#40372e]
+                    animate-[rotateReverse_28s_linear_infinite]
                   "
                 />
 
-                {/* Crosshair */}
+                {/* Rune points */}
 
-                <div className="absolute inset-12">
-                  <div
-                    className="
-                      absolute
-                      left-1/2
-                      top-0
-                      h-full
-                      w-px
-                      -translate-x-1/2
-                      bg-gradient-to-b
-                      from-transparent
-                      via-red-900
-                      to-transparent
-                    "
-                  />
+                <span
+                  className="
+                    absolute
+                    left-1/2
+                    top-0
+                    -translate-x-1/2
+                    text-xs
+                    text-[#8e7c68]
+                  "
+                >
+                  ᚱ
+                </span>
 
-                  <div
-                    className="
-                      absolute
-                      left-0
-                      top-1/2
-                      h-px
-                      w-full
-                      -translate-y-1/2
-                      bg-gradient-to-r
-                      from-transparent
-                      via-red-900
-                      to-transparent
-                    "
-                  />
-                </div>
+                <span
+                  className="
+                    absolute
+                    right-1
+                    top-1/2
+                    text-xs
+                    text-[#8e7c68]
+                  "
+                >
+                  ᚷ
+                </span>
 
-                {/* Center */}
+                <span
+                  className="
+                    absolute
+                    bottom-0
+                    left-1/2
+                    -translate-x-1/2
+                    text-xs
+                    text-[#8e7c68]
+                  "
+                >
+                  ᛏ
+                </span>
+
+                <span
+                  className="
+                    absolute
+                    left-1
+                    top-1/2
+                    text-xs
+                    text-[#8e7c68]
+                  "
+                >
+                  ᛒ
+                </span>
+
+                {/* Throne */}
 
                 <div
                   className="
                     relative
                     flex
-                    h-32
-                    w-32
-                    items-center
+                    h-44
+                    w-36
+                    items-end
                     justify-center
-                    rounded-full
-                    border
-                    border-red-700/60
-                    bg-gradient-to-br
-                    from-zinc-800
-                    via-zinc-950
-                    to-black
-                    shadow-[0_0_60px_rgba(220,38,38,0.18)]
-                    animate-[centerPulse_4s_ease-in-out_infinite]
                   "
                 >
-                  <Crosshair
-                    size={65}
+                  {/* Crown */}
+
+                  <Crown
+                    size={27}
+                    className="
+                      absolute
+                      -top-3
+                      text-[#b8863d]
+                      drop-shadow-[0_0_12px_rgba(184,134,61,0.4)]
+                    "
+                  />
+
+                  {/* Back */}
+
+                  <div
+                    className="
+                      absolute
+                      top-5
+                      h-28
+                      w-24
+                      rounded-t-[50%]
+                      border
+                      border-[#625548]
+                      bg-gradient-to-b
+                      from-[#38322b]
+                      via-[#181613]
+                      to-black
+                      shadow-[0_0_50px_rgba(0,0,0,0.9)]
+                    "
+                  />
+
+                  {/* Swords */}
+
+                  <Sword
+                    size={74}
                     strokeWidth={1}
                     className="
-                      text-red-600
-                      drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]
+                      absolute
+                      -left-3
+                      top-1
+                      -rotate-[25deg]
+                      text-[#665c51]
+                    "
+                  />
+
+                  <Sword
+                    size={74}
+                    strokeWidth={1}
+                    className="
+                      absolute
+                      left-4
+                      top-0
+                      -rotate-[12deg]
+                      text-[#665c51]
+                    "
+                  />
+
+                  <Sword
+                    size={74}
+                    strokeWidth={1}
+                    className="
+                      absolute
+                      left-1/2
+                      top-0
+                      -translate-x-1/2
+                      text-[#74685a]
+                    "
+                  />
+
+                  <Sword
+                    size={74}
+                    strokeWidth={1}
+                    className="
+                      absolute
+                      right-4
+                      top-0
+                      rotate-[12deg]
+                      text-[#665c51]
+                    "
+                  />
+
+                  <Sword
+                    size={74}
+                    strokeWidth={1}
+                    className="
+                      absolute
+                      -right-3
+                      top-1
+                      rotate-[25deg]
+                      text-[#665c51]
+                    "
+                  />
+
+                  {/* Seat */}
+
+                  <div
+                    className="
+                      absolute
+                      bottom-5
+                      h-20
+                      w-28
+                      rounded-t-xl
+                      border
+                      border-[#51483e]
+                      bg-gradient-to-b
+                      from-[#37312a]
+                      to-[#0d0c0a]
+                    "
+                  />
+
+                  {/* Legs */}
+
+                  <div
+                    className="
+                      absolute
+                      bottom-0
+                      left-7
+                      h-9
+                      w-5
+                      rotate-[8deg]
+                      bg-[#26221e]
                     "
                   />
 
                   <div
                     className="
                       absolute
-                      h-2
-                      w-2
-                      animate-ping
-                      rounded-full
-                      bg-red-500
+                      bottom-0
+                      right-7
+                      h-9
+                      w-5
+                      -rotate-[8deg]
+                      bg-[#26221e]
                     "
                   />
                 </div>
 
-                {/* Orbiting icons */}
+                {/* Core */}
 
                 <div
                   className="
                     absolute
-                    -right-2
-                    top-1/2
+                    h-2
+                    w-2
+                    rounded-full
+                    bg-[#d6b36a]
+                    shadow-[0_0_25px_8px_rgba(214,179,106,0.18)]
+                    animate-ping
+                  "
+                />
+
+                {/* Bird */}
+
+                <div
+                  className="
+                    absolute
+                    left-0
+                    top-1/3
                     flex
                     h-10
                     w-10
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-[#40372e]
+                    bg-black
+                    text-[#8a7c6b]
+                    shadow-xl
+                    animate-[iconFloat_5s_ease-in-out_infinite]
+                  "
+                >
+                  <Bird size={16} />
+                </div>
+
+                {/* Crown */}
+
+                <div
+                  className="
+                    absolute
+                    right-0
+                    top-1/2
+                    flex
+                    h-11
+                    w-11
                     -translate-y-1/2
                     items-center
                     justify-center
                     rounded-xl
                     border
-                    border-zinc-800
+                    border-[#4a3e2e]
                     bg-black
-                    text-red-500
-                    shadow-lg
-                    animate-[iconOrbit_4s_ease-in-out_infinite]
+                    text-[#b8863d]
+                    shadow-xl
+                    animate-[iconFloat_4s_ease-in-out_infinite_1s]
                   "
                 >
-                  <Target size={17} />
-                </div>
-
-                <div
-                  className="
-                    absolute
-                    bottom-5
-                    left-10
-                    flex
-                    h-9
-                    w-9
-                    items-center
-                    justify-center
-                    rounded-lg
-                    border
-                    border-zinc-800
-                    bg-black
-                    text-amber-500
-                    animate-[iconFloat_3s_ease-in-out_infinite]
-                  "
-                >
-                  <Crown size={15} />
-                </div>
-
-                <div
-                  className="
-                    absolute
-                    left-4
-                    top-10
-                    flex
-                    h-9
-                    w-9
-                    items-center
-                    justify-center
-                    rounded-lg
-                    border
-                    border-zinc-800
-                    bg-black
-                    text-zinc-500
-                    animate-[iconFloat_4s_ease-in-out_infinite]
-                  "
-                >
-                  <Activity size={15} />
+                  <Crown size={17} />
                 </div>
               </div>
 
-              {/* Bottom status */}
+              {/* Status */}
 
               <div>
                 <div
                   className="
-                    mb-4
+                    mb-3
                     flex
                     items-center
                     justify-between
@@ -785,26 +1382,26 @@ function Login() {
                     tracking-[0.2em]
                   "
                 >
-                  <span className="text-zinc-600">
-                    Progress System
+                  <span className="text-[#62594f]">
+                    Realm status
                   </span>
 
-                  <span className="text-red-500">
+                  <span className="text-[#a67c32]">
                     Online
                   </span>
                 </div>
 
-                <div className="h-1 overflow-hidden bg-zinc-900">
+                <div className="h-1 overflow-hidden bg-[#1b1713]">
                   <div
                     className="
                       h-full
-                      w-[72%]
+                      w-[76%]
                       bg-gradient-to-r
-                      from-red-950
-                      via-red-700
-                      to-red-500
-                      shadow-[0_0_12px_rgba(239,68,68,0.5)]
-                      animate-[progressPulse_3s_ease-in-out_infinite]
+                      from-[#5a0712]
+                      via-[#96182b]
+                      to-[#b8863d]
+                      shadow-[0_0_15px_rgba(139,0,0,0.5)]
+                      animate-[progressPulse_4s_ease-in-out_infinite]
                     "
                   />
                 </div>
@@ -812,38 +1409,38 @@ function Login() {
                 <div className="mt-4 flex items-center justify-between">
                   <span
                     className="
-                      text-[9px]
+                      text-[8px]
                       font-black
                       uppercase
                       tracking-[0.2em]
-                      text-zinc-700
+                      text-[#4d463e]
                     "
                   >
-                    SMART LMS // SECURE NETWORK
+                    Smart LMS // The Realm
                   </span>
 
-                  <Radio
+                  <Flame
                     size={13}
                     className="
+                      text-[#8d111f]
                       animate-pulse
-                      text-red-600
                     "
                   />
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* =================================================
-              RIGHT LOGIN PANEL
-          ================================================= */}
+          {/* ====================================================
+              RIGHT PANEL
+          ==================================================== */}
 
-          <div
+          <section
             className="
               relative
               flex
               items-center
-              bg-[#0c0c0c]
+              bg-[#0b0907]
               p-6
               sm:p-10
               lg:p-12
@@ -861,7 +1458,7 @@ function Login() {
                 w-24
                 border-r
                 border-t
-                border-red-900/30
+                border-[#72101d]/50
               "
             />
 
@@ -871,21 +1468,24 @@ function Login() {
                 absolute
                 bottom-0
                 left-0
-                h-20
-                w-20
+                h-24
+                w-24
                 border-b
                 border-l
-                border-red-900/30
+                border-[#72101d]/50
               "
             />
 
             <div className="relative z-10 w-full">
-              {/* =================================================
-                  FORM HEADER
-              ================================================= */}
+
+              {/* ==================================================
+                  HEADER
+              ================================================== */}
 
               <div className="mb-8">
+
                 <div className="mb-5 flex items-center gap-3">
+
                   <div
                     className="
                       flex
@@ -895,10 +1495,10 @@ function Login() {
                       justify-center
                       rounded-xl
                       border
-                      border-red-900/60
-                      bg-red-950/30
-                      text-red-500
-                      shadow-[0_0_20px_rgba(220,38,38,0.1)]
+                      border-[#72101d]/60
+                      bg-[#26070b]
+                      text-[#d6b36a]
+                      shadow-[0_0_25px_rgba(139,0,0,0.15)]
                       animate-[iconFloat_3s_ease-in-out_infinite]
                     "
                   >
@@ -906,13 +1506,14 @@ function Login() {
                   </div>
 
                   <div>
+
                     <p
                       className="
                         text-[9px]
                         font-black
                         uppercase
                         tracking-[0.25em]
-                        text-red-500
+                        text-[#a51c30]
                       "
                     >
                       Authentication
@@ -920,26 +1521,26 @@ function Login() {
 
                     <p
                       className="
-                        mt-0.5
-                        text-[9px]
+                        mt-1
+                        text-[8px]
                         font-bold
                         uppercase
-                        tracking-wider
-                        text-zinc-700
+                        tracking-[0.2em]
+                        text-[#62594e]
                       "
                     >
                       Secure access protocol
                     </p>
+
                   </div>
                 </div>
 
                 <h2
                   className="
-                    text-3xl
+                    text-4xl
                     font-black
-                    tracking-[-0.03em]
-                    text-white
-                    sm:text-4xl
+                    tracking-[-0.04em]
+                    text-[#eee6da]
                   "
                 >
                   Welcome back.
@@ -948,37 +1549,38 @@ function Login() {
                 <p
                   className="
                     mt-2
-                    max-w-md
                     text-sm
                     leading-6
-                    text-zinc-500
+                    text-[#746b60]
                   "
                 >
-                  Sign in to continue your learning mission.
+                  Sign in and continue your
+                  learning journey.
                 </p>
               </div>
 
-              {/* =================================================
-                  FORM
-              ================================================= */}
+              {/* ==================================================
+                  LOGIN FORM
+              ================================================== */}
 
               <form onSubmit={handleSubmit}>
-                {/* =================================================
-                    ROLE SELECTOR
-                ================================================= */}
+
+                {/* ROLE */}
 
                 <div className="mb-6">
+
                   <div className="mb-3 flex items-center justify-between">
+
                     <label
                       className="
                         text-[10px]
                         font-black
                         uppercase
                         tracking-[0.18em]
-                        text-zinc-500
+                        text-[#82766a]
                       "
                     >
-                      Access level
+                      Choose your path
                     </label>
 
                     <span
@@ -986,27 +1588,32 @@ function Login() {
                         flex
                         items-center
                         gap-1
-                        text-[9px]
+                        text-[8px]
                         font-bold
-                        text-zinc-700
+                        uppercase
+                        tracking-wider
+                        text-[#544c43]
                       "
                     >
                       <LockKeyhole size={10} />
-
                       Role based
                     </span>
+
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    {/* Student */}
+
+                    {/* STUDENT */}
 
                     <button
                       type="button"
                       onClick={() =>
-                        handleRoleChange("student")
+                        handleRoleChange(
+                          "student"
+                        )
                       }
                       className={`
-                        group/role
+                        group
                         relative
                         overflow-hidden
                         rounded-xl
@@ -1015,15 +1622,29 @@ function Login() {
                         text-left
                         transition-all
                         duration-300
+                        hover:-translate-y-1
+
                         ${
-                          formData.role === "student"
-                            ? "border-red-700/70 bg-red-950/20 shadow-[0_0_25px_rgba(220,38,38,0.08)]"
-                            : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"
+                          formData.role ===
+                          "student"
+                            ? `
+                              border-[#801324]
+                              bg-gradient-to-br
+                              from-[#30070d]
+                              to-[#100b08]
+                              shadow-[0_0_25px_rgba(139,0,0,0.15)]
+                            `
+                            : `
+                              border-[#302a23]
+                              bg-[#0a0907]
+                              hover:border-[#4b4035]
+                            `
                         }
                       `}
                     >
-                      {formData.role === "student" && (
-                        <div
+                      {formData.role ===
+                        "student" && (
+                        <span
                           className="
                             absolute
                             bottom-0
@@ -1032,13 +1653,14 @@ function Login() {
                             w-full
                             bg-gradient-to-r
                             from-transparent
-                            via-red-500
+                            via-[#b8863d]
                             to-transparent
                           "
                         />
                       )}
 
                       <div className="flex items-center gap-3">
+
                         <div
                           className={`
                             flex
@@ -1050,10 +1672,22 @@ function Login() {
                             rounded-lg
                             border
                             transition-all
+                            duration-300
+                            group-hover:scale-110
+
                             ${
-                              formData.role === "student"
-                                ? "border-red-800 bg-red-950/50 text-red-500"
-                                : "border-zinc-800 bg-zinc-900 text-zinc-600"
+                              formData.role ===
+                              "student"
+                                ? `
+                                  border-[#72101d]
+                                  bg-[#35070d]
+                                  text-[#d6b36a]
+                                `
+                                : `
+                                  border-[#302a23]
+                                  bg-[#15120f]
+                                  text-[#62594e]
+                                `
                             }
                           `}
                         >
@@ -1061,36 +1695,42 @@ function Login() {
                         </div>
 
                         <div>
+
                           <p
                             className={`
                               text-xs
                               font-black
+
                               ${
-                                formData.role === "student"
-                                  ? "text-white"
-                                  : "text-zinc-400"
+                                formData.role ===
+                                "student"
+                                  ? "text-[#eee6da]"
+                                  : "text-[#93887b]"
                               }
                             `}
                           >
                             Student
                           </p>
 
-                          <p className="mt-0.5 text-[9px] text-zinc-600">
-                            Learn & progress
+                          <p className="mt-0.5 text-[9px] text-[#5e554b]">
+                            Learn & conquer
                           </p>
+
                         </div>
                       </div>
                     </button>
 
-                    {/* Instructor */}
+                    {/* INSTRUCTOR */}
 
                     <button
                       type="button"
                       onClick={() =>
-                        handleRoleChange("instructor")
+                        handleRoleChange(
+                          "instructor"
+                        )
                       }
                       className={`
-                        group/role
+                        group
                         relative
                         overflow-hidden
                         rounded-xl
@@ -1099,15 +1739,29 @@ function Login() {
                         text-left
                         transition-all
                         duration-300
+                        hover:-translate-y-1
+
                         ${
-                          formData.role === "instructor"
-                            ? "border-red-700/70 bg-red-950/20 shadow-[0_0_25px_rgba(220,38,38,0.08)]"
-                            : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"
+                          formData.role ===
+                          "instructor"
+                            ? `
+                              border-[#801324]
+                              bg-gradient-to-br
+                              from-[#30070d]
+                              to-[#100b08]
+                              shadow-[0_0_25px_rgba(139,0,0,0.15)]
+                            `
+                            : `
+                              border-[#302a23]
+                              bg-[#0a0907]
+                              hover:border-[#4b4035]
+                            `
                         }
                       `}
                     >
-                      {formData.role === "instructor" && (
-                        <div
+                      {formData.role ===
+                        "instructor" && (
+                        <span
                           className="
                             absolute
                             bottom-0
@@ -1116,13 +1770,14 @@ function Login() {
                             w-full
                             bg-gradient-to-r
                             from-transparent
-                            via-red-500
+                            via-[#b8863d]
                             to-transparent
                           "
                         />
                       )}
 
                       <div className="flex items-center gap-3">
+
                         <div
                           className={`
                             flex
@@ -1134,10 +1789,22 @@ function Login() {
                             rounded-lg
                             border
                             transition-all
+                            duration-300
+                            group-hover:scale-110
+
                             ${
-                              formData.role === "instructor"
-                                ? "border-red-800 bg-red-950/50 text-red-500"
-                                : "border-zinc-800 bg-zinc-900 text-zinc-600"
+                              formData.role ===
+                              "instructor"
+                                ? `
+                                  border-[#72101d]
+                                  bg-[#35070d]
+                                  text-[#d6b36a]
+                                `
+                                : `
+                                  border-[#302a23]
+                                  bg-[#15120f]
+                                  text-[#62594e]
+                                `
                             }
                           `}
                         >
@@ -1145,34 +1812,38 @@ function Login() {
                         </div>
 
                         <div>
+
                           <p
                             className={`
                               text-xs
                               font-black
+
                               ${
-                                formData.role === "instructor"
-                                  ? "text-white"
-                                  : "text-zinc-400"
+                                formData.role ===
+                                "instructor"
+                                  ? "text-[#eee6da]"
+                                  : "text-[#93887b]"
                               }
                             `}
                           >
                             Instructor
                           </p>
 
-                          <p className="mt-0.5 text-[9px] text-zinc-600">
-                            Teach & manage
+                          <p className="mt-0.5 text-[9px] text-[#5e554b]">
+                            Teach & rule
                           </p>
+
                         </div>
                       </div>
                     </button>
+
                   </div>
                 </div>
 
-                {/* =================================================
-                    EMAIL
-                ================================================= */}
+                {/* EMAIL */}
 
                 <div className="mb-5">
+
                   <label
                     htmlFor="email"
                     className="
@@ -1182,64 +1853,49 @@ function Login() {
                       font-black
                       uppercase
                       tracking-[0.15em]
-                      text-zinc-500
+                      text-[#82766a]
                     "
                   >
                     Email address
                   </label>
 
-                  <div className="group/input relative">
-                    <div
-                      className="
-                        pointer-events-none
-                        absolute
-                        left-0
-                        top-0
-                        h-full
-                        w-0.5
-                        bg-red-600
-                        opacity-0
-                        transition-opacity
-                        group-focus-within/input:opacity-100
-                      "
-                    />
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    className="
+                      h-12
+                      w-full
+                      rounded-xl
+                      border
+                      border-[#302a23]
+                      bg-[#090806]
+                      px-4
+                      text-sm
+                      text-[#eee6da]
+                      outline-none
+                      placeholder:text-[#443d35]
+                      transition-all
+                      duration-300
+                      hover:border-[#4a4035]
+                      focus:border-[#7b1724]
+                      focus:ring-1
+                      focus:ring-[#7b1724]/40
+                    "
+                  />
 
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="you@example.com"
-                      autoComplete="email"
-                      className="
-                        h-12
-                        w-full
-                        rounded-xl
-                        border
-                        border-zinc-800
-                        bg-zinc-950
-                        px-4
-                        text-sm
-                        text-white
-                        outline-none
-                        placeholder:text-zinc-700
-                        transition-all
-                        focus:border-red-800
-                        focus:bg-black
-                        focus:ring-1
-                        focus:ring-red-900/40
-                      "
-                    />
-                  </div>
                 </div>
 
-                {/* =================================================
-                    PASSWORD
-                ================================================= */}
+                {/* PASSWORD */}
 
                 <div className="mb-5">
+
                   <div className="mb-2 flex items-center justify-between">
+
                     <label
                       htmlFor="password"
                       className="
@@ -1247,7 +1903,7 @@ function Login() {
                         font-black
                         uppercase
                         tracking-[0.15em]
-                        text-zinc-500
+                        text-[#82766a]
                       "
                     >
                       Password
@@ -1258,30 +1914,17 @@ function Login() {
                       className="
                         text-[10px]
                         font-bold
-                        text-red-500
-                        transition-colors
-                        hover:text-red-400
+                        text-[#a51c30]
+                        transition-all
+                        hover:text-[#d6b36a]
                       "
                     >
                       Forgot password?
                     </Link>
+
                   </div>
 
-                  <div className="group/input relative">
-                    <div
-                      className="
-                        pointer-events-none
-                        absolute
-                        left-0
-                        top-0
-                        h-full
-                        w-0.5
-                        bg-red-600
-                        opacity-0
-                        transition-opacity
-                        group-focus-within/input:opacity-100
-                      "
-                    />
+                  <div className="relative">
 
                     <input
                       id="password"
@@ -1300,19 +1943,20 @@ function Login() {
                         w-full
                         rounded-xl
                         border
-                        border-zinc-800
-                        bg-zinc-950
+                        border-[#302a23]
+                        bg-[#090806]
                         px-4
                         pr-12
                         text-sm
-                        text-white
+                        text-[#eee6da]
                         outline-none
-                        placeholder:text-zinc-700
+                        placeholder:text-[#443d35]
                         transition-all
-                        focus:border-red-800
-                        focus:bg-black
+                        duration-300
+                        hover:border-[#4a4035]
+                        focus:border-[#7b1724]
                         focus:ring-1
-                        focus:ring-red-900/40
+                        focus:ring-[#7b1724]/40
                       "
                     />
 
@@ -1320,7 +1964,8 @@ function Login() {
                       type="button"
                       onClick={() =>
                         setShowPassword(
-                          (prev) => !prev
+                          (previous) =>
+                            !previous
                         )
                       }
                       className="
@@ -1334,11 +1979,18 @@ function Login() {
                         items-center
                         justify-center
                         rounded-lg
-                        text-zinc-600
+                        text-[#5e554b]
                         transition-all
-                        hover:bg-zinc-900
-                        hover:text-red-500
+                        duration-300
+                        hover:bg-[#17130f]
+                        hover:text-[#d6b36a]
+                        hover:scale-110
                       "
+                      aria-label={
+                        showPassword
+                          ? "Hide password"
+                          : "Show password"
+                      }
                     >
                       {showPassword ? (
                         <EyeOff size={17} />
@@ -1346,30 +1998,43 @@ function Login() {
                         <Eye size={17} />
                       )}
                     </button>
+
                   </div>
                 </div>
 
-                {/* =================================================
-                    SECURITY
-                ================================================= */}
+                {/* SECURITY */}
 
-                <div className="mb-6 flex items-center justify-between">
-                  <label className="flex cursor-pointer items-center gap-2">
+                <div
+                  className="
+                    mb-6
+                    flex
+                    items-center
+                    justify-between
+                  "
+                >
+
+                  <label
+                    className="
+                      flex
+                      items-center
+                      gap-2
+                      text-[10px]
+                      text-[#5e554b]
+                    "
+                  >
                     <input
                       type="checkbox"
                       className="
                         h-3.5
                         w-3.5
                         rounded
-                        border-zinc-700
-                        bg-zinc-900
-                        accent-red-600
+                        border-[#4a4035]
+                        bg-[#15120f]
+                        accent-[#8f1111]
                       "
                     />
 
-                    <span className="text-[10px] text-zinc-600">
-                      Remember this session
-                    </span>
+                    Remember this session
                   </label>
 
                   <div
@@ -1381,21 +2046,20 @@ function Login() {
                       font-bold
                       uppercase
                       tracking-wider
-                      text-zinc-600
+                      text-[#5e554b]
                     "
                   >
                     <ShieldCheck
                       size={12}
-                      className="text-emerald-600"
+                      className="text-emerald-700"
                     />
 
                     Encrypted
                   </div>
+
                 </div>
 
-                {/* =================================================
-                    LOGIN BUTTON
-                ================================================= */}
+                {/* LOGIN BUTTON */}
 
                 <button
                   type="submit"
@@ -1404,7 +2068,7 @@ function Login() {
                     group
                     relative
                     flex
-                    h-13
+                    h-14
                     w-full
                     items-center
                     justify-center
@@ -1412,35 +2076,50 @@ function Login() {
                     overflow-hidden
                     rounded-xl
                     border
-                    border-red-600/70
+                    border-[#841326]
                     bg-gradient-to-r
-                    from-red-800
-                    via-red-700
-                    to-red-800
+                    from-[#570711]
+                    via-[#8e1328]
+                    to-[#570711]
                     text-sm
                     font-black
-                    text-white
-                    shadow-[0_0_25px_rgba(220,38,38,0.15)]
+                    text-[#f4eadc]
+                    shadow-[0_0_30px_rgba(139,0,0,0.18)]
                     transition-all
-                    duration-300
-                    hover:border-red-500
-                    hover:shadow-[0_0_35px_rgba(220,38,38,0.3)]
+                    duration-500
+                    hover:-translate-y-1
+                    hover:border-[#b8863d]
+                    hover:shadow-[0_15px_45px_rgba(139,0,0,0.35)]
                     disabled:cursor-not-allowed
                     disabled:opacity-60
                   "
                 >
-                  {/* Button shine */}
 
                   <span
                     className="
+                      pointer-events-none
                       absolute
                       inset-y-0
-                      -left-20
-                      w-16
+                      -left-24
+                      w-20
                       -skew-x-12
-                      bg-white/20
-                      blur-sm
-                      animate-[buttonShine_3s_linear_infinite]
+                      bg-white/15
+                      blur-md
+                      animate-[buttonShine_3.5s_linear_infinite]
+                    "
+                  />
+
+                  <span
+                    className="
+                      pointer-events-none
+                      absolute
+                      inset-0
+                      rounded-xl
+                      border
+                      border-[#d6b36a]/0
+                      transition-all
+                      duration-500
+                      group-hover:border-[#d6b36a]/40
                     "
                   />
 
@@ -1458,47 +2137,230 @@ function Login() {
                         "
                       />
 
-                      <span>
-                        Authenticating...
-                      </span>
+                      Opening the gates...
                     </>
                   ) : (
                     <>
-                      <Crosshair
-                        size={16}
+                      <Sword
+                        size={17}
                         className="
+                          rotate-[-35deg]
                           transition-transform
-                          duration-300
-                          group-hover:rotate-90
+                          duration-500
+                          group-hover:rotate-[-15deg]
                         "
                       />
 
-                      <span>
-                        Enter as{" "}
-                        {formData.role === "student"
-                          ? "Student"
-                          : "Instructor"}
-                      </span>
+                      Enter as{" "}
+                      {formData.role ===
+                      "student"
+                        ? "Student"
+                        : "Instructor"}
 
                       <ArrowRight
                         size={17}
                         className="
                           transition-transform
-                          duration-300
-                          group-hover:translate-x-1
+                          duration-500
+                          group-hover:translate-x-2
                         "
                       />
                     </>
                   )}
+
                 </button>
+
               </form>
 
-              {/* =================================================
+              {/* ==================================================
+                  VERIFICATION BOX
+              ================================================== */}
+
+              {showResendVerification && (
+                <div
+                  className="
+                    mt-5
+                    rounded-xl
+                    border
+                    border-[#72101d]/70
+                    bg-gradient-to-br
+                    from-[#27070b]
+                    via-[#100b08]
+                    to-[#090806]
+                    p-4
+                    shadow-[0_0_30px_rgba(139,0,0,0.12)]
+                    animate-[verificationAppear_400ms_ease-out]
+                  "
+                >
+
+                  <div className="mb-4 flex items-start gap-3">
+
+                    <div
+                      className="
+                        flex
+                        h-10
+                        w-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-lg
+                        border
+                        border-[#72101d]
+                        bg-[#35070d]
+                        text-[#d6b36a]
+                      "
+                    >
+                      <MailCheck size={17} />
+                    </div>
+
+                    <div className="min-w-0">
+
+                      <p className="text-sm font-black text-[#eee6da]">
+                        Your raven could not reach you
+                      </p>
+
+                      <p
+                        className="
+                          mt-1
+                          text-[10px]
+                          leading-5
+                          text-[#766c60]
+                        "
+                      >
+                        Your email has not been
+                        verified. Request a fresh
+                        verification link.
+                      </p>
+
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowResendVerification(
+                          false
+                        )
+                      }
+                      className="
+                        ml-auto
+                        shrink-0
+                        text-[#51483e]
+                        transition-colors
+                        hover:text-[#d6b36a]
+                      "
+                      aria-label="Close verification options"
+                    >
+                      <X size={15} />
+                    </button>
+
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={
+                      handleResendVerification
+                    }
+                    disabled={
+                      resendingVerification
+                    }
+                    className="
+                      group
+                      flex
+                      h-11
+                      w-full
+                      items-center
+                      justify-center
+                      gap-2
+                      rounded-lg
+                      border
+                      border-[#55442d]
+                      bg-[#17120c]
+                      text-[10px]
+                      font-black
+                      uppercase
+                      tracking-[0.15em]
+                      text-[#b8863d]
+                      transition-all
+                      duration-300
+                      hover:-translate-y-0.5
+                      hover:border-[#b8863d]
+                      hover:bg-[#21190e]
+                      disabled:cursor-not-allowed
+                      disabled:opacity-50
+                    "
+                  >
+                    {resendingVerification ? (
+                      <>
+                        <span
+                          className="
+                            h-3.5
+                            w-3.5
+                            animate-spin
+                            rounded-full
+                            border-2
+                            border-[#b8863d]
+                            border-t-transparent
+                          "
+                        />
+
+                        Sending raven...
+                      </>
+                    ) : (
+                      <>
+                        <Bird
+                          size={14}
+                          className="
+                            transition-transform
+                            group-hover:-translate-y-1
+                          "
+                        />
+
+                        Resend verification
+                      </>
+                    )}
+                  </button>
+
+                </div>
+              )}
+
+              {/* Verification shortcut */}
+
+              {!showResendVerification && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowResendVerification(
+                      true
+                    )
+                  }
+                  className="
+                    mt-5
+                    flex
+                    w-full
+                    items-center
+                    justify-center
+                    gap-2
+                    text-[10px]
+                    font-bold
+                    text-[#554c43]
+                    transition-all
+                    duration-300
+                    hover:text-[#b8863d]
+                  "
+                >
+                  <Bird size={12} />
+
+                  Didn't receive your verification email?
+                </button>
+              )}
+
+              {/* ==================================================
                   DIVIDER
-              ================================================= */}
+              ================================================== */}
 
               <div className="my-6 flex items-center gap-3">
-                <div className="h-px flex-1 bg-zinc-900" />
+
+                <div className="h-px flex-1 bg-[#211d18]" />
 
                 <span
                   className="
@@ -1509,19 +2371,18 @@ function Login() {
                     font-black
                     uppercase
                     tracking-[0.2em]
-                    text-zinc-700
+                    text-[#51483e]
                   "
                 >
-                  <CircleDot size={8} />
-                  Alternative
+                  <Moon size={9} />
+                  Another path
                 </span>
 
-                <div className="h-px flex-1 bg-zinc-900" />
+                <div className="h-px flex-1 bg-[#211d18]" />
+
               </div>
 
-              {/* =================================================
-                  GOOGLE
-              ================================================= */}
+              {/* GOOGLE */}
 
               <button
                 type="button"
@@ -1531,6 +2392,7 @@ function Login() {
                   )
                 }
                 className="
+                  group
                   flex
                   h-12
                   w-full
@@ -1539,16 +2401,17 @@ function Login() {
                   gap-3
                   rounded-xl
                   border
-                  border-zinc-800
-                  bg-zinc-950
+                  border-[#302a23]
+                  bg-[#090806]
                   text-sm
                   font-bold
-                  text-zinc-400
+                  text-[#85796b]
                   transition-all
-                  duration-300
-                  hover:border-zinc-700
-                  hover:bg-zinc-900
-                  hover:text-white
+                  duration-500
+                  hover:-translate-y-0.5
+                  hover:border-[#4d4235]
+                  hover:bg-[#110e0b]
+                  hover:text-[#eee6da]
                 "
               >
                 <span
@@ -1560,11 +2423,15 @@ function Login() {
                     justify-center
                     rounded-full
                     border
-                    border-zinc-700
+                    border-[#493d30]
                     bg-black
                     text-xs
                     font-black
-                    text-zinc-400
+                    text-[#a99a88]
+                    transition-all
+                    duration-300
+                    group-hover:border-[#b8863d]
+                    group-hover:text-[#d6b36a]
                   "
                 >
                   G
@@ -1573,37 +2440,33 @@ function Login() {
                 Continue with Google
               </button>
 
-              {/* =================================================
-                  REGISTER
-              ================================================= */}
+              {/* REGISTER */}
 
               <p
                 className="
                   mt-6
                   text-center
                   text-[10px]
-                  text-zinc-600
+                  text-[#5b5147]
                 "
               >
-                Don't have an account?
+                New to the realm?
 
                 <Link
                   to="/register"
                   className="
                     ml-1.5
                     font-black
-                    text-red-500
+                    text-[#a51c30]
                     transition-colors
-                    hover:text-red-400
+                    hover:text-[#d6b36a]
                   "
                 >
-                  Create account
+                  Create your account
                 </Link>
               </p>
 
-              {/* =================================================
-                  BOTTOM SECURITY
-              ================================================= */}
+              {/* FOOTER */}
 
               <div
                 className="
@@ -1616,31 +2479,45 @@ function Login() {
                   font-black
                   uppercase
                   tracking-[0.18em]
-                  text-zinc-800
+                  text-[#3f3932]
                 "
               >
-                <BadgeCheck
+                <Check
                   size={11}
-                  className="text-emerald-700"
+                  className="text-emerald-800"
                 />
 
-                SmartLMS Secure Authentication
+                Smart LMS Secure Authentication
 
                 <Zap
                   size={10}
-                  className="text-red-800"
+                  className="text-[#72101d]"
                 />
               </div>
+
             </div>
-          </div>
+          </section>
         </div>
       </main>
 
-      {/* =====================================================
+      {/* ========================================================
           ANIMATIONS
-      ===================================================== */}
+      ======================================================== */}
 
       <style>{`
+        @keyframes ambientGlow {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.45;
+          }
+
+          50% {
+            transform: scale(1.12);
+            opacity: 0.8;
+          }
+        }
+
         @keyframes scan {
           0% {
             transform: translateY(-10px);
@@ -1657,6 +2534,48 @@ function Login() {
 
           100% {
             transform: translateY(100vh);
+            opacity: 0;
+          }
+        }
+
+        @keyframes particle {
+          0%,
+          100% {
+            transform: translateY(0);
+            opacity: 0.25;
+          }
+
+          50% {
+            transform: translateY(-20px);
+            opacity: 0.9;
+          }
+        }
+
+        @keyframes sparkFloat {
+          0%,
+          100% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 0.3;
+          }
+
+          50% {
+            transform: translateY(-12px) rotate(12deg);
+            opacity: 0.8;
+          }
+        }
+
+        @keyframes ember {
+          0% {
+            transform: translateY(20px) scale(0.5);
+            opacity: 0;
+          }
+
+          20% {
+            opacity: 0.8;
+          }
+
+          100% {
+            transform: translateY(-100px) scale(1);
             opacity: 0;
           }
         }
@@ -1681,36 +2600,6 @@ function Login() {
           }
         }
 
-        @keyframes centerPulse {
-          0%,
-          100% {
-            transform: scale(1);
-            box-shadow:
-              0 0 35px rgba(220, 38, 38, 0.12);
-          }
-
-          50% {
-            transform: scale(1.04);
-            box-shadow:
-              0 0 65px rgba(220, 38, 38, 0.25);
-          }
-        }
-
-        @keyframes iconOrbit {
-          0%,
-          100% {
-            transform:
-              translateY(-50%)
-              translateX(0);
-          }
-
-          50% {
-            transform:
-              translateY(-50%)
-              translateX(8px);
-          }
-        }
-
         @keyframes iconFloat {
           0%,
           100% {
@@ -1718,72 +2607,84 @@ function Login() {
           }
 
           50% {
-            transform: translateY(-7px);
+            transform: translateY(-8px);
           }
         }
 
-        @keyframes particle {
+        @keyframes birdFloat {
           0%,
           100% {
-            transform: translateY(0);
-            opacity: 0.2;
+            transform: translateY(0) rotate(0deg);
           }
 
           50% {
-            transform: translateY(-18px);
-            opacity: 0.8;
-          }
-        }
-
-        @keyframes sparkFloat {
-          0%,
-          100% {
-            transform:
-              translateY(0)
-              rotate(0deg);
-            opacity: 0.3;
-          }
-
-          50% {
-            transform:
-              translateY(-12px)
-              rotate(15deg);
-            opacity: 0.8;
-          }
-        }
-
-        @keyframes ambientGlow {
-          0%,
-          100% {
-            transform: scale(1);
-            opacity: 0.5;
-          }
-
-          50% {
-            transform: scale(1.15);
-            opacity: 0.8;
+            transform: translateY(-4px) rotate(-5deg);
           }
         }
 
         @keyframes progressPulse {
           0%,
           100% {
-            width: 65%;
+            width: 70%;
           }
 
           50% {
-            width: 78%;
+            width: 82%;
           }
         }
 
         @keyframes buttonShine {
           0% {
-            left: -80px;
+            left: -100px;
           }
 
           45%,
           100% {
-            left: 120%;
+            left: 130%;
+          }
+        }
+
+        @keyframes verificationAppear {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        ::selection {
+          background: rgba(139, 0, 0, 0.55);
+          color: #f4eadc;
+        }
+
+        ::-webkit-scrollbar {
+          width: 7px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: #070605;
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background: #3b171c;
+          border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background: #701321;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          *,
+          *::before,
+          *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
           }
         }
       `}</style>

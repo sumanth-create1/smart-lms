@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Registration";
+import VerifyEmail from "../pages/auth/VerifyEmail";
 
 // =====================================================
 // PUBLIC COURSE PAGES
@@ -16,7 +17,7 @@ import StudentCourses from "../pages/student/StudentCourses";
 import StudentCourseDetails from "../pages/student/StudentCourseDetails";
 
 // =====================================================
-// AUTH
+// AUTH / PROTECTION
 // =====================================================
 
 import ProtectedRoute from "./ProtectedRoute";
@@ -56,6 +57,7 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* =================================================
             PUBLIC ROUTES
         ================================================= */}
@@ -66,38 +68,70 @@ function AppRoutes() {
 
         <Route path="/register" element={<Register />} />
 
+        {/* Email verification
+            Must remain PUBLIC because the user is
+            not authenticated when clicking the email link.
+        */}
+        <Route
+          path="/verify-email/:token"
+          element={<VerifyEmail />}
+        />
+
         {/* =================================================
             PUBLIC COURSE ROUTES
         ================================================= */}
 
-        <Route path="/courses" element={<StudentCourses />} />
+        <Route
+          path="/courses"
+          element={<StudentCourses />}
+        />
 
-        <Route path="/courses/:courseId" element={<StudentCourseDetails />} />
+        <Route
+          path="/courses/:courseId"
+          element={<StudentCourseDetails />}
+        />
 
         {/* =================================================
             STUDENT PROTECTED ROUTES
         ================================================= */}
 
-        {/* =================================================
-    STUDENT PROTECTED ROUTES
-================================================= */}
+        <Route
+          element={<ProtectedRoute allowedRoles={["student"]} />}
+        >
+          {/* Student Dashboard Layout */}
 
-        <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
           <Route element={<StudentDashboardLayout />}>
+
             {/* Dashboard */}
-            <Route path="/dashboard" element={<StudentDashboard />} />
+            <Route
+              path="/dashboard"
+              element={<StudentDashboard />}
+            />
 
             {/* Progress */}
-            <Route path="/progress" element={<StudentProgress />} />
+            <Route
+              path="/progress"
+              element={<StudentProgress />}
+            />
 
             {/* Achievements */}
-            <Route path="/achievements" element={<Achievements />} />
+            <Route
+              path="/achievements"
+              element={<Achievements />}
+            />
 
             {/* Profile */}
-            <Route path="/profile" element={<Profile />} />
+            <Route
+              path="/profile"
+              element={<Profile />}
+            />
 
             {/* Settings */}
-            <Route path="/settings" element={<Settings />} />
+            <Route
+              path="/settings"
+              element={<Settings />}
+            />
+
           </Route>
 
           {/* Course Learning */}
@@ -105,14 +139,20 @@ function AppRoutes() {
             path="/courses/:courseId/learn"
             element={<StudentCourseLearning />}
           />
+
         </Route>
 
         {/* =================================================
             INSTRUCTOR PROTECTED ROUTES
         ================================================= */}
 
-        <Route element={<ProtectedRoute allowedRoles={["instructor"]} />}>
+        <Route
+          element={<ProtectedRoute allowedRoles={["instructor"]} />}
+        >
+          {/* Instructor Dashboard Layout */}
+
           <Route element={<InstructorDashboardLayout />}>
+
             {/* Dashboard */}
             <Route
               path="/instructor/dashboard"
@@ -120,7 +160,10 @@ function AppRoutes() {
             />
 
             {/* Courses */}
-            <Route path="/instructor/courses" element={<InstructorCourses />} />
+            <Route
+              path="/instructor/courses"
+              element={<InstructorCourses />}
+            />
 
             {/* Create Course */}
             <Route
@@ -159,9 +202,14 @@ function AppRoutes() {
             />
 
             {/* Profile */}
-            <Route path="/instructor/profile" element={<InstructorProfile />} />
+            <Route
+              path="/instructor/profile"
+              element={<InstructorProfile />}
+            />
+
           </Route>
         </Route>
+
       </Routes>
     </BrowserRouter>
   );

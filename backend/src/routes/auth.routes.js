@@ -10,6 +10,7 @@ import {
   changePassword,
   changeEmail,
   verifyEmail,
+  resendVerification,
 } from "../controllers/auth.controller.js";
 
 import {
@@ -64,6 +65,11 @@ router.post(
 router.get(
   "/verify-email/:token",
   verifyEmail
+);
+
+router.post(
+  "/resend-verification",
+  resendVerification
 );
 
 export default router;

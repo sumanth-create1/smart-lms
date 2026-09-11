@@ -14,8 +14,39 @@ export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
+    // =========================================
+    // VALIDATION
+    // =========================================
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, email and password are required",
+      });
+    }
+
+    if (!["student", "instructor"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role selected",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least 6 characters",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // =========================================
+    // CHECK EXISTING USER
+    // =========================================
+
     const existingUser = await User.findOne({
-      email: email?.toLowerCase().trim(),
+      email: normalizedEmail,
     });
 
     if (existingUser) {
@@ -25,27 +56,134 @@ export const registerUser = async (req, res) => {
       });
     }
 
+    // =========================================
+    // CREATE USER
+    // =========================================
+
     const user = await User.create({
-      name,
-      email: email.toLowerCase().trim(),
+      name: name.trim(),
+      email: normalizedEmail,
       password,
       role,
+      isVerified: false,
     });
 
+    // =========================================
+    // GENERATE VERIFICATION TOKEN
+    // =========================================
+
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    user.emailVerificationToken = verificationToken;
+
+    // Token expires after 15 minutes
+    user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    await user.save();
+
+    // =========================================
+    // VERIFICATION URL
+    // =========================================
+
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+    // =========================================
+    // SEND VERIFICATION EMAIL
+    // =========================================
+
+    await transporter.sendMail({
+      from: `"Smart LMS" <${process.env.EMAIL_USER}>`,
+      to: normalizedEmail,
+      subject: "Verify your Smart LMS account",
+
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: 40px auto;
+          padding: 30px;
+          border: 1px solid #333;
+          border-radius: 12px;
+          background: #111;
+          color: #eee;
+        ">
+
+          <h2 style="
+            color: #d4af37;
+            margin-bottom: 20px;
+          ">
+            Welcome to Smart LMS
+          </h2>
+
+          <p>
+            Hello ${user.name},
+          </p>
+
+          <p>
+            Thank you for creating your Smart LMS account.
+          </p>
+
+          <p>
+            Please verify your email address to activate your account.
+          </p>
+
+          <div style="margin: 30px 0;">
+            <a
+              href="${verificationUrl}"
+              style="
+                display: inline-block;
+                padding: 12px 24px;
+                background: #b08d57;
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: bold;
+              "
+            >
+              Verify Email
+            </a>
+          </div>
+
+          <p style="
+            font-size: 13px;
+            color: #aaa;
+          ">
+            This verification link expires in 15 minutes.
+          </p>
+
+          <p style="
+            font-size: 13px;
+            color: #777;
+          ">
+            If you didn't create this account, you can safely ignore this email.
+          </p>
+
+        </div>
+      `,
+    });
+
+    // =========================================
+    // RESPONSE
+    // =========================================
+
     const userData = user.toObject();
+
     delete userData.password;
+    delete userData.emailVerificationToken;
+    delete userData.emailVerificationExpires;
 
     return res.status(201).json({
       success: true,
-      message: "User registered successfully",
-      data: userData,
+      message:
+        "Registration successful. Please check your email to verify your account.",
+      user: userData,
     });
   } catch (error) {
     console.error("Register error:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Unable to register user",
     });
   }
 };
@@ -116,6 +254,18 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: "Invalid Credentials",
+      });
+    }
+
+    // =========================================
+    // CHECK EMAIL VERIFICATION
+    // =========================================
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Please verify your email address before logging in.",
+        requiresVerification: true,
       });
     }
 
@@ -339,9 +489,7 @@ export const changeEmail = async (req, res) => {
     user.emailVerificationToken = verificationToken;
 
     // Token expires after 15 minutes
-    user.emailVerificationExpires = new Date(
-      Date.now() + 15 * 60 * 1000
-    );
+    user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     await user.save();
 
@@ -349,8 +497,7 @@ export const changeEmail = async (req, res) => {
     // VERIFICATION URL
     // =========================================
 
-    const verificationUrl =
-      `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
     // =========================================
     // SEND EMAIL
@@ -439,6 +586,10 @@ export const verifyEmail = async (req, res) => {
   try {
     const { token } = req.params;
 
+    // =========================================
+    // VALIDATION
+    // =========================================
+
     if (!token) {
       return res.status(400).json({
         success: false,
@@ -447,7 +598,7 @@ export const verifyEmail = async (req, res) => {
     }
 
     // =========================================
-    // FIND USER USING TOKEN
+    // FIND USER
     // =========================================
 
     const user = await User.findOne({
@@ -465,49 +616,48 @@ export const verifyEmail = async (req, res) => {
     }
 
     // =========================================
-    // CHECK PENDING EMAIL
+    // CHANGE EMAIL FLOW
     // =========================================
 
-    if (!user.pendingEmail) {
-      return res.status(400).json({
-        success: false,
-        message: "No pending email change found",
+    if (user.pendingEmail) {
+      const existingUser = await User.findOne({
+        email: user.pendingEmail,
+        _id: { $ne: user._id },
       });
+
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: "This email is already registered",
+        });
+      }
+
+      user.email = user.pendingEmail;
+      user.pendingEmail = "";
     }
 
     // =========================================
-    // CHECK EMAIL STILL AVAILABLE
+    // VERIFY EMAIL
     // =========================================
-
-    const existingUser = await User.findOne({
-      email: user.pendingEmail,
-      _id: { $ne: user._id },
-    });
-
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: "This email is already registered",
-      });
-    }
-
-    // =========================================
-    // UPDATE EMAIL
-    // =========================================
-
-    user.email = user.pendingEmail;
-
-    user.pendingEmail = "";
-    user.emailVerificationToken = "";
-    user.emailVerificationExpires = null;
 
     user.isVerified = true;
 
+    // =========================================
+    // CLEAR TOKEN
+    // =========================================
+
+    user.emailVerificationToken = "";
+    user.emailVerificationExpires = null;
+
     await user.save();
+
+    // =========================================
+    // RESPONSE
+    // =========================================
 
     return res.status(200).json({
       success: true,
-      message: "Email address verified and updated successfully",
+      message: "Email verified successfully",
     });
   } catch (error) {
     console.error("Verify email error:", error);
@@ -521,21 +671,13 @@ export const verifyEmail = async (req, res) => {
 
 export const changePassword = async (req, res) => {
   try {
-    const {
-      currentPassword,
-      newPassword,
-      confirmPassword,
-    } = req.body;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
 
     // =========================================
     // VALIDATION
     // =========================================
 
-    if (
-      !currentPassword ||
-      !newPassword ||
-      !confirmPassword
-    ) {
+    if (!currentPassword || !newPassword || !confirmPassword) {
       return res.status(400).json({
         success: false,
         message: "All password fields are required",
@@ -573,8 +715,7 @@ export const changePassword = async (req, res) => {
     // CHECK CURRENT PASSWORD
     // =========================================
 
-    const isPasswordCorrect =
-      await user.comparePassword(currentPassword);
+    const isPasswordCorrect = await user.comparePassword(currentPassword);
 
     if (!isPasswordCorrect) {
       return res.status(401).json({
@@ -587,14 +728,12 @@ export const changePassword = async (req, res) => {
     // PREVENT SAME PASSWORD
     // =========================================
 
-    const isSamePassword =
-      await user.comparePassword(newPassword);
+    const isSamePassword = await user.comparePassword(newPassword);
 
     if (isSamePassword) {
       return res.status(400).json({
         success: false,
-        message:
-          "New password must be different from your current password",
+        message: "New password must be different from your current password",
       });
     }
 
@@ -612,13 +751,175 @@ export const changePassword = async (req, res) => {
       success: true,
       message: "Password changed successfully",
     });
-
   } catch (error) {
     console.error("Change password error:", error);
 
     return res.status(500).json({
       success: false,
       message: "Unable to change password",
+    });
+  }
+};
+
+
+export const resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // =========================================
+    // VALIDATION
+    // =========================================
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // =========================================
+    // FIND USER
+    // =========================================
+
+    const user = await User.findOne({
+      email: normalizedEmail,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No account found with this email",
+      });
+    }
+
+    // =========================================
+    // CHECK VERIFICATION
+    // =========================================
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "This email is already verified",
+      });
+    }
+
+    // =========================================
+    // GENERATE NEW TOKEN
+    // =========================================
+
+    const verificationToken = crypto
+      .randomBytes(32)
+      .toString("hex");
+
+    user.emailVerificationToken = verificationToken;
+
+    // Token expires after 15 minutes
+    user.emailVerificationExpires = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
+
+    await user.save();
+
+    // =========================================
+    // VERIFICATION URL
+    // =========================================
+
+    const verificationUrl =
+      `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+    // =========================================
+    // SEND EMAIL
+    // =========================================
+
+    await transporter.sendMail({
+      from: `"Smart LMS" <${process.env.EMAIL_USER}>`,
+      to: normalizedEmail,
+      subject: "Verify your Smart LMS account",
+
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: 40px auto;
+          padding: 30px;
+          border: 1px solid #333;
+          border-radius: 12px;
+          background: #111;
+          color: #eee;
+        ">
+
+          <h2 style="
+            color: #d4af37;
+            margin-bottom: 20px;
+          ">
+            Verify Your Smart LMS Account
+          </h2>
+
+          <p>
+            Hello ${user.name},
+          </p>
+
+          <p>
+            You requested a new verification link for your
+            Smart LMS account.
+          </p>
+
+          <p>
+            Click the button below to verify your email address.
+          </p>
+
+          <div style="margin: 30px 0;">
+            <a
+              href="${verificationUrl}"
+              style="
+                display: inline-block;
+                padding: 12px 24px;
+                background: #b08d57;
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: bold;
+              "
+            >
+              Verify Email
+            </a>
+          </div>
+
+          <p style="
+            font-size: 13px;
+            color: #aaa;
+          ">
+            This verification link expires in 15 minutes.
+          </p>
+
+          <p style="
+            font-size: 13px;
+            color: #777;
+          ">
+            If you didn't request this email, you can safely ignore it.
+          </p>
+
+        </div>
+      `,
+    });
+
+    // =========================================
+    // RESPONSE
+    // =========================================
+
+    return res.status(200).json({
+      success: true,
+      message: "A new verification email has been sent",
+    });
+
+  } catch (error) {
+    console.error("Resend verification error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to resend verification email",
     });
   }
 };
