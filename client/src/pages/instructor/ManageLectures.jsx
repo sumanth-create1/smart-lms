@@ -7,12 +7,14 @@ import {
   Check,
   Edit3,
   Film,
+  FileText,
   LoaderCircle,
   Plus,
   Trash2,
   Upload,
   X,
   PlayCircle,
+  Save,
 } from "lucide-react";
 
 import toast from "react-hot-toast";
@@ -28,15 +30,32 @@ function ManageLectures() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
+  /* =====================================================
+     CREATE STATE
+  ===================================================== */
+
   const [showCreate, setShowCreate] = useState(false);
+
   const [lectureTitle, setLectureTitle] = useState("");
+  const [lectureContent, setLectureContent] = useState("");
+
+  /* =====================================================
+     EDIT STATE
+  ===================================================== */
 
   const [editingId, setEditingId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [editingContent, setEditingContent] = useState("");
+  const [updatingId, setUpdatingId] = useState(null);
+
+  /* =====================================================
+     OTHER STATES
+  ===================================================== */
 
   const [uploadingId, setUploadingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const [previewLoadingId, setPreviewLoadingId] = useState(null);
+  const [previewLoadingId, setPreviewLoadingId] =
+    useState(null);
 
   /* =====================================================
      FETCH COURSE
@@ -102,6 +121,16 @@ function ManageLectures() {
   }, [courseId]);
 
   /* =====================================================
+     RESET CREATE FORM
+  ===================================================== */
+
+  const resetCreateForm = () => {
+    setLectureTitle("");
+    setLectureContent("");
+    setShowCreate(false);
+  };
+
+  /* =====================================================
      CREATE LECTURE
   ===================================================== */
 
@@ -109,9 +138,15 @@ function ManageLectures() {
     event.preventDefault();
 
     const title = lectureTitle.trim();
+    const content = lectureContent.trim();
 
     if (!title) {
       toast.error("Please enter a lecture title.");
+      return;
+    }
+
+    if (!content) {
+      toast.error("Please add lecture content.");
       return;
     }
 
@@ -122,6 +157,7 @@ function ManageLectures() {
         `/lecture/${courseId}`,
         {
           lectureTitle: title,
+          lectureContent: content,
         }
       );
 
@@ -135,8 +171,7 @@ function ManageLectures() {
 
       toast.success("Lecture created successfully");
 
-      setLectureTitle("");
-      setShowCreate(false);
+      resetCreateForm();
 
       await fetchLectures();
     } catch (error) {
@@ -155,22 +190,53 @@ function ManageLectures() {
   };
 
   /* =====================================================
+     START EDITING
+  ===================================================== */
+
+  const startEditing = (lecture) => {
+    setEditingId(lecture._id);
+    setEditingTitle(lecture.lectureTitle || "");
+    setEditingContent(
+      lecture.lectureContent || ""
+    );
+  };
+
+  /* =====================================================
+     CANCEL EDITING
+  ===================================================== */
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingTitle("");
+    setEditingContent("");
+  };
+
+  /* =====================================================
      UPDATE LECTURE
   ===================================================== */
 
   const handleUpdateLecture = async (lectureId) => {
     const title = editingTitle.trim();
+    const content = editingContent.trim();
 
     if (!title) {
       toast.error("Lecture title cannot be empty.");
       return;
     }
 
+    if (!content) {
+      toast.error("Lecture content cannot be empty.");
+      return;
+    }
+
     try {
+      setUpdatingId(lectureId);
+
       const response = await api.put(
         `/lecture/${lectureId}`,
         {
           lectureTitle: title,
+          lectureContent: content,
         }
       );
 
@@ -190,10 +256,11 @@ function ManageLectures() {
         )
       );
 
-      setEditingId(null);
-      setEditingTitle("");
+      cancelEditing();
 
-      toast.success("Lecture updated successfully");
+      toast.success(
+        "Lecture updated successfully"
+      );
     } catch (error) {
       console.error(
         "Update lecture error:",
@@ -204,6 +271,8 @@ function ManageLectures() {
         error.response?.data?.message ||
           "Unable to update lecture"
       );
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -241,7 +310,6 @@ function ManageLectures() {
         )
       );
 
-      // Re-fetch to keep lecture order correct.
       await fetchLectures();
     } catch (error) {
       console.error(
@@ -262,11 +330,16 @@ function ManageLectures() {
      UPLOAD VIDEO
   ===================================================== */
 
-  const handleVideoUpload = async (lectureId, file) => {
+  const handleVideoUpload = async (
+    lectureId,
+    file
+  ) => {
     if (!file) return;
 
     if (!file.type.startsWith("video/")) {
-      toast.error("Please select a valid video file.");
+      toast.error(
+        "Please select a valid video file."
+      );
       return;
     }
 
@@ -298,7 +371,9 @@ function ManageLectures() {
         )
       );
 
-      toast.success("Video uploaded successfully");
+      toast.success(
+        "Video uploaded successfully"
+      );
     } catch (error) {
       console.error(
         "Video upload error:",
@@ -318,7 +393,9 @@ function ManageLectures() {
      TOGGLE PREVIEW
   ===================================================== */
 
-  const handleTogglePreview = async (lectureId) => {
+  const handleTogglePreview = async (
+    lectureId
+  ) => {
     try {
       setPreviewLoadingId(lectureId);
 
@@ -373,8 +450,12 @@ function ManageLectures() {
 
     const totalSeconds = Math.floor(seconds);
 
-    const minutes = Math.floor(totalSeconds / 60);
-    const remainingSeconds = totalSeconds % 60;
+    const minutes = Math.floor(
+      totalSeconds / 60
+    );
+
+    const remainingSeconds =
+      totalSeconds % 60;
 
     return `${minutes}:${String(
       remainingSeconds
@@ -410,7 +491,9 @@ function ManageLectures() {
     <div className="min-h-full bg-[#F7F6F2] px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
 
-        {/* HEADER */}
+        {/* =================================================
+           HEADER
+        ================================================= */}
 
         <div className="mb-8">
           <button
@@ -425,7 +508,6 @@ function ManageLectures() {
           </button>
 
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-
             <div className="flex min-w-0 items-center gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm">
                 <Film size={24} />
@@ -442,14 +524,18 @@ function ManageLectures() {
                 </h1>
 
                 <p className="mt-1 text-sm text-gray-500">
-                  Manage lectures, videos and previews.
+                  Create lessons, add learning
+                  content, upload videos and manage
+                  previews.
                 </p>
               </div>
             </div>
 
             <button
               type="button"
-              onClick={() => setShowCreate(true)}
+              onClick={() =>
+                setShowCreate(true)
+              }
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
             >
               <Plus size={18} />
@@ -458,93 +544,188 @@ function ManageLectures() {
           </div>
         </div>
 
-        {/* CREATE LECTURE */}
+        {/* =================================================
+           CREATE LECTURE
+        ================================================= */}
 
         {showCreate && (
-          <div className="mb-6 rounded-3xl border border-indigo-100 bg-white p-6 shadow-sm">
+          <div className="mb-6 overflow-hidden rounded-3xl border border-indigo-100 bg-white shadow-sm">
+            <div className="border-b border-gray-100 bg-indigo-50/40 px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-indigo-100 p-2.5 text-indigo-600">
+                    <FileText size={20} />
+                  </div>
 
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Add New Lecture
-                </h2>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Add New Lecture
+                    </h2>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Create the lecture first, then upload
-                  its video.
-                </p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Add the lesson title and
+                      teaching content.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={resetCreateForm}
+                  className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                >
+                  <X size={19} />
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCreate(false);
-                  setLectureTitle("");
-                }}
-                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
-              >
-                <X size={19} />
-              </button>
             </div>
 
             <form
               onSubmit={handleCreateLecture}
-              className="flex flex-col gap-4 sm:flex-row"
+              className="space-y-5 p-6"
             >
-              <input
-                type="text"
-                value={lectureTitle}
-                onChange={(event) =>
-                  setLectureTitle(event.target.value)
-                }
-                placeholder="e.g. Introduction to React"
-                className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-              />
+              {/* TITLE */}
 
-              <button
-                type="submit"
-                disabled={creating}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {creating ? (
-                  <>
-                    <LoaderCircle
-                      size={18}
-                      className="animate-spin"
-                    />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus size={18} />
-                    Create Lecture
-                  </>
-                )}
-              </button>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-gray-800">
+                  Lecture Title
+                </label>
+
+                <input
+                  type="text"
+                  value={lectureTitle}
+                  onChange={(event) =>
+                    setLectureTitle(
+                      event.target.value
+                    )
+                  }
+                  placeholder="e.g. Introduction to React"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                />
+              </div>
+
+              {/* CONTENT */}
+
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="block text-sm font-semibold text-gray-800">
+                    Lecture Content
+                  </label>
+
+                  <span className="text-xs text-gray-400">
+                    {lectureContent.length} characters
+                  </span>
+                </div>
+
+                <textarea
+                  value={lectureContent}
+                  onChange={(event) =>
+                    setLectureContent(
+                      event.target.value
+                    )
+                  }
+                  rows={10}
+                  placeholder={`Write the concepts taught in this lecture...
+
+Example:
+
+A React component is a reusable piece of UI.
+
+Functional components are JavaScript functions that return JSX.
+
+Example:
+
+function Welcome() {
+  return <h1>Hello World</h1>;
+}
+
+Explain the important concepts, examples,
+and notes students should understand.`}
+                  className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm leading-7 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                />
+
+                <div className="mt-2 flex items-start gap-2 text-xs text-gray-400">
+                  <BookOpen
+                    size={14}
+                    className="mt-0.5 shrink-0"
+                  />
+
+                  <p>
+                    This content will be available
+                    to students and used by the AI
+                    Mentor to answer lecture-related
+                    questions.
+                  </p>
+                </div>
+              </div>
+
+              {/* ACTIONS */}
+
+              <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={resetCreateForm}
+                  className="rounded-xl bg-gray-100 px-5 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {creating ? (
+                    <>
+                      <LoaderCircle
+                        size={18}
+                        className="animate-spin"
+                      />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={18} />
+                      Create Lecture
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         )}
 
-        {/* LECTURE LIST */}
+        {/* =================================================
+           LECTURE LIST
+        ================================================= */}
 
         <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
 
           <div className="border-b border-gray-100 px-6 py-5">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Course Lectures
-            </h2>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Course Lectures
+                </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              {lectures.length}{" "}
-              {lectures.length === 1
-                ? "lecture"
-                : "lectures"}
-            </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  {lectures.length}{" "}
+                  {lectures.length === 1
+                    ? "lecture"
+                    : "lectures"}
+                </p>
+              </div>
+
+              {lectures.length > 0 && (
+                <div className="inline-flex items-center gap-2 self-start rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600">
+                  <BookOpen size={14} />
+                  Learning Content
+                </div>
+              )}
+            </div>
           </div>
 
           {lectures.length === 0 ? (
             <div className="flex min-h-[350px] flex-col items-center justify-center px-6 text-center">
-
               <div className="rounded-full bg-indigo-50 p-5">
                 <BookOpen
                   size={30}
@@ -557,13 +738,15 @@ function ManageLectures() {
               </h3>
 
               <p className="mt-1 max-w-md text-sm text-gray-500">
-                Start building your course by adding
-                your first lecture.
+                Start building your course by
+                adding your first lecture.
               </p>
 
               <button
                 type="button"
-                onClick={() => setShowCreate(true)}
+                onClick={() =>
+                  setShowCreate(true)
+                }
                 className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
               >
                 <Plus size={17} />
@@ -578,243 +761,349 @@ function ManageLectures() {
                   key={lecture._id}
                   className="p-5 transition hover:bg-gray-50 sm:p-6"
                 >
+                  {/* =================================================
+                     EDIT MODE
+                  ================================================= */}
 
-                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
+                  {editingId === lecture._id ? (
+                    <div className="rounded-2xl border border-indigo-100 bg-indigo-50/30 p-5">
 
-                    {/* LECTURE INFO */}
-
-                    <div className="flex min-w-0 items-center gap-4 lg:w-[45%]">
-
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-sm font-bold text-indigo-600">
-                        {lecture.order}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-
-                        {editingId === lecture._id ? (
-                          <div className="flex gap-2">
-
-                            <input
-                              autoFocus
-                              type="text"
-                              value={editingTitle}
-                              onChange={(event) =>
-                                setEditingTitle(
-                                  event.target.value
-                                )
-                              }
-                              onKeyDown={(event) => {
-                                if (
-                                  event.key === "Enter"
-                                ) {
-                                  handleUpdateLecture(
-                                    lecture._id
-                                  );
-                                }
-
-                                if (
-                                  event.key === "Escape"
-                                ) {
-                                  setEditingId(null);
-                                  setEditingTitle("");
-                                }
-                              }}
-                              className="min-w-0 flex-1 rounded-lg border border-indigo-300 bg-white px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-indigo-100"
-                            />
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleUpdateLecture(
-                                  lecture._id
-                                )
-                              }
-                              className="rounded-lg bg-emerald-600 p-2 text-white hover:bg-emerald-700"
-                            >
-                              <Check size={17} />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingId(null);
-                                setEditingTitle("");
-                              }}
-                              className="rounded-lg bg-gray-100 p-2 text-gray-500 hover:bg-gray-200"
-                            >
-                              <X size={17} />
-                            </button>
+                      <div className="mb-5 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-sm font-bold text-white">
+                            {lecture.order}
                           </div>
-                        ) : (
-                          <>
-                            <h3 className="truncate font-semibold text-gray-900">
-                              {lecture.lectureTitle}
+
+                          <div>
+                            <h3 className="font-semibold text-gray-900">
+                              Edit Lecture
                             </h3>
 
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <p className="text-xs text-gray-500">
+                              Update lesson information
+                            </p>
+                          </div>
+                        </div>
 
-                              {lecture.videoUrl ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600">
-                                  <Check size={13} />
-                                  Video uploaded
-                                </span>
-                              ) : (
-                                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600">
-                                  Video pending
-                                </span>
-                              )}
+                        <button
+                          type="button"
+                          onClick={cancelEditing}
+                          className="rounded-lg p-2 text-gray-400 hover:bg-white hover:text-gray-700"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
 
-                              {lecture.isPreviewFree && (
-                                <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
-                                  Free Preview
-                                </span>
-                              )}
-                            </div>
-                          </>
-                        )}
+                      <div className="space-y-5">
+
+                        {/* EDIT TITLE */}
+
+                        <div>
+                          <label className="mb-2 block text-sm font-semibold text-gray-800">
+                            Lecture Title
+                          </label>
+
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editingTitle}
+                            onChange={(event) =>
+                              setEditingTitle(
+                                event.target.value
+                              )
+                            }
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                          />
+                        </div>
+
+                        {/* EDIT CONTENT */}
+
+                        <div>
+                          <div className="mb-2 flex items-center justify-between">
+                            <label className="block text-sm font-semibold text-gray-800">
+                              Lecture Content
+                            </label>
+
+                            <span className="text-xs text-gray-400">
+                              {
+                                editingContent.length
+                              }{" "}
+                              characters
+                            </span>
+                          </div>
+
+                          <textarea
+                            value={editingContent}
+                            onChange={(event) =>
+                              setEditingContent(
+                                event.target.value
+                              )
+                            }
+                            rows={12}
+                            className="w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-4 text-sm leading-7 text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                          />
+
+                          {!editingContent.trim() && (
+                            <p className="mt-2 text-xs text-amber-600">
+                              Add lecture content so
+                              the AI Mentor can use
+                              this lesson as context.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* EDIT ACTIONS */}
+
+                        <div className="flex flex-col-reverse gap-3 border-t border-indigo-100 pt-4 sm:flex-row sm:justify-end">
+                          <button
+                            type="button"
+                            onClick={cancelEditing}
+                            disabled={
+                              updatingId ===
+                              lecture._id
+                            }
+                            className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUpdateLecture(
+                                lecture._id
+                              )
+                            }
+                            disabled={
+                              updatingId ===
+                              lecture._id
+                            }
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {updatingId ===
+                            lecture._id ? (
+                              <>
+                                <LoaderCircle
+                                  size={17}
+                                  className="animate-spin"
+                                />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save size={17} />
+                                Save Changes
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
+                  ) : (
+                    /* =================================================
+                       NORMAL MODE
+                    ================================================= */
 
-                    {/* ACTIONS */}
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
 
-                    <div className="flex flex-wrap items-center gap-3 lg:flex-1 lg:justify-end">
+                      {/* LECTURE INFO */}
 
-                      {/* DURATION */}
+                      <div className="flex min-w-0 items-center gap-4 lg:w-[43%]">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-sm font-bold text-indigo-600">
+                          {lecture.order}
+                        </div>
 
-                      <div className="hidden min-w-[90px] text-center sm:block">
-                        <p className="text-xs text-gray-400">
-                          Duration
-                        </p>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate font-semibold text-gray-900">
+                            {lecture.lectureTitle}
+                          </h3>
 
-                        <p className="mt-1 text-sm font-semibold text-gray-800">
-                          {formatDuration(
-                            lecture.videoDuration
-                          )}
-                        </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+
+                            {/* CONTENT STATUS */}
+
+                            {lecture.lectureContent?.trim() ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600">
+                                <FileText size={13} />
+                                Content added
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600">
+                                Content missing
+                              </span>
+                            )}
+
+                            {/* VIDEO STATUS */}
+
+                            {lecture.videoUrl ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600">
+                                <Check size={13} />
+                                Video uploaded
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600">
+                                Video pending
+                              </span>
+                            )}
+
+                            {/* PREVIEW */}
+
+                            {lecture.isPreviewFree && (
+                              <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
+                                Free Preview
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
-                      {/* PREVIEW */}
+                      {/* ACTIONS */}
 
-                      <button
-                        type="button"
-                        disabled={
-                          previewLoadingId ===
-                          lecture._id
-                        }
-                        onClick={() =>
-                          handleTogglePreview(
-                            lecture._id
-                          )
-                        }
-                        className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                          lecture.isPreviewFree
-                            ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                      >
-                        {previewLoadingId ===
-                        lecture._id ? (
-                          <LoaderCircle
-                            size={15}
-                            className="animate-spin"
-                          />
-                        ) : (
-                          <PlayCircle size={15} />
-                        )}
+                      <div className="flex flex-wrap items-center gap-3 lg:flex-1 lg:justify-end">
 
-                        {lecture.isPreviewFree
-                          ? "Preview On"
-                          : "Preview Off"}
-                      </button>
+                        {/* DURATION */}
 
-                      {/* VIDEO UPLOAD */}
+                        <div className="hidden min-w-[90px] text-center sm:block">
+                          <p className="text-xs text-gray-400">
+                            Duration
+                          </p>
 
-                      <label
-                        className={`inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-200 ${
-                          uploadingId === lecture._id
-                            ? "pointer-events-none opacity-60"
-                            : ""
-                        }`}
-                      >
-                        {uploadingId === lecture._id ? (
-                          <LoaderCircle
-                            size={15}
-                            className="animate-spin"
-                          />
-                        ) : (
-                          <Upload size={15} />
-                        )}
+                          <p className="mt-1 text-sm font-semibold text-gray-800">
+                            {formatDuration(
+                              lecture.videoDuration
+                            )}
+                          </p>
+                        </div>
 
-                        {uploadingId === lecture._id
-                          ? "Uploading..."
-                          : lecture.videoUrl
-                          ? "Replace Video"
-                          : "Upload Video"}
+                        {/* PREVIEW */}
 
-                        <input
-                          type="file"
-                          accept="video/*"
-                          className="hidden"
+                        <button
+                          type="button"
                           disabled={
-                            uploadingId ===
+                            previewLoadingId ===
                             lecture._id
                           }
-                          onChange={(event) => {
-                            const file =
-                              event.target.files?.[0];
+                          onClick={() =>
+                            handleTogglePreview(
+                              lecture._id
+                            )
+                          }
+                          className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                            lecture.isPreviewFree
+                              ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          {previewLoadingId ===
+                          lecture._id ? (
+                            <LoaderCircle
+                              size={15}
+                              className="animate-spin"
+                            />
+                          ) : (
+                            <PlayCircle size={15} />
+                          )}
 
-                            handleVideoUpload(
-                              lecture._id,
-                              file
-                            );
+                          {lecture.isPreviewFree
+                            ? "Preview On"
+                            : "Preview Off"}
+                        </button>
 
-                            event.target.value = "";
-                          }}
-                        />
-                      </label>
+                        {/* VIDEO UPLOAD */}
 
-                      {/* EDIT */}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingId(lecture._id);
-                          setEditingTitle(
-                            lecture.lectureTitle
-                          );
-                        }}
-                        className="rounded-xl bg-gray-100 p-2 text-gray-600 transition hover:bg-gray-200"
-                        title="Edit lecture"
-                      >
-                        <Edit3 size={16} />
-                      </button>
-
-                      {/* DELETE */}
-
-                      <button
-                        type="button"
-                        disabled={
-                          deletingId === lecture._id
-                        }
-                        onClick={() =>
-                          handleDeleteLecture(
+                        <label
+                          className={`inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-200 ${
+                            uploadingId ===
                             lecture._id
-                          )
-                        }
-                        className="rounded-xl bg-red-50 p-2 text-red-500 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                        title="Delete lecture"
-                      >
-                        {deletingId === lecture._id ? (
-                          <LoaderCircle
-                            size={16}
-                            className="animate-spin"
+                              ? "pointer-events-none opacity-60"
+                              : ""
+                          }`}
+                        >
+                          {uploadingId ===
+                          lecture._id ? (
+                            <LoaderCircle
+                              size={15}
+                              className="animate-spin"
+                            />
+                          ) : (
+                            <Upload size={15} />
+                          )}
+
+                          {uploadingId ===
+                          lecture._id
+                            ? "Uploading..."
+                            : lecture.videoUrl
+                            ? "Replace Video"
+                            : "Upload Video"}
+
+                          <input
+                            type="file"
+                            accept="video/*"
+                            className="hidden"
+                            disabled={
+                              uploadingId ===
+                              lecture._id
+                            }
+                            onChange={(event) => {
+                              const file =
+                                event.target
+                                  .files?.[0];
+
+                              handleVideoUpload(
+                                lecture._id,
+                                file
+                              );
+
+                              event.target.value =
+                                "";
+                            }}
                           />
-                        ) : (
-                          <Trash2 size={16} />
-                        )}
-                      </button>
+                        </label>
+
+                        {/* EDIT */}
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            startEditing(
+                              lecture
+                            )
+                          }
+                          className="rounded-xl bg-gray-100 p-2 text-gray-600 transition hover:bg-gray-200"
+                          title="Edit lecture"
+                        >
+                          <Edit3 size={16} />
+                        </button>
+
+                        {/* DELETE */}
+
+                        <button
+                          type="button"
+                          disabled={
+                            deletingId ===
+                            lecture._id
+                          }
+                          onClick={() =>
+                            handleDeleteLecture(
+                              lecture._id
+                            )
+                          }
+                          className="rounded-xl bg-red-50 p-2 text-red-500 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          title="Delete lecture"
+                        >
+                          {deletingId ===
+                          lecture._id ? (
+                            <LoaderCircle
+                              size={16}
+                              className="animate-spin"
+                            />
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>

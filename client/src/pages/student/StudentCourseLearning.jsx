@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   ArrowLeft,
@@ -14,23 +9,17 @@ import {
   Clock3,
   FileText,
   Flame,
-  Info,
   Keyboard,
   LoaderCircle,
   Lock,
   Maximize2,
   Minimize2,
-  Pause,
-  Play,
   PlayCircle,
   Search,
   Shield,
-  SkipBack,
-  SkipForward,
   Sparkles,
   Sword,
   Trophy,
-  Volume2,
   X,
 } from "lucide-react";
 
@@ -41,6 +30,9 @@ import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
 import AchievementUnlockCelebration from "./components/student/AchievementUnlockCelebration";
+
+// AI MENTOR
+import AIMentor from "../ai/AIMentor";
 
 // =====================================================
 // CONSTANTS
@@ -62,34 +54,47 @@ const StudentCourseLearning = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
 
-  const {
-    user,
-    loading: authLoading,
-  } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+
+  // ---------------------------------------------------
+  // COURSE STATE
+  // ---------------------------------------------------
 
   const [course, setCourse] = useState(null);
   const [lectures, setLectures] = useState([]);
   const [progress, setProgress] = useState(null);
-  const [selectedLecture, setSelectedLecture] =
-    useState(null);
+  const [selectedLecture, setSelectedLecture] = useState(null);
+
+  // ---------------------------------------------------
+  // LOADING STATE
+  // ---------------------------------------------------
 
   const [loading, setLoading] = useState(true);
-  const [lectureLoading, setLectureLoading] =
-    useState(true);
-  const [enrollmentLoading, setEnrollmentLoading] =
-    useState(true);
-  const [progressLoading, setProgressLoading] =
-    useState(false);
+  const [lectureLoading, setLectureLoading] = useState(true);
+  const [enrollmentLoading, setEnrollmentLoading] = useState(true);
+  const [progressLoading, setProgressLoading] = useState(false);
 
   const [isEnrolled, setIsEnrolled] = useState(false);
 
-  const [unlockedAchievements, setUnlockedAchievements] =
-    useState([]);
+  // ---------------------------------------------------
+  // ACHIEVEMENT
+  // ---------------------------------------------------
+
+  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
+
+  // ---------------------------------------------------
+  // UI STATE
+  // ---------------------------------------------------
 
   const [searchTerm, setSearchTerm] = useState("");
   const [theaterMode, setTheaterMode] = useState(false);
-  const [showShortcuts, setShowShortcuts] =
-    useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // ---------------------------------------------------
+  // AI MENTOR STATE
+  // ---------------------------------------------------
+
+  const [showAIMentor, setShowAIMentor] = useState(false);
 
   // ===================================================
   // INITIALIZE
@@ -104,21 +109,31 @@ const StudentCourseLearning = () => {
   const initializeLearning = async () => {
     if (!courseId) {
       toast.error("Invalid course ID.");
-      navigate("/courses", { replace: true });
+
+      navigate("/courses", {
+        replace: true,
+      });
+
       return;
     }
 
     if (!user) {
       toast.error("Please login to access this course.");
-      navigate("/login", { replace: true });
+
+      navigate("/login", {
+        replace: true,
+      });
+
       return;
     }
 
     if (user.role !== "student") {
-      toast.error(
-        "Only students can access the learning page."
-      );
-      navigate("/courses", { replace: true });
+      toast.error("Only students can access the learning page.");
+
+      navigate("/courses", {
+        replace: true,
+      });
+
       return;
     }
 
@@ -137,28 +152,22 @@ const StudentCourseLearning = () => {
     try {
       setEnrollmentLoading(true);
 
-      const response = await api.get(
-        `/enrollment/check/${courseId}`
-      );
+      const response = await api.get(`/enrollment/check/${courseId}`);
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.message ||
-            "Unable to verify enrollment."
+          response.data?.message || "Unable to verify enrollment.",
         );
       }
 
       const enrolled = Boolean(
-        response.data.enrolled ??
-          response.data.isEnrolled
+        response.data.enrolled ?? response.data.isEnrolled,
       );
 
       setIsEnrolled(enrolled);
 
       if (!enrolled) {
-        toast.error(
-          "You are not enrolled in this course."
-        );
+        toast.error("You are not enrolled in this course.");
 
         navigate(`/courses/${courseId}`, {
           replace: true,
@@ -169,15 +178,12 @@ const StudentCourseLearning = () => {
 
       return true;
     } catch (error) {
-      console.error(
-        "Enrollment check error:",
-        error
-      );
+      console.error("Enrollment check error:", error);
 
       toast.error(
         error.response?.data?.message ||
           error.message ||
-          "Unable to verify course enrollment."
+          "Unable to verify course enrollment.",
       );
 
       navigate(`/courses/${courseId}`, {
@@ -214,28 +220,22 @@ const StudentCourseLearning = () => {
 
   const fetchCourse = async () => {
     try {
-      const response = await api.get(
-        `/course/${courseId}`
-      );
+      const response = await api.get(`/course/${courseId}`);
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.message ||
-            "Unable to load course."
+          response.data?.message || "Unable to load course.",
         );
       }
 
       setCourse(response.data.course);
     } catch (error) {
-      console.error(
-        "Fetch course error:",
-        error
-      );
+      console.error("Fetch course error:", error);
 
       toast.error(
         error.response?.data?.message ||
           error.message ||
-          "Unable to load course."
+          "Unable to load course.",
       );
 
       navigate("/courses", {
@@ -253,13 +253,13 @@ const StudentCourseLearning = () => {
       setLectureLoading(true);
 
       const response = await api.get(
-        `/lecture/course/${courseId}`
+        `/lecture/course/${courseId}`,
       );
 
       if (!response.data?.success) {
         throw new Error(
           response.data?.message ||
-            "Unable to load lectures."
+            "Unable to load lectures.",
         );
       }
 
@@ -274,15 +274,12 @@ const StudentCourseLearning = () => {
         setSelectedLecture(lectureData[0]);
       }
     } catch (error) {
-      console.error(
-        "Fetch lectures error:",
-        error
-      );
+      console.error("Fetch lectures error:", error);
 
       toast.error(
         error.response?.data?.message ||
           error.message ||
-          "Unable to load course lectures."
+          "Unable to load course lectures.",
       );
 
       setLectures([]);
@@ -298,7 +295,7 @@ const StudentCourseLearning = () => {
   const fetchProgress = async () => {
     try {
       const response = await api.get(
-        `/progress/course/${courseId}`
+        `/progress/course/${courseId}`,
       );
 
       if (!response.data?.success) {
@@ -309,14 +306,11 @@ const StudentCourseLearning = () => {
       setProgress(
         response.data.progress ||
           response.data.courseProgress ||
-          null
+          null,
       );
     } catch (error) {
       if (error.response?.status !== 404) {
-        console.error(
-          "Fetch progress error:",
-          error
-        );
+        console.error("Fetch progress error:", error);
       }
 
       setProgress(null);
@@ -339,9 +333,7 @@ const StudentCourseLearning = () => {
             ? item.lecture?._id
             : item.lecture;
 
-        return (
-          String(id) === String(lectureId)
-        );
+        return String(id) === String(lectureId);
       }) || null
     );
   };
@@ -378,24 +370,18 @@ const StudentCourseLearning = () => {
 
     return Math.round(
       Math.min(
-        (completedLectureIds.size /
-          lectures.length) *
-          100,
-        100
-      )
+        (completedLectureIds.size / lectures.length) * 100,
+        100,
+      ),
     );
-  }, [
-    lectures.length,
-    completedLectureIds,
-  ]);
+  }, [lectures.length, completedLectureIds]);
 
   // ===================================================
   // SEARCHED LECTURES
   // ===================================================
 
   const filteredLectures = useMemo(() => {
-    const query =
-      searchTerm.trim().toLowerCase();
+    const query = searchTerm.trim().toLowerCase();
 
     if (!query) return lectures;
 
@@ -405,9 +391,7 @@ const StudentCourseLearning = () => {
         lecture.lectureTitle ||
         "";
 
-      return title
-        .toLowerCase()
-        .includes(query);
+      return title.toLowerCase().includes(query);
     });
   }, [lectures, searchTerm]);
 
@@ -421,15 +405,13 @@ const StudentCourseLearning = () => {
     return lectures.findIndex(
       (lecture) =>
         String(lecture._id) ===
-        String(selectedLecture._id)
+        String(selectedLecture._id),
     );
   }, [lectures, selectedLecture]);
 
   const isLectureCompleted = (lectureId) =>
     Boolean(lectureId) &&
-    completedLectureIds.has(
-      String(lectureId)
-    );
+    completedLectureIds.has(String(lectureId));
 
   // ===================================================
   // SELECT LECTURE
@@ -440,6 +422,9 @@ const StudentCourseLearning = () => {
 
     setSelectedLecture(lecture);
 
+    // Close AI when changing lecture.
+    setShowAIMentor(false);
+
     window.scrollTo({
       top: 0,
       behavior: "smooth",
@@ -447,11 +432,24 @@ const StudentCourseLearning = () => {
   };
 
   // ===================================================
+  // OPEN AI MENTOR
+  // ===================================================
+
+  const handleOpenAIMentor = () => {
+    if (!selectedLecture) {
+      toast.error("Select a lecture before asking the AI Mentor.");
+      return;
+    }
+
+    setShowAIMentor(true);
+  };
+
+  // ===================================================
   // ACHIEVEMENT
   // ===================================================
 
   const showAchievementCelebration = (
-    newlyUnlocked = []
+    newlyUnlocked = [],
   ) => {
     if (
       !Array.isArray(newlyUnlocked) ||
@@ -460,9 +458,7 @@ const StudentCourseLearning = () => {
       return;
     }
 
-    setUnlockedAchievements(
-      newlyUnlocked
-    );
+    setUnlockedAchievements(newlyUnlocked);
   };
 
   // ===================================================
@@ -470,8 +466,7 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   const handleMarkComplete = async () => {
-    const lectureId =
-      selectedLecture?._id;
+    const lectureId = selectedLecture?._id;
 
     if (!lectureId) {
       toast.error("No lecture selected.");
@@ -479,9 +474,7 @@ const StudentCourseLearning = () => {
     }
 
     if (isLectureCompleted(lectureId)) {
-      toast.info(
-        "This lecture is already completed."
-      );
+      toast.info("This lecture is already completed.");
       return;
     }
 
@@ -492,77 +485,68 @@ const StudentCourseLearning = () => {
         getLectureProgress(lectureId);
 
       const watchedSeconds = Number(
-        lectureProgress?.watchedSeconds || 0
+        lectureProgress?.watchedSeconds || 0,
       );
 
       const duration =
-        getLectureDuration(
-          selectedLecture
-        );
+        getLectureDuration(selectedLecture);
 
       if (duration > 0) {
         const watchedPercentage =
-          (watchedSeconds / duration) *
-          100;
+          (watchedSeconds / duration) * 100;
 
         if (
           watchedPercentage <
           COMPLETION_PERCENTAGE
         ) {
           toast.error(
-            `Watch at least ${COMPLETION_PERCENTAGE}% before completing this lecture.`
+            `Watch at least ${COMPLETION_PERCENTAGE}% before completing this lecture.`,
           );
 
           return;
         }
       }
 
-      // IMPORTANT:
-      // Completion endpoint is different
-      // from progress save endpoint.
       const response = await api.patch(
-        `/progress/complete/${lectureId}`
+        `/progress/complete/${lectureId}`,
       );
 
       if (!response.data?.success) {
         toast.error(
           response.data?.message ||
-            "Unable to complete lecture."
+            "Unable to complete lecture.",
         );
 
         return;
       }
 
       if (response.data.progress) {
-        setProgress(
-          response.data.progress
-        );
+        setProgress(response.data.progress);
       }
 
       clearSavedVideoPosition(
         courseId,
-        lectureId
+        lectureId,
       );
 
       toast.success(
         response.data.message ||
-          "Lecture completed!"
+          "Lecture completed!",
       );
 
       showAchievementCelebration(
-        response.data.newlyUnlocked ||
-          []
+        response.data.newlyUnlocked || [],
       );
     } catch (error) {
       console.error(
         "Mark lecture complete error:",
-        error.response?.data || error
+        error.response?.data || error,
       );
 
       toast.error(
         error.response?.data?.message ||
           error.message ||
-          "Unable to complete lecture."
+          "Unable to complete lecture.",
       );
     } finally {
       setProgressLoading(false);
@@ -574,8 +558,7 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   const handleUnmarkComplete = async () => {
-    const lectureId =
-      selectedLecture?._id;
+    const lectureId = selectedLecture?._id;
 
     if (!lectureId) {
       toast.error("No lecture selected.");
@@ -584,7 +567,7 @@ const StudentCourseLearning = () => {
 
     if (!isLectureCompleted(lectureId)) {
       toast.info(
-        "This lecture is already incomplete."
+        "This lecture is already incomplete.",
       );
       return;
     }
@@ -593,69 +576,62 @@ const StudentCourseLearning = () => {
       setProgressLoading(true);
 
       const response = await api.patch(
-        `/progress/uncomplete/${lectureId}`
+        `/progress/uncomplete/${lectureId}`,
       );
 
       if (!response.data?.success) {
         toast.error(
           response.data?.message ||
-            "Unable to mark lecture incomplete."
+            "Unable to mark lecture incomplete.",
         );
 
         return;
       }
 
       if (response.data.progress) {
-        setProgress(
-          response.data.progress
-        );
+        setProgress(response.data.progress);
 
         const updated =
           response.data.progress.lectures?.find(
             (item) => {
               const id =
-                typeof item.lecture ===
-                "object"
+                typeof item.lecture === "object"
                   ? item.lecture?._id
                   : item.lecture;
 
               return (
-                String(id) ===
-                String(lectureId)
+                String(id) === String(lectureId)
               );
-            }
+            },
           );
 
         if (
-          updated?.watchedSeconds !==
-          undefined
+          updated?.watchedSeconds !== undefined
         ) {
           localStorage.setItem(
             getVideoStorageKey(
               courseId,
-              lectureId
+              lectureId,
             ),
-            String(
-              updated.watchedSeconds
-            )
+            String(updated.watchedSeconds),
           );
         }
       }
 
       toast.success(
         response.data.message ||
-          "Lecture marked incomplete."
+          "Lecture marked incomplete.",
       );
     } catch (error) {
       console.error(
         "Unmark lecture error:",
-        error
+        error,
       );
 
       toast.error(
         error.response?.data?.message ||
           error.message ||
-          "Unable to update lecture."
+          "Unable to update lecture.",
       );
     } finally {
       setProgressLoading(false);
@@ -667,8 +643,7 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   const handleVideoCompleted = async () => {
-    const lectureId =
-      selectedLecture?._id;
+    const lectureId = selectedLecture?._id;
 
     if (
       !lectureId ||
@@ -681,27 +656,28 @@ const StudentCourseLearning = () => {
   };
 
   // ===================================================
-  // NAVIGATION
+  // NEXT LECTURE
   // ===================================================
 
   const handleNextLecture = () => {
-    if (currentLectureIndex === -1)
-      return;
+    if (currentLectureIndex === -1) return;
 
     if (
       currentLectureIndex >=
       lectures.length - 1
     ) {
       toast.success(
-        "You have reached the final lecture."
+        "You have reached the final lecture.",
       );
 
       return;
     }
 
     setSelectedLecture(
-      lectures[currentLectureIndex + 1]
+      lectures[currentLectureIndex + 1],
     );
+
+    setShowAIMentor(false);
 
     window.scrollTo({
       top: 0,
@@ -709,18 +685,24 @@ const StudentCourseLearning = () => {
     });
   };
 
+  // ===================================================
+  // PREVIOUS LECTURE
+  // ===================================================
+
   const handlePreviousLecture = () => {
     if (currentLectureIndex <= 0) {
       toast.info(
-        "This is the first lecture."
+        "This is the first lecture.",
       );
 
       return;
     }
 
     setSelectedLecture(
-      lectures[currentLectureIndex - 1]
+      lectures[currentLectureIndex - 1],
     );
+
+    setShowAIMentor(false);
 
     window.scrollTo({
       top: 0,
@@ -783,7 +765,9 @@ const StudentCourseLearning = () => {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#080a0c] text-slate-200">
 
-      {/* WINTER ATMOSPHERE */}
+      {/* =================================================
+          WINTER ATMOSPHERE
+      ================================================= */}
 
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-32 top-20 h-96 w-96 rounded-full bg-cyan-950/20 blur-[120px]" />
@@ -802,6 +786,10 @@ const StudentCourseLearning = () => {
         />
       </div>
 
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
       <LearningHeader
         course={course}
         onBack={handleBack}
@@ -815,13 +803,15 @@ const StudentCourseLearning = () => {
         }`}
       >
 
-        {/* TOP TITLE */}
+        {/* =================================================
+            TITLE
+        ================================================= */}
 
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-
           <div>
             <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500">
               <Sword size={13} />
+
               The Seven Paths of Knowledge
             </div>
 
@@ -830,23 +820,40 @@ const StudentCourseLearning = () => {
             </h1>
 
             <p className="mt-2 max-w-2xl text-sm text-slate-500">
-              Continue your journey through the
-              realm of knowledge.
+              Continue your journey through the realm
+              of knowledge.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
 
+            {/* AI MENTOR BUTTON */}
+
+            <button
+              type="button"
+              onClick={handleOpenAIMentor}
+              disabled={!selectedLecture}
+              className="group flex items-center gap-2 rounded-xl border border-cyan-800/50 bg-cyan-950/30 px-4 py-2.5 text-xs font-bold text-cyan-300 shadow-lg shadow-cyan-950/10 transition hover:border-cyan-500/60 hover:bg-cyan-900/30 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Sparkles
+                size={15}
+                className="transition group-hover:rotate-12 group-hover:scale-110"
+              />
+
+              AI Mentor
+            </button>
+
             <button
               type="button"
               onClick={() =>
                 setShowShortcuts(
-                  (value) => !value
+                  (value) => !value,
                 )
               }
               className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:border-amber-700 hover:text-amber-400"
             >
               <Keyboard size={15} />
+
               Shortcuts
             </button>
 
@@ -854,7 +861,7 @@ const StudentCourseLearning = () => {
               type="button"
               onClick={() =>
                 setTheaterMode(
-                  (value) => !value
+                  (value) => !value,
                 )
               }
               className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:border-cyan-700 hover:text-cyan-400"
@@ -872,7 +879,9 @@ const StudentCourseLearning = () => {
           </div>
         </div>
 
-        {/* SHORTCUT PANEL */}
+        {/* =================================================
+            SHORTCUT PANEL
+        ================================================= */}
 
         {showShortcuts && (
           <div className="mb-5 rounded-2xl border border-amber-900/50 bg-[#111417] p-5 shadow-2xl">
@@ -933,6 +942,10 @@ const StudentCourseLearning = () => {
           </div>
         )}
 
+        {/* =================================================
+            CONTENT GRID
+        ================================================= */}
+
         <div
           className={`grid gap-6 ${
             theaterMode
@@ -947,12 +960,8 @@ const StudentCourseLearning = () => {
             <LectureSidebar
               course={course}
               lectures={filteredLectures}
-              allLecturesCount={
-                lectures.length
-              }
-              selectedLecture={
-                selectedLecture
-              }
+              allLecturesCount={lectures.length}
+              selectedLecture={selectedLecture}
               progressPercentage={
                 progressPercentage
               }
@@ -960,9 +969,7 @@ const StudentCourseLearning = () => {
                 completedLectureIds
               }
               searchTerm={searchTerm}
-              setSearchTerm={
-                setSearchTerm
-              }
+              setSearchTerm={setSearchTerm}
               onSelectLecture={
                 handleSelectLecture
               }
@@ -976,14 +983,13 @@ const StudentCourseLearning = () => {
             {/* VIDEO */}
 
             <div className="overflow-hidden rounded-2xl border border-slate-800 bg-black shadow-[0_20px_80px_rgba(0,0,0,.5)]">
-
               <LectureViewer
                 lecture={selectedLecture}
                 courseId={courseId}
                 isCompleted={
                   selectedLecture
                     ? isLectureCompleted(
-                        selectedLecture._id
+                        selectedLecture._id,
                       )
                     : false
                 }
@@ -1003,16 +1009,12 @@ const StudentCourseLearning = () => {
 
             {selectedLecture && (
               <VideoStatusBar
-                lecture={
-                  selectedLecture
-                }
-                progress={
-                  getLectureProgress(
-                    selectedLecture._id
-                  )
-                }
+                lecture={selectedLecture}
+                progress={getLectureProgress(
+                  selectedLecture._id,
+                )}
                 isCompleted={isLectureCompleted(
-                  selectedLecture._id
+                  selectedLecture._id,
                 )}
               />
             )}
@@ -1030,7 +1032,7 @@ const StudentCourseLearning = () => {
               isCompleted={
                 selectedLecture
                   ? isLectureCompleted(
-                      selectedLecture._id
+                      selectedLecture._id,
                     )
                   : false
               }
@@ -1039,6 +1041,9 @@ const StudentCourseLearning = () => {
               }
               onUnmarkComplete={
                 handleUnmarkComplete
+              }
+              onAskAIMentor={
+                handleOpenAIMentor
               }
             />
 
@@ -1054,9 +1059,7 @@ const StudentCourseLearning = () => {
               onPrevious={
                 handlePreviousLecture
               }
-              onNext={
-                handleNextLecture
-              }
+              onNext={handleNextLecture}
             />
 
             {/* COURSE COMPLETED */}
@@ -1068,16 +1071,32 @@ const StudentCourseLearning = () => {
         </div>
       </div>
 
-      {/* ACHIEVEMENT */}
+      {/* =================================================
+          ACHIEVEMENT CELEBRATION
+      ================================================= */}
 
-      {unlockedAchievements.length >
-        0 && (
+      {unlockedAchievements.length > 0 && (
         <AchievementUnlockCelebration
           achievements={
             unlockedAchievements
           }
           onClose={() =>
             setUnlockedAchievements([])
+          }
+        />
+      )}
+
+      {/* =================================================
+          AI MENTOR
+      ================================================= */}
+
+      {showAIMentor && selectedLecture && (
+        <AIMentor
+          course={course}
+          lecture={selectedLecture}
+          user={user}
+          onClose={() =>
+            setShowAIMentor(false)
           }
         />
       )}
@@ -1106,9 +1125,9 @@ const LectureSidebar = ({
       {/* HEADER */}
 
       <div className="border-b border-slate-800 p-5">
-
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
           <Shield size={13} />
+
           Course Chronicle
         </div>
 
@@ -1119,7 +1138,6 @@ const LectureSidebar = ({
         {/* PROGRESS */}
 
         <div className="mt-5">
-
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
               Realm Progress
@@ -1141,7 +1159,8 @@ const LectureSidebar = ({
 
           <div className="mt-2 flex items-center justify-between text-[10px] text-slate-600">
             <span>
-              {completedLectureIds.size} completed
+              {completedLectureIds.size}{" "}
+              completed
             </span>
 
             <span>
@@ -1163,7 +1182,7 @@ const LectureSidebar = ({
             value={searchTerm}
             onChange={(event) =>
               setSearchTerm(
-                event.target.value
+                event.target.value,
               )
             }
             placeholder="Search lectures..."
@@ -1175,87 +1194,82 @@ const LectureSidebar = ({
       {/* LECTURES */}
 
       <div className="max-h-[calc(100vh-340px)] overflow-y-auto">
-
         {lectures.length === 0 ? (
           <div className="p-6 text-center text-xs text-slate-600">
             No lectures found.
           </div>
         ) : (
-          lectures.map(
-            (lecture, index) => {
-              const completed =
-                completedLectureIds.has(
-                  String(lecture._id)
-                );
-
-              const active =
-                String(
-                  selectedLecture?._id
-                ) ===
-                String(lecture._id);
-
-              return (
-                <button
-                  key={lecture._id}
-                  type="button"
-                  onClick={() =>
-                    onSelectLecture(
-                      lecture
-                    )
-                  }
-                  className={`group flex w-full items-start gap-3 border-b border-slate-800/70 px-5 py-4 text-left transition ${
-                    active
-                      ? "bg-gradient-to-r from-amber-950/40 to-transparent"
-                      : "hover:bg-slate-900/70"
-                  }`}
-                >
-                  <div className="mt-0.5 shrink-0">
-                    {completed ? (
-                      <CheckCircle2
-                        size={19}
-                        className="text-emerald-500"
-                      />
-                    ) : (
-                      <PlayCircle
-                        size={19}
-                        className={
-                          active
-                            ? "text-amber-400"
-                            : "text-slate-600 group-hover:text-slate-400"
-                        }
-                      />
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-
-                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
-                      Chapter {index + 1}
-                    </p>
-
-                    <p
-                      className={`mt-1 line-clamp-2 text-sm font-semibold ${
-                        active
-                          ? "text-amber-300"
-                          : "text-slate-300"
-                      }`}
-                    >
-                      {lecture.title ||
-                        lecture.lectureTitle ||
-                        "Untitled Lecture"}
-                    </p>
-
-                    {lecture.duration && (
-                      <div className="mt-2 flex items-center gap-1 text-[10px] text-slate-600">
-                        <Clock3 size={12} />
-                        {lecture.duration}
-                      </div>
-                    )}
-                  </div>
-                </button>
+          lectures.map((lecture, index) => {
+            const completed =
+              completedLectureIds.has(
+                String(lecture._id),
               );
-            }
-          )
+
+            const active =
+              String(selectedLecture?._id) ===
+              String(lecture._id);
+
+            return (
+              <button
+                key={lecture._id}
+                type="button"
+                onClick={() =>
+                  onSelectLecture(
+                    lecture,
+                  )
+                }
+                className={`group flex w-full items-start gap-3 border-b border-slate-800/70 px-5 py-4 text-left transition ${
+                  active
+                    ? "bg-gradient-to-r from-amber-950/40 to-transparent"
+                    : "hover:bg-slate-900/70"
+                }`}
+              >
+                <div className="mt-0.5 shrink-0">
+                  {completed ? (
+                    <CheckCircle2
+                      size={19}
+                      className="text-emerald-500"
+                    />
+                  ) : (
+                    <PlayCircle
+                      size={19}
+                      className={
+                        active
+                          ? "text-amber-400"
+                          : "text-slate-600 group-hover:text-slate-400"
+                      }
+                    />
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                    Chapter {index + 1}
+                  </p>
+
+                  <p
+                    className={`mt-1 line-clamp-2 text-sm font-semibold ${
+                      active
+                        ? "text-amber-300"
+                        : "text-slate-300"
+                    }`}
+                  >
+                    {lecture.title ||
+                      lecture.lectureTitle ||
+                      "Untitled Lecture"}
+                  </p>
+
+                  {lecture.duration && (
+                    <div className="mt-2 flex items-center gap-1 text-[10px] text-slate-600">
+                      <Clock3 size={12} />
+
+                      {lecture.duration}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })
         )}
       </div>
     </aside>
@@ -1274,28 +1288,28 @@ const VideoStatusBar = ({
   const duration =
     getLectureDuration(lecture);
 
-  const watched =
-    Number(
-      progress?.watchedSeconds || 0
-    );
+  const watched = Number(
+    progress?.watchedSeconds || 0,
+  );
 
   const percentage =
     duration > 0
       ? Math.min(
           Math.round(
-            (watched / duration) * 100
+            (watched / duration) * 100,
           ),
-          100
+          100,
         )
       : 0;
 
   return (
     <div className="mt-3 grid gap-3 sm:grid-cols-3">
-
       <StatusCard
         icon={Clock3}
         label="Watched"
-        value={`${formatTime(watched)} / ${formatTime(duration)}`}
+        value={`${formatTime(
+          watched,
+        )} / ${formatTime(duration)}`}
       />
 
       <StatusCard
@@ -1306,9 +1320,7 @@ const VideoStatusBar = ({
 
       <StatusCard
         icon={
-          isCompleted
-            ? Trophy
-            : Sword
+          isCompleted ? Trophy : Sword
         }
         label="Status"
         value={
@@ -1356,6 +1368,7 @@ const LectureInformation = ({
   isCompleted,
   onMarkComplete,
   onUnmarkComplete,
+  onAskAIMentor,
 }) => {
   return (
     <section className="mt-5 rounded-2xl border border-slate-800 bg-[#0d1012] p-6 shadow-2xl sm:p-8">
@@ -1363,9 +1376,9 @@ const LectureInformation = ({
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 
         <div className="min-w-0">
-
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
             <Sparkles size={12} />
+
             Chapter{" "}
             {lectureIndex >= 0
               ? lectureIndex + 1
@@ -1379,70 +1392,92 @@ const LectureInformation = ({
           </h1>
         </div>
 
-        {isCompleted ? (
+        {/* ACTIONS */}
+
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+
+          {/* AI */}
+
           <button
             type="button"
-            onClick={
-              onUnmarkComplete
-            }
-            disabled={
-              progressLoading
-            }
-            className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-900 bg-emerald-950/30 px-5 py-3 text-sm font-bold text-emerald-400 transition hover:border-red-900 hover:bg-red-950/30 hover:text-red-400 disabled:opacity-50"
+            onClick={onAskAIMentor}
+            disabled={!lecture}
+            className="group flex items-center justify-center gap-2 rounded-xl border border-cyan-800/50 bg-cyan-950/30 px-5 py-3 text-sm font-black text-cyan-300 shadow-lg shadow-cyan-950/10 transition hover:border-cyan-500/60 hover:bg-cyan-900/30 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {progressLoading ? (
-              <>
-                <LoaderCircle
-                  size={17}
-                  className="animate-spin"
-                />
-                Updating...
-              </>
-            ) : (
-              <>
-                <CheckCircle2
-                  size={17}
-                />
-                Conquered
-              </>
-            )}
+            <Sparkles
+              size={17}
+              className="transition group-hover:rotate-12"
+            />
+
+            Ask AI Mentor
           </button>
-        ) : (
-          <button
-            type="button"
-            onClick={
-              onMarkComplete
-            }
-            disabled={
-              progressLoading ||
-              !lecture
-            }
-            className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-amber-700/50 bg-gradient-to-r from-amber-800 to-amber-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-amber-950/20 transition hover:from-amber-700 hover:to-amber-500 disabled:cursor-wait disabled:opacity-50"
-          >
-            {progressLoading ? (
-              <>
-                <LoaderCircle
-                  size={17}
-                  className="animate-spin"
-                />
-                Saving...
-              </>
-            ) : (
-              <>
-                <CheckCircle2
-                  size={17}
-                />
-                Mark Complete
-              </>
-            )}
-          </button>
-        )}
+
+          {/* COMPLETE */}
+
+          {isCompleted ? (
+            <button
+              type="button"
+              onClick={onUnmarkComplete}
+              disabled={progressLoading}
+              className="flex items-center justify-center gap-2 rounded-xl border border-emerald-900 bg-emerald-950/30 px-5 py-3 text-sm font-bold text-emerald-400 transition hover:border-red-900 hover:bg-red-950/30 hover:text-red-400 disabled:opacity-50"
+            >
+              {progressLoading ? (
+                <>
+                  <LoaderCircle
+                    size={17}
+                    className="animate-spin"
+                  />
+
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2
+                    size={17}
+                  />
+
+                  Conquered
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onMarkComplete}
+              disabled={
+                progressLoading ||
+                !lecture
+              }
+              className="flex items-center justify-center gap-2 rounded-xl border border-amber-700/50 bg-gradient-to-r from-amber-800 to-amber-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-amber-950/20 transition hover:from-amber-700 hover:to-amber-500 disabled:cursor-wait disabled:opacity-50"
+            >
+              {progressLoading ? (
+                <>
+                  <LoaderCircle
+                    size={17}
+                    className="animate-spin"
+                  />
+
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2
+                    size={17}
+                  />
+
+                  Mark Complete
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* NOTES */}
 
       {(lecture?.description ||
         lecture?.content) && (
         <div className="mt-7 border-t border-slate-800 pt-6">
-
           <div className="flex items-center gap-2">
             <FileText
               size={16}
@@ -1483,7 +1518,6 @@ const LectureNavigation = ({
 
   return (
     <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
       <button
         type="button"
         onClick={onPrevious}
@@ -1494,6 +1528,7 @@ const LectureNavigation = ({
           size={18}
           className="transition group-hover:-translate-x-1"
         />
+
         Previous Chapter
       </button>
 
@@ -1504,6 +1539,7 @@ const LectureNavigation = ({
         className="group flex items-center justify-center gap-2 rounded-xl border border-amber-800/50 bg-amber-950/20 px-5 py-3 text-sm font-bold text-amber-400 transition hover:bg-amber-900/30 disabled:cursor-not-allowed disabled:opacity-30"
       >
         Next Chapter
+
         <ChevronRight
           size={18}
           className="transition group-hover:translate-x-1"
@@ -1526,7 +1562,6 @@ const CourseCompleted = () => {
       </div>
 
       <div className="relative flex items-start gap-4">
-
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-amber-700/40 bg-amber-950/40 text-amber-400">
           <Trophy size={24} />
         </div>
@@ -1715,7 +1750,7 @@ const VideoPlayer = ({
   const storageKey =
     getVideoStorageKey(
       courseId,
-      lectureId
+      lectureId,
     );
 
   // ===================================================
@@ -1727,32 +1762,22 @@ const VideoPlayer = ({
       getLectureProgress(lectureId);
 
     const backendTime = Number(
-      backendProgress?.watchedSeconds || 0
+      backendProgress?.watchedSeconds || 0,
     );
 
     const localTime = Number(
       localStorage.getItem(
-        storageKey
-      ) || 0
+        storageKey,
+      ) || 0,
     );
-
-    /*
-      Backend is authoritative.
-
-      If local storage is ahead by a large
-      amount, don't trust it because the user
-      could have manipulated localStorage.
-    */
 
     if (backendTime > 0) {
       return backendTime;
     }
 
-    // New lecture: only trust a small
-    // local resume position.
     return Math.min(
       localTime,
-      MAX_FORWARD_SEEK
+      MAX_FORWARD_SEEK,
     );
   };
 
@@ -1761,7 +1786,7 @@ const VideoPlayer = ({
   // ===================================================
 
   const handleLoadedMetadata = (
-    event
+    event,
   ) => {
     const video =
       event.currentTarget;
@@ -1772,7 +1797,8 @@ const VideoPlayer = ({
       getLectureProgress(lectureId);
 
     const backendTime = Number(
-      backendProgress?.watchedSeconds || 0
+      backendProgress?.watchedSeconds ||
+        0,
     );
 
     serverWatchedRef.current =
@@ -1795,12 +1821,12 @@ const VideoPlayer = ({
       0,
       (video.duration ||
         initialTime) -
-        SEEK_TOLERANCE
+        SEEK_TOLERANCE,
     );
 
     const resumeTime = Math.min(
       initialTime,
-      maxSafeTime
+      maxSafeTime,
     );
 
     furthestWatchedRef.current =
@@ -1828,7 +1854,7 @@ const VideoPlayer = ({
       } catch (error) {
         console.error(
           "Unable to restore video position:",
-          error
+          error,
         );
       }
     }
@@ -1839,7 +1865,8 @@ const VideoPlayer = ({
   // ===================================================
 
   const handleSeeking = () => {
-    const video = videoRef.current;
+    const video =
+      videoRef.current;
 
     if (
       !video ||
@@ -1855,9 +1882,7 @@ const VideoPlayer = ({
     const furthest =
       furthestWatchedRef.current;
 
-    // -----------------------------------------------
-    // BACKWARD SEEK
-    // -----------------------------------------------
+    // BACKWARD
 
     if (
       requestedTime <=
@@ -1872,36 +1897,14 @@ const VideoPlayer = ({
       return;
     }
 
-    // -----------------------------------------------
-    // FORWARD SEEK
-    // -----------------------------------------------
+    // FORWARD
 
     const maximumAllowed =
-      furthest +
-      MAX_FORWARD_SEEK;
+      furthest + MAX_FORWARD_SEEK;
 
     if (
-      requestedTime <=
-      maximumAllowed
+      requestedTime <= maximumAllowed
     ) {
-      /*
-        Allow up to 15 seconds forward.
-
-        BUT:
-
-        The skipped section becomes "debt".
-
-        Example:
-
-        watched = 100
-        seek = 115
-
-        User can move to 115,
-        but must actually watch
-        100 -> 115 before progress
-        can move beyond 115.
-      */
-
       forwardSeekActiveRef.current =
         true;
 
@@ -1925,28 +1928,24 @@ const VideoPlayer = ({
         {
           icon: "⚔️",
           duration: 2500,
-        }
+        },
       );
 
       return;
     }
 
-    // -----------------------------------------------
     // TOO LARGE
-    // -----------------------------------------------
 
-    restoringSeekRef.current =
-      true;
+    restoringSeekRef.current = true;
 
     try {
-      video.currentTime =
-        furthest;
+      video.currentTime = furthest;
 
       previousTimeRef.current =
         furthest;
 
       toast.error(
-        `Forward jumps are limited to ${MAX_FORWARD_SEEK} seconds.`
+        `Forward jumps are limited to ${MAX_FORWARD_SEEK} seconds.`,
       );
     } finally {
       setTimeout(() => {
@@ -1961,12 +1960,10 @@ const VideoPlayer = ({
   // ===================================================
 
   const handleTimeUpdate = () => {
-    const video = videoRef.current;
+    const video =
+      videoRef.current;
 
-    if (
-      !video ||
-      isCompleted
-    ) {
+    if (!video || isCompleted) {
       return;
     }
 
@@ -1976,9 +1973,7 @@ const VideoPlayer = ({
     const previousTime =
       previousTimeRef.current;
 
-    // -----------------------------------------------
-    // BACKWARD / NORMAL PLAYBACK
-    // -----------------------------------------------
+    // BACKWARD
 
     if (
       currentTime <
@@ -1990,17 +1985,12 @@ const VideoPlayer = ({
       return;
     }
 
-    // -----------------------------------------------
     // FORWARD SEEK DEBT
-    // -----------------------------------------------
 
-    if (
-      forwardSeekActiveRef.current
-    ) {
+    if (forwardSeekActiveRef.current) {
       if (isPlayingRef.current) {
         const delta =
-          currentTime -
-          previousTime;
+          currentTime - previousTime;
 
         if (
           delta > 0 &&
@@ -2017,11 +2007,6 @@ const VideoPlayer = ({
       const accumulated =
         forwardSeekAccumulatedRef.current;
 
-      /*
-        Once the user has watched the skipped
-        section, unlock the new position.
-      */
-
       if (
         accumulated >=
         required - SEEK_TOLERANCE
@@ -2029,7 +2014,7 @@ const VideoPlayer = ({
         furthestWatchedRef.current =
           Math.max(
             furthestWatchedRef.current,
-            forwardSeekTargetRef.current
+            forwardSeekTargetRef.current,
           );
 
         forwardSeekActiveRef.current =
@@ -2045,9 +2030,7 @@ const VideoPlayer = ({
       return;
     }
 
-    // -----------------------------------------------
     // NORMAL PLAYBACK
-    // -----------------------------------------------
 
     if (
       isPlayingRef.current &&
@@ -2055,13 +2038,7 @@ const VideoPlayer = ({
         furthestWatchedRef.current
     ) {
       const delta =
-        currentTime -
-        previousTime;
-
-      /*
-        Prevent abnormal jumps from being
-        counted as watched.
-      */
+        currentTime - previousTime;
 
       if (
         delta >= 0 &&
@@ -2075,23 +2052,19 @@ const VideoPlayer = ({
     previousTimeRef.current =
       currentTime;
 
-    // -----------------------------------------------
-    // SAVE LOCAL POSITION
-    // -----------------------------------------------
+    // LOCAL STORAGE
 
     const watchedSeconds =
       Math.floor(
-        furthestWatchedRef.current
+        furthestWatchedRef.current,
       );
 
     localStorage.setItem(
       storageKey,
-      String(watchedSeconds)
+      String(watchedSeconds),
     );
 
-    // -----------------------------------------------
-    // PERIODIC BACKEND SYNC
-    // -----------------------------------------------
+    // BACKEND SYNC
 
     if (
       furthestWatchedRef.current -
@@ -2128,26 +2101,23 @@ const VideoPlayer = ({
   // ===================================================
 
   const syncProgress = async (
-    force = false
+    force = false,
   ) => {
     const video =
       videoRef.current;
 
-    if (
-      !video ||
-      isCompleted
-    ) {
+    if (!video || isCompleted) {
       return;
     }
 
     const watchedTime =
       Math.floor(
-        furthestWatchedRef.current
+        furthestWatchedRef.current,
       );
 
     const previousSynced =
       Math.floor(
-        lastSyncedTimeRef.current
+        lastSyncedTimeRef.current,
       );
 
     if (watchedTime <= 0) {
@@ -2156,8 +2126,7 @@ const VideoPlayer = ({
 
     if (
       !force &&
-      watchedTime <=
-        previousSynced
+      watchedTime <= previousSynced
     ) {
       return;
     }
@@ -2172,27 +2141,16 @@ const VideoPlayer = ({
       savingProgressRef.current =
         true;
 
-      /*
-        IMPORTANT:
-
-        Only send the legitimate watched
-        position.
-
-        Never send video.currentTime directly.
-      */
-
       const response =
         await api.patch(
           `/progress/${lectureId}`,
           {
             watchedSeconds:
               watchedTime,
-          }
+          },
         );
 
-      if (
-        response.data?.success
-      ) {
+      if (response.data?.success) {
         lastSyncedTimeRef.current =
           watchedTime;
 
@@ -2201,14 +2159,14 @@ const VideoPlayer = ({
 
         localStorage.setItem(
           storageKey,
-          String(watchedTime)
+          String(watchedTime),
         );
 
         if (
           response.data.progress
         ) {
           onProgressSaved(
-            response.data.progress
+            response.data.progress,
           );
         }
       }
@@ -2216,13 +2174,8 @@ const VideoPlayer = ({
       console.error(
         "Video progress sync error:",
         error.response?.data ||
-          error
+          error,
       );
-
-      /*
-        Don't spam the user with a toast
-        every 5 seconds.
-      */
     } finally {
       savingProgressRef.current =
         false;
@@ -2253,18 +2206,8 @@ const VideoPlayer = ({
 
     const percentage =
       duration > 0
-        ? (furthest / duration) *
-          100
+        ? (furthest / duration) * 100
         : 100;
-
-    /*
-      VERY IMPORTANT:
-
-      Never blindly set watchedTime = duration.
-
-      Otherwise dragging the progress bar
-      to the end would create fake progress.
-    */
 
     if (
       duration > 0 &&
@@ -2281,7 +2224,7 @@ const VideoPlayer = ({
         furthest;
 
       toast.error(
-        `You still need to watch ${COMPLETION_PERCENTAGE}% of this lecture.`
+        `You still need to watch ${COMPLETION_PERCENTAGE}% of this lecture.`,
       );
 
       return;
@@ -2297,38 +2240,29 @@ const VideoPlayer = ({
             furthest,
             duration *
               (COMPLETION_PERCENTAGE /
-                100)
-          )
+                100),
+          ),
         );
-
-      /*
-        Sync legitimate progress first.
-      */
 
       furthestWatchedRef.current =
         Math.min(
           finalSeconds,
-          duration
+          duration,
         );
 
       await syncProgress(true);
-
-      /*
-        Only after progress has been saved
-        do we request completion.
-      */
 
       await onCompleted();
 
       clearSavedVideoPosition(
         courseId,
-        lectureId
+        lectureId,
       );
     } catch (error) {
       console.error(
         "Video completion error:",
         error.response?.data ||
-          error
+          error,
       );
     } finally {
       completionTriggeredRef.current =
@@ -2343,36 +2277,29 @@ const VideoPlayer = ({
   useEffect(() => {
     const lectureProgress =
       getLectureProgress(
-        lectureId
+        lectureId,
       );
 
-    const backendTime =
-      Number(
-        lectureProgress?.watchedSeconds ||
-          0
-      );
+    const backendTime = Number(
+      lectureProgress?.watchedSeconds ||
+        0,
+    );
 
-    const localTime =
-      Number(
-        localStorage.getItem(
-          storageKey
-        ) || 0
-      );
+    const localTime = Number(
+      localStorage.getItem(
+        storageKey,
+      ) || 0,
+    );
 
     serverWatchedRef.current =
       backendTime;
-
-    /*
-      Backend is authoritative when
-      progress already exists.
-    */
 
     const initial =
       backendTime > 0
         ? backendTime
         : Math.min(
             localTime,
-            MAX_FORWARD_SEEK
+            MAX_FORWARD_SEEK,
           );
 
     furthestWatchedRef.current =
@@ -2423,26 +2350,26 @@ const VideoPlayer = ({
     const saveBeforeUnload = () => {
       const watchedTime =
         Math.floor(
-          furthestWatchedRef.current
+          furthestWatchedRef.current,
         );
 
       if (watchedTime > 0) {
         localStorage.setItem(
           storageKey,
-          String(watchedTime)
+          String(watchedTime),
         );
       }
     };
 
     window.addEventListener(
       "beforeunload",
-      saveBeforeUnload
+      saveBeforeUnload,
     );
 
     return () => {
       window.removeEventListener(
         "beforeunload",
-        saveBeforeUnload
+        saveBeforeUnload,
       );
     };
   }, [storageKey]);
@@ -2453,15 +2380,12 @@ const VideoPlayer = ({
 
   useEffect(() => {
     const handleKeyDown = (
-      event
+      event,
     ) => {
       const video =
         videoRef.current;
 
-      if (
-        !video ||
-        isCompleted
-      ) {
+      if (!video || isCompleted) {
         return;
       }
 
@@ -2477,10 +2401,6 @@ const VideoPlayer = ({
         return;
       }
 
-      // ---------------------------------------------
-      // SPACE
-      // ---------------------------------------------
-
       if (event.code === "Space") {
         event.preventDefault();
 
@@ -2493,10 +2413,6 @@ const VideoPlayer = ({
         return;
       }
 
-      // ---------------------------------------------
-      // ARROW LEFT
-      // ---------------------------------------------
-
       if (
         event.key === "ArrowLeft" ||
         event.key === "j" ||
@@ -2507,7 +2423,7 @@ const VideoPlayer = ({
         video.currentTime =
           Math.max(
             0,
-            video.currentTime - 10
+            video.currentTime - 10,
           );
 
         previousTimeRef.current =
@@ -2515,10 +2431,6 @@ const VideoPlayer = ({
 
         return;
       }
-
-      // ---------------------------------------------
-      // ARROW RIGHT
-      // ---------------------------------------------
 
       if (
         event.key === "ArrowRight" ||
@@ -2532,9 +2444,10 @@ const VideoPlayer = ({
 
         const targetTime =
           Math.min(
-            video.duration || Infinity,
+            video.duration ||
+              Infinity,
             furthest +
-              MAX_FORWARD_SEEK
+              MAX_FORWARD_SEEK,
           );
 
         if (
@@ -2546,7 +2459,7 @@ const VideoPlayer = ({
             "Watch the current section before moving forward.",
             {
               icon: "⚔️",
-            }
+            },
           );
 
           return;
@@ -2554,20 +2467,18 @@ const VideoPlayer = ({
 
         video.currentTime =
           targetTime;
-
-        return;
       }
     };
 
     window.addEventListener(
       "keydown",
-      handleKeyDown
+      handleKeyDown,
     );
 
     return () => {
       window.removeEventListener(
         "keydown",
-        handleKeyDown
+        handleKeyDown,
       );
     };
   }, [isCompleted]);
@@ -2582,7 +2493,9 @@ const VideoPlayer = ({
 
     if (!video) return;
 
-    if (video.playbackRate !== 1) {
+    if (
+      video.playbackRate !== 1
+    ) {
       video.playbackRate = 1;
 
       toast(
@@ -2590,7 +2503,7 @@ const VideoPlayer = ({
         {
           icon: "🛡️",
           duration: 2000,
-        }
+        },
       );
     }
   };
@@ -2600,7 +2513,7 @@ const VideoPlayer = ({
   // ===================================================
 
   const handleContextMenu = (
-    event
+    event,
   ) => {
     event.preventDefault();
 
@@ -2609,7 +2522,7 @@ const VideoPlayer = ({
       {
         icon: "🛡️",
         duration: 1500,
-      }
+      },
     );
   };
 
@@ -2619,8 +2532,6 @@ const VideoPlayer = ({
 
   return (
     <div className="relative bg-black">
-
-      {/* CINEMATIC TOP BORDER */}
 
       <div className="absolute left-0 right-0 top-0 z-10 h-[2px] bg-gradient-to-r from-transparent via-amber-500/70 to-transparent" />
 
@@ -2655,8 +2566,6 @@ const VideoPlayer = ({
         the video element.
       </video>
 
-      {/* ANTI-SKIP NOTICE */}
-
       {!isCompleted && (
         <div className="absolute bottom-14 left-3 flex items-center gap-2 rounded-lg border border-slate-700/70 bg-black/80 px-3 py-2 text-[10px] font-semibold text-slate-400 backdrop-blur">
           <Shield
@@ -2668,8 +2577,6 @@ const VideoPlayer = ({
           {MAX_FORWARD_SEEK}s
         </div>
       )}
-
-      {/* CINEMATIC BOTTOM BORDER */}
 
       <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-900/70 to-transparent" />
     </div>
@@ -2702,7 +2609,7 @@ const Shortcut = ({
 // =====================================================
 
 const getLectureDuration = (
-  lecture
+  lecture,
 ) => {
   if (!lecture) return 0;
 
@@ -2716,62 +2623,80 @@ const getLectureDuration = (
     Number(duration);
 
   return Number.isFinite(
-    numericDuration
+    numericDuration,
   )
     ? numericDuration
     : 0;
 };
 
 const formatTime = (
-  seconds
+  seconds,
 ) => {
   const value = Math.max(
     0,
     Math.floor(
-      Number(seconds) || 0
-    )
+      Number(seconds) || 0,
+    ),
   );
 
   const hours = Math.floor(
-    value / 3600
+    value / 3600,
   );
 
   const minutes = Math.floor(
-    (value % 3600) / 60
+    (value % 3600) / 60,
   );
 
   const secs = value % 60;
 
   if (hours > 0) {
     return `${String(
-      hours
-    ).padStart(2, "0")}:${String(
-      minutes
-    ).padStart(2, "0")}:${String(
-      secs
-    ).padStart(2, "0")}`;
+      hours,
+    ).padStart(
+      2,
+      "0",
+    )}:${String(
+      minutes,
+    ).padStart(
+      2,
+      "0",
+    )}:${String(
+      secs,
+    ).padStart(
+      2,
+      "0",
+    )}`;
   }
 
   return `${String(
-    minutes
-  ).padStart(2, "0")}:${String(
-    secs
-  ).padStart(2, "0")}`;
+    minutes,
+  ).padStart(
+    2,
+    "0",
+  )}:${String(
+    secs,
+  ).padStart(
+    2,
+    "0",
+  )}`;
 };
 
 const clearSavedVideoPosition = (
   courseId,
-  lectureId
+  lectureId,
 ) => {
-  if (!courseId || !lectureId) {
+  if (
+    !courseId ||
+    !lectureId
+  ) {
     return;
   }
 
   localStorage.removeItem(
     getVideoStorageKey(
       courseId,
-      lectureId
-    )
+      lectureId,
+    ),
   );
 };
 
@@ -2819,7 +2744,6 @@ const LearningHeader = ({
 }) => {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-[#090b0d]/95 backdrop-blur-xl">
-
       <div className="mx-auto flex min-h-[72px] max-w-[1550px] items-center gap-4 px-4 sm:px-6 lg:px-8">
 
         <button
@@ -2834,7 +2758,6 @@ const LearningHeader = ({
         </button>
 
         <div className="min-w-0">
-
           <div className="flex items-center gap-2">
             <Sword
               size={13}
@@ -2853,7 +2776,6 @@ const LearningHeader = ({
         </div>
 
         <div className="ml-auto hidden items-center gap-2 sm:flex">
-
           <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2">
             <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,.8)]" />
 
@@ -2861,7 +2783,6 @@ const LearningHeader = ({
               Chronicle Active
             </span>
           </div>
-
         </div>
       </div>
     </header>
@@ -2875,7 +2796,6 @@ const LearningHeader = ({
 const LearningLoading = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#080a0c] text-slate-200">
-
       <div className="text-center">
 
         <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-800/50 bg-amber-950/20">

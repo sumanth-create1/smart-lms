@@ -8,6 +8,12 @@ const lectureSchema = new mongoose.Schema(
       trim: true,
     },
 
+    lectureContent: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     order: {
       type: Number,
       required: true,

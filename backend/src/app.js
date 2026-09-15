@@ -12,6 +12,8 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 import instructorDashboardRoutes from "./routes/instructorDashboard.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import achievementRoutes from "./routes/achievement.routes.js";
+import aiRoutes from "./routes/ai.routes.js";
+
 
 const app = express();
 
@@ -60,6 +62,9 @@ app.use(
 );
 
 app.use("/api/v1/achievements", achievementRoutes);
+
+
+app.use("/api/v1/ai", aiRoutes);
 
 
 export default app;
