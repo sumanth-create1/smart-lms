@@ -93,7 +93,7 @@ router.post(
 // =====================================================
 
 // Change email while logged in
-router.post(
+router.patch(
   "/change-email",
   isAuthenticated,
   changeEmail

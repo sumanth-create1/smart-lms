@@ -428,6 +428,8 @@ export const updateProfile = async (req, res) => {
 
 export const changeEmail = async (req, res) => {
   try {
+    console.log("📧 Change email request received");
+
     const { newEmail } = req.body;
 
     // =========================================
@@ -469,7 +471,7 @@ export const changeEmail = async (req, res) => {
     // CHECK SAME EMAIL
     // =========================================
 
-    if (email === user.email) {
+    if (email === user.email.toLowerCase()) {
       return res.status(400).json({
         success: false,
         message: "This is already your current email",
@@ -477,7 +479,7 @@ export const changeEmail = async (req, res) => {
     }
 
     // =========================================
-    // CHECK EMAIL AVAILABILITY
+    // CHECK EMAIL ALREADY EXISTS
     // =========================================
 
     const existingUser = await User.findOne({
@@ -496,30 +498,33 @@ export const changeEmail = async (req, res) => {
     // GENERATE VERIFICATION TOKEN
     // =========================================
 
-    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationToken = crypto
+      .randomBytes(32)
+      .toString("hex");
 
-    user.pendingEmail = email;
-    user.emailVerificationToken = verificationToken;
-
-    // Token expires after 15 minutes
-    user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
-
-    await user.save();
+    const expiresAt = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
 
     // =========================================
-    // VERIFICATION URL
+    // CREATE VERIFICATION URL
     // =========================================
 
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+    const verificationUrl =
+      `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+    console.log("🔗 Verification URL created");
+    console.log("📨 Sending verification email to:", email);
 
     // =========================================
-    // SEND EMAIL
+    // SEND EMAIL FIRST
     // =========================================
 
     await transporter.sendMail({
       from: `"Smart LMS" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Verify your new Smart LMS email",
+
       html: `
         <div style="
           font-family: Arial, sans-serif;
@@ -532,7 +537,10 @@ export const changeEmail = async (req, res) => {
           color: #eee;
         ">
 
-          <h2 style="color: #d4af37;">
+          <h2 style="
+            color: #d4af37;
+            margin-bottom: 20px;
+          ">
             Verify Your New Email
           </h2>
 
@@ -553,6 +561,7 @@ export const changeEmail = async (req, res) => {
           </p>
 
           <div style="margin: 30px 0;">
+
             <a
               href="${verificationUrl}"
               style="
@@ -565,32 +574,60 @@ export const changeEmail = async (req, res) => {
                 font-weight: bold;
               "
             >
-              Verify Email
+              Verify New Email
             </a>
+
           </div>
 
-          <p style="font-size: 13px; color: #aaa;">
+          <p style="
+            font-size: 13px;
+            color: #aaa;
+          ">
             This verification link expires in 15 minutes.
           </p>
 
-          <p style="font-size: 13px; color: #777;">
-            If you didn't request this change, you can safely ignore this email.
+          <p style="
+            font-size: 13px;
+            color: #777;
+          ">
+            If you did not request this change, you can safely ignore this email.
           </p>
 
         </div>
       `,
     });
 
+    console.log("✅ Verification email sent");
+
+    // =========================================
+    // SAVE PENDING EMAIL ONLY AFTER EMAIL SENT
+    // =========================================
+
+    user.pendingEmail = email;
+    user.emailVerificationToken = verificationToken;
+    user.emailVerificationExpires = expiresAt;
+
+    await user.save();
+
+    console.log("💾 Pending email saved");
+
+    // =========================================
+    // RESPONSE
+    // =========================================
+
     return res.status(200).json({
       success: true,
-      message: "Verification email sent to your new email address",
+      message:
+        "Verification email sent to your new email address",
     });
+
   } catch (error) {
-    console.error("Change email error:", error);
+    console.error("❌ Change email error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Unable to send verification email",
+      message:
+        "Unable to send verification email",
     });
   }
 };
