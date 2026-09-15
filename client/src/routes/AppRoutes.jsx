@@ -8,6 +8,8 @@ import Home from "../pages/Home";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Registration";
 import VerifyEmail from "../pages/auth/VerifyEmail";
+import ForgotPassword from "../pages/auth/ForgotPassword";
+import ResetPassword from "../pages/auth/ResetPassword";
 
 // =====================================================
 // PUBLIC COURSE PAGES
@@ -64,9 +66,41 @@ function AppRoutes() {
 
         <Route path="/" element={<Home />} />
 
+        {/* Login */}
         <Route path="/login" element={<Login />} />
 
+        {/* Register */}
         <Route path="/register" element={<Register />} />
+
+        {/* =================================================
+            PASSWORD RECOVERY
+        ================================================= */}
+
+        {/* Forgot Password
+
+            Public route because the user may not
+            be authenticated.
+        */}
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+
+        {/* Reset Password
+
+            :token comes from the password reset email.
+            Example:
+
+            /reset-password/abc123xyz
+        */}
+        <Route
+          path="/reset-password/:token"
+          element={<ResetPassword />}
+        />
+
+        {/* =================================================
+            EMAIL VERIFICATION
+        ================================================= */}
 
         {/* Email verification
             Must remain PUBLIC because the user is
@@ -96,8 +130,11 @@ function AppRoutes() {
         ================================================= */}
 
         <Route
-          element={<ProtectedRoute allowedRoles={["student"]} />}
+          element={
+            <ProtectedRoute allowedRoles={["student"]} />
+          }
         >
+
           {/* Student Dashboard Layout */}
 
           <Route element={<StudentDashboardLayout />}>
@@ -135,6 +172,7 @@ function AppRoutes() {
           </Route>
 
           {/* Course Learning */}
+
           <Route
             path="/courses/:courseId/learn"
             element={<StudentCourseLearning />}
@@ -147,8 +185,11 @@ function AppRoutes() {
         ================================================= */}
 
         <Route
-          element={<ProtectedRoute allowedRoles={["instructor"]} />}
+          element={
+            <ProtectedRoute allowedRoles={["instructor"]} />
+          }
         >
+
           {/* Instructor Dashboard Layout */}
 
           <Route element={<InstructorDashboardLayout />}>
@@ -208,6 +249,7 @@ function AppRoutes() {
             />
 
           </Route>
+
         </Route>
 
       </Routes>

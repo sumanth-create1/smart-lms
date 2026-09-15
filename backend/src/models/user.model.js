@@ -88,10 +88,24 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+
+    // =====================================================
+    // PASSWORD RESET
+    // =====================================================
+
+    resetPasswordToken: {
+      type: String,
+      default: "",
+    },
+
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // =====================================================
@@ -128,7 +142,7 @@ userSchema.methods.generateToken = function () {
     process.env.JWT_SECRET,
     {
       expiresIn: process.env.JWT_EXPIRES_IN,
-    }
+    },
   );
 };
 

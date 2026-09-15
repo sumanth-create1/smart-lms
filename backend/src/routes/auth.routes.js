@@ -11,6 +11,8 @@ import {
   changeEmail,
   verifyEmail,
   resendVerification,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/auth.controller.js";
 
 import {
@@ -19,6 +21,10 @@ import {
 } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+// =====================================================
+// AUTHENTICATION
+// =====================================================
 
 router.post("/register", registerUser);
 
@@ -36,6 +42,10 @@ router.post(
   logoutUser
 );
 
+// =====================================================
+// INSTRUCTOR
+// =====================================================
+
 router.get(
   "/instructor-dashboard",
   isAuthenticated,
@@ -43,30 +53,59 @@ router.get(
   instructorDashboard
 );
 
+// =====================================================
+// PROFILE
+// =====================================================
+
 router.put(
   "/profile",
   isAuthenticated,
   updateProfile
 );
 
+// =====================================================
+// PASSWORD
+// =====================================================
+
+// Change password while logged in
 router.patch(
   "/change-password",
   isAuthenticated,
   changePassword
 );
 
+// Forgot password
+// No authentication required
+router.post(
+  "/forgot-password",
+  forgotPassword
+);
 
+// Reset password using reset token
+// No authentication required
+router.post(
+  "/reset-password/:token",
+  resetPassword
+);
+
+// =====================================================
+// EMAIL
+// =====================================================
+
+// Change email while logged in
 router.post(
   "/change-email",
   isAuthenticated,
   changeEmail
 );
 
+// Verify email using verification token
 router.get(
   "/verify-email/:token",
   verifyEmail
 );
 
+// Resend verification email
 router.post(
   "/resend-verification",
   resendVerification

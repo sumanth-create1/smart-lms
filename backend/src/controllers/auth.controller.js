@@ -4,10 +4,23 @@ import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
+
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
   },
+
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
+});
+
+transporter.verify((error) => {
+  if (error) {
+    console.error("❌ Email transporter error:", error);
+  } else {
+    console.log("✅ Email transporter is ready");
+  }
 });
 
 export const registerUser = async (req, res) => {
@@ -761,7 +774,6 @@ export const changePassword = async (req, res) => {
   }
 };
 
-
 export const resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
@@ -809,16 +821,12 @@ export const resendVerification = async (req, res) => {
     // GENERATE NEW TOKEN
     // =========================================
 
-    const verificationToken = crypto
-      .randomBytes(32)
-      .toString("hex");
+    const verificationToken = crypto.randomBytes(32).toString("hex");
 
     user.emailVerificationToken = verificationToken;
 
     // Token expires after 15 minutes
-    user.emailVerificationExpires = new Date(
-      Date.now() + 15 * 60 * 1000
-    );
+    user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     await user.save();
 
@@ -826,8 +834,7 @@ export const resendVerification = async (req, res) => {
     // VERIFICATION URL
     // =========================================
 
-    const verificationUrl =
-      `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
     // =========================================
     // SEND EMAIL
@@ -913,13 +920,266 @@ export const resendVerification = async (req, res) => {
       success: true,
       message: "A new verification email has been sent",
     });
-
   } catch (error) {
     console.error("Resend verification error:", error);
 
     return res.status(500).json({
       success: false,
       message: "Unable to resend verification email",
+    });
+  }
+};
+
+
+// ============================================================
+// FORGOT PASSWORD
+// ============================================================
+
+export const forgotPassword = async (req, res) => {
+  try {
+    console.log("🔥 Forgot password request received");
+
+    const { email } = req.body;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    console.log("🔍 Searching user:", normalizedEmail);
+
+    const user = await User.findOne({
+      email: normalizedEmail,
+    });
+
+    // Don't reveal whether an account exists
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message:
+          "If an account exists with this email, a password reset link has been sent.",
+      });
+    }
+
+    console.log("👤 User found");
+
+    // Generate random reset token
+    const resetToken = crypto
+      .randomBytes(32)
+      .toString("hex");
+
+    // Hash token before storing it
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    user.resetPasswordToken = hashedToken;
+
+    // Token expires in 15 minutes
+    user.resetPasswordExpires = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
+
+    await user.save({
+      validateBeforeSave: false,
+    });
+
+    console.log("💾 Reset token saved");
+
+    // Create reset URL
+    const resetUrl =
+      `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    console.log("🔗 Reset URL created");
+
+    // Send email
+    console.log("📨 Sending password reset email...");
+
+    await transporter.sendMail({
+      from: `"Smart LMS" <${process.env.EMAIL_USER}>`,
+      to: normalizedEmail,
+      subject: "Reset your Smart LMS password",
+
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: 40px auto;
+          padding: 30px;
+          border: 1px solid #333;
+          border-radius: 12px;
+          background: #111;
+          color: #eee;
+        ">
+
+          <h2 style="
+            color: #d4af37;
+            margin-bottom: 20px;
+          ">
+            Smart LMS Password Reset
+          </h2>
+
+          <p>
+            Hello ${user.name},
+          </p>
+
+          <p>
+            We received a request to reset your Smart LMS password.
+          </p>
+
+          <p>
+            Click the button below to create a new password.
+          </p>
+
+          <div style="margin: 30px 0;">
+
+            <a
+              href="${resetUrl}"
+              style="
+                display: inline-block;
+                padding: 12px 24px;
+                background: #8e1328;
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: bold;
+              "
+            >
+              Reset Password
+            </a>
+
+          </div>
+
+          <p style="
+            font-size: 13px;
+            color: #aaa;
+          ">
+            This password reset link expires in 15 minutes.
+          </p>
+
+          <p style="
+            font-size: 13px;
+            color: #777;
+          ">
+            If you did not request a password reset,
+            you can safely ignore this email.
+          </p>
+
+        </div>
+      `,
+    });
+
+    console.log("✅ Password reset email sent");
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "If an account exists with this email, a password reset link has been sent.",
+    });
+
+  } catch (error) {
+    console.error("❌ Forgot password error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to process password reset request",
+    });
+  }
+};
+
+
+// ============================================================
+// RESET PASSWORD
+// ============================================================
+
+export const resetPassword = async (req, res) => {
+  try {
+    console.log("🔐 Reset password request received");
+
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Reset token is required",
+      });
+    }
+
+    if (!password || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password and confirm password are required",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must contain at least 6 characters",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    // Hash the token received from the URL
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    // Find matching user whose token hasn't expired
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: {
+        $gt: new Date(),
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid or expired password reset link",
+      });
+    }
+
+    // Set new password
+    user.password = password;
+
+    // Remove reset token
+    user.resetPasswordToken = "";
+    user.resetPasswordExpires = null;
+
+    // User model pre-save middleware hashes password
+    await user.save();
+
+    console.log("✅ Password reset successfully");
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Password reset successfully. You can now login with your new password.",
+    });
+
+  } catch (error) {
+    console.error("❌ Reset password error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to reset password",
     });
   }
 };
