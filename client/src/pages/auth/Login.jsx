@@ -32,7 +32,7 @@ import api from "../../services/api";
 
 function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
 
   const cardRef = useRef(null);
 
@@ -59,6 +59,21 @@ function Login() {
 
   const [resendingVerification, setResendingVerification] =
     useState(false);
+
+  // ============================================================
+  // REDIRECT AUTHENTICATED USERS
+  // ============================================================
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    const destination =
+      user.role === "instructor"
+        ? "/instructor/dashboard"
+        : "/dashboard";
+
+    navigate(destination, { replace: true });
+  }, [user, authLoading, navigate]);
 
   // ============================================================
   // CURSOR STATE
@@ -290,27 +305,12 @@ function Login() {
         }!`
       );
 
-      // --------------------------------------------------------
-      // REDIRECT
-      // --------------------------------------------------------
-
-      if (
+      const destination =
         formData.role === "instructor"
-      ) {
-        navigate(
-          "/instructor/dashboard",
-          {
-            replace: true,
-          }
-        );
-      } else {
-        navigate(
-          "/dashboard",
-          {
-            replace: true,
-          }
-        );
-      }
+          ? "/instructor/dashboard"
+          : "/dashboard";
+
+      navigate(destination, { replace: true });
     } catch (error) {
       console.error(
         "Login error:",
