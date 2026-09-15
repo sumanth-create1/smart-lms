@@ -7,7 +7,7 @@ import {
 
 import api from "../services/api";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 // =====================================================
 // AUTH PROVIDER
@@ -26,15 +26,19 @@ export function AuthProvider({ children }) {
       const response = await api.get("/auth/me");
 
       const currentUser =
-        response.data.user || response.data;
+        response.data?.user || response.data;
 
       setUser(currentUser);
 
-      console.log("Authenticated user:", currentUser);
+      console.log("✅ Authenticated user:", currentUser);
+
+      return currentUser;
     } catch (error) {
-      console.log("No authenticated user");
+      console.log("ℹ️ No authenticated user");
 
       setUser(null);
+
+      return null;
     } finally {
       setLoading(false);
     }
@@ -46,19 +50,11 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password, role) => {
     try {
-      // -----------------------------------------------
-      // VALIDATE ROLE
-      // -----------------------------------------------
-
       if (!role) {
         throw new Error(
           "Please select Student or Instructor."
         );
       }
-
-      // -----------------------------------------------
-      // LOGIN REQUEST
-      // -----------------------------------------------
 
       const response = await api.post("/auth/login", {
         email,
@@ -66,37 +62,42 @@ export function AuthProvider({ children }) {
         role,
       });
 
-      // -----------------------------------------------
-      // GET USER FROM RESPONSE
-      // -----------------------------------------------
-
       const loggedInUser =
-        response.data.user || response.data;
-
-      // -----------------------------------------------
-      // SAVE USER
-      // -----------------------------------------------
+        response.data?.user || response.data;
 
       setUser(loggedInUser);
 
       console.log(
-        "Login successful:",
+        "✅ Login successful:",
         loggedInUser
       );
 
       return response.data;
     } catch (error) {
-      console.error(
-        "Login error:",
-        error
-      );
-
-      // Important:
-      // Re-throw so Login.jsx can show
-      // the error using react-hot-toast.
+      console.error("❌ Login error:", error);
 
       throw error;
     }
+  };
+
+  // ===================================================
+  // UPDATE USER
+  // ===================================================
+
+  const updateUser = (updatedUser) => {
+    if (!updatedUser) {
+      console.warn(
+        "⚠️ updateUser called without user data"
+      );
+      return;
+    }
+
+    console.log(
+      "🔄 Updating AuthContext user:",
+      updatedUser
+    );
+
+    setUser(updatedUser);
   };
 
   // ===================================================
@@ -107,22 +108,28 @@ export function AuthProvider({ children }) {
     try {
       await api.post("/auth/logout");
     } catch (error) {
-      console.error(
-        "Logout error:",
-        error
-      );
+      console.error("❌ Logout error:", error);
     } finally {
       setUser(null);
     }
   };
 
   // ===================================================
-  // CHECK AUTH WHEN APP STARTS
+  // CHECK AUTH ON APP START
   // ===================================================
 
   useEffect(() => {
     getCurrentUser();
   }, []);
+
+  // ===================================================
+  // DEBUG
+  // ===================================================
+
+  console.log("🔐 AuthProvider rendered:", {
+    user,
+    loading,
+  });
 
   // ===================================================
   // PROVIDER
@@ -133,6 +140,7 @@ export function AuthProvider({ children }) {
       value={{
         user,
         setUser,
+        updateUser,
         loading,
         login,
         logout,
@@ -149,5 +157,16 @@ export function AuthProvider({ children }) {
 // =====================================================
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+
+  console.log("🔍 useAuth context:", context);
+
+  if (context === null) {
+    throw new Error(
+      "useAuth() must be used inside <AuthProvider>. " +
+        "Check the AuthProvider wrapper and AuthContext import path."
+    );
+  }
+
+  return context;
 }

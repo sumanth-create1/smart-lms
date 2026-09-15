@@ -1,5 +1,9 @@
 import { askAIMentor } from "../services/ai.service.js";
 
+// =====================================================
+// AI MENTOR CHAT CONTROLLER
+// =====================================================
+
 export const mentorChat = async (req, res) => {
   try {
     const {
@@ -9,6 +13,7 @@ export const mentorChat = async (req, res) => {
       courseLevel,
       lectureTitle,
       lectureContent,
+      conversationHistory, // 🧠 NEW
     } = req.body;
 
     // ============================================
@@ -33,6 +38,9 @@ export const mentorChat = async (req, res) => {
       courseLevel,
       lectureTitle,
       lectureContent,
+
+      // 🧠 Pass previous conversation to AI service
+      conversationHistory,
     });
 
     // ============================================
@@ -60,11 +68,16 @@ export const mentorChat = async (req, res) => {
     // GEMINI QUOTA / RATE LIMIT ERROR
     // ============================================
 
+    const status = Number(
+      error?.status ||
+      error?.statusCode
+    );
+
     if (
-      error.status === 429 ||
-      error.statusCode === 429 ||
-      error.code === "too_many_requests" ||
-      error.code === "quota_exceeded"
+      status === 429 ||
+      error?.code === "too_many_requests" ||
+      error?.code === "quota_exceeded" ||
+      error?.code === "AI_QUOTA_EXCEEDED"
     ) {
       return res.status(429).json({
         success: false,
