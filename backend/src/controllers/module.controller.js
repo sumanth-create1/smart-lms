@@ -198,3 +198,61 @@ export const deleteModule = async (req, res) => {
     });
   }
 };
+
+// =====================================================
+// RESET MODULE ASSIGNMENTS
+// =====================================================
+
+export const resetModuleAssignments = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found.",
+      });
+    }
+
+    // Only course instructor can reset module assignments
+    if (
+      course.instructor.toString() !==
+      req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "You are not authorized to modify this course.",
+      });
+    }
+
+    const result = await Lecture.updateMany(
+      {
+        course: courseId,
+      },
+      {
+        $set: {
+          module: null,
+        },
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "All lecture module assignments have been reset.",
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error(
+      "RESET MODULE ASSIGNMENTS ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to reset module assignments.",
+    });
+  }
+};

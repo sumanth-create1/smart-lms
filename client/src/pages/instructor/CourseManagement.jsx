@@ -5,12 +5,14 @@ import {
   BookOpen,
   Edit3,
   IndianRupee,
+  Layers,
   LoaderCircle,
   Plus,
   Save,
   Trash2,
   Users,
   Film,
+  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -41,6 +43,10 @@ function CourseManagement() {
 
   const goToLectures = () => {
     navigate(`/instructor/courses/${courseId}/lectures`);
+  };
+
+  const goToModules = () => {
+    navigate(`/instructor/courses/${courseId}/modules`);
   };
 
   /* =====================================================
@@ -252,7 +258,7 @@ function CourseManagement() {
           onClick={() =>
             navigate("/instructor/courses")
           }
-          className="mt-5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
+          className="mt-5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
         >
           Back to Courses
         </button>
@@ -295,7 +301,8 @@ function CourseManagement() {
               </h1>
 
               <p className="mt-2 text-sm text-gray-500">
-                Manage your course information and content.
+                Manage your course information, modules,
+                lectures and learning structure.
               </p>
             </div>
 
@@ -311,6 +318,19 @@ function CourseManagement() {
                   Edit Course
                 </button>
               )}
+
+              {/* MANAGE MODULES */}
+
+              <button
+                type="button"
+                onClick={goToModules}
+                className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-100"
+              >
+                <Layers size={17} />
+                Manage Modules
+              </button>
+
+              {/* MANAGE LECTURES */}
 
               <button
                 type="button"
@@ -406,6 +426,100 @@ function CourseManagement() {
             </div>
 
             {/* =================================================
+                LEARNING STRUCTURE
+            ================================================= */}
+
+            <div className="rounded-3xl border border-gray-200 bg-white shadow-sm">
+
+              <div className="border-b border-gray-100 px-6 py-5">
+                <div className="flex items-start justify-between gap-4">
+
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                        <Layers size={18} />
+                      </div>
+
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        Learning Structure
+                      </h2>
+                    </div>
+
+                    <p className="mt-2 text-sm leading-6 text-gray-500">
+                      Organize lectures into modules and
+                      prepare module-based quizzes for your
+                      students.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={goToModules}
+                    className="hidden shrink-0 items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 sm:inline-flex"
+                  >
+                    <Plus size={17} />
+                    Manage Modules
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+
+                <div className="grid gap-4 sm:grid-cols-3">
+
+                  <StructureCard
+                    icon={<Layers size={20} />}
+                    title="Modules"
+                    description="Create and organize learning modules."
+                  />
+
+                  <StructureCard
+                    icon={<Film size={20} />}
+                    title="Lectures"
+                    description="Assign your existing lectures to modules."
+                  />
+
+                  <StructureCard
+                    icon={<BookOpen size={20} />}
+                    title="AI Quizzes"
+                    description="Generate quizzes from module lectures."
+                  />
+
+                </div>
+
+                <button
+                  type="button"
+                  onClick={goToModules}
+                  className="mt-5 flex w-full items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-left transition hover:border-indigo-200 hover:bg-indigo-50"
+                >
+                  <div className="flex items-center gap-3">
+
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
+                      <Layers size={18} />
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        Open Module Management
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-500">
+                        Create modules, organize lectures and
+                        manage quizzes.
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronRight
+                    size={19}
+                    className="text-gray-400"
+                  />
+                </button>
+
+              </div>
+            </div>
+
+            {/* =================================================
                 COURSE CONTENT
             ================================================= */}
 
@@ -419,11 +533,10 @@ function CourseManagement() {
                   </h2>
 
                   <p className="mt-1 text-sm text-gray-500">
-                    Add lectures and organize your course.
+                    Add lectures and manage your course
+                    content.
                   </p>
                 </div>
-
-                {/* UPDATED LINK */}
 
                 <button
                   type="button"
@@ -447,10 +560,8 @@ function CourseManagement() {
 
                 <p className="mt-1 max-w-sm text-sm leading-6 text-gray-500">
                   Create lectures, upload videos, edit lecture
-                  titles and enable free previews.
+                  titles and assign lectures to modules.
                 </p>
-
-                {/* UPDATED LINK */}
 
                 <button
                   type="button"
@@ -532,7 +643,14 @@ function CourseManagement() {
                   Edit Course
                 </button>
 
-                {/* UPDATED LINK */}
+                <button
+                  type="button"
+                  onClick={goToModules}
+                  className="flex w-full items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-left text-sm font-semibold text-indigo-600 transition hover:bg-indigo-100"
+                >
+                  <Layers size={18} />
+                  Manage Modules
+                </button>
 
                 <button
                   type="button"
@@ -542,8 +660,6 @@ function CourseManagement() {
                   <Plus size={18} />
                   Add Lecture
                 </button>
-
-                {/* NEW MANAGE LECTURES LINK */}
 
                 <button
                   type="button"
@@ -736,7 +852,7 @@ function CourseManagement() {
                     type="button"
                     onClick={() => setEditing(false)}
                     disabled={saving}
-                    className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                    className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -744,7 +860,7 @@ function CourseManagement() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {saving ? (
                       <>
@@ -826,6 +942,32 @@ function DetailRow({ label, value }) {
       <span className="text-right text-sm font-semibold text-gray-900">
         {value}
       </span>
+    </div>
+  );
+}
+
+/* =====================================================
+   STRUCTURE CARD
+===================================================== */
+
+function StructureCard({
+  icon,
+  title,
+  description,
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
+        {icon}
+      </div>
+
+      <h3 className="mt-4 text-sm font-semibold text-gray-900">
+        {title}
+      </h3>
+
+      <p className="mt-1 text-xs leading-5 text-gray-500">
+        {description}
+      </p>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   getCourseModules,
   updateModule,
   deleteModule,
+  resetModuleAssignments,
 } from "../controllers/module.controller.js";
 
 import {
@@ -34,6 +35,13 @@ router.delete(
   isAuthenticated,
   authorizeRoles("instructor"),
   deleteModule,
+);
+
+router.patch(
+  "/course/:courseId/modules/reset-assignments",
+  isAuthenticated,
+  authorizeRoles("instructor"),
+  resetModuleAssignments
 );
 
 export default router;

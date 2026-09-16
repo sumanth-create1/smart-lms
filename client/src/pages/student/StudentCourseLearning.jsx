@@ -1,15 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import {
   ArrowLeft,
   BookOpen,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock3,
   FileText,
   Flame,
   Keyboard,
+  Layers3,
   LoaderCircle,
   Lock,
   Maximize2,
@@ -20,19 +27,21 @@ import {
   Sparkles,
   Sword,
   Trophy,
-  Brain,
-  CircleCheck,
+  ClipboardCheck,
+  X,
 } from "lucide-react";
 
-import { useNavigate, useParams } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
 import toast from "react-hot-toast";
 
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
-import AchievementUnlockCelebration from "./components/student/AchievementUnlockCelebration";
-
-// AI MENTOR
+import AchievementUnlockCelebration from "../student/components/student/AchievementUnlockCelebration";
 import AIMentor from "../ai/AIMentor";
 
 // =====================================================
@@ -44,7 +53,10 @@ const SEEK_TOLERANCE = 1;
 const MAX_FORWARD_SEEK = 15;
 const COMPLETION_PERCENTAGE = 95;
 
-const getVideoStorageKey = (courseId, lectureId) =>
+const getVideoStorageKey = (
+  courseId,
+  lectureId,
+) =>
   `smart-lms-video-${courseId}-${lectureId}`;
 
 // =====================================================
@@ -55,50 +67,87 @@ const StudentCourseLearning = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
 
-  const { user, loading: authLoading } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+  } = useAuth();
 
   // ---------------------------------------------------
   // COURSE STATE
   // ---------------------------------------------------
 
   const [course, setCourse] = useState(null);
+
   const [lectures, setLectures] = useState([]);
-  const [modules, setModules] = useState([]);
-  const [moduleQuizzes, setModuleQuizzes] = useState({});
+
   const [progress, setProgress] = useState(null);
-  const [selectedLecture, setSelectedLecture] = useState(null);
+
+  const [selectedLecture, setSelectedLecture] =
+    useState(null);
+
+  // ---------------------------------------------------
+  // MODULE STATE
+  // ---------------------------------------------------
+
+  const [modules, setModules] = useState([]);
+
+  const [moduleQuizzes, setModuleQuizzes] =
+    useState({});
+
+  const [modulesLoading, setModulesLoading] =
+    useState(false);
 
   // ---------------------------------------------------
   // LOADING STATE
   // ---------------------------------------------------
 
   const [loading, setLoading] = useState(true);
-  const [lectureLoading, setLectureLoading] = useState(true);
-  const [modulesLoading, setModulesLoading] = useState(true);
-  const [enrollmentLoading, setEnrollmentLoading] = useState(true);
-  const [progressLoading, setProgressLoading] = useState(false);
 
-  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [lectureLoading, setLectureLoading] =
+    useState(true);
+
+  const [enrollmentLoading, setEnrollmentLoading] =
+    useState(true);
+
+  const [progressLoading, setProgressLoading] =
+    useState(false);
+
+  const [isEnrolled, setIsEnrolled] =
+    useState(false);
 
   // ---------------------------------------------------
   // ACHIEVEMENT
   // ---------------------------------------------------
 
-  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
+  const [unlockedAchievements, setUnlockedAchievements] =
+    useState([]);
 
   // ---------------------------------------------------
   // UI STATE
   // ---------------------------------------------------
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [theaterMode, setTheaterMode] = useState(false);
-  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [searchTerm, setSearchTerm] =
+    useState("");
+
+  const [theaterMode, setTheaterMode] =
+    useState(false);
+
+  const [showShortcuts, setShowShortcuts] =
+    useState(false);
 
   // ---------------------------------------------------
-  // AI MENTOR STATE
+  // AI MENTOR
   // ---------------------------------------------------
 
-  const [showAIMentor, setShowAIMentor] = useState(false);
+  const [showAIMentor, setShowAIMentor] =
+    useState(false);
+
+  // ---------------------------------------------------
+  // MODULE UI
+  // ---------------------------------------------------
+
+  const [expandedModules, setExpandedModules] =
+    useState({});
 
   // ===================================================
   // INITIALIZE
@@ -108,7 +157,15 @@ const StudentCourseLearning = () => {
     if (authLoading) return;
 
     initializeLearning();
-  }, [authLoading, user, courseId]);
+  }, [
+    authLoading,
+    user,
+    courseId,
+  ]);
+
+  // ===================================================
+  // INITIALIZE LEARNING
+  // ===================================================
 
   const initializeLearning = async () => {
     if (!courseId) {
@@ -122,7 +179,9 @@ const StudentCourseLearning = () => {
     }
 
     if (!user) {
-      toast.error("Please login to access this course.");
+      toast.error(
+        "Please login to access this course.",
+      );
 
       navigate("/login", {
         replace: true,
@@ -132,7 +191,9 @@ const StudentCourseLearning = () => {
     }
 
     if (user.role !== "student") {
-      toast.error("Only students can access the learning page.");
+      toast.error(
+        "Only students can access the learning page.",
+      );
 
       navigate("/courses", {
         replace: true,
@@ -210,14 +271,14 @@ const StudentCourseLearning = () => {
   };
 
   // ===================================================
-  // LOAD DATA
+  // LOAD ALL LEARNING DATA
   // ===================================================
 
   const loadLearningData = async () => {
     try {
       setLoading(true);
 
-      const [, , , moduleData] =
+      const [, , , moduleList] =
         await Promise.all([
           fetchCourse(),
           fetchLectures(),
@@ -225,7 +286,17 @@ const StudentCourseLearning = () => {
           fetchModules(),
         ]);
 
-      await fetchModuleQuizzes(moduleData);
+      if (
+        Array.isArray(moduleList) &&
+        moduleList.length > 0
+      ) {
+        await fetchModuleQuizzes(moduleList);
+      }
+    } catch (error) {
+      console.error(
+        "Learning data loading error:",
+        error,
+      );
     } finally {
       setLoading(false);
     }
@@ -291,10 +362,18 @@ const StudentCourseLearning = () => {
         response.data.courseLectures ||
         [];
 
-      setLectures(lectureData);
+      const sortedLectures = [...lectureData].sort(
+        (a, b) =>
+          Number(a.order || 0) -
+          Number(b.order || 0),
+      );
 
-      if (lectureData.length > 0) {
-        setSelectedLecture(lectureData[0]);
+      setLectures(sortedLectures);
+
+      if (sortedLectures.length > 0) {
+        setSelectedLecture(
+          sortedLectures[0],
+        );
       }
     } catch (error) {
       console.error(
@@ -336,7 +415,9 @@ const StudentCourseLearning = () => {
       const moduleData =
         response.data.modules || [];
 
-      const sortedModules = [...moduleData].sort(
+      const sortedModules = [
+        ...moduleData,
+      ].sort(
         (a, b) =>
           Number(a.order || 0) -
           Number(b.order || 0),
@@ -344,29 +425,25 @@ const StudentCourseLearning = () => {
 
       setModules(sortedModules);
 
+      // Open first module by default.
+      if (sortedModules.length > 0) {
+        setExpandedModules((previous) => ({
+          ...previous,
+          [sortedModules[0]._id]: true,
+        }));
+      }
+
       return sortedModules;
     } catch (error) {
-      console.error(
-        "Fetch modules error:",
-        error,
-      );
-
-      setModules([]);
-
-      /*
-       * We don't redirect here.
-       *
-       * This is important because old courses may
-       * still contain lectures without modules.
-       */
-
+      // A course without modules should still work.
       if (error.response?.status !== 404) {
-        toast.error(
-          error.response?.data?.message ||
-            error.message ||
-            "Unable to load course modules.",
+        console.error(
+          "Fetch modules error:",
+          error,
         );
       }
+
+      setModules([]);
 
       return [];
     } finally {
@@ -390,49 +467,72 @@ const StudentCourseLearning = () => {
     }
 
     try {
-      const results = await Promise.all(
-        moduleList.map(async (module) => {
-          try {
-            const response = await api.get(
-              `/module/${module._id}/quiz`,
-            );
+      const quizResults =
+        await Promise.all(
+          moduleList.map(async (module) => {
+            try {
+              const response =
+                await api.get(
+                  `/module/${module._id}/quiz`,
+                );
 
-            return [
-              String(module._id),
-              response.data?.success
-                ? response.data.quiz
-                : null,
-            ];
-          } catch (error) {
-            /*
-             * 404 simply means the instructor
-             * has not generated the quiz yet.
-             */
-            if (
-              error.response?.status !== 404
-            ) {
-              console.error(
-                `Quiz fetch failed for module ${module._id}:`,
-                error,
-              );
+              if (
+                response.data?.success &&
+                response.data.quiz
+              ) {
+                return {
+                  moduleId: String(
+                    module._id,
+                  ),
+                  quiz: response.data.quiz,
+                };
+              }
+
+              return {
+                moduleId: String(
+                  module._id,
+                ),
+                quiz: null,
+              };
+            } catch (error) {
+              // 404 simply means the instructor
+              // has not generated the quiz yet.
+              if (
+                error.response?.status !==
+                404
+              ) {
+                console.error(
+                  `Quiz fetch error for module ${module._id}:`,
+                  error,
+                );
+              }
+
+              return {
+                moduleId: String(
+                  module._id,
+                ),
+                quiz: null,
+              };
             }
+          }),
+        );
 
-            return [
-              String(module._id),
-              null,
-            ];
-          }
-        }),
+      const quizMap = {};
+
+      quizResults.forEach(
+        ({ moduleId, quiz }) => {
+          quizMap[moduleId] = quiz;
+        },
       );
 
-      setModuleQuizzes(
-        Object.fromEntries(results),
-      );
+      setModuleQuizzes(quizMap);
     } catch (error) {
       console.error(
         "Fetch module quizzes error:",
         error,
       );
+
+      setModuleQuizzes({});
     }
   };
 
@@ -457,7 +557,9 @@ const StudentCourseLearning = () => {
           null,
       );
     } catch (error) {
-      if (error.response?.status !== 404) {
+      if (
+        error.response?.status !== 404
+      ) {
         console.error(
           "Fetch progress error:",
           error,
@@ -472,7 +574,9 @@ const StudentCourseLearning = () => {
   // LECTURE PROGRESS
   // ===================================================
 
-  const getLectureProgress = (lectureId) => {
+  const getLectureProgress = (
+    lectureId,
+  ) => {
     if (
       !progress?.lectures ||
       !lectureId
@@ -483,7 +587,8 @@ const StudentCourseLearning = () => {
     return (
       progress.lectures.find((item) => {
         const id =
-          typeof item.lecture === "object"
+          typeof item.lecture ===
+          "object"
             ? item.lecture?._id
             : item.lecture;
 
@@ -499,177 +604,257 @@ const StudentCourseLearning = () => {
   // COMPLETED LECTURES
   // ===================================================
 
-  const completedLectureIds = useMemo(() => {
-    const ids = new Set();
+  const completedLectureIds =
+    useMemo(() => {
+      const ids = new Set();
 
-    progress?.lectures?.forEach((item) => {
-      if (!item?.completed) return;
+      progress?.lectures?.forEach(
+        (item) => {
+          if (!item?.completed) return;
 
-      const lectureId =
-        typeof item.lecture === "object"
-          ? item.lecture?._id
-          : item.lecture;
+          const lectureId =
+            typeof item.lecture ===
+            "object"
+              ? item.lecture?._id
+              : item.lecture;
 
-      if (lectureId) {
-        ids.add(String(lectureId));
-      }
-    });
+          if (lectureId) {
+            ids.add(String(lectureId));
+          }
+        },
+      );
 
-    return ids;
-  }, [progress]);
+      return ids;
+    }, [progress]);
 
   // ===================================================
-  // COURSE PROGRESS
+  // COURSE LECTURE PROGRESS
   // ===================================================
 
-  const progressPercentage = useMemo(() => {
-    if (!lectures.length) return 0;
+  const progressPercentage =
+    useMemo(() => {
+      if (!lectures.length) return 0;
 
-    return Math.round(
-      Math.min(
-        (completedLectureIds.size /
-          lectures.length) *
+      return Math.round(
+        Math.min(
+          (completedLectureIds.size /
+            lectures.length) *
+            100,
           100,
-        100,
-      ),
-    );
-  }, [
-    lectures.length,
-    completedLectureIds,
-  ]);
+        ),
+      );
+    }, [
+      lectures.length,
+      completedLectureIds,
+    ]);
 
   // ===================================================
-  // SEARCHED LECTURES
+  // MODULE GROUPING
   // ===================================================
 
-  const filteredLectures = useMemo(() => {
-    const query =
-      searchTerm.trim().toLowerCase();
+  const modulesWithLectures =
+    useMemo(() => {
+      if (!modules.length) {
+        return [];
+      }
 
-    if (!query) return lectures;
+      return modules.map((module) => {
+        const moduleLectures =
+          lectures
+            .filter((lecture) => {
+              const lectureModule =
+                lecture.module;
 
-    return lectures.filter((lecture) => {
-      const title =
-        lecture.title ||
-        lecture.lectureTitle ||
-        "";
+              const moduleId =
+                typeof lectureModule ===
+                "object"
+                  ? lectureModule?._id
+                  : lectureModule;
 
-      return title
-        .toLowerCase()
-        .includes(query);
-    });
-  }, [
-    lectures,
-    searchTerm,
-  ]);
-
-  // ===================================================
-  // MODULES WITH LECTURES
-  // ===================================================
-
-  const modulesWithLectures = useMemo(() => {
-    if (!modules.length) {
-      return [];
-    }
-
-    return modules.map((module) => {
-      const moduleLectures =
-        filteredLectures
-          .filter((lecture) => {
-            const lectureModuleId =
-              typeof lecture.module ===
-              "object"
-                ? lecture.module?._id
-                : lecture.module;
-
-            return (
-              String(lectureModuleId) ===
-              String(module._id)
+              return (
+                String(moduleId) ===
+                String(module._id)
+              );
+            })
+            .sort(
+              (a, b) =>
+                Number(a.order || 0) -
+                Number(b.order || 0),
             );
-          })
-          .sort(
-            (a, b) =>
-              Number(a.order || 0) -
-              Number(b.order || 0),
-          );
 
-      const completedCount =
-        moduleLectures.filter((lecture) =>
-          completedLectureIds.has(
-            String(lecture._id),
-          ),
-        ).length;
+        const completedCount =
+          moduleLectures.filter(
+            (lecture) =>
+              completedLectureIds.has(
+                String(lecture._id),
+              ),
+          ).length;
 
-      const quiz =
-        moduleQuizzes[
-          String(module._id)
-        ] || null;
-
-      const hasLectures =
-        moduleLectures.length > 0;
-
-      const lecturesCompleted =
-        hasLectures &&
-        completedCount ===
+        const totalLectures =
           moduleLectures.length;
 
-      return {
-        ...module,
+        const modulePercentage =
+          totalLectures > 0
+            ? Math.round(
+                (completedCount /
+                  totalLectures) *
+                  100,
+              )
+            : 0;
 
-        lectures:
-          moduleLectures,
+        const quiz =
+          moduleQuizzes[
+            String(module._id)
+          ] || null;
 
-        completedCount,
-
-        totalLectures:
-          moduleLectures.length,
-
-        lecturesCompleted,
-
-        quiz,
-      };
-    });
-  }, [
-    modules,
-    filteredLectures,
-    completedLectureIds,
-    moduleQuizzes,
-  ]);
+        return {
+          ...module,
+          lectures: moduleLectures,
+          completedCount,
+          totalLectures,
+          modulePercentage,
+          quiz,
+          allLecturesCompleted:
+            totalLectures > 0 &&
+            completedCount ===
+              totalLectures,
+        };
+      });
+    }, [
+      modules,
+      lectures,
+      completedLectureIds,
+      moduleQuizzes,
+    ]);
 
   // ===================================================
   // UNASSIGNED LECTURES
   // ===================================================
 
-  const unassignedLectures = useMemo(() => {
-    return filteredLectures.filter(
-      (lecture) => {
-        const lectureModuleId =
-          typeof lecture.module ===
-          "object"
-            ? lecture.module?._id
-            : lecture.module;
+  const unassignedLectures =
+    useMemo(() => {
+      if (!modules.length) {
+        return [];
+      }
 
-        return !lectureModuleId;
-      },
-    );
-  }, [filteredLectures]);
+      return lectures.filter((lecture) => {
+        const lectureModule =
+          lecture.module;
+
+        const moduleId =
+          typeof lectureModule ===
+          "object"
+            ? lectureModule?._id
+            : lectureModule;
+
+        return !moduleId;
+      });
+    }, [lectures, modules]);
+
+  // ===================================================
+  // SEARCH FILTER
+  // ===================================================
+
+  const normalizedSearch =
+    searchTerm.trim().toLowerCase();
+
+  const filteredModules =
+    useMemo(() => {
+      if (!normalizedSearch) {
+        return modulesWithLectures;
+      }
+
+      return modulesWithLectures
+        .map((module) => {
+          const moduleMatches =
+            String(
+              module.moduleTitle || "",
+            )
+              .toLowerCase()
+              .includes(
+                normalizedSearch,
+              );
+
+          const matchingLectures =
+            module.lectures.filter(
+              (lecture) => {
+                const title =
+                  lecture.title ||
+                  lecture.lectureTitle ||
+                  "";
+
+                return title
+                  .toLowerCase()
+                  .includes(
+                    normalizedSearch,
+                  );
+              },
+            );
+
+          if (
+            moduleMatches ||
+            matchingLectures.length > 0
+          ) {
+            return {
+              ...module,
+              lectures: moduleMatches
+                ? module.lectures
+                : matchingLectures,
+            };
+          }
+
+          return null;
+        })
+        .filter(Boolean);
+    }, [
+      modulesWithLectures,
+      normalizedSearch,
+    ]);
+
+  const filteredUnassignedLectures =
+    useMemo(() => {
+      if (!normalizedSearch) {
+        return unassignedLectures;
+      }
+
+      return unassignedLectures.filter(
+        (lecture) => {
+          const title =
+            lecture.title ||
+            lecture.lectureTitle ||
+            "";
+
+          return title
+            .toLowerCase()
+            .includes(
+              normalizedSearch,
+            );
+        },
+      );
+    }, [
+      unassignedLectures,
+      normalizedSearch,
+    ]);
 
   // ===================================================
   // CURRENT LECTURE
   // ===================================================
 
-  const currentLectureIndex = useMemo(() => {
-    if (!selectedLecture) return -1;
+  const currentLectureIndex =
+    useMemo(() => {
+      if (!selectedLecture) return -1;
 
-    return lectures.findIndex(
-      (lecture) =>
-        String(lecture._id) ===
-        String(selectedLecture._id),
-    );
-  }, [
-    lectures,
-    selectedLecture,
-  ]);
+      return lectures.findIndex(
+        (lecture) =>
+          String(lecture._id) ===
+          String(
+            selectedLecture._id,
+          ),
+      );
+    }, [
+      lectures,
+      selectedLecture,
+    ]);
 
   const isLectureCompleted = (
     lectureId,
@@ -678,34 +863,6 @@ const StudentCourseLearning = () => {
     completedLectureIds.has(
       String(lectureId),
     );
-
-  // ===================================================
-  // FIND MODULE OF LECTURE
-  // ===================================================
-
-  const getModuleForLecture = (
-    lecture,
-  ) => {
-    if (!lecture?.module) {
-      return null;
-    }
-
-    const moduleId =
-      typeof lecture.module ===
-      "object"
-        ? lecture.module?._id
-        : lecture.module;
-
-    if (!moduleId) return null;
-
-    return (
-      modules.find(
-        (module) =>
-          String(module._id) ===
-          String(moduleId),
-      ) || null
-    );
-  };
 
   // ===================================================
   // SELECT LECTURE
@@ -727,6 +884,20 @@ const StudentCourseLearning = () => {
   };
 
   // ===================================================
+  // TOGGLE MODULE
+  // ===================================================
+
+  const toggleModule = (
+    moduleId,
+  ) => {
+    setExpandedModules((previous) => ({
+      ...previous,
+      [moduleId]:
+        !previous[moduleId],
+    }));
+  };
+
+  // ===================================================
   // OPEN MODULE QUIZ
   // ===================================================
 
@@ -734,23 +905,41 @@ const StudentCourseLearning = () => {
     module,
   ) => {
     if (!module?._id) {
-      toast.error("Invalid module.");
-      return;
-    }
-
-    if (
-      !module.lecturesCompleted
-    ) {
       toast.error(
-        "Complete all lectures in this module first.",
+        "Invalid module.",
       );
-
       return;
     }
 
     if (!module.quiz) {
+      toast.info(
+        "The instructor has not generated the AI quiz for this module yet.",
+      );
+      return;
+    }
+
+    if (
+      module.totalLectures === 0
+    ) {
+      toast.info(
+        "This module does not have any lectures yet.",
+      );
+      return;
+    }
+
+    if (
+      !module.allLecturesCompleted
+    ) {
+      const remaining =
+        module.totalLectures -
+        module.completedCount;
+
       toast.error(
-        "The module quiz is not available yet.",
+        `Complete ${remaining} more lecture${
+          remaining === 1
+            ? ""
+            : "s"
+        } before taking this quiz.`,
       );
 
       return;
@@ -807,119 +996,124 @@ const StudentCourseLearning = () => {
   // MARK COMPLETE
   // ===================================================
 
-  const handleMarkComplete = async () => {
-    const lectureId =
-      selectedLecture?._id;
+  const handleMarkComplete =
+    async () => {
+      const lectureId =
+        selectedLecture?._id;
 
-    if (!lectureId) {
-      toast.error(
-        "No lecture selected.",
-      );
-
-      return;
-    }
-
-    if (
-      isLectureCompleted(
-        lectureId,
-      )
-    ) {
-      toast.info(
-        "This lecture is already completed.",
-      );
-
-      return;
-    }
-
-    try {
-      setProgressLoading(true);
-
-      const lectureProgress =
-        getLectureProgress(
-          lectureId,
-        );
-
-      const watchedSeconds =
-        Number(
-          lectureProgress?.watchedSeconds ||
-            0,
-        );
-
-      const duration =
-        getLectureDuration(
-          selectedLecture,
-        );
-
-      if (duration > 0) {
-        const watchedPercentage =
-          (watchedSeconds /
-            duration) *
-          100;
-
-        if (
-          watchedPercentage <
-          COMPLETION_PERCENTAGE
-        ) {
-          toast.error(
-            `Watch at least ${COMPLETION_PERCENTAGE}% before completing this lecture.`,
-          );
-
-          return;
-        }
-      }
-
-      const response =
-        await api.patch(
-          `/progress/complete/${lectureId}`,
-        );
-
-      if (
-        !response.data?.success
-      ) {
+      if (!lectureId) {
         toast.error(
-          response.data?.message ||
-            "Unable to complete lecture.",
+          "No lecture selected.",
         );
 
         return;
       }
 
-      if (response.data.progress) {
-        setProgress(
-          response.data.progress,
+      if (
+        isLectureCompleted(
+          lectureId,
+        )
+      ) {
+        toast.info(
+          "This lecture is already completed.",
         );
+
+        return;
       }
 
-      clearSavedVideoPosition(
-        courseId,
-        lectureId,
-      );
+      try {
+        setProgressLoading(true);
 
-      toast.success(
-        response.data.message ||
-          "Lecture completed!",
-      );
+        const lectureProgress =
+          getLectureProgress(
+            lectureId,
+          );
 
-      showAchievementCelebration(
-        response.data
-          .newlyUnlocked || [],
-      );
-    } catch (error) {
-      console.error(
-        "Mark lecture complete error:",
-        error.response?.data ||
-          error,
-      );
+        const watchedSeconds =
+          Number(
+            lectureProgress?.watchedSeconds ||
+              0,
+          );
 
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Unable to complete lecture.",
-      );
-    } finally {
-      setProgressLoading(false);
-    }
-  };
+        const duration =
+          getLectureDuration(
+            selectedLecture,
+          );
+
+        if (duration > 0) {
+          const watchedPercentage =
+            (watchedSeconds /
+              duration) *
+            100;
+
+          if (
+            watchedPercentage <
+            COMPLETION_PERCENTAGE
+          ) {
+            toast.error(
+              `Watch at least ${COMPLETION_PERCENTAGE}% before completing this lecture.`,
+            );
+
+            return;
+          }
+        }
+
+        const response =
+          await api.patch(
+            `/progress/complete/${lectureId}`,
+          );
+
+        if (
+          !response.data?.success
+        ) {
+          toast.error(
+            response.data
+              ?.message ||
+              "Unable to complete lecture.",
+          );
+
+          return;
+        }
+
+        if (
+          response.data.progress
+        ) {
+          setProgress(
+            response.data.progress,
+          );
+        }
+
+        clearSavedVideoPosition(
+          courseId,
+          lectureId,
+        );
+
+        toast.success(
+          response.data.message ||
+            "Lecture completed!",
+        );
+
+        showAchievementCelebration(
+          response.data
+            .newlyUnlocked || [],
+        );
+      } catch (error) {
+        console.error(
+          "Mark lecture complete error:",
+          error.response?.data ||
+            error,
+        );
+
+        toast.error(
+          error.response?.data
+            ?.message ||
+            error.message ||
+            "Unable to complete lecture.",
+        );
+      } finally {
+        setProgressLoading(false);
+      }
+    };
 
   // ===================================================
   // UNMARK COMPLETE
@@ -962,14 +1156,17 @@ const StudentCourseLearning = () => {
           !response.data?.success
         ) {
           toast.error(
-            response.data?.message ||
+            response.data
+              ?.message ||
               "Unable to mark lecture incomplete.",
           );
 
           return;
         }
 
-        if (response.data.progress) {
+        if (
+          response.data.progress
+        ) {
           setProgress(
             response.data.progress,
           );
@@ -1017,7 +1214,8 @@ const StudentCourseLearning = () => {
         );
 
         toast.error(
-          error.response?.data?.message ||
+          error.response?.data
+            ?.message ||
             error.message ||
             "Unable to update lecture.",
         );
@@ -1053,8 +1251,7 @@ const StudentCourseLearning = () => {
 
   const handleNextLecture = () => {
     if (
-      currentLectureIndex ===
-      -1
+      currentLectureIndex === -1
     ) {
       return;
     }
@@ -1091,8 +1288,7 @@ const StudentCourseLearning = () => {
   const handlePreviousLecture =
     () => {
       if (
-        currentLectureIndex <=
-        0
+        currentLectureIndex <= 0
       ) {
         toast.info(
           "This is the first lecture.",
@@ -1135,7 +1331,10 @@ const StudentCourseLearning = () => {
     return <LearningLoading />;
   }
 
-  if (!isEnrolled || !course) {
+  if (
+    !isEnrolled ||
+    !course
+  ) {
     return null;
   }
 
@@ -1171,7 +1370,7 @@ const StudentCourseLearning = () => {
     <div className="min-h-screen overflow-x-hidden bg-[#080a0c] text-slate-200">
 
       {/* =================================================
-          WINTER ATMOSPHERE
+          ATMOSPHERE
       ================================================= */}
 
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
@@ -1214,6 +1413,7 @@ const StudentCourseLearning = () => {
         ================================================= */}
 
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+
           <div>
             <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500">
               <Sword size={13} />
@@ -1226,8 +1426,9 @@ const StudentCourseLearning = () => {
             </h1>
 
             <p className="mt-2 max-w-2xl text-sm text-slate-500">
-              Continue your journey through the realm
-              of knowledge.
+              Continue your journey through
+              modules, lectures, and
+              knowledge trials.
             </p>
           </div>
 
@@ -1305,7 +1506,9 @@ const StudentCourseLearning = () => {
 
         {showShortcuts && (
           <div className="mb-5 rounded-2xl border border-amber-900/50 bg-[#111417] p-5 shadow-2xl">
+
             <div className="mb-4 flex items-center justify-between">
+
               <div className="flex items-center gap-2">
                 <Keyboard
                   size={17}
@@ -1326,11 +1529,12 @@ const StudentCourseLearning = () => {
                 }
                 className="text-slate-500 hover:text-white"
               >
-                ×
+                <X size={18} />
               </button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+
               <Shortcut
                 keys="Space"
                 label="Play / Pause"
@@ -1383,11 +1587,9 @@ const StudentCourseLearning = () => {
           {!theaterMode && (
             <ModuleSidebar
               course={course}
-              modules={
-                modulesWithLectures
-              }
+              modules={filteredModules}
               unassignedLectures={
-                unassignedLectures
+                filteredUnassignedLectures
               }
               allLecturesCount={
                 lectures.length
@@ -1401,14 +1603,22 @@ const StudentCourseLearning = () => {
               completedLectureIds={
                 completedLectureIds
               }
-              searchTerm={searchTerm}
+              searchTerm={
+                searchTerm
+              }
               setSearchTerm={
                 setSearchTerm
+              }
+              expandedModules={
+                expandedModules
+              }
+              onToggleModule={
+                toggleModule
               }
               onSelectLecture={
                 handleSelectLecture
               }
-              onOpenModuleQuiz={
+              onOpenQuiz={
                 handleOpenModuleQuiz
               }
               modulesLoading={
@@ -1496,64 +1706,6 @@ const StudentCourseLearning = () => {
               }
             />
 
-            {/* CURRENT MODULE QUIZ CTA */}
-
-            {selectedLecture &&
-              (() => {
-                const currentModule =
-                  getModuleForLecture(
-                    selectedLecture,
-                  );
-
-                if (
-                  !currentModule
-                ) {
-                  return null;
-                }
-
-                const currentModuleData =
-                  modulesWithLectures.find(
-                    (module) =>
-                      String(
-                        module._id,
-                      ) ===
-                      String(
-                        currentModule._id,
-                      ),
-                  );
-
-                if (
-                  !currentModuleData
-                ) {
-                  return null;
-                }
-
-                const isReady =
-                  currentModuleData.lecturesCompleted;
-
-                const hasQuiz =
-                  Boolean(
-                    currentModuleData.quiz,
-                  );
-
-                if (!hasQuiz) {
-                  return null;
-                }
-
-                return (
-                  <ModuleQuizCTA
-                    module={
-                      currentModuleData
-                    }
-                    onOpenQuiz={() =>
-                      handleOpenModuleQuiz(
-                        currentModuleData,
-                      )
-                    }
-                  />
-                );
-              })()}
-
             {/* NAVIGATION */}
 
             <LectureNavigation
@@ -1571,12 +1723,32 @@ const StudentCourseLearning = () => {
               }
             />
 
-            {/* COURSE COMPLETED */}
+            {/* =================================================
+                MODULE COMPLETION NOTICE
+            ================================================= */}
 
             {progressPercentage ===
-              100 && (
-              <CourseCompleted />
-            )}
+              100 &&
+              modules.length > 0 && (
+                <ModuleQuizRequirement
+                  modules={
+                    modulesWithLectures
+                  }
+                  onOpenQuiz={
+                    handleOpenModuleQuiz
+                  }
+                />
+              )}
+
+            {/* =================================================
+                LEGACY COURSE NOTICE
+            ================================================= */}
+
+            {progressPercentage ===
+              100 &&
+              modules.length === 0 && (
+                <LegacyCourseCompleted />
+              )}
           </main>
         </div>
       </div>
@@ -1612,9 +1784,7 @@ const StudentCourseLearning = () => {
             }
             user={user}
             onClose={() =>
-              setShowAIMentor(
-                false,
-              )
+              setShowAIMentor(false)
             }
           />
         )}
@@ -1636,8 +1806,10 @@ const ModuleSidebar = ({
   completedLectureIds,
   searchTerm,
   setSearchTerm,
+  expandedModules,
+  onToggleModule,
   onSelectLecture,
-  onOpenModuleQuiz,
+  onOpenQuiz,
   modulesLoading,
 }) => {
   return (
@@ -1646,6 +1818,7 @@ const ModuleSidebar = ({
       {/* HEADER */}
 
       <div className="border-b border-slate-800 p-5">
+
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
           <Shield size={13} />
 
@@ -1659,7 +1832,9 @@ const ModuleSidebar = ({
         {/* PROGRESS */}
 
         <div className="mt-5">
+
           <div className="flex items-center justify-between">
+
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
               Realm Progress
             </span>
@@ -1670,6 +1845,7 @@ const ModuleSidebar = ({
           </div>
 
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
+
             <div
               className="h-full rounded-full bg-gradient-to-r from-amber-700 via-amber-500 to-yellow-300 transition-all duration-700"
               style={{
@@ -1679,8 +1855,11 @@ const ModuleSidebar = ({
           </div>
 
           <div className="mt-2 flex items-center justify-between text-[10px] text-slate-600">
+
             <span>
-              {completedLectureIds.size}{" "}
+              {
+                completedLectureIds.size
+              }{" "}
               completed
             </span>
 
@@ -1693,6 +1872,7 @@ const ModuleSidebar = ({
         {/* SEARCH */}
 
         <div className="relative mt-5">
+
           <Search
             size={15}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
@@ -1706,84 +1886,299 @@ const ModuleSidebar = ({
                 event.target.value,
               )
             }
-            placeholder="Search lectures..."
+            placeholder="Search modules or lectures..."
             className="w-full rounded-xl border border-slate-800 bg-[#080a0c] py-2.5 pl-9 pr-3 text-xs text-slate-200 outline-none placeholder:text-slate-600 focus:border-amber-700"
           />
         </div>
       </div>
 
-      {/* MODULE CONTENT */}
+      {/* MODULES */}
 
-      <div className="max-h-[calc(100vh-340px)] overflow-y-auto">
+      <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
 
         {modulesLoading ? (
-          <div className="flex items-center justify-center p-8">
+          <div className="flex items-center justify-center gap-2 p-8 text-xs text-slate-600">
             <LoaderCircle
-              size={22}
+              size={16}
               className="animate-spin text-amber-500"
             />
+
+            Loading modules...
           </div>
         ) : modules.length === 0 ? (
           <div className="p-6 text-center">
+
             <BookOpen
-              size={28}
+              size={30}
               className="mx-auto text-slate-700"
             />
 
-            <p className="mt-3 text-xs text-slate-600">
-              No modules have been created
-              for this course yet.
+            <p className="mt-3 text-xs font-semibold text-slate-500">
+              No modules created yet.
+            </p>
+
+            <p className="mt-1 text-[10px] leading-5 text-slate-700">
+              Your course is using the
+              legacy lecture structure.
             </p>
           </div>
         ) : (
-          <div>
+          <>
+
             {modules.map(
-              (module, moduleIndex) => (
-                <ModuleSection
-                  key={module._id}
-                  module={module}
-                  moduleIndex={
-                    moduleIndex
-                  }
-                  selectedLecture={
-                    selectedLecture
-                  }
-                  completedLectureIds={
-                    completedLectureIds
-                  }
-                  onSelectLecture={
-                    onSelectLecture
-                  }
-                  onOpenModuleQuiz={
-                    onOpenModuleQuiz
-                  }
-                />
-              ),
+              (module, moduleIndex) => {
+                const expanded =
+                  Boolean(
+                    expandedModules[
+                      module._id
+                    ],
+                  );
+
+                return (
+                  <div
+                    key={module._id}
+                    className="border-b border-slate-800/80"
+                  >
+
+                    {/* MODULE HEADER */}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onToggleModule(
+                          module._id,
+                        )
+                      }
+                      className={`group flex w-full items-start gap-3 px-4 py-4 text-left transition ${
+                        expanded
+                          ? "bg-amber-950/10"
+                          : "hover:bg-slate-900/60"
+                      }`}
+                    >
+
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-900/50 bg-amber-950/20 text-amber-500">
+                        <Layers3
+                          size={17}
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+
+                        <div className="flex items-center justify-between gap-2">
+
+                          <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                            Module{" "}
+                            {module.order ||
+                              moduleIndex +
+                                1}
+                          </span>
+
+                          <ChevronDown
+                            size={15}
+                            className={`shrink-0 text-slate-600 transition-transform ${
+                              expanded
+                                ? "rotate-180"
+                                : ""
+                            }`}
+                          />
+                        </div>
+
+                        <p className="mt-1 line-clamp-2 text-sm font-bold text-slate-200">
+                          {module.moduleTitle ||
+                            "Untitled Module"}
+                        </p>
+
+                        <div className="mt-2">
+
+                          <div className="flex items-center justify-between text-[9px]">
+
+                            <span className="text-slate-600">
+                              {
+                                module.completedCount
+                              }{" "}
+                              /{" "}
+                              {
+                                module.totalLectures
+                              }{" "}
+                              lectures
+                            </span>
+
+                            <span className="font-bold text-amber-500">
+                              {
+                                module.modulePercentage
+                              }
+                              %
+                            </span>
+                          </div>
+
+                          <div className="mt-1 h-1 overflow-hidden rounded-full bg-slate-800">
+
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-amber-700 to-amber-400 transition-all duration-500"
+                              style={{
+                                width: `${module.modulePercentage}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* MODULE CONTENT */}
+
+                    {expanded && (
+                      <div className="bg-[#090b0d]">
+
+                        {module.lectures.length ===
+                        0 ? (
+                          <div className="px-5 py-5 text-center">
+
+                            <FileText
+                              size={22}
+                              className="mx-auto text-slate-700"
+                            />
+
+                            <p className="mt-2 text-[10px] text-slate-600">
+                              No lectures assigned
+                              to this module.
+                            </p>
+                          </div>
+                        ) : (
+                          module.lectures.map(
+                            (
+                              lecture,
+                              lectureIndex,
+                            ) => {
+                              const completed =
+                                completedLectureIds.has(
+                                  String(
+                                    lecture._id,
+                                  ),
+                                );
+
+                              const active =
+                                String(
+                                  selectedLecture?._id,
+                                ) ===
+                                String(
+                                  lecture._id,
+                                );
+
+                              return (
+                                <button
+                                  key={
+                                    lecture._id
+                                  }
+                                  type="button"
+                                  onClick={() =>
+                                    onSelectLecture(
+                                      lecture,
+                                    )
+                                  }
+                                  className={`group flex w-full items-start gap-3 border-t border-slate-800/60 px-5 py-3.5 text-left transition ${
+                                    active
+                                      ? "bg-gradient-to-r from-amber-950/40 to-transparent"
+                                      : "hover:bg-slate-900/60"
+                                  }`}
+                                >
+
+                                  <div className="mt-0.5 shrink-0">
+
+                                    {completed ? (
+                                      <CheckCircle2
+                                        size={18}
+                                        className="text-emerald-500"
+                                      />
+                                    ) : (
+                                      <PlayCircle
+                                        size={18}
+                                        className={
+                                          active
+                                            ? "text-amber-400"
+                                            : "text-slate-600 group-hover:text-slate-400"
+                                        }
+                                      />
+                                    )}
+                                  </div>
+
+                                  <div className="min-w-0 flex-1">
+
+                                    <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-slate-700">
+                                      Lecture{" "}
+                                      {lecture.order ||
+                                        lectureIndex +
+                                          1}
+                                    </p>
+
+                                    <p
+                                      className={`mt-1 line-clamp-2 text-xs font-semibold ${
+                                        active
+                                          ? "text-amber-300"
+                                          : "text-slate-400"
+                                      }`}
+                                    >
+                                      {lecture.title ||
+                                        lecture.lectureTitle ||
+                                        "Untitled Lecture"}
+                                    </p>
+
+                                    {lecture.duration && (
+                                      <div className="mt-1.5 flex items-center gap-1 text-[9px] text-slate-700">
+                                        <Clock3
+                                          size={
+                                            10
+                                          }
+                                        />
+
+                                        {
+                                          lecture.duration
+                                        }
+                                      </div>
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            },
+                          )
+                        )}
+
+                        {/* QUIZ */}
+
+                        <ModuleQuizButton
+                          module={module}
+                          onOpenQuiz={
+                            onOpenQuiz
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              },
             )}
 
             {/* =================================================
-                OLD / UNASSIGNED LECTURES
+                UNASSIGNED
             ================================================= */}
 
             {unassignedLectures.length >
               0 && (
               <div className="border-t border-slate-800">
-                <div className="px-5 py-4">
-                  <div className="flex items-center gap-2">
-                    <BookOpen
-                      size={15}
-                      className="text-slate-500"
-                    />
 
-                    <div>
-                      <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
-                        Legacy Content
-                      </p>
+                <div className="flex items-center gap-2 px-5 py-4">
+                  <BookOpen
+                    size={15}
+                    className="text-slate-600"
+                  />
 
-                      <p className="mt-1 text-xs font-bold text-slate-300">
-                        Unassigned Lectures
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                      Legacy Content
+                    </p>
+
+                    <p className="text-xs font-bold text-slate-400">
+                      Unassigned Lectures
+                    </p>
                   </div>
                 </div>
 
@@ -1791,32 +2186,77 @@ const ModuleSidebar = ({
                   (
                     lecture,
                     index,
-                  ) => (
-                    <LectureSidebarItem
-                      key={
-                        lecture._id
-                      }
-                      lecture={
-                        lecture
-                      }
-                      index={
-                        index
-                      }
-                      selectedLecture={
-                        selectedLecture
-                      }
-                      completedLectureIds={
-                        completedLectureIds
-                      }
-                      onSelectLecture={
-                        onSelectLecture
-                      }
-                    />
-                  ),
+                  ) => {
+                    const completed =
+                      completedLectureIds.has(
+                        String(
+                          lecture._id,
+                        ),
+                      );
+
+                    const active =
+                      String(
+                        selectedLecture?._id,
+                      ) ===
+                      String(
+                        lecture._id,
+                      );
+
+                    return (
+                      <button
+                        key={
+                          lecture._id
+                        }
+                        type="button"
+                        onClick={() =>
+                          onSelectLecture(
+                            lecture,
+                          )
+                        }
+                        className={`group flex w-full items-start gap-3 border-t border-slate-800/60 px-5 py-3 text-left transition ${
+                          active
+                            ? "bg-amber-950/20"
+                            : "hover:bg-slate-900/60"
+                        }`}
+                      >
+
+                        {completed ? (
+                          <CheckCircle2
+                            size={17}
+                            className="mt-0.5 text-emerald-500"
+                          />
+                        ) : (
+                          <PlayCircle
+                            size={17}
+                            className="mt-0.5 text-slate-600"
+                          />
+                        )}
+
+                        <div className="min-w-0">
+                          <p className="text-[8px] font-bold uppercase tracking-wider text-slate-700">
+                            Lecture{" "}
+                            {index + 1}
+                          </p>
+
+                          <p
+                            className={`mt-1 line-clamp-2 text-xs font-semibold ${
+                              active
+                                ? "text-amber-300"
+                                : "text-slate-400"
+                            }`}
+                          >
+                            {lecture.title ||
+                              lecture.lectureTitle ||
+                              "Untitled Lecture"}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  },
                 )}
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </aside>
@@ -1824,384 +2264,323 @@ const ModuleSidebar = ({
 };
 
 // =====================================================
-// MODULE SECTION
+// MODULE QUIZ BUTTON
 // =====================================================
 
-const ModuleSection = ({
-  module,
-  moduleIndex,
-  selectedLecture,
-  completedLectureIds,
-  onSelectLecture,
-  onOpenModuleQuiz,
-}) => {
-  const {
-    lectures,
-    completedCount,
-    totalLectures,
-    lecturesCompleted,
-    quiz,
-  } = module;
-
-  const hasQuiz =
-    Boolean(quiz);
-
-  const quizLocked =
-    !lecturesCompleted;
-
-  return (
-    <section className="border-b border-slate-800/80">
-
-      {/* MODULE HEADER */}
-
-      <div className="bg-gradient-to-r from-amber-950/20 to-transparent px-5 py-4">
-
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.2em] text-amber-600">
-              <Sword size={12} />
-
-              Module{" "}
-              {String(
-                module.order ||
-                  moduleIndex + 1,
-              ).padStart(2, "0")}
-            </div>
-
-            <h3 className="mt-1.5 line-clamp-2 text-sm font-black text-white">
-              {module.moduleTitle ||
-                "Untitled Module"}
-            </h3>
-
-            {module.description && (
-              <p className="mt-1 line-clamp-2 text-[10px] leading-5 text-slate-600">
-                {module.description}
-              </p>
-            )}
-          </div>
-
-          {lecturesCompleted && (
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-emerald-900/60 bg-emerald-950/30">
-              <CheckCircle2
-                size={15}
-                className="text-emerald-500"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* MODULE PROGRESS */}
-
-        {totalLectures > 0 && (
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-[9px]">
-              <span className="text-slate-600">
-                Lectures
-              </span>
-
-              <span
-                className={
-                  lecturesCompleted
-                    ? "font-bold text-emerald-500"
-                    : "font-bold text-slate-500"
-                }
-              >
-                {completedCount}/
-                {totalLectures}
-              </span>
-            </div>
-
-            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-slate-800">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-700 to-amber-400 transition-all duration-500"
-                style={{
-                  width: `${
-                    totalLectures > 0
-                      ? (completedCount /
-                          totalLectures) *
-                        100
-                      : 0
-                  }%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* LECTURES */}
-
-      {lectures.length === 0 ? (
-        <div className="px-5 pb-4 text-[10px] text-slate-700">
-          No lectures assigned to this
-          module yet.
-        </div>
-      ) : (
-        <div>
-          {lectures.map(
-            (lecture, index) => (
-              <LectureSidebarItem
-                key={lecture._id}
-                lecture={lecture}
-                index={index}
-                selectedLecture={
-                  selectedLecture
-                }
-                completedLectureIds={
-                  completedLectureIds
-                }
-                onSelectLecture={
-                  onSelectLecture
-                }
-              />
-            ),
-          )}
-        </div>
-      )}
-
-      {/* QUIZ */}
-
-      {hasQuiz && (
-        <div className="border-t border-slate-800 bg-[#090b0d] p-4">
-
-          <div className="mb-3 flex items-center gap-2">
-            <Brain
-              size={15}
-              className={
-                quizLocked
-                  ? "text-slate-600"
-                  : "text-cyan-400"
-              }
-            />
-
-            <div className="min-w-0">
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
-                Module Challenge
-              </p>
-
-              <p className="mt-0.5 truncate text-xs font-bold text-slate-300">
-                {quiz.title ||
-                  "AI Module Quiz"}
-              </p>
-            </div>
-          </div>
-
-          {quizLocked ? (
-            <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2.5">
-              <Lock
-                size={14}
-                className="shrink-0 text-slate-600"
-              />
-
-              <div>
-                <p className="text-[10px] font-bold text-slate-500">
-                  Quiz Locked
-                </p>
-
-                <p className="mt-0.5 text-[9px] text-slate-700">
-                  Complete all lectures
-                  first.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() =>
-                onOpenModuleQuiz(
-                  module,
-                )
-              }
-              className="group flex w-full items-center justify-between rounded-xl border border-cyan-800/50 bg-cyan-950/20 px-4 py-3 text-left transition hover:border-cyan-500/60 hover:bg-cyan-900/30"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-950/60 text-cyan-400">
-                  <Brain
-                    size={16}
-                  />
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-cyan-300">
-                    Take Quiz
-                  </p>
-
-                  <p className="mt-0.5 text-[9px] text-slate-600">
-                    Test your knowledge
-                  </p>
-                </div>
-              </div>
-
-              <ChevronRight
-                size={16}
-                className="text-cyan-600 transition group-hover:translate-x-1 group-hover:text-cyan-300"
-              />
-            </button>
-          )}
-        </div>
-      )}
-    </section>
-  );
-};
-
-// =====================================================
-// LECTURE SIDEBAR ITEM
-// =====================================================
-
-const LectureSidebarItem = ({
-  lecture,
-  index,
-  selectedLecture,
-  completedLectureIds,
-  onSelectLecture,
-}) => {
-  const completed =
-    completedLectureIds.has(
-      String(lecture._id),
-    );
-
-  const active =
-    String(
-      selectedLecture?._id,
-    ) === String(lecture._id);
-
-  return (
-    <button
-      type="button"
-      onClick={() =>
-        onSelectLecture(
-          lecture,
-        )
-      }
-      className={`group flex w-full items-start gap-3 border-t border-slate-800/50 px-5 py-3.5 text-left transition ${
-        active
-          ? "bg-gradient-to-r from-amber-950/40 to-transparent"
-          : "hover:bg-slate-900/70"
-      }`}
-    >
-      <div className="mt-0.5 shrink-0">
-        {completed ? (
-          <CheckCircle2
-            size={18}
-            className="text-emerald-500"
-          />
-        ) : (
-          <PlayCircle
-            size={18}
-            className={
-              active
-                ? "text-amber-400"
-                : "text-slate-600 group-hover:text-slate-400"
-            }
-          />
-        )}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-slate-600">
-          Lesson{" "}
-          {index + 1}
-        </p>
-
-        <p
-          className={`mt-1 line-clamp-2 text-xs font-semibold ${
-            active
-              ? "text-amber-300"
-              : "text-slate-300"
-          }`}
-        >
-          {lecture.title ||
-            lecture.lectureTitle ||
-            "Untitled Lecture"}
-        </p>
-
-        {lecture.duration && (
-          <div className="mt-1.5 flex items-center gap-1 text-[9px] text-slate-600">
-            <Clock3 size={11} />
-
-            {lecture.duration}
-          </div>
-        )}
-      </div>
-    </button>
-  );
-};
-
-// =====================================================
-// MODULE QUIZ CTA
-// =====================================================
-
-const ModuleQuizCTA = ({
+const ModuleQuizButton = ({
   module,
   onOpenQuiz,
 }) => {
   const hasQuiz =
-    Boolean(module?.quiz);
+    Boolean(module.quiz);
+
+  const lecturesComplete =
+    module.allLecturesCompleted;
 
   if (!hasQuiz) {
-    return null;
+    return (
+      <div className="border-t border-slate-800/70 px-4 py-4">
+
+        <div className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-slate-700">
+            <ClipboardCheck
+              size={16}
+            />
+          </div>
+
+          <div>
+            <p className="text-[10px] font-bold text-slate-500">
+              Module Quiz
+            </p>
+
+            <p className="mt-0.5 text-[9px] leading-4 text-slate-700">
+              AI quiz has not been generated
+              yet.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const ready =
-    module?.lecturesCompleted;
+  return (
+    <div className="border-t border-amber-900/30 bg-amber-950/10 p-4">
+
+      <div className="mb-3 flex items-center gap-2">
+        <Sparkles
+          size={13}
+          className="text-cyan-400"
+        />
+
+        <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-cyan-500">
+          AI Knowledge Trial
+        </span>
+      </div>
+
+      <div className="rounded-xl border border-cyan-900/40 bg-cyan-950/10 p-3">
+
+        <div className="flex items-start gap-3">
+
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-900/50 bg-cyan-950/30 text-cyan-400">
+            <ClipboardCheck
+              size={17}
+            />
+          </div>
+
+          <div className="min-w-0 flex-1">
+
+            <p className="text-xs font-bold text-slate-200">
+              {module.quiz.title ||
+                "Module Quiz"}
+            </p>
+
+            <p className="mt-1 text-[9px] leading-4 text-slate-600">
+              {module.quiz.questions
+                ?.length || 0}{" "}
+              questions
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            onOpenQuiz(module)
+          }
+          disabled={
+            !lecturesComplete
+          }
+          className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[10px] font-black uppercase tracking-wider transition ${
+            lecturesComplete
+              ? "border border-cyan-700/50 bg-cyan-950/40 text-cyan-300 hover:border-cyan-500 hover:bg-cyan-900/40"
+              : "cursor-not-allowed border border-slate-800 bg-slate-900/60 text-slate-700"
+          }`}
+        >
+          {lecturesComplete ? (
+            <>
+              <Trophy
+                size={14}
+              />
+
+              Take Module Quiz
+            </>
+          ) : (
+            <>
+              <Lock
+                size={13}
+              />
+
+              Complete Lectures First
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// =====================================================
+// MODULE QUIZ REQUIREMENT
+// =====================================================
+
+const ModuleQuizRequirement = ({
+  modules,
+  onOpenQuiz,
+}) => {
+  const modulesWithQuizzes =
+    modules.filter(
+      (module) =>
+        Boolean(module.quiz),
+    );
+
+  const completedLectureModules =
+    modules.filter(
+      (module) =>
+        module.allLecturesCompleted,
+    );
+
+  const readyModules =
+    modulesWithQuizzes.filter(
+      (module) =>
+        module.allLecturesCompleted,
+    );
 
   return (
-    <section className="mt-5 overflow-hidden rounded-2xl border border-cyan-900/50 bg-gradient-to-br from-cyan-950/30 via-[#0d1012] to-slate-950 p-6 shadow-2xl">
+    <section className="relative mt-5 overflow-hidden rounded-2xl border border-cyan-900/40 bg-gradient-to-r from-cyan-950/20 via-[#101417] to-amber-950/20 p-6 shadow-2xl sm:p-7">
+
+      <div className="absolute -right-5 -top-5 opacity-[0.04]">
+        <Trophy size={120} />
+      </div>
 
       <div className="relative">
 
-        <div className="absolute -right-4 -top-5 opacity-[0.05]">
-          <Brain size={120} />
-        </div>
+        <div className="flex items-start gap-4">
 
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-
-          <div>
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-cyan-400">
-              <Sparkles size={13} />
-
-              Module Challenge
-            </div>
-
-            <h2 className="mt-2 text-xl font-black text-white">
-              {module.moduleTitle}
-            </h2>
-
-            <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
-              {ready
-                ? "Your lectures are complete. Test your knowledge with the AI-generated module quiz."
-                : "Complete every lecture in this module to unlock the quiz."}
-            </p>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cyan-800/50 bg-cyan-950/30 text-cyan-400">
+            <ClipboardCheck
+              size={23}
+            />
           </div>
 
-          <button
-            type="button"
-            onClick={onOpenQuiz}
-            disabled={!ready}
-            className="group flex shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-700/50 bg-cyan-950/40 px-5 py-3 text-sm font-black text-cyan-300 transition hover:border-cyan-400 hover:bg-cyan-900/40 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {ready ? (
-              <>
-                <Brain
-                  size={17}
-                  className="transition group-hover:scale-110"
-                />
+          <div className="min-w-0">
 
-                Take Module Quiz
+            <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-cyan-500">
+              The Final Trial
+            </p>
 
-                <ChevronRight
-                  size={17}
-                  className="transition group-hover:translate-x-1"
-                />
-              </>
-            ) : (
-              <>
-                <Lock size={17} />
+            <h3 className="mt-1 text-lg font-black text-white">
+              All lectures conquered
+            </h3>
 
-                Quiz Locked
-              </>
-            )}
-          </button>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+              Your lecture progress is
+              complete. Now prove your
+              understanding by passing the
+              AI-generated module quizzes.
+            </p>
+          </div>
+        </div>
+
+        {/* MODULE STATUS */}
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+
+          {modules.map(
+            (module) => {
+              const hasQuiz =
+                Boolean(
+                  module.quiz,
+                );
+
+              const lecturesDone =
+                module.allLecturesCompleted;
+
+              return (
+                <div
+                  key={
+                    module._id
+                  }
+                  className="rounded-xl border border-slate-800 bg-[#0a0c0e]/80 p-4"
+                >
+
+                  <div className="flex items-start justify-between gap-3">
+
+                    <div className="min-w-0">
+
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-600">
+                        Module{" "}
+                        {module.order}
+                      </p>
+
+                      <p className="mt-1 line-clamp-2 text-xs font-bold text-slate-300">
+                        {
+                          module.moduleTitle
+                        }
+                      </p>
+                    </div>
+
+                    {lecturesDone ? (
+                      <CheckCircle2
+                        size={17}
+                        className="shrink-0 text-emerald-500"
+                      />
+                    ) : (
+                      <Lock
+                        size={16}
+                        className="shrink-0 text-slate-700"
+                      />
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between text-[9px]">
+
+                    <span className="text-slate-600">
+                      {
+                        module.completedCount
+                      }{" "}
+                      /{" "}
+                      {
+                        module.totalLectures
+                      }{" "}
+                      lectures
+                    </span>
+
+                    <span
+                      className={
+                        hasQuiz
+                          ? "text-cyan-500"
+                          : "text-slate-700"
+                      }
+                    >
+                      {hasQuiz
+                        ? "Quiz Ready"
+                        : "Quiz Pending"}
+                    </span>
+                  </div>
+
+                  {hasQuiz && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onOpenQuiz(
+                          module,
+                        )
+                      }
+                      disabled={
+                        !lecturesDone
+                      }
+                      className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-[9px] font-black uppercase tracking-wider ${
+                        lecturesDone
+                          ? "bg-cyan-950/40 text-cyan-300 hover:bg-cyan-900/40"
+                          : "cursor-not-allowed bg-slate-900 text-slate-700"
+                      }`}
+                    >
+                      {lecturesDone ? (
+                        <>
+                          <ClipboardCheck
+                            size={13}
+                          />
+
+                          Open Quiz
+                        </>
+                      ) : (
+                        <>
+                          <Lock
+                            size={12}
+                          />
+
+                          Locked
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              );
+            },
+          )}
+        </div>
+
+        {/* STATUS */}
+
+        <div className="mt-5 flex flex-wrap gap-2 text-[9px] font-bold uppercase tracking-wider">
+
+          <span className="rounded-lg border border-emerald-900/50 bg-emerald-950/20 px-3 py-2 text-emerald-500">
+            {completedLectureModules.length}{" "}
+            modules lecture-complete
+          </span>
+
+          <span className="rounded-lg border border-cyan-900/50 bg-cyan-950/20 px-3 py-2 text-cyan-500">
+            {readyModules.length} quizzes
+            unlocked
+          </span>
+
+          {modulesWithQuizzes.length ===
+            0 && (
+            <span className="rounded-lg border border-amber-900/40 bg-amber-950/20 px-3 py-2 text-amber-500">
+              Awaiting AI quizzes
+            </span>
+          )}
         </div>
       </div>
     </section>
@@ -2230,7 +2609,8 @@ const VideoStatusBar = ({
     duration > 0
       ? Math.min(
           Math.round(
-            (watched / duration) *
+            (watched /
+              duration) *
               100,
           ),
           100,
@@ -2239,6 +2619,7 @@ const VideoStatusBar = ({
 
   return (
     <div className="mt-3 grid gap-3 sm:grid-cols-3">
+
       <StatusCard
         icon={Clock3}
         label="Watched"
@@ -2283,11 +2664,13 @@ const StatusCard = ({
 }) => {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-slate-800 bg-[#0d1012] px-4 py-3">
+
       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-950/30 text-amber-500">
         <Icon size={16} />
       </div>
 
       <div>
+
         <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-600">
           {label}
         </p>
@@ -2319,10 +2702,11 @@ const LectureInformation = ({
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 
         <div className="min-w-0">
+
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
             <Sparkles size={12} />
 
-            Chapter{" "}
+            Lecture{" "}
             {lectureIndex >= 0
               ? lectureIndex + 1
               : ""}
@@ -2429,7 +2813,9 @@ const LectureInformation = ({
       {(lecture?.description ||
         lecture?.content) && (
         <div className="mt-7 border-t border-slate-800 pt-6">
+
           <div className="flex items-center gap-2">
+
             <FileText
               size={16}
               className="text-amber-500"
@@ -2469,9 +2855,12 @@ const LectureNavigation = ({
 
   return (
     <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
       <button
         type="button"
-        onClick={onPrevious}
+        onClick={
+          onPrevious
+        }
         disabled={isFirst}
         className="group flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-[#0d1012] px-5 py-3 text-sm font-bold text-slate-400 transition hover:border-slate-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
       >
@@ -2501,41 +2890,45 @@ const LectureNavigation = ({
 };
 
 // =====================================================
-// COURSE COMPLETED
+// LEGACY COURSE COMPLETED
 // =====================================================
 
-const CourseCompleted = () => {
-  return (
-    <div className="relative mt-5 overflow-hidden rounded-2xl border border-amber-800/50 bg-gradient-to-r from-amber-950/40 via-[#15110b] to-red-950/30 p-6">
+const LegacyCourseCompleted =
+  () => {
+    return (
+      <div className="relative mt-5 overflow-hidden rounded-2xl border border-amber-800/50 bg-gradient-to-r from-amber-950/40 via-[#15110b] to-red-950/30 p-6">
 
-      <div className="absolute right-5 top-5 opacity-10">
-        <Trophy size={80} />
-      </div>
-
-      <div className="relative flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-amber-700/40 bg-amber-950/40 text-amber-400">
-          <Trophy size={24} />
+        <div className="absolute right-5 top-5 opacity-10">
+          <Trophy size={80} />
         </div>
 
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
-            The Realm Remembers
-          </p>
+        <div className="relative flex items-start gap-4">
 
-          <h3 className="mt-1 text-lg font-black text-white">
-            Course Conquered
-          </h3>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-amber-700/40 bg-amber-950/40 text-amber-400">
+            <Trophy size={24} />
+          </div>
 
-          <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
-            You have completed every chapter
-            in this course. Your knowledge has
-            been forged through every lesson.
-          </p>
+          <div>
+
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
+              The Realm Remembers
+            </p>
+
+            <h3 className="mt-1 text-lg font-black text-white">
+              Course Conquered
+            </h3>
+
+            <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
+              You have completed every
+              lecture in this course.
+              This course currently does
+              not have module quizzes.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 // =====================================================
 // LECTURE VIEWER
@@ -2552,7 +2945,9 @@ const LectureViewer = ({
   if (!lecture) {
     return (
       <div className="flex aspect-video items-center justify-center bg-[#0d1012]">
+
         <div className="text-center">
+
           <BookOpen
             size={40}
             className="mx-auto text-slate-700"
@@ -2569,7 +2964,8 @@ const LectureViewer = ({
   const videoUrl =
     lecture.videoUrl ||
     lecture.video?.url ||
-    lecture.lectureVideo?.url ||
+    lecture.lectureVideo
+      ?.url ||
     lecture.video;
 
   const content =
@@ -2582,7 +2978,9 @@ const LectureViewer = ({
         key={lecture._id}
         videoUrl={videoUrl}
         courseId={courseId}
-        lectureId={lecture._id}
+        lectureId={
+          lecture._id
+        }
         isCompleted={
           isCompleted
         }
@@ -2602,7 +3000,9 @@ const LectureViewer = ({
   if (content) {
     return (
       <div className="flex min-h-[400px] items-center justify-center bg-[#0d1012] p-6 sm:p-10">
+
         <div className="max-w-3xl">
+
           <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900 text-amber-500">
             <FileText size={25} />
           </div>
@@ -2617,14 +3017,17 @@ const LectureViewer = ({
 
   return (
     <div className="flex aspect-video items-center justify-center bg-[#0d1012]">
+
       <div className="text-center">
+
         <Lock
           size={38}
           className="mx-auto text-slate-700"
         />
 
         <p className="mt-3 text-sm font-medium text-slate-500">
-          This chapter has not been unlocked yet.
+          This chapter has not been
+          unlocked yet.
         </p>
       </div>
     </div>
@@ -2644,7 +3047,12 @@ const VideoPlayer = ({
   onProgressSaved,
   onCompleted,
 }) => {
-  const videoRef = useRef(null);
+  const videoRef =
+    useRef(null);
+
+  // ---------------------------------------------------
+  // WATCHED POSITION
+  // ---------------------------------------------------
 
   const furthestWatchedRef =
     useRef(0);
@@ -2654,6 +3062,10 @@ const VideoPlayer = ({
 
   const previousTimeRef =
     useRef(0);
+
+  // ---------------------------------------------------
+  // FORWARD SEEK
+  // ---------------------------------------------------
 
   const forwardSeekActiveRef =
     useRef(false);
@@ -2669,6 +3081,10 @@ const VideoPlayer = ({
 
   const forwardSeekAccumulatedRef =
     useRef(0);
+
+  // ---------------------------------------------------
+  // CONTROL REFS
+  // ---------------------------------------------------
 
   const restoringSeekRef =
     useRef(false);
@@ -2732,85 +3148,84 @@ const VideoPlayer = ({
   // METADATA
   // ===================================================
 
-  const handleLoadedMetadata = (
-    event,
-  ) => {
-    const video =
-      event.currentTarget;
+  const handleLoadedMetadata =
+    (event) => {
+      const video =
+        event.currentTarget;
 
-    if (!video) return;
+      if (!video) return;
 
-    const backendProgress =
-      getLectureProgress(
-        lectureId,
-      );
+      const backendProgress =
+        getLectureProgress(
+          lectureId,
+        );
 
-    const backendTime =
-      Number(
-        backendProgress?.watchedSeconds ||
+      const backendTime =
+        Number(
+          backendProgress?.watchedSeconds ||
+            0,
+        );
+
+      serverWatchedRef.current =
+        backendTime;
+
+      if (isCompleted) {
+        furthestWatchedRef.current =
+          video.duration || 0;
+
+        previousTimeRef.current =
+          video.duration || 0;
+
+        return;
+      }
+
+      const initialTime =
+        getInitialWatchedTime();
+
+      const maxSafeTime =
+        Math.max(
           0,
-      );
+          (video.duration ||
+            initialTime) -
+            SEEK_TOLERANCE,
+        );
 
-    serverWatchedRef.current =
-      backendTime;
+      const resumeTime =
+        Math.min(
+          initialTime,
+          maxSafeTime,
+        );
 
-    if (isCompleted) {
       furthestWatchedRef.current =
-        video.duration || 0;
+        resumeTime;
 
       previousTimeRef.current =
-        video.duration || 0;
+        resumeTime;
 
-      return;
-    }
+      lastSyncedTimeRef.current =
+        backendTime;
 
-    const initialTime =
-      getInitialWatchedTime();
+      lastProgressUpdateRef.current =
+        resumeTime;
 
-    const maxSafeTime =
-      Math.max(
-        0,
-        (video.duration ||
-          initialTime) -
-          SEEK_TOLERANCE,
-      );
+      forwardSeekActiveRef.current =
+        false;
 
-    const resumeTime =
-      Math.min(
-        initialTime,
-        maxSafeTime,
-      );
+      forwardSeekAccumulatedRef.current =
+        0;
 
-    furthestWatchedRef.current =
-      resumeTime;
-
-    previousTimeRef.current =
-      resumeTime;
-
-    lastSyncedTimeRef.current =
-      backendTime;
-
-    lastProgressUpdateRef.current =
-      resumeTime;
-
-    forwardSeekActiveRef.current =
-      false;
-
-    forwardSeekAccumulatedRef.current =
-      0;
-
-    if (resumeTime > 0) {
-      try {
-        video.currentTime =
-          resumeTime;
-      } catch (error) {
-        console.error(
-          "Unable to restore video position:",
-          error,
-        );
+      if (resumeTime > 0) {
+        try {
+          video.currentTime =
+            resumeTime;
+        } catch (error) {
+          console.error(
+            "Unable to restore video position:",
+            error,
+          );
+        }
       }
-    }
-  };
+    };
 
   // ===================================================
   // SEEK PROTECTION
@@ -2838,7 +3253,8 @@ const VideoPlayer = ({
 
     if (
       requestedTime <=
-      furthest + SEEK_TOLERANCE
+      furthest +
+        SEEK_TOLERANCE
     ) {
       forwardSeekActiveRef.current =
         false;
@@ -2916,137 +3332,136 @@ const VideoPlayer = ({
   // TIME UPDATE
   // ===================================================
 
-  const handleTimeUpdate = () => {
-    const video =
-      videoRef.current;
+  const handleTimeUpdate =
+    () => {
+      const video =
+        videoRef.current;
 
-    if (
-      !video ||
-      isCompleted
-    ) {
-      return;
-    }
-
-    const currentTime =
-      video.currentTime;
-
-    const previousTime =
-      previousTimeRef.current;
-
-    // BACKWARD
-
-    if (
-      currentTime <
-      previousTime -
-        SEEK_TOLERANCE
-    ) {
-      previousTimeRef.current =
-        currentTime;
-
-      return;
-    }
-
-    // FORWARD SEEK DEBT
-
-    if (
-      forwardSeekActiveRef.current
-    ) {
       if (
-        isPlayingRef.current
+        !video ||
+        isCompleted
+      ) {
+        return;
+      }
+
+      const currentTime =
+        video.currentTime;
+
+      const previousTime =
+        previousTimeRef.current;
+
+      // BACKWARD
+
+      if (
+        currentTime <
+        previousTime -
+          SEEK_TOLERANCE
+      ) {
+        previousTimeRef.current =
+          currentTime;
+
+        return;
+      }
+
+      // FORWARD SEEK DEBT
+
+      if (
+        forwardSeekActiveRef.current
+      ) {
+        if (
+          isPlayingRef.current
+        ) {
+          const delta =
+            currentTime -
+            previousTime;
+
+          if (
+            delta > 0 &&
+            delta < 2
+          ) {
+            forwardSeekAccumulatedRef.current +=
+              delta;
+          }
+        }
+
+        const required =
+          forwardSeekRequiredRef.current;
+
+        const accumulated =
+          forwardSeekAccumulatedRef.current;
+
+        if (
+          accumulated >=
+          required -
+            SEEK_TOLERANCE
+        ) {
+          furthestWatchedRef.current =
+            Math.max(
+              furthestWatchedRef.current,
+              forwardSeekTargetRef.current,
+            );
+
+          forwardSeekActiveRef.current =
+            false;
+
+          forwardSeekAccumulatedRef.current =
+            0;
+        }
+
+        previousTimeRef.current =
+          currentTime;
+
+        return;
+      }
+
+      // NORMAL PLAYBACK
+
+      if (
+        isPlayingRef.current &&
+        currentTime >
+          furthestWatchedRef.current
       ) {
         const delta =
           currentTime -
           previousTime;
 
         if (
-          delta > 0 &&
+          delta >= 0 &&
           delta < 2
         ) {
-          forwardSeekAccumulatedRef.current +=
-            delta;
+          furthestWatchedRef.current =
+            currentTime;
         }
-      }
-
-      const required =
-        forwardSeekRequiredRef.current;
-
-      const accumulated =
-        forwardSeekAccumulatedRef.current;
-
-      if (
-        accumulated >=
-        required -
-          SEEK_TOLERANCE
-      ) {
-        furthestWatchedRef.current =
-          Math.max(
-            furthestWatchedRef.current,
-            forwardSeekTargetRef.current,
-          );
-
-        forwardSeekActiveRef.current =
-          false;
-
-        forwardSeekAccumulatedRef.current =
-          0;
       }
 
       previousTimeRef.current =
         currentTime;
 
-      return;
-    }
+      // LOCAL STORAGE
 
-    // NORMAL PLAYBACK
+      const watchedSeconds =
+        Math.floor(
+          furthestWatchedRef.current,
+        );
 
-    if (
-      isPlayingRef.current &&
-      currentTime >
-        furthestWatchedRef.current
-    ) {
-      const delta =
-        currentTime -
-        previousTime;
-
-      if (
-        delta >= 0 &&
-        delta < 2
-      ) {
-        furthestWatchedRef.current =
-          currentTime;
-      }
-    }
-
-    previousTimeRef.current =
-      currentTime;
-
-    // LOCAL STORAGE
-
-    const watchedSeconds =
-      Math.floor(
-        furthestWatchedRef.current,
+      localStorage.setItem(
+        storageKey,
+        String(watchedSeconds),
       );
 
-    localStorage.setItem(
-      storageKey,
-      String(
-        watchedSeconds,
-      ),
-    );
+      // BACKEND SYNC
 
-    // BACKEND SYNC
+      if (
+        furthestWatchedRef.current -
+          lastProgressUpdateRef.current >=
+        PROGRESS_SYNC_INTERVAL
+      ) {
+        lastProgressUpdateRef.current =
+          furthestWatchedRef.current;
 
-    if (
-      furthestWatchedRef.current -
-        lastProgressUpdateRef.current >=
-      PROGRESS_SYNC_INTERVAL
-    ) {
-      lastProgressUpdateRef.current =
-        furthestWatchedRef.current;
-
-      syncProgress();
-    }
-  };
+        syncProgress();
+      }
+    };
 
   // ===================================================
   // PLAY
@@ -3095,7 +3510,9 @@ const VideoPlayer = ({
         lastSyncedTimeRef.current,
       );
 
-    if (watchedTime <= 0) {
+    if (
+      watchedTime <= 0
+    ) {
       return;
     }
 
@@ -3137,9 +3554,7 @@ const VideoPlayer = ({
 
         localStorage.setItem(
           storageKey,
-          String(
-            watchedTime,
-          ),
+          String(watchedTime),
         );
 
         if (
@@ -3344,9 +3759,7 @@ const VideoPlayer = ({
         ) {
           localStorage.setItem(
             storageKey,
-            String(
-              watchedTime,
-            ),
+            String(watchedTime),
           );
         }
       };
@@ -3369,104 +3782,110 @@ const VideoPlayer = ({
   // ===================================================
 
   useEffect(() => {
-    const handleKeyDown = (
-      event,
-    ) => {
-      const video =
-        videoRef.current;
-
-      if (
-        !video ||
-        isCompleted
-      ) {
-        return;
-      }
-
-      const target =
-        event.target;
-
-      if (
-        target instanceof
-          HTMLInputElement ||
-        target instanceof
-          HTMLTextAreaElement
-      ) {
-        return;
-      }
-
-      if (
-        event.code === "Space"
-      ) {
-        event.preventDefault();
-
-        if (video.paused) {
-          video.play();
-        } else {
-          video.pause();
-        }
-
-        return;
-      }
-
-      if (
-        event.key ===
-          "ArrowLeft" ||
-        event.key === "j" ||
-        event.key === "J"
-      ) {
-        event.preventDefault();
-
-        video.currentTime =
-          Math.max(
-            0,
-            video.currentTime -
-              10,
-          );
-
-        previousTimeRef.current =
-          video.currentTime;
-
-        return;
-      }
-
-      if (
-        event.key ===
-          "ArrowRight" ||
-        event.key === "l" ||
-        event.key === "L"
-      ) {
-        event.preventDefault();
-
-        const furthest =
-          furthestWatchedRef.current;
-
-        const targetTime =
-          Math.min(
-            video.duration ||
-              Infinity,
-            furthest +
-              MAX_FORWARD_SEEK,
-          );
+    const handleKeyDown =
+      (event) => {
+        const video =
+          videoRef.current;
 
         if (
-          targetTime <=
-          furthest +
-            SEEK_TOLERANCE
+          !video ||
+          isCompleted
         ) {
-          toast(
-            "Watch the current section before moving forward.",
-            {
-              icon: "⚔️",
-            },
-          );
+          return;
+        }
+
+        const target =
+          event.target;
+
+        if (
+          target instanceof
+            HTMLInputElement ||
+          target instanceof
+            HTMLTextAreaElement
+        ) {
+          return;
+        }
+
+        // SPACE
+
+        if (
+          event.code ===
+          "Space"
+        ) {
+          event.preventDefault();
+
+          if (video.paused) {
+            video.play();
+          } else {
+            video.pause();
+          }
 
           return;
         }
 
-        video.currentTime =
-          targetTime;
-      }
-    };
+        // BACKWARD
+
+        if (
+          event.key ===
+            "ArrowLeft" ||
+          event.key === "j" ||
+          event.key === "J"
+        ) {
+          event.preventDefault();
+
+          video.currentTime =
+            Math.max(
+              0,
+              video.currentTime -
+                10,
+            );
+
+          previousTimeRef.current =
+            video.currentTime;
+
+          return;
+        }
+
+        // FORWARD
+
+        if (
+          event.key ===
+            "ArrowRight" ||
+          event.key === "l" ||
+          event.key === "L"
+        ) {
+          event.preventDefault();
+
+          const furthest =
+            furthestWatchedRef.current;
+
+          const targetTime =
+            Math.min(
+              video.duration ||
+                Infinity,
+              furthest +
+                MAX_FORWARD_SEEK,
+            );
+
+          if (
+            targetTime <=
+            furthest +
+              SEEK_TOLERANCE
+          ) {
+            toast(
+              "Watch the current section before moving forward.",
+              {
+                icon: "⚔️",
+              },
+            );
+
+            return;
+          }
+
+          video.currentTime =
+            targetTime;
+        }
+      };
 
     window.addEventListener(
       "keydown",
@@ -3496,7 +3915,8 @@ const VideoPlayer = ({
         video.playbackRate !==
         1
       ) {
-        video.playbackRate = 1;
+        video.playbackRate =
+          1;
 
         toast(
           "Playback speed is locked for progress tracking.",
@@ -3512,19 +3932,18 @@ const VideoPlayer = ({
   // CONTEXT MENU
   // ===================================================
 
-  const handleContextMenu = (
-    event,
-  ) => {
-    event.preventDefault();
+  const handleContextMenu =
+    (event) => {
+      event.preventDefault();
 
-    toast(
-      "This realm is protected.",
-      {
-        icon: "🛡️",
-        duration: 1500,
-      },
-    );
-  };
+      toast(
+        "This realm is protected.",
+        {
+          icon: "🛡️",
+          duration: 1500,
+        },
+      );
+    };
 
   // ===================================================
   // RENDER
@@ -3570,6 +3989,7 @@ const VideoPlayer = ({
 
       {!isCompleted && (
         <div className="absolute bottom-14 left-3 flex items-center gap-2 rounded-lg border border-slate-700/70 bg-black/80 px-3 py-2 text-[10px] font-semibold text-slate-400 backdrop-blur">
+
           <Shield
             size={12}
             className="text-cyan-500"
@@ -3595,6 +4015,7 @@ const Shortcut = ({
 }) => {
   return (
     <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-[#0a0c0e] px-4 py-3">
+
       <span className="text-xs text-slate-500">
         {label}
       </span>
@@ -3649,7 +4070,8 @@ const formatTime = (
     (value % 3600) / 60,
   );
 
-  const secs = value % 60;
+  const secs =
+    value % 60;
 
   if (hours > 0) {
     return `${String(
@@ -3721,8 +4143,9 @@ const EmptyLectures = ({
       </h2>
 
       <p className="mt-2 text-sm leading-6 text-slate-500">
-        The instructor has not added any
-        chapters to this course yet.
+        The instructor has not added
+        any chapters to this course
+        yet.
       </p>
 
       <button
@@ -3746,6 +4169,7 @@ const LearningHeader = ({
 }) => {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-[#090b0d]/95 backdrop-blur-xl">
+
       <div className="mx-auto flex min-h-[72px] max-w-[1550px] items-center gap-4 px-4 sm:px-6 lg:px-8">
 
         <button
@@ -3760,7 +4184,9 @@ const LearningHeader = ({
         </button>
 
         <div className="min-w-0">
+
           <div className="flex items-center gap-2">
+
             <Sword
               size={13}
               className="text-amber-500"
@@ -3778,7 +4204,9 @@ const LearningHeader = ({
         </div>
 
         <div className="ml-auto hidden items-center gap-2 sm:flex">
+
           <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2">
+
             <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,.8)]" />
 
             <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
@@ -3795,31 +4223,34 @@ const LearningHeader = ({
 // LOADING
 // =====================================================
 
-const LearningLoading = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#080a0c] text-slate-200">
-      <div className="text-center">
+const LearningLoading =
+  () => {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#080a0c] text-slate-200">
 
-        <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-800/50 bg-amber-950/20">
-          <Sword
-            size={25}
-            className="text-amber-500"
-          />
+        <div className="text-center">
 
-          <div className="absolute inset-0 animate-ping rounded-full border border-amber-700/20" />
+          <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-800/50 bg-amber-950/20">
+
+            <Sword
+              size={25}
+              className="text-amber-500"
+            />
+
+            <div className="absolute inset-0 animate-ping rounded-full border border-amber-700/20" />
+          </div>
+
+          <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500">
+            Summoning the Chronicle
+          </p>
+
+          <p className="mt-2 text-sm text-slate-600">
+            Preparing your learning
+            realm...
+          </p>
         </div>
-
-        <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500">
-          Summoning the Chronicle
-        </p>
-
-        <p className="mt-2 text-sm text-slate-600">
-          Preparing your learning realm...
-        </p>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default StudentCourseLearning;
-

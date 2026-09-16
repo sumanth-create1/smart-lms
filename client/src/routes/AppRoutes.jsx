@@ -51,6 +51,7 @@ import InstructorProfile from "../pages/instructor/InstructorProfile";
 import InstructorStudents from "../pages/instructor/InstructorStudents";
 import InstructorStudentDetails from "../pages/instructor/InstructorStudentDetails";
 import InstructorAnalytics from "../pages/instructor/InstructorAnalytics";
+import ModuleManagement from "../pages/instructor/ModuleManagement";
 
 // =====================================================
 // APP ROUTES
@@ -60,153 +61,228 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* =================================================
             PUBLIC ROUTES
         ================================================= */}
 
         <Route path="/" element={<Home />} />
 
-        {/* Login */}
         <Route path="/login" element={<Login />} />
 
-        {/* Register */}
         <Route path="/register" element={<Register />} />
 
         {/* =================================================
             PASSWORD RECOVERY
         ================================================= */}
 
-        {/* Forgot Password
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
 
-            Public route because the user may not
-            be authenticated.
-        */}
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-
-        {/* Reset Password
-
-            :token comes from the password reset email.
-            Example:
-
-            /reset-password/abc123xyz
-        */}
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route
+          path="/reset-password/:token"
+          element={<ResetPassword />}
+        />
 
         {/* =================================================
             EMAIL VERIFICATION
         ================================================= */}
 
-        {/* Email verification
-            Must remain PUBLIC because the user is
-            not authenticated when clicking the email link.
-        */}
-        <Route path="/verify-email/:token" element={<VerifyEmail />} />
+        <Route
+          path="/verify-email/:token"
+          element={<VerifyEmail />}
+        />
 
         {/* =================================================
             PUBLIC COURSE ROUTES
         ================================================= */}
 
-        <Route path="/courses" element={<StudentCourses />} />
+        <Route
+          path="/courses"
+          element={<StudentCourses />}
+        />
 
-        <Route path="/courses/:courseId" element={<StudentCourseDetails />} />
+        <Route
+          path="/courses/:courseId"
+          element={<StudentCourseDetails />}
+        />
 
         {/* =================================================
             STUDENT PROTECTED ROUTES
         ================================================= */}
 
-        <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-          {/* Student Dashboard Layout */}
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={["student"]}
+            />
+          }
+        >
+
+          {/* =================================================
+              STUDENT DASHBOARD LAYOUT
+          ================================================= */}
 
           <Route element={<StudentDashboardLayout />}>
+
             {/* Dashboard */}
-            <Route path="/dashboard" element={<StudentDashboard />} />
+
+            <Route
+              path="/dashboard"
+              element={<StudentDashboard />}
+            />
 
             {/* Progress */}
-            <Route path="/progress" element={<StudentProgress />} />
+
+            <Route
+              path="/progress"
+              element={<StudentProgress />}
+            />
 
             {/* Achievements */}
-            <Route path="/achievements" element={<Achievements />} />
+
+            <Route
+              path="/achievements"
+              element={<Achievements />}
+            />
 
             {/* Profile */}
-            <Route path="/profile" element={<Profile />} />
+
+            <Route
+              path="/profile"
+              element={<Profile />}
+            />
 
             {/* Settings */}
-            <Route path="/settings" element={<Settings />} />
+
+            <Route
+              path="/settings"
+              element={<Settings />}
+            />
+
           </Route>
 
-          {/* Course Learning */}
+          {/* =================================================
+              COURSE LEARNING
+          ================================================= */}
 
           <Route
             path="/courses/:courseId/learn"
             element={<StudentCourseLearning />}
           />
+
+          {/* =================================================
+              MODULE QUIZ
+          ================================================= */}
+
+          <Route
+            path="/dashboard/modules/:moduleId/quiz"
+            element={<ModuleQuiz />}
+          />
+
         </Route>
 
-        <Route
-          path="/dashboard/modules/:moduleId/quiz"
-          element={
-            <ProtectedRoute>
-              <ModuleQuiz />
-            </ProtectedRoute>
-          }
-        />
         {/* =================================================
             INSTRUCTOR PROTECTED ROUTES
         ================================================= */}
 
-        <Route element={<ProtectedRoute allowedRoles={["instructor"]} />}>
-          {/* Instructor Dashboard Layout */}
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={["instructor"]}
+            />
+          }
+        >
+
+          {/* =================================================
+              INSTRUCTOR DASHBOARD LAYOUT
+          ================================================= */}
 
           <Route element={<InstructorDashboardLayout />}>
+
             {/* Dashboard */}
+
             <Route
               path="/instructor/dashboard"
               element={<InstructorDashboard />}
             />
 
             {/* Courses */}
-            <Route path="/instructor/courses" element={<InstructorCourses />} />
+
+            <Route
+              path="/instructor/courses"
+              element={<InstructorCourses />}
+            />
 
             {/* Create Course */}
+
             <Route
               path="/instructor/create-course"
               element={<CreateCourse />}
             />
 
-            {/* Course Management */}
+            {/* =================================================
+                COURSE MANAGEMENT
+            ================================================= */}
+
             <Route
               path="/instructor/courses/:courseId"
               element={<CourseManagement />}
             />
 
-            {/* Manage Lectures */}
+            {/* =================================================
+                MODULE MANAGEMENT
+            ================================================= */}
+
+            <Route
+              path="/instructor/courses/:courseId/modules"
+              element={<ModuleManagement />}
+            />
+
+            {/* =================================================
+                MANAGE LECTURES
+            ================================================= */}
+
             <Route
               path="/instructor/courses/:courseId/lectures"
               element={<ManageLectures />}
             />
 
-            {/* Students */}
+            {/* =================================================
+                STUDENTS
+            ================================================= */}
+
             <Route
               path="/instructor/students"
               element={<InstructorStudents />}
             />
 
             {/* Student Details */}
+
             <Route
               path="/instructor/students/:studentId"
               element={<InstructorStudentDetails />}
             />
 
             {/* Analytics */}
+
             <Route
               path="/instructor/analytics"
               element={<InstructorAnalytics />}
             />
 
             {/* Profile */}
-            <Route path="/instructor/profile" element={<InstructorProfile />} />
+
+            <Route
+              path="/instructor/profile"
+              element={<InstructorProfile />}
+            />
+
           </Route>
         </Route>
+
       </Routes>
     </BrowserRouter>
   );
