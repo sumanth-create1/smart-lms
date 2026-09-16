@@ -78,6 +78,27 @@ const getLectureDuration = (lecture) =>
   0;
 
 // =====================================================
+// CHAT STORAGE
+// =====================================================
+
+const MAX_LOCAL_HISTORY = 24;
+
+const getChatStorageKey = (course, lecture) => {
+  const courseKey =
+    course?._id ||
+    course?.id ||
+    getCourseTitle(course);
+
+  const lectureKey =
+    lecture?._id ||
+    lecture?.id ||
+    lecture?.lectureId ||
+    getLectureTitle(lecture);
+
+  return `smart-lms-ai-mentor-${String(courseKey)}-${String(lectureKey)}`;
+};
+
+// =====================================================
 // CODE BLOCK
 // =====================================================
 
@@ -276,6 +297,7 @@ const MarkdownMessage = ({ content }) => {
 // =====================================================
 // MAIN COMPONENT
 // =====================================================
+// Conversation memory is maintained per course + lecture in sessionStorage.
 
 const AIMentor = ({
   course,
@@ -346,6 +368,11 @@ const AIMentor = ({
     return result;
   }, [course, lecture]);
 
+  const chatStorageKey = useMemo(
+    () => getChatStorageKey(course, lecture),
+    [course, lecture]
+  );
+
   const hasLectureContent =
     Boolean(context.lectureContent);
 
@@ -354,17 +381,35 @@ const AIMentor = ({
   // =====================================================
 
   useEffect(() => {
-    setMessages([]);
     setQuestion("");
     setLoading(false);
     setCopiedIndex(null);
+
+    try {
+      const saved = sessionStorage.getItem(chatStorageKey);
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        if (Array.isArray(parsed)) {
+          setMessages(parsed.slice(-MAX_LOCAL_HISTORY));
+        } else {
+          setMessages([]);
+        }
+      } else {
+        setMessages([]);
+      }
+    } catch (error) {
+      console.warn("Unable to restore AI Mentor conversation:", error);
+      setMessages([]);
+    }
 
     const timer = setTimeout(() => {
       textareaRef.current?.focus();
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [context.lectureId]);
+  }, [chatStorageKey, context.lectureId]);
 
   // =====================================================
   // AUTO SCROLL
@@ -375,6 +420,28 @@ const AIMentor = ({
       behavior: "smooth",
     });
   }, [messages, loading]);
+
+  // =====================================================
+  // PERSIST CHAT FOR THIS LECTURE
+  // =====================================================
+
+  useEffect(() => {
+    try {
+      if (!chatStorageKey) return;
+
+      if (messages.length === 0) {
+        sessionStorage.removeItem(chatStorageKey);
+        return;
+      }
+
+      sessionStorage.setItem(
+        chatStorageKey,
+        JSON.stringify(messages.slice(-MAX_LOCAL_HISTORY))
+      );
+    } catch (error) {
+      console.warn("Unable to save AI Mentor conversation:", error);
+    }
+  }, [messages, chatStorageKey]);
 
   // =====================================================
   // ESCAPE TO CLOSE
@@ -442,10 +509,18 @@ const AIMentor = ({
     // Capture conversation BEFORE adding
     // the new question.
     const conversationHistory =
-      messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      }));
+      messages
+        .filter(
+          (message) =>
+            !message.error &&
+            (message.role === "user" ||
+              message.role === "assistant")
+        )
+        .slice(-12)
+        .map((message) => ({
+          role: message.role,
+          content: message.content,
+        }));
 
     setMessages((previous) => [
       ...previous,
@@ -620,6 +695,12 @@ const AIMentor = ({
     setMessages([]);
     setQuestion("");
 
+    try {
+      sessionStorage.removeItem(chatStorageKey);
+    } catch (error) {
+      console.warn("Unable to clear AI Mentor conversation:", error);
+    }
+
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 50);
@@ -728,6 +809,12 @@ const AIMentor = ({
                 <span className="hidden rounded-full border border-emerald-400/20 bg-emerald-950/30 px-2 py-0.5 text-[8px] font-black tracking-[0.15em] text-emerald-300 sm:inline-flex">
                   ONLINE
                 </span>
+
+                {messages.length > 0 && (
+                  <span className="hidden rounded-full border border-cyan-400/10 bg-cyan-950/20 px-2 py-0.5 text-[8px] font-black tracking-[0.12em] text-cyan-400 sm:inline-flex">
+                    MEMORY {Math.min(messages.length, 12)}
+                  </span>
+                )}
               </div>
 
               <p className="mt-0.5 truncate text-[11px] text-zinc-500">
@@ -913,8 +1000,8 @@ const AIMentor = ({
                   </span>
                   . I can explain concepts,
                   provide practical examples,
-                  review code, and guide you
-                  step by step.
+                  review code, remember your recent
+                  questions, and guide you step by step.
                 </p>
 
                 {!hasLectureContent && (
@@ -1183,8 +1270,7 @@ const AIMentor = ({
               </p>
 
               <p className="hidden text-[8px] text-zinc-700 sm:block">
-                AI responses may contain
-                mistakes
+                RECENT CHAT MEMORY • AI responses may contain mistakes
               </p>
             </div>
           </form>

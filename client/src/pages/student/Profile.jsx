@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AtSign,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Check,
   CheckCircle2,
   Crown,
@@ -134,7 +136,7 @@ const getInitials = (name = "") => {
 // ======================================================
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   // ====================================================
   // PROFILE STATE
@@ -182,6 +184,95 @@ const Profile = () => {
 
   const [showAvatarPicker, setShowAvatarPicker] =
     useState(false);
+
+  // ====================================================
+  // LIVE CALENDAR STATE
+  // ====================================================
+
+  const [calendarDate, setCalendarDate] = useState(() => new Date());
+  const [liveNow, setLiveNow] = useState(() => new Date());
+
+  // Keeps the profile/calendar visually fresh without a page refresh.
+  // The calendar itself is client-side, while profile mutations below
+  // immediately update AuthContext when updateUser is available.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setLiveNow(new Date());
+    }, 30_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const calendarMonthLabel = useMemo(
+    () =>
+      calendarDate.toLocaleDateString("en-IN", {
+        month: "long",
+        year: "numeric",
+      }),
+    [calendarDate]
+  );
+
+  const calendarDays = useMemo(() => {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Monday-first calendar.
+    const mondayFirstOffset = (firstDay + 6) % 7;
+    const cells = [];
+
+    for (let i = 0; i < mondayFirstOffset; i += 1) {
+      cells.push(null);
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      cells.push(new Date(year, month, day));
+    }
+
+    while (cells.length % 7 !== 0) {
+      cells.push(null);
+    }
+
+    return cells;
+  }, [calendarDate]);
+
+  const todayKey = useMemo(() => {
+    const d = liveNow;
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  }, [liveNow]);
+
+  const joinedDate = useMemo(() => {
+    const raw = user?.createdAt || user?.created_at;
+    if (!raw) return null;
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }, [user]);
+
+  const isSameDay = (a, b) =>
+    Boolean(a && b) &&
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const goToPreviousMonth = () => {
+    setCalendarDate(
+      (current) =>
+        new Date(current.getFullYear(), current.getMonth() - 1, 1)
+    );
+  };
+
+  const goToNextMonth = () => {
+    setCalendarDate(
+      (current) =>
+        new Date(current.getFullYear(), current.getMonth() + 1, 1)
+    );
+  };
+
+  const goToCurrentMonth = () => {
+    const now = new Date();
+    setCalendarDate(new Date(now.getFullYear(), now.getMonth(), 1));
+  };
 
   // ====================================================
   // INITIALIZE USER DATA
@@ -245,6 +336,25 @@ const Profile = () => {
         name: trimmedName,
         avatar: selectedAvatar,
       });
+
+      // Update AuthContext immediately so the profile page and the rest
+      // of the LMS reflect the new name/avatar without a hard refresh.
+      const updatedUser =
+        response?.user ||
+        response?.data?.user ||
+        response?.data ||
+        null;
+
+      if (typeof updateUser === "function") {
+        if (updatedUser && typeof updatedUser === "object") {
+          updateUser(updatedUser);
+        } else {
+          updateUser({
+            name: trimmedName,
+            avatar: selectedAvatar,
+          });
+        }
+      }
 
       toast.success(
         response?.message ||
@@ -645,15 +755,27 @@ const Profile = () => {
                     {user.email}
                   </p>
 
-                  <p className="mt-3 flex items-center gap-2 text-xs text-slate-600">
-                    <CalendarDays className="h-3.5 w-3.5" />
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-600">
+                    <p className="flex items-center gap-2">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      Joined{" "}
+                      {formatDate(
+                        user.createdAt ||
+                          user.created_at
+                      )}
+                    </p>
 
-                    Joined{" "}
-                    {formatDate(
-                      user.createdAt ||
-                        user.created_at
-                    )}
-                  </p>
+                    <span className="hidden h-1 w-1 rounded-full bg-slate-700 sm:block" />
+
+                    <p className="flex items-center gap-2 text-emerald-500/70">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                      {liveNow.toLocaleDateString("en-IN", {
+                        weekday: "short",
+                        day: "2-digit",
+                        month: "short",
+                      })}
+                    </p>
+                  </div>
 
                 </div>
 
@@ -1317,6 +1439,166 @@ const Profile = () => {
 
               </div>
 
+            </section>
+
+            {/* ===============================================
+                LIVE LEARNING CALENDAR
+            =============================================== */}
+
+            <section className="relative overflow-hidden rounded-[2rem] border border-slate-800/80 bg-[#0a0c0f]/95 shadow-2xl shadow-black/30">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+              <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-red-500/[0.05] blur-3xl" />
+
+              <div className="relative p-6">
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/[0.06]">
+                      <CalendarDays className="h-5 w-5 text-red-300" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-400/60">
+                        Journey Timeline
+                      </p>
+                      <h3 className="mt-1 font-serif text-lg font-bold text-slate-100">
+                        Learning Calendar
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                      Live
+                    </p>
+                    <p className="mt-1 text-[11px] font-medium text-emerald-400">
+                      {liveNow.toLocaleTimeString("en-IN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mb-4 flex items-center justify-between rounded-2xl border border-slate-800 bg-[#07090c]/90 p-3">
+                  <button
+                    type="button"
+                    onClick={goToPreviousMonth}
+                    className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+                    aria-label="Previous month"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={goToCurrentMonth}
+                    className="font-serif text-sm font-semibold text-slate-200 transition hover:text-amber-300"
+                    title="Go to current month"
+                  >
+                    {calendarMonthLabel}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={goToNextMonth}
+                    className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+                    aria-label="Next month"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1 text-center">
+                  {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
+                    <div
+                      key={`${day}-${index}`}
+                      className="py-1 text-[9px] font-bold uppercase tracking-wider text-slate-700"
+                    >
+                      {day}
+                    </div>
+                  ))}
+
+                  {calendarDays.map((date, index) => {
+                    if (!date) {
+                      return (
+                        <div
+                          key={`empty-${index}`}
+                          className="aspect-square rounded-lg"
+                        />
+                      );
+                    }
+
+                    const isToday = isSameDay(date, liveNow);
+                    const isJoined = isSameDay(date, joinedDate);
+                    const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
+                    return (
+                      <div
+                        key={dateKey}
+                        className={`relative flex aspect-square items-center justify-center rounded-lg text-[11px] transition-all ${
+                          isToday
+                            ? "bg-gradient-to-br from-red-500/25 to-amber-500/15 font-bold text-amber-300 ring-1 ring-red-400/40 shadow-[0_0_18px_rgba(239,68,68,0.10)]"
+                            : isJoined
+                              ? "bg-slate-800/80 font-semibold text-slate-200 ring-1 ring-slate-600"
+                              : "text-slate-500 hover:bg-slate-800/50 hover:text-slate-200"
+                        }`}
+                        title={
+                          isToday
+                            ? "Today"
+                            : isJoined
+                              ? "Your Smart LMS journey started here"
+                              : date.toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                        }
+                      >
+                        {date.getDate()}
+                        {isToday && (
+                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-amber-300" />
+                        )}
+                        {isJoined && !isToday && (
+                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-slate-400" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-slate-800 bg-[#07090c] p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                      Today
+                    </p>
+                    <p className="mt-1 text-xs font-semibold text-slate-300">
+                      {liveNow.toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                      })}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-[#07090c] p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                      Streak
+                    </p>
+                    <p className="mt-1 text-xs font-semibold text-orange-300">
+                      {user.studyStreak || 0} days
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center gap-4 text-[9px] font-medium text-slate-600">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-amber-300" />
+                    Today
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-slate-400" />
+                    Joined
+                  </span>
+                </div>
+              </div>
             </section>
 
             {/* ===============================================
