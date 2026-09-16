@@ -44,6 +44,12 @@ const lectureSchema = new mongoose.Schema(
       ref: "Course",
       required: true,
     },
+
+    module: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Module",
+      default: null,
+    },
   },
   {
     timestamps: true,

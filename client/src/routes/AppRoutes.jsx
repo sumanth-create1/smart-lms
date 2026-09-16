@@ -35,6 +35,7 @@ import StudentProgress from "../pages/student/StudentProgress";
 import Achievements from "../pages/student/Achievements";
 import Settings from "../pages/student/Settings";
 import Profile from "../pages/student/Profile";
+import ModuleQuiz from "../pages/student/ModuleQuiz";
 
 // =====================================================
 // INSTRUCTOR
@@ -59,7 +60,6 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* =================================================
             PUBLIC ROUTES
         ================================================= */}
@@ -81,10 +81,7 @@ function AppRoutes() {
             Public route because the user may not
             be authenticated.
         */}
-        <Route
-          path="/forgot-password"
-          element={<ForgotPassword />}
-        />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Reset Password
 
@@ -93,10 +90,7 @@ function AppRoutes() {
 
             /reset-password/abc123xyz
         */}
-        <Route
-          path="/reset-password/:token"
-          element={<ResetPassword />}
-        />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* =================================================
             EMAIL VERIFICATION
@@ -106,69 +100,38 @@ function AppRoutes() {
             Must remain PUBLIC because the user is
             not authenticated when clicking the email link.
         */}
-        <Route
-          path="/verify-email/:token"
-          element={<VerifyEmail />}
-        />
+        <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
         {/* =================================================
             PUBLIC COURSE ROUTES
         ================================================= */}
 
-        <Route
-          path="/courses"
-          element={<StudentCourses />}
-        />
+        <Route path="/courses" element={<StudentCourses />} />
 
-        <Route
-          path="/courses/:courseId"
-          element={<StudentCourseDetails />}
-        />
+        <Route path="/courses/:courseId" element={<StudentCourseDetails />} />
 
         {/* =================================================
             STUDENT PROTECTED ROUTES
         ================================================= */}
 
-        <Route
-          element={
-            <ProtectedRoute allowedRoles={["student"]} />
-          }
-        >
-
+        <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
           {/* Student Dashboard Layout */}
 
           <Route element={<StudentDashboardLayout />}>
-
             {/* Dashboard */}
-            <Route
-              path="/dashboard"
-              element={<StudentDashboard />}
-            />
+            <Route path="/dashboard" element={<StudentDashboard />} />
 
             {/* Progress */}
-            <Route
-              path="/progress"
-              element={<StudentProgress />}
-            />
+            <Route path="/progress" element={<StudentProgress />} />
 
             {/* Achievements */}
-            <Route
-              path="/achievements"
-              element={<Achievements />}
-            />
+            <Route path="/achievements" element={<Achievements />} />
 
             {/* Profile */}
-            <Route
-              path="/profile"
-              element={<Profile />}
-            />
+            <Route path="/profile" element={<Profile />} />
 
             {/* Settings */}
-            <Route
-              path="/settings"
-              element={<Settings />}
-            />
-
+            <Route path="/settings" element={<Settings />} />
           </Route>
 
           {/* Course Learning */}
@@ -177,23 +140,24 @@ function AppRoutes() {
             path="/courses/:courseId/learn"
             element={<StudentCourseLearning />}
           />
-
         </Route>
 
+        <Route
+          path="/dashboard/modules/:moduleId/quiz"
+          element={
+            <ProtectedRoute>
+              <ModuleQuiz />
+            </ProtectedRoute>
+          }
+        />
         {/* =================================================
             INSTRUCTOR PROTECTED ROUTES
         ================================================= */}
 
-        <Route
-          element={
-            <ProtectedRoute allowedRoles={["instructor"]} />
-          }
-        >
-
+        <Route element={<ProtectedRoute allowedRoles={["instructor"]} />}>
           {/* Instructor Dashboard Layout */}
 
           <Route element={<InstructorDashboardLayout />}>
-
             {/* Dashboard */}
             <Route
               path="/instructor/dashboard"
@@ -201,10 +165,7 @@ function AppRoutes() {
             />
 
             {/* Courses */}
-            <Route
-              path="/instructor/courses"
-              element={<InstructorCourses />}
-            />
+            <Route path="/instructor/courses" element={<InstructorCourses />} />
 
             {/* Create Course */}
             <Route
@@ -243,15 +204,9 @@ function AppRoutes() {
             />
 
             {/* Profile */}
-            <Route
-              path="/instructor/profile"
-              element={<InstructorProfile />}
-            />
-
+            <Route path="/instructor/profile" element={<InstructorProfile />} />
           </Route>
-
         </Route>
-
       </Routes>
     </BrowserRouter>
   );
