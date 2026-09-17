@@ -19,12 +19,20 @@ const router = express.Router();
 // INSTRUCTOR
 // =====================================================
 
-// Create quiz for a module
+// Create a normal/manual quiz
 router.post(
   "/module/:moduleId/quiz",
   isAuthenticated,
   authorizeRoles("instructor"),
-  createQuiz,
+  createQuiz
+);
+
+// Generate AI quiz for a module
+router.post(
+  "/module/:moduleId/quiz/generate",
+  isAuthenticated,
+  authorizeRoles("instructor"),
+  generateAIQuiz
 );
 
 // =====================================================
@@ -32,14 +40,18 @@ router.post(
 // =====================================================
 
 // Get module quiz
-router.get("/module/:moduleId/quiz", isAuthenticated, getModuleQuiz);
+router.get(
+  "/module/:moduleId/quiz",
+  isAuthenticated,
+  getModuleQuiz
+);
 
 // Submit quiz
 router.post(
   "/quiz/:quizId/submit",
   isAuthenticated,
   authorizeRoles("student"),
-  submitQuiz,
+  submitQuiz
 );
 
 // Get student's latest attempt
@@ -47,7 +59,7 @@ router.get(
   "/quiz/:quizId/my-attempt",
   isAuthenticated,
   authorizeRoles("student"),
-  getMyQuizAttempt,
+  getMyQuizAttempt
 );
 
 export default router;
