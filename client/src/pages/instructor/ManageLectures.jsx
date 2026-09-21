@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -15,14 +15,34 @@ import {
   X,
   PlayCircle,
   Save,
+  Crown,
+  Sparkles,
+  Flame,
+  Shield,
+  Gem,
+  ScrollText,
+  Eye,
+  Sword,
+  ChevronRight,
 } from "lucide-react";
 
 import toast from "react-hot-toast";
 import api from "../../services/api";
 
+const EMBERS = Array.from({ length: 22 }, (_, index) => ({
+  id: index,
+  left: `${(index * 37) % 100}%`,
+  delay: `${(index * 0.73) % 8}s`,
+  duration: `${6 + ((index * 1.17) % 7)}s`,
+  size: `${2 + (index % 3)}px`,
+}));
+
 function ManageLectures() {
   const { courseId } = useParams();
   const navigate = useNavigate();
+
+  const cursorRef = useRef(null);
+  const cursorDotRef = useRef(null);
 
   const [course, setCourse] = useState(null);
   const [lectures, setLectures] = useState([]);
@@ -54,8 +74,40 @@ function ManageLectures() {
 
   const [uploadingId, setUploadingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const [previewLoadingId, setPreviewLoadingId] =
-    useState(null);
+  const [previewLoadingId, setPreviewLoadingId] = useState(null);
+
+  /* =====================================================
+     PREMIUM CURSOR
+  ===================================================== */
+
+  useEffect(() => {
+    const handlePointerMove = (event) => {
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate3d(
+          ${event.clientX}px,
+          ${event.clientY}px,
+          0
+        )`;
+      }
+
+      if (cursorDotRef.current) {
+        cursorDotRef.current.style.transform = `translate3d(
+          ${event.clientX}px,
+          ${event.clientY}px,
+          0
+        )`;
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+
+    return () => {
+      window.removeEventListener(
+        "pointermove",
+        handlePointerMove
+      );
+    };
+  }, []);
 
   /* =====================================================
      FETCH COURSE
@@ -302,7 +354,9 @@ function ManageLectures() {
         return;
       }
 
-      toast.success("Lecture deleted successfully");
+      toast.success(
+        "Lecture deleted successfully"
+      );
 
       setLectures((previous) =>
         previous.filter(
@@ -468,15 +522,34 @@ function ManageLectures() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[500px] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <LoaderCircle
-            size={36}
-            className="animate-spin text-indigo-600"
-          />
+      <div className="relative flex min-h-[70vh] items-center justify-center overflow-hidden bg-[#070504] text-white">
 
-          <p className="text-sm text-gray-500">
-            Loading lectures...
+        {/* AMBIENT GLOW */}
+
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(245,158,11,0.12),transparent_35%),radial-gradient(circle_at_20%_80%,rgba(127,29,29,0.14),transparent_30%)]" />
+
+        <div className="relative z-10 flex flex-col items-center">
+
+          <div className="relative mb-6">
+
+            <div className="absolute inset-0 animate-ping rounded-full bg-amber-500/10" />
+
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-amber-400/20 bg-white/[0.04] shadow-[0_0_60px_rgba(245,158,11,0.12)] backdrop-blur-xl">
+
+              <Crown
+                size={38}
+                className="text-amber-400"
+              />
+
+            </div>
+          </div>
+
+          <p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-400">
+            Opening the Lecture Hall
+          </p>
+
+          <p className="mt-3 text-sm text-white/40">
+            Summoning your lessons...
           </p>
         </div>
       </div>
@@ -488,143 +561,333 @@ function ManageLectures() {
   ===================================================== */
 
   return (
-    <div className="min-h-full bg-[#F7F6F2] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
+    <div className="lecture-realm relative min-h-full overflow-hidden bg-[#070504] text-white">
 
-        {/* =================================================
-           HEADER
-        ================================================= */}
+      {/* =================================================
+         PREMIUM CURSOR
+      ================================================= */}
 
-        <div className="mb-8">
+      <div
+        ref={cursorRef}
+        className="pointer-events-none fixed left-0 top-0 z-[100] hidden h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-400/40 bg-amber-400/5 shadow-[0_0_25px_rgba(245,158,11,0.18)] lg:block"
+      />
+
+      <div
+        ref={cursorDotRef}
+        className="pointer-events-none fixed left-0 top-0 z-[101] hidden h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.9)] lg:block"
+      />
+
+      {/* =================================================
+         BACKGROUND ATMOSPHERE
+      ================================================= */}
+
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(245,158,11,0.10),transparent_28%),radial-gradient(circle_at_85%_20%,rgba(127,29,29,0.13),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(180,83,9,0.08),transparent_35%)]" />
+
+      <div className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.5)_1px,transparent_1px)] [background-size:42px_42px]" />
+
+      {/* VIGNETTE */}
+
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(0,0,0,0.55)_100%)]" />
+
+      {/* =================================================
+         EMBERS
+      ================================================= */}
+
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {EMBERS.map((ember) => (
+          <span
+            key={ember.id}
+            className="absolute bottom-[-10px] rounded-full bg-amber-300 opacity-0 blur-[0.5px] animate-[emberFloat_var(--duration)_linear_var(--delay)_infinite]"
+            style={{
+              left: ember.left,
+              width: ember.size,
+              height: ember.size,
+              "--duration": ember.duration,
+              "--delay": ember.delay,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative z-10 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+
+        <div className="mx-auto max-w-7xl">
+
+          {/* =================================================
+             BACK BUTTON
+          ================================================= */}
+
           <button
             type="button"
             onClick={() =>
               navigate("/instructor/courses")
             }
-            className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-gray-900"
+            className="group mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/50 backdrop-blur-xl transition duration-300 hover:border-amber-400/30 hover:bg-amber-400/[0.06] hover:text-amber-300"
           >
-            <ArrowLeft size={18} />
-            Back to Courses
+            <ArrowLeft
+              size={15}
+              className="transition-transform duration-300 group-hover:-translate-x-1"
+            />
+
+            Return to Courses
           </button>
 
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm">
-                <Film size={24} />
-              </div>
+          {/* =================================================
+             HERO
+          ================================================= */}
 
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-indigo-600">
-                  Lecture Management
-                </p>
+          <section className="relative mb-8 overflow-hidden rounded-[30px] border border-amber-400/10 bg-white/[0.035] p-6 shadow-[0_25px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-8">
 
-                <h1 className="truncate text-2xl font-bold tracking-tight text-[#15121F] sm:text-3xl">
-                  {course?.courseTitle ||
-                    "Course Lectures"}
-                </h1>
+            <div className="pointer-events-none absolute right-[-80px] top-[-100px] h-72 w-72 rounded-full bg-amber-500/10 blur-[100px]" />
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Create lessons, add learning
-                  content, upload videos and manage
-                  previews.
-                </p>
-              </div>
-            </div>
+            <div className="pointer-events-none absolute bottom-[-100px] left-[20%] h-60 w-60 rounded-full bg-red-900/10 blur-[90px]" />
 
-            <button
-              type="button"
-              onClick={() =>
-                setShowCreate(true)
-              }
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-            >
-              <Plus size={18} />
-              Add Lecture
-            </button>
-          </div>
-        </div>
+            <div className="relative flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
 
-        {/* =================================================
-           CREATE LECTURE
-        ================================================= */}
+              <div className="flex min-w-0 items-start gap-5">
 
-        {showCreate && (
-          <div className="mb-6 overflow-hidden rounded-3xl border border-indigo-100 bg-white shadow-sm">
-            <div className="border-b border-gray-100 bg-indigo-50/40 px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-xl bg-indigo-100 p-2.5 text-indigo-600">
-                    <FileText size={20} />
+                {/* SIGIL */}
+
+                <div className="group relative hidden shrink-0 sm:block">
+
+                  <div className="absolute inset-[-7px] rounded-[24px] border border-amber-400/10 transition duration-500 group-hover:rotate-6 group-hover:border-amber-400/30" />
+
+                  <div className="relative flex h-20 w-20 items-center justify-center rounded-[22px] border border-amber-400/20 bg-gradient-to-br from-amber-500/15 to-red-950/20 shadow-[0_0_45px_rgba(245,158,11,0.12)]">
+
+                    <div className="absolute inset-2 rounded-[16px] border border-amber-400/10" />
+
+                    <Film
+                      size={32}
+                      className="text-amber-400 transition duration-500 group-hover:scale-110 group-hover:rotate-3"
+                    />
+
                   </div>
 
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Add New Lecture
-                    </h2>
-
-                    <p className="mt-1 text-sm text-gray-500">
-                      Add the lesson title and
-                      teaching content.
-                    </p>
-                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={resetCreateForm}
-                  className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
-                >
-                  <X size={19} />
-                </button>
+                <div className="min-w-0">
+
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/15 bg-amber-400/[0.06] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
+
+                      <Crown size={12} />
+
+                      Instructor Realm
+                    </span>
+
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/10 bg-emerald-400/[0.05] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">
+
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+
+                      Live Course
+                    </span>
+
+                  </div>
+
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.3em] text-amber-500/70">
+                    The Lecture Hall
+                  </p>
+
+                  <h1 className="max-w-3xl truncate text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
+                    {course?.courseTitle ||
+                      "Course Lectures"}
+                  </h1>
+
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-white/40 sm:text-base">
+                    Forge your course lesson by lesson.
+                    Create knowledge, upload your
+                    teachings and decide which
+                    chapters students may preview.
+                  </p>
+
+                </div>
               </div>
+
+              {/* ADD BUTTON */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowCreate(true)
+                }
+                className="group relative inline-flex shrink-0 items-center justify-center gap-2 overflow-hidden rounded-2xl border border-amber-400/25 bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3.5 text-sm font-black text-black shadow-[0_12px_40px_rgba(245,158,11,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(245,158,11,0.28)]"
+              >
+
+                <span className="absolute inset-0 -translate-x-full bg-white/20 transition duration-700 group-hover:translate-x-full" />
+
+                <Plus
+                  size={18}
+                  className="relative transition-transform duration-300 group-hover:rotate-90"
+                />
+
+                <span className="relative">
+                  Add Lecture
+                </span>
+
+              </button>
             </div>
 
-            <form
-              onSubmit={handleCreateLecture}
-              className="space-y-5 p-6"
-            >
-              {/* TITLE */}
+            {/* HERO FOOTER */}
 
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-gray-800">
-                  Lecture Title
-                </label>
+            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/[0.06] pt-5">
 
-                <input
-                  type="text"
-                  value={lectureTitle}
-                  onChange={(event) =>
-                    setLectureTitle(
-                      event.target.value
-                    )
-                  }
-                  placeholder="e.g. Introduction to React"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+              <div className="flex items-center gap-2 text-xs text-white/35">
+                <ScrollText
+                  size={14}
+                  className="text-amber-400"
                 />
+
+                <span>
+                  {lectures.length}{" "}
+                  {lectures.length === 1
+                    ? "chapter"
+                    : "chapters"}{" "}
+                  forged
+                </span>
               </div>
 
-              {/* CONTENT */}
+              <div className="flex items-center gap-2 text-xs text-white/35">
+                <BookOpen
+                  size={14}
+                  className="text-amber-400"
+                />
 
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="block text-sm font-semibold text-gray-800">
-                    Lecture Content
+                <span>
+                  Learning content
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-white/35">
+                <Sparkles
+                  size={14}
+                  className="text-amber-400"
+                />
+
+                <span>
+                  AI Mentor compatible
+                </span>
+              </div>
+
+            </div>
+          </section>
+
+          {/* =================================================
+             CREATE LECTURE
+          ================================================= */}
+
+          {showCreate && (
+            <section className="relative mb-8 overflow-hidden rounded-[30px] border border-amber-400/20 bg-[#0e0b08]/90 shadow-[0_25px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+
+              <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+
+              <div className="border-b border-white/[0.06] bg-gradient-to-r from-amber-500/[0.06] to-transparent px-6 py-6 sm:px-7">
+
+                <div className="flex items-start justify-between gap-4">
+
+                  <div className="flex items-start gap-4">
+
+                    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/[0.07]">
+
+                      <FileText
+                        size={22}
+                        className="text-amber-400"
+                      />
+
+                      <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.8)]" />
+
+                    </div>
+
+                    <div>
+
+                      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500/70">
+                        Forge New Knowledge
+                      </p>
+
+                      <h2 className="mt-1 text-xl font-black text-white">
+                        Add New Lecture
+                      </h2>
+
+                      <p className="mt-1 text-sm text-white/35">
+                        Create the next chapter of
+                        your course.
+                      </p>
+
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={resetCreateForm}
+                    className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-white/35 transition hover:border-red-400/20 hover:bg-red-400/10 hover:text-red-300"
+                  >
+                    <X size={18} />
+                  </button>
+
+                </div>
+              </div>
+
+              <form
+                onSubmit={handleCreateLecture}
+                className="space-y-6 p-6 sm:p-7"
+              >
+
+                {/* TITLE */}
+
+                <div>
+
+                  <label className="mb-2.5 block text-xs font-bold uppercase tracking-[0.16em] text-white/55">
+                    Lecture Title
                   </label>
 
-                  <span className="text-xs text-gray-400">
-                    {lectureContent.length} characters
-                  </span>
+                  <div className="group relative">
+
+                    <BookOpen
+                      size={17}
+                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition group-focus-within:text-amber-400"
+                    />
+
+                    <input
+                      type="text"
+                      value={lectureTitle}
+                      onChange={(event) =>
+                        setLectureTitle(
+                          event.target.value
+                        )
+                      }
+                      placeholder="e.g. Introduction to React"
+                      className="w-full rounded-2xl border border-white/10 bg-black/30 py-4 pl-11 pr-4 text-sm text-white outline-none transition duration-300 placeholder:text-white/20 focus:border-amber-400/40 focus:bg-amber-400/[0.025] focus:shadow-[0_0_30px_rgba(245,158,11,0.07)]"
+                    />
+
+                  </div>
                 </div>
 
-                <textarea
-                  value={lectureContent}
-                  onChange={(event) =>
-                    setLectureContent(
-                      event.target.value
-                    )
-                  }
-                  rows={10}
-                  placeholder={`Write the concepts taught in this lecture...
+                {/* CONTENT */}
+
+                <div>
+
+                  <div className="mb-2.5 flex items-center justify-between">
+
+                    <label className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
+                      Lecture Content
+                    </label>
+
+                    <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold text-white/30">
+                      {lectureContent.length}{" "}
+                      characters
+                    </span>
+
+                  </div>
+
+                  <textarea
+                    value={lectureContent}
+                    onChange={(event) =>
+                      setLectureContent(
+                        event.target.value
+                      )
+                    }
+                    rows={11}
+                    placeholder={`Write the concepts taught in this lecture...
 
 Example:
 
@@ -640,476 +903,767 @@ function Welcome() {
 
 Explain the important concepts, examples,
 and notes students should understand.`}
-                  className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm leading-7 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                />
-
-                <div className="mt-2 flex items-start gap-2 text-xs text-gray-400">
-                  <BookOpen
-                    size={14}
-                    className="mt-0.5 shrink-0"
+                    className="w-full resize-y rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-sm leading-7 text-white outline-none transition duration-300 placeholder:text-white/20 focus:border-amber-400/40 focus:bg-amber-400/[0.025] focus:shadow-[0_0_30px_rgba(245,158,11,0.07)]"
                   />
 
-                  <p>
-                    This content will be available
-                    to students and used by the AI
-                    Mentor to answer lecture-related
-                    questions.
-                  </p>
+                  <div className="mt-3 flex items-start gap-2 text-xs leading-5 text-white/30">
+
+                    <Sparkles
+                      size={14}
+                      className="mt-0.5 shrink-0 text-amber-400/60"
+                    />
+
+                    <p>
+                      This content will be available
+                      to students and used by the AI
+                      Mentor to answer lecture-related
+                      questions.
+                    </p>
+
+                  </div>
+
                 </div>
-              </div>
 
-              {/* ACTIONS */}
+                {/* ACTIONS */}
 
-              <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={resetCreateForm}
-                  className="rounded-xl bg-gray-100 px-5 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
+                <div className="flex flex-col-reverse gap-3 border-t border-white/[0.06] pt-5 sm:flex-row sm:justify-end">
 
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {creating ? (
-                    <>
-                      <LoaderCircle
-                        size={18}
-                        className="animate-spin"
-                      />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={18} />
-                      Create Lecture
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
+                  <button
+                    type="button"
+                    onClick={resetCreateForm}
+                    className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-bold text-white/50 transition hover:bg-white/[0.07] hover:text-white"
+                  >
+                    Cancel
+                  </button>
 
-        {/* =================================================
-           LECTURE LIST
-        ================================================= */}
+                  <button
+                    type="submit"
+                    disabled={creating}
+                    className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3 text-sm font-black text-black shadow-[0_10px_30px_rgba(245,158,11,0.15)] transition hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(245,158,11,0.25)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
 
-        <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+                    {creating ? (
+                      <>
+                        <LoaderCircle
+                          size={17}
+                          className="animate-spin"
+                        />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={17} />
+                        Forge Lecture
+                      </>
+                    )}
 
-          <div className="border-b border-gray-100 px-6 py-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Course Lectures
-                </h2>
+                  </button>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  {lectures.length}{" "}
-                  {lectures.length === 1
-                    ? "lecture"
-                    : "lectures"}
+                </div>
+              </form>
+            </section>
+          )}
+
+          {/* =================================================
+             LECTURE HEADER
+          ================================================= */}
+
+          <section className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+
+            <div>
+
+              <div className="flex items-center gap-2">
+                <Sword
+                  size={15}
+                  className="text-amber-400"
+                />
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500/70">
+                  The Chapters
                 </p>
               </div>
 
-              {lectures.length > 0 && (
-                <div className="inline-flex items-center gap-2 self-start rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600">
-                  <BookOpen size={14} />
-                  Learning Content
-                </div>
-              )}
-            </div>
-          </div>
+              <h2 className="mt-2 text-2xl font-black text-white">
+                Course Lectures
+              </h2>
 
-          {lectures.length === 0 ? (
-            <div className="flex min-h-[350px] flex-col items-center justify-center px-6 text-center">
-              <div className="rounded-full bg-indigo-50 p-5">
-                <BookOpen
-                  size={30}
-                  className="text-indigo-500"
-                />
-              </div>
-
-              <h3 className="mt-5 font-semibold text-gray-900">
-                No lectures yet
-              </h3>
-
-              <p className="mt-1 max-w-md text-sm text-gray-500">
-                Start building your course by
-                adding your first lecture.
+              <p className="mt-1 text-sm text-white/30">
+                Manage every lesson forged inside
+                this course.
               </p>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setShowCreate(true)
-                }
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
-              >
-                <Plus size={17} />
-                Add First Lecture
-              </button>
             </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
 
-              {lectures.map((lecture) => (
-                <div
-                  key={lecture._id}
-                  className="p-5 transition hover:bg-gray-50 sm:p-6"
+            {lectures.length > 0 && (
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-400/10 bg-amber-400/[0.05] px-3.5 py-2 text-xs font-bold text-amber-400">
+                <BookOpen size={14} />
+                {lectures.length}{" "}
+                {lectures.length === 1
+                  ? "Lecture"
+                  : "Lectures"}
+              </div>
+            )}
+
+          </section>
+
+          {/* =================================================
+             LECTURE LIST
+          ================================================= */}
+
+          <section className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#0b0907]/90 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+
+            <div className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
+
+            {lectures.length === 0 ? (
+
+              /* =================================================
+                 EMPTY STATE
+              ================================================= */
+
+              <div className="flex min-h-[430px] flex-col items-center justify-center px-6 text-center">
+
+                <div className="relative mb-7">
+
+                  <div className="absolute inset-[-25px] rounded-full bg-amber-500/5 blur-2xl" />
+
+                  <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-amber-400/15 bg-amber-400/[0.04] shadow-[0_0_50px_rgba(245,158,11,0.08)]">
+
+                    <ScrollText
+                      size={34}
+                      className="text-amber-400/80"
+                    />
+
+                  </div>
+
+                  <div className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border border-amber-400/20 bg-[#0b0907] text-amber-400">
+                    <Plus size={15} />
+                  </div>
+
+                </div>
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500/60">
+                  The Hall Awaits
+                </p>
+
+                <h3 className="mt-2 text-2xl font-black text-white">
+                  No lectures yet
+                </h3>
+
+                <p className="mt-2 max-w-md text-sm leading-6 text-white/35">
+                  Every great course begins with
+                  its first chapter. Forge your
+                  first lecture and begin building
+                  your learning realm.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowCreate(true)
+                  }
+                  className="mt-7 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-5 py-3 text-sm font-black text-black shadow-[0_10px_35px_rgba(245,158,11,0.16)] transition hover:-translate-y-1 hover:shadow-[0_15px_45px_rgba(245,158,11,0.25)]"
                 >
-                  {/* =================================================
-                     EDIT MODE
-                  ================================================= */}
+                  <Plus size={17} />
+                  Forge First Lecture
+                </button>
 
-                  {editingId === lecture._id ? (
-                    <div className="rounded-2xl border border-indigo-100 bg-indigo-50/30 p-5">
+              </div>
 
-                      <div className="mb-5 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-sm font-bold text-white">
-                            {lecture.order}
+            ) : (
+
+              /* =================================================
+                 LECTURES
+              ================================================= */
+
+              <div className="divide-y divide-white/[0.06]">
+
+                {lectures.map((lecture) => {
+
+                  const hasContent =
+                    Boolean(
+                      lecture.lectureContent?.trim()
+                    );
+
+                  const hasVideo =
+                    Boolean(lecture.videoUrl);
+
+                  const isEditing =
+                    editingId === lecture._id;
+
+                  return (
+                    <div
+                      key={lecture._id}
+                      className="group relative p-5 transition duration-500 hover:bg-amber-400/[0.018] sm:p-6 lg:p-7"
+                    >
+
+                      {/* HOVER RAIL */}
+
+                      <div className="absolute bottom-0 left-0 top-0 w-0.5 origin-bottom scale-y-0 bg-gradient-to-b from-amber-300 via-orange-500 to-transparent transition duration-500 group-hover:scale-y-100" />
+
+                      {isEditing ? (
+
+                        /* =================================================
+                           EDIT MODE
+                        ================================================= */
+
+                        <div className="relative overflow-hidden rounded-[25px] border border-amber-400/20 bg-gradient-to-br from-amber-400/[0.07] to-transparent shadow-[0_15px_60px_rgba(0,0,0,0.25)]">
+
+                          <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-700" />
+
+                          <div className="border-b border-white/[0.06] px-5 py-5 sm:px-6">
+
+                            <div className="flex items-center justify-between gap-4">
+
+                              <div className="flex items-center gap-4">
+
+                                <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] text-sm font-black text-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.08)]">
+
+                                  {lecture.order}
+
+                                </div>
+
+                                <div>
+
+                                  <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500/70">
+                                    Editing Chapter
+                                  </p>
+
+                                  <h3 className="mt-1 font-black text-white">
+                                    Update Lecture
+                                  </h3>
+
+                                </div>
+
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={
+                                  cancelEditing
+                                }
+                                className="rounded-xl border border-white/10 bg-white/[0.04] p-2 text-white/35 transition hover:border-red-400/20 hover:bg-red-400/10 hover:text-red-300"
+                              >
+                                <X size={18} />
+                              </button>
+
+                            </div>
                           </div>
 
-                          <div>
-                            <h3 className="font-semibold text-gray-900">
-                              Edit Lecture
-                            </h3>
+                          <div className="space-y-6 p-5 sm:p-6">
 
-                            <p className="text-xs text-gray-500">
-                              Update lesson information
-                            </p>
+                            {/* TITLE */}
+
+                            <div>
+
+                              <label className="mb-2.5 block text-xs font-bold uppercase tracking-[0.16em] text-white/50">
+                                Lecture Title
+                              </label>
+
+                              <input
+                                autoFocus
+                                type="text"
+                                value={
+                                  editingTitle
+                                }
+                                onChange={(
+                                  event
+                                ) =>
+                                  setEditingTitle(
+                                    event.target
+                                      .value
+                                  )
+                                }
+                                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm font-semibold text-white outline-none transition focus:border-amber-400/40 focus:shadow-[0_0_30px_rgba(245,158,11,0.06)]"
+                              />
+
+                            </div>
+
+                            {/* CONTENT */}
+
+                            <div>
+
+                              <div className="mb-2.5 flex items-center justify-between">
+
+                                <label className="text-xs font-bold uppercase tracking-[0.16em] text-white/50">
+                                  Lecture Content
+                                </label>
+
+                                <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] text-white/30">
+                                  {
+                                    editingContent.length
+                                  }{" "}
+                                  characters
+                                </span>
+
+                              </div>
+
+                              <textarea
+                                value={
+                                  editingContent
+                                }
+                                onChange={(
+                                  event
+                                ) =>
+                                  setEditingContent(
+                                    event.target
+                                      .value
+                                  )
+                                }
+                                rows={12}
+                                className="w-full resize-y rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-sm leading-7 text-white outline-none transition focus:border-amber-400/40 focus:shadow-[0_0_30px_rgba(245,158,11,0.06)]"
+                              />
+
+                              {!editingContent.trim() && (
+                                <div className="mt-3 flex items-center gap-2 text-xs text-amber-400/70">
+                                  <Sparkles
+                                    size={13}
+                                  />
+                                  Add lecture content so
+                                  the AI Mentor can use
+                                  this lesson as context.
+                                </div>
+                              )}
+
+                            </div>
+
+                            {/* ACTIONS */}
+
+                            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.06] pt-5 sm:flex-row sm:justify-end">
+
+                              <button
+                                type="button"
+                                onClick={
+                                  cancelEditing
+                                }
+                                disabled={
+                                  updatingId ===
+                                  lecture._id
+                                }
+                                className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-bold text-white/45 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-50"
+                              >
+                                Cancel
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleUpdateLecture(
+                                    lecture._id
+                                  )
+                                }
+                                disabled={
+                                  updatingId ===
+                                  lecture._id
+                                }
+                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3 text-sm font-black text-black shadow-[0_10px_30px_rgba(245,158,11,0.12)] transition hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(245,158,11,0.22)] disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+
+                                {updatingId ===
+                                lecture._id ? (
+                                  <>
+                                    <LoaderCircle
+                                      size={17}
+                                      className="animate-spin"
+                                    />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save
+                                      size={17}
+                                    />
+                                    Save Changes
+                                  </>
+                                )}
+
+                              </button>
+
+                            </div>
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={cancelEditing}
-                          className="rounded-lg p-2 text-gray-400 hover:bg-white hover:text-gray-700"
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
+                      ) : (
 
-                      <div className="space-y-5">
+                        /* =================================================
+                           NORMAL MODE
+                        ================================================= */
 
-                        {/* EDIT TITLE */}
+                        <div className="flex flex-col gap-6 xl:flex-row xl:items-center">
 
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-gray-800">
-                            Lecture Title
-                          </label>
+                          {/* ORDER / INFO */}
 
-                          <input
-                            autoFocus
-                            type="text"
-                            value={editingTitle}
-                            onChange={(event) =>
-                              setEditingTitle(
-                                event.target.value
-                              )
-                            }
-                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                          />
-                        </div>
+                          <div className="flex min-w-0 flex-1 items-start gap-4">
 
-                        {/* EDIT CONTENT */}
+                            <div className="relative shrink-0">
 
-                        <div>
-                          <div className="mb-2 flex items-center justify-between">
-                            <label className="block text-sm font-semibold text-gray-800">
-                              Lecture Content
-                            </label>
+                              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-400/15 bg-gradient-to-br from-amber-400/[0.12] to-orange-900/[0.12] text-lg font-black text-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.05)] transition duration-500 group-hover:border-amber-400/30 group-hover:shadow-[0_0_35px_rgba(245,158,11,0.12)]">
 
-                            <span className="text-xs text-gray-400">
-                              {
-                                editingContent.length
-                              }{" "}
-                              characters
-                            </span>
+                                {lecture.order}
+
+                              </div>
+
+                              <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-[#0b0907] bg-amber-500 text-[9px] font-black text-black">
+                                <Gem size={9} />
+                              </span>
+
+                            </div>
+
+                            <div className="min-w-0">
+
+                              <div className="flex items-start gap-3">
+
+                                <div className="min-w-0">
+
+                                  <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-500/55">
+                                    Chapter{" "}
+                                    {lecture.order}
+                                  </p>
+
+                                  <h3 className="break-words text-lg font-black text-white transition group-hover:text-amber-300 sm:text-xl">
+                                    {
+                                      lecture.lectureTitle
+                                    }
+                                  </h3>
+
+                                </div>
+
+                              </div>
+
+                              {/* STATUS */}
+
+                              <div className="mt-3 flex flex-wrap items-center gap-2">
+
+                                {hasContent ? (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/10 bg-emerald-400/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-400">
+                                    <FileText
+                                      size={12}
+                                    />
+                                    Content Ready
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/10 bg-amber-400/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-400">
+                                    <FileText
+                                      size={12}
+                                    />
+                                    Content Missing
+                                  </span>
+                                )}
+
+                                {hasVideo ? (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/10 bg-emerald-400/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-400">
+                                    <Check
+                                      size={12}
+                                    />
+                                    Video Ready
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/10 bg-red-400/[0.05] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-red-300">
+                                    <Film
+                                      size={12}
+                                    />
+                                    Video Pending
+                                  </span>
+                                )}
+
+                                {lecture.isPreviewFree && (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/15 bg-amber-400/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-300">
+                                    <Eye
+                                      size={12}
+                                    />
+                                    Free Preview
+                                  </span>
+                                )}
+
+                              </div>
+
+                            </div>
                           </div>
 
-                          <textarea
-                            value={editingContent}
-                            onChange={(event) =>
-                              setEditingContent(
-                                event.target.value
-                              )
-                            }
-                            rows={12}
-                            className="w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-4 text-sm leading-7 text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                          />
+                          {/* META */}
 
-                          {!editingContent.trim() && (
-                            <p className="mt-2 text-xs text-amber-600">
-                              Add lecture content so
-                              the AI Mentor can use
-                              this lesson as context.
-                            </p>
-                          )}
-                        </div>
+                          <div className="hidden items-center gap-7 border-x border-white/[0.06] px-6 xl:flex">
 
-                        {/* EDIT ACTIONS */}
+                            <div className="text-center">
 
-                        <div className="flex flex-col-reverse gap-3 border-t border-indigo-100 pt-4 sm:flex-row sm:justify-end">
-                          <button
-                            type="button"
-                            onClick={cancelEditing}
-                            disabled={
-                              updatingId ===
-                              lecture._id
-                            }
-                            className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
-                          >
-                            Cancel
-                          </button>
+                              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
+                                Duration
+                              </p>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleUpdateLecture(
-                                lecture._id
-                              )
-                            }
-                            disabled={
-                              updatingId ===
-                              lecture._id
-                            }
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {updatingId ===
-                            lecture._id ? (
-                              <>
-                                <LoaderCircle
-                                  size={17}
-                                  className="animate-spin"
-                                />
-                                Saving...
-                              </>
-                            ) : (
-                              <>
-                                <Save size={17} />
-                                Save Changes
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    /* =================================================
-                       NORMAL MODE
-                    ================================================= */
+                              <p className="mt-1.5 text-sm font-black text-white/75">
+                                {formatDuration(
+                                  lecture.videoDuration
+                                )}
+                              </p>
 
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
+                            </div>
 
-                      {/* LECTURE INFO */}
+                            <div className="h-8 w-px bg-white/[0.06]" />
 
-                      <div className="flex min-w-0 items-center gap-4 lg:w-[43%]">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-sm font-bold text-indigo-600">
-                          {lecture.order}
-                        </div>
+                            <div className="text-center">
 
-                        <div className="min-w-0 flex-1">
-                          <h3 className="truncate font-semibold text-gray-900">
-                            {lecture.lectureTitle}
-                          </h3>
+                              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
+                                Preview
+                              </p>
 
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <p
+                                className={`mt-1.5 text-xs font-black ${
+                                  lecture.isPreviewFree
+                                    ? "text-amber-400"
+                                    : "text-white/30"
+                                }`}
+                              >
+                                {lecture.isPreviewFree
+                                  ? "ENABLED"
+                                  : "LOCKED"}
+                              </p>
 
-                            {/* CONTENT STATUS */}
+                            </div>
+                          </div>
 
-                            {lecture.lectureContent?.trim() ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600">
-                                <FileText size={13} />
-                                Content added
-                              </span>
-                            ) : (
-                              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600">
-                                Content missing
-                              </span>
-                            )}
+                          {/* ACTIONS */}
 
-                            {/* VIDEO STATUS */}
-
-                            {lecture.videoUrl ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600">
-                                <Check size={13} />
-                                Video uploaded
-                              </span>
-                            ) : (
-                              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600">
-                                Video pending
-                              </span>
-                            )}
+                          <div className="flex flex-wrap items-center gap-2.5 xl:justify-end">
 
                             {/* PREVIEW */}
 
-                            {lecture.isPreviewFree && (
-                              <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
-                                Free Preview
+                            <button
+                              type="button"
+                              disabled={
+                                previewLoadingId ===
+                                lecture._id
+                              }
+                              onClick={() =>
+                                handleTogglePreview(
+                                  lecture._id
+                                )
+                              }
+                              className={`group/btn inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-[11px] font-black uppercase tracking-wide transition duration-300 disabled:cursor-not-allowed disabled:opacity-50 ${
+                                lecture.isPreviewFree
+                                  ? "border-amber-400/20 bg-amber-400/10 text-amber-300 hover:bg-amber-400/15 hover:shadow-[0_0_25px_rgba(245,158,11,0.12)]"
+                                  : "border-white/10 bg-white/[0.04] text-white/40 hover:border-amber-400/20 hover:bg-amber-400/[0.05] hover:text-amber-300"
+                              }`}
+                            >
+                              {previewLoadingId ===
+                              lecture._id ? (
+                                <LoaderCircle
+                                  size={14}
+                                  className="animate-spin"
+                                />
+                              ) : (
+                                <PlayCircle
+                                  size={14}
+                                  className="transition group-hover/btn:scale-110"
+                                />
+                              )}
+
+                              {lecture.isPreviewFree
+                                ? "Preview On"
+                                : "Preview Off"}
+                            </button>
+
+                            {/* UPLOAD */}
+
+                            <label
+                              className={`group/upload inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-[11px] font-black uppercase tracking-wide text-white/45 transition duration-300 hover:border-amber-400/20 hover:bg-amber-400/[0.05] hover:text-amber-300 ${
+                                uploadingId ===
+                                lecture._id
+                                  ? "pointer-events-none opacity-50"
+                                  : ""
+                              }`}
+                            >
+
+                              {uploadingId ===
+                              lecture._id ? (
+                                <LoaderCircle
+                                  size={14}
+                                  className="animate-spin"
+                                />
+                              ) : (
+                                <Upload
+                                  size={14}
+                                  className="transition group-hover/upload:-translate-y-0.5"
+                                />
+                              )}
+
+                              <span className="hidden sm:inline">
+                                {uploadingId ===
+                                lecture._id
+                                  ? "Uploading..."
+                                  : lecture.videoUrl
+                                  ? "Replace Video"
+                                  : "Upload Video"}
                               </span>
-                            )}
+
+                              <input
+                                type="file"
+                                accept="video/*"
+                                className="hidden"
+                                disabled={
+                                  uploadingId ===
+                                  lecture._id
+                                }
+                                onChange={(event) => {
+                                  const file =
+                                    event.target
+                                      .files?.[0];
+
+                                  handleVideoUpload(
+                                    lecture._id,
+                                    file
+                                  );
+
+                                  event.target.value =
+                                    "";
+                                }}
+                              />
+                            </label>
+
+                            {/* EDIT */}
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                startEditing(
+                                  lecture
+                                )
+                              }
+                              className="group/edit rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-white/40 transition duration-300 hover:-translate-y-0.5 hover:border-amber-400/20 hover:bg-amber-400/[0.07] hover:text-amber-300 hover:shadow-[0_0_25px_rgba(245,158,11,0.08)]"
+                              title="Edit lecture"
+                            >
+                              <Edit3
+                                size={16}
+                                className="transition group-hover/edit:rotate-12"
+                              />
+                            </button>
+
+                            {/* DELETE */}
+
+                            <button
+                              type="button"
+                              disabled={
+                                deletingId ===
+                                lecture._id
+                              }
+                              onClick={() =>
+                                handleDeleteLecture(
+                                  lecture._id
+                                )
+                              }
+                              className="group/delete rounded-xl border border-red-400/10 bg-red-400/[0.04] p-2.5 text-red-400/60 transition duration-300 hover:-translate-y-0.5 hover:border-red-400/30 hover:bg-red-500/10 hover:text-red-300 hover:shadow-[0_0_25px_rgba(239,68,68,0.08)] disabled:cursor-not-allowed disabled:opacity-40"
+                              title="Delete lecture"
+                            >
+
+                              {deletingId ===
+                              lecture._id ? (
+                                <LoaderCircle
+                                  size={16}
+                                  className="animate-spin"
+                                />
+                              ) : (
+                                <Trash2
+                                  size={16}
+                                  className="transition group-hover/delete:scale-110"
+                                />
+                              )}
+
+                            </button>
+
                           </div>
                         </div>
-                      </div>
-
-                      {/* ACTIONS */}
-
-                      <div className="flex flex-wrap items-center gap-3 lg:flex-1 lg:justify-end">
-
-                        {/* DURATION */}
-
-                        <div className="hidden min-w-[90px] text-center sm:block">
-                          <p className="text-xs text-gray-400">
-                            Duration
-                          </p>
-
-                          <p className="mt-1 text-sm font-semibold text-gray-800">
-                            {formatDuration(
-                              lecture.videoDuration
-                            )}
-                          </p>
-                        </div>
-
-                        {/* PREVIEW */}
-
-                        <button
-                          type="button"
-                          disabled={
-                            previewLoadingId ===
-                            lecture._id
-                          }
-                          onClick={() =>
-                            handleTogglePreview(
-                              lecture._id
-                            )
-                          }
-                          className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                            lecture.isPreviewFree
-                              ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          }`}
-                        >
-                          {previewLoadingId ===
-                          lecture._id ? (
-                            <LoaderCircle
-                              size={15}
-                              className="animate-spin"
-                            />
-                          ) : (
-                            <PlayCircle size={15} />
-                          )}
-
-                          {lecture.isPreviewFree
-                            ? "Preview On"
-                            : "Preview Off"}
-                        </button>
-
-                        {/* VIDEO UPLOAD */}
-
-                        <label
-                          className={`inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-200 ${
-                            uploadingId ===
-                            lecture._id
-                              ? "pointer-events-none opacity-60"
-                              : ""
-                          }`}
-                        >
-                          {uploadingId ===
-                          lecture._id ? (
-                            <LoaderCircle
-                              size={15}
-                              className="animate-spin"
-                            />
-                          ) : (
-                            <Upload size={15} />
-                          )}
-
-                          {uploadingId ===
-                          lecture._id
-                            ? "Uploading..."
-                            : lecture.videoUrl
-                            ? "Replace Video"
-                            : "Upload Video"}
-
-                          <input
-                            type="file"
-                            accept="video/*"
-                            className="hidden"
-                            disabled={
-                              uploadingId ===
-                              lecture._id
-                            }
-                            onChange={(event) => {
-                              const file =
-                                event.target
-                                  .files?.[0];
-
-                              handleVideoUpload(
-                                lecture._id,
-                                file
-                              );
-
-                              event.target.value =
-                                "";
-                            }}
-                          />
-                        </label>
-
-                        {/* EDIT */}
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            startEditing(
-                              lecture
-                            )
-                          }
-                          className="rounded-xl bg-gray-100 p-2 text-gray-600 transition hover:bg-gray-200"
-                          title="Edit lecture"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-
-                        {/* DELETE */}
-
-                        <button
-                          type="button"
-                          disabled={
-                            deletingId ===
-                            lecture._id
-                          }
-                          onClick={() =>
-                            handleDeleteLecture(
-                              lecture._id
-                            )
-                          }
-                          className="rounded-xl bg-red-50 p-2 text-red-500 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                          title="Delete lecture"
-                        >
-                          {deletingId ===
-                          lecture._id ? (
-                            <LoaderCircle
-                              size={16}
-                              className="animate-spin"
-                            />
-                          ) : (
-                            <Trash2 size={16} />
-                          )}
-                        </button>
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  );
+                })}
+
+              </div>
+            )}
+          </section>
+
+          {/* =================================================
+             FOOTER
+          ================================================= */}
+
+          <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-white/[0.05] pt-5 text-center sm:flex-row sm:text-left">
+
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">
+
+              <Shield
+                size={13}
+                className="text-amber-500/50"
+              />
+
+              Your course realm is protected
             </div>
-          )}
+
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">
+
+              <Flame
+                size={13}
+                className="text-orange-500/60"
+              />
+
+              Forge. Teach. Inspire.
+            </div>
+
+          </div>
         </div>
       </div>
+
+      {/* =================================================
+         ANIMATION STYLES
+      ================================================= */}
+
+      <style>{`
+        @keyframes emberFloat {
+          0% {
+            transform: translate3d(0, 0, 0) scale(0.7);
+            opacity: 0;
+          }
+
+          10% {
+            opacity: 0.7;
+          }
+
+          50% {
+            transform: translate3d(
+              25px,
+              -45vh,
+              0
+            ) scale(1);
+            opacity: 0.45;
+          }
+
+          100% {
+            transform: translate3d(
+              -15px,
+              -100vh,
+              0
+            ) scale(0.4);
+            opacity: 0;
+          }
+        }
+
+        .lecture-realm {
+          isolation: isolate;
+        }
+
+        .lecture-realm button,
+        .lecture-realm label,
+        .lecture-realm a {
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        @media (max-width: 1023px) {
+          .lecture-realm {
+            cursor: auto;
+          }
+        }
+
+        ::selection {
+          background: rgba(245, 158, 11, 0.25);
+          color: #fff;
+        }
+      `}</style>
     </div>
   );
 }

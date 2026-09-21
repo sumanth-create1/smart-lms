@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
@@ -9,6 +9,15 @@ import {
   CalendarDays,
   UserRound,
   ArrowRight,
+  Crown,
+  Flame,
+  Shield,
+  Sparkles,
+  Swords,
+  Eye,
+  Gem,
+  X,
+  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -19,16 +28,54 @@ function InstructorStudents() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  // =====================================================
-  // FETCH STUDENTS
-  // =====================================================
+  const cursorRef = useRef(null);
+  const cursorGlowRef = useRef(null);
+
+  /* =====================================================
+     PREMIUM CURSOR
+  ===================================================== */
+
+  useEffect(() => {
+    let frame;
+
+    const moveCursor = (event) => {
+      const { clientX, clientY } = event;
+
+      cancelAnimationFrame(frame);
+
+      frame = requestAnimationFrame(() => {
+        if (cursorRef.current) {
+          cursorRef.current.style.transform = `
+            translate3d(${clientX}px, ${clientY}px, 0)
+          `;
+        }
+
+        if (cursorGlowRef.current) {
+          cursorGlowRef.current.style.transform = `
+            translate3d(${clientX}px, ${clientY}px, 0)
+          `;
+        }
+      });
+    };
+
+    window.addEventListener("mousemove", moveCursor);
+
+    return () => {
+      window.removeEventListener("mousemove", moveCursor);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  /* =====================================================
+     FETCH STUDENTS
+  ===================================================== */
 
   const fetchStudents = async () => {
     try {
       setLoading(true);
 
       const response = await api.get(
-        "/dashboard/instructor/students"
+        "/dashboard/instructor/students",
       );
 
       if (response.data?.success) {
@@ -36,18 +83,18 @@ function InstructorStudents() {
       } else {
         toast.error(
           response.data?.message ||
-            "Failed to load students"
+            "Failed to load students",
         );
       }
     } catch (error) {
       console.error(
         "Instructor students error:",
-        error
+        error,
       );
 
       toast.error(
         error.response?.data?.message ||
-          "Unable to load students"
+          "Unable to load students",
       );
     } finally {
       setLoading(false);
@@ -58,9 +105,9 @@ function InstructorStudents() {
     fetchStudents();
   }, []);
 
-  // =====================================================
-  // FILTER STUDENTS
-  // =====================================================
+  /* =====================================================
+     FILTER STUDENTS
+  ===================================================== */
 
   const filteredEnrollments = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -87,9 +134,9 @@ function InstructorStudents() {
     });
   }, [enrollments, search]);
 
-  // =====================================================
-  // STATS
-  // =====================================================
+  /* =====================================================
+     STATS
+  ===================================================== */
 
   const totalEnrollments = enrollments.length;
 
@@ -97,7 +144,7 @@ function InstructorStudents() {
     return new Set(
       enrollments
         .map((item) => item.student?._id)
-        .filter(Boolean)
+        .filter(Boolean),
     ).size;
   }, [enrollments]);
 
@@ -105,628 +152,1225 @@ function InstructorStudents() {
     return new Set(
       enrollments
         .map((item) => item.course?._id)
-        .filter(Boolean)
+        .filter(Boolean),
     ).size;
   }, [enrollments]);
 
-  // =====================================================
-  // LOADING
-  // =====================================================
+  /* =====================================================
+     LOADING
+  ===================================================== */
 
   if (loading) {
-    return (
-      <div className="flex min-h-[500px] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <LoaderCircle
-            size={36}
-            className="animate-spin text-indigo-600"
-          />
-
-          <p className="text-sm text-gray-500">
-            Loading students...
-          </p>
-        </div>
-      </div>
-    );
+    return <StudentsLoading />;
   }
 
-  // =====================================================
-  // PAGE
-  // =====================================================
+  /* =====================================================
+     PAGE
+  ===================================================== */
 
   return (
-    <div className="space-y-8 p-6 lg:p-8">
+    <div className="students-realm relative min-h-screen overflow-hidden bg-[#070707] text-white">
 
       {/* =================================================
-          HEADER
+          PREMIUM CURSOR
       ================================================= */}
 
-      <div>
-        <p className="mb-1 text-sm font-medium text-indigo-600">
-          Instructor
-        </p>
+      <div
+        ref={cursorGlowRef}
+        className="students-cursor-glow pointer-events-none fixed left-0 top-0 z-[9998]"
+      />
 
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-          Students
-        </h1>
-
-        <p className="mt-2 text-gray-500">
-          View and manage students enrolled in your courses.
-        </p>
+      <div
+        ref={cursorRef}
+        className="students-cursor pointer-events-none fixed left-0 top-0 z-[9999]"
+      >
+        <div className="students-cursor-dot" />
       </div>
 
       {/* =================================================
-          STATS
+          AMBIENT WORLD
       ================================================= */}
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
 
-        <InfoCard
-          title="Total Enrollments"
-          value={totalEnrollments}
-          icon={<Users size={22} />}
-          iconClass="bg-indigo-50 text-indigo-600"
-        />
+        <div className="students-orb students-orb-one" />
 
-        <InfoCard
-          title="Active Students"
-          value={activeStudents}
-          icon={<UserRound size={22} />}
-          iconClass="bg-emerald-50 text-emerald-600"
-        />
+        <div className="students-orb students-orb-two" />
 
-        <InfoCard
-          title="Courses Enrolled"
-          value={enrolledCourses}
-          icon={<BookOpen size={22} />}
-          iconClass="bg-amber-50 text-amber-600"
-        />
+        <div className="students-orb students-orb-three" />
 
-      </div>
+        <div className="students-grid" />
 
-      {/* =================================================
-          SEARCH
-      ================================================= */}
-
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-
-        <div className="relative max-w-xl">
-
-          <Search
-            size={19}
-            className="
-              absolute
-              left-4
-              top-1/2
-              -translate-y-1/2
-              text-gray-400
-            "
+        {Array.from({ length: 22 }).map((_, index) => (
+          <span
+            key={index}
+            className="students-ember"
+            style={{
+              left: `${2 + index * 4.7}%`,
+              animationDelay: `${index * 0.42}s`,
+              animationDuration: `${5 + (index % 5)}s`,
+            }}
           />
-
-          <input
-            type="text"
-            value={search}
-            onChange={(event) =>
-              setSearch(event.target.value)
-            }
-            placeholder="Search students, email or course..."
-            className="
-              w-full
-              rounded-xl
-              border
-              border-gray-200
-              bg-gray-50
-              py-3
-              pl-11
-              pr-4
-              text-sm
-              text-gray-900
-              outline-none
-              transition
-              placeholder:text-gray-400
-              focus:border-indigo-500
-              focus:bg-white
-              focus:ring-4
-              focus:ring-indigo-50
-            "
-          />
-
-        </div>
+        ))}
 
       </div>
 
       {/* =================================================
-          STUDENT TABLE
+          CONTENT
       ================================================= */}
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="relative z-10 space-y-7 p-5 sm:p-6 lg:p-8">
 
-        {/* TABLE HEADER */}
+        {/* =================================================
+            HERO
+        ================================================= */}
 
-        <div className="border-b border-gray-100 px-6 py-5">
+        <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#101010]/90 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
 
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          {/* top energy line */}
 
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                Enrolled Students
-              </h2>
+          <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-400 to-transparent opacity-70" />
 
-              <p className="mt-1 text-sm text-gray-500">
-                {filteredEnrollments.length}{" "}
-                {filteredEnrollments.length === 1
-                  ? "enrollment"
-                  : "enrollments"}{" "}
-                found
-              </p>
+          {/* ambient glow */}
+
+          <div className="absolute -right-32 -top-40 h-96 w-96 rounded-full bg-orange-600/10 blur-[110px]" />
+
+          <div className="absolute -bottom-40 -left-20 h-80 w-80 rounded-full bg-red-700/10 blur-[100px]" />
+
+          <div className="relative p-6 sm:p-8 lg:p-10">
+
+            <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
+
+              {/* TITLE */}
+
+              <div>
+
+                <div className="mb-4 flex flex-wrap items-center gap-3">
+
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-400/15 bg-orange-500/10 text-orange-400 shadow-[0_0_25px_rgba(249,115,22,0.08)]">
+                    <Crown size={19} />
+                  </div>
+
+                  <span className="text-[10px] font-black uppercase tracking-[0.28em] text-orange-400/70">
+                    The Royal Student Registry
+                  </span>
+
+                  <span className="h-1 w-1 rounded-full bg-orange-400/40" />
+
+                  <span className="flex items-center gap-1.5 text-[10px] font-medium text-white/25">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                    Realm Online
+                  </span>
+
+                </div>
+
+                <h1 className="max-w-3xl text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
+                  Know your{" "}
+                  <span className="bg-gradient-to-r from-orange-300 via-amber-400 to-orange-500 bg-clip-text text-transparent">
+                    learners.
+                  </span>
+                </h1>
+
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-white/35 sm:text-base">
+                  Monitor every learner enrolled in your courses,
+                  explore their journey, and enter their individual
+                  learning realm.
+                </p>
+
+                <div className="mt-6 flex flex-wrap gap-2">
+
+                  <RealmTag
+                    icon={<Users size={13} />}
+                    text={`${activeStudents} Active Learners`}
+                  />
+
+                  <RealmTag
+                    icon={<BookOpen size={13} />}
+                    text={`${enrolledCourses} Courses`}
+                  />
+
+                  <RealmTag
+                    icon={<Sparkles size={13} />}
+                    text={`${totalEnrollments} Enrollments`}
+                  />
+
+                </div>
+
+              </div>
+
+              {/* COMMAND EMBLEM */}
+
+              <div className="relative hidden xl:block">
+
+                <div className="relative flex h-44 w-44 items-center justify-center rounded-full border border-orange-400/10 bg-orange-500/[0.025]">
+
+                  <div className="absolute inset-4 rounded-full border border-orange-400/10" />
+
+                  <div className="absolute inset-8 rounded-full border border-dashed border-orange-400/10 students-rotating-ring" />
+
+                  <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl border border-orange-400/20 bg-gradient-to-br from-orange-500/15 to-red-900/10 text-orange-400 shadow-[0_0_40px_rgba(249,115,22,0.12)]">
+                    <Swords size={34} />
+                  </div>
+
+                  <div className="absolute left-4 top-12 text-orange-400/30">
+                    <Gem size={13} />
+                  </div>
+
+                  <div className="absolute right-5 top-9 text-orange-400/30">
+                    <Sparkles size={12} />
+                  </div>
+
+                  <div className="absolute bottom-8 left-9 text-orange-400/25">
+                    <Flame size={13} />
+                  </div>
+
+                </div>
+
+              </div>
+
             </div>
 
           </div>
 
         </div>
 
-        {/* EMPTY STATE */}
+        {/* =================================================
+            STATS
+        ================================================= */}
 
-        {filteredEnrollments.length === 0 ? (
-          <EmptyStudents search={search} />
-        ) : (
-          <>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
 
-            {/* =================================================
-                DESKTOP TABLE
-            ================================================= */}
+          <InfoCard
+            title="Total Enrollments"
+            value={totalEnrollments}
+            description="Enrollment records"
+            icon={<Users size={21} />}
+            accent="orange"
+          />
 
-            <div className="hidden overflow-x-auto md:block">
+          <InfoCard
+            title="Active Students"
+            value={activeStudents}
+            description="Unique learners"
+            icon={<UserRound size={21} />}
+            accent="green"
+          />
 
-              <table className="w-full">
+          <InfoCard
+            title="Courses Enrolled"
+            value={enrolledCourses}
+            description="Unique courses"
+            icon={<BookOpen size={21} />}
+            accent="gold"
+          />
 
-                <thead className="bg-gray-50">
+        </div>
 
-                  <tr>
+        {/* =================================================
+            SEARCH COMMAND CENTER
+        ================================================= */}
 
-                    <TableHeader>
-                      Student
-                    </TableHeader>
+        <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-[#0f0f0f]/90 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.25)] backdrop-blur-xl sm:p-5">
 
-                    <TableHeader>
-                      Course
-                    </TableHeader>
+          <div className="absolute left-0 top-0 h-px w-40 bg-gradient-to-r from-orange-500/70 to-transparent" />
 
-                    <TableHeader>
-                      Level
-                    </TableHeader>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-                    <TableHeader>
-                      Enrolled
-                    </TableHeader>
+            <div className="flex items-center gap-3">
 
-                    <TableHeader>
-                      Email
-                    </TableHeader>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-400/10 bg-orange-500/5 text-orange-400">
+                <Search size={18} />
+              </div>
 
-                    <TableHeader>
-                      Action
-                    </TableHeader>
+              <div>
 
-                  </tr>
+                <p className="text-sm font-bold text-white">
+                  Search the Registry
+                </p>
 
-                </thead>
+                <p className="mt-0.5 text-[10px] text-white/25">
+                  Name · email · course
+                </p>
 
-                <tbody className="divide-y divide-gray-100">
-
-                  {filteredEnrollments.map(
-                    (enrollment) => {
-
-                      const student =
-                        enrollment.student;
-
-                      const course =
-                        enrollment.course;
-
-                      const studentId =
-                        student?._id;
-
-                      return (
-                        <tr
-                          key={enrollment._id}
-                          className="
-                            transition
-                            hover:bg-gray-50
-                          "
-                        >
-
-                          {/* STUDENT */}
-
-                          <td className="px-6 py-5">
-
-                            <div className="flex items-center gap-3">
-
-                              <StudentAvatar
-                                student={student}
-                                size="desktop"
-                              />
-
-                              <div className="min-w-0">
-
-                                {studentId ? (
-                                  <Link
-                                    to={`/instructor/students/${studentId}`}
-                                    className="
-                                      font-semibold
-                                      text-gray-900
-                                      transition
-                                      hover:text-indigo-600
-                                    "
-                                  >
-                                    {student?.name ||
-                                      "Student"}
-                                  </Link>
-                                ) : (
-                                  <p className="font-semibold text-gray-900">
-                                    {student?.name ||
-                                      "Student"}
-                                  </p>
-                                )}
-
-                                <p className="mt-1 text-xs text-gray-500">
-                                  Student
-                                </p>
-
-                              </div>
-
-                            </div>
-
-                          </td>
-
-                          {/* COURSE */}
-
-                          <td className="px-6 py-5">
-
-                            <div className="flex items-center gap-2">
-
-                              <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600">
-                                <BookOpen size={16} />
-                              </div>
-
-                              <div className="min-w-0">
-
-                                <p className="max-w-[220px] truncate font-medium text-gray-900">
-                                  {course?.courseTitle ||
-                                    "Course"}
-                                </p>
-
-                                <p className="mt-1 text-xs text-gray-400">
-                                  ₹
-                                  {course?.coursePrice ||
-                                    0}
-                                </p>
-
-                              </div>
-
-                            </div>
-
-                          </td>
-
-                          {/* LEVEL */}
-
-                          <td className="px-6 py-5">
-
-                            <span
-                              className="
-                                inline-flex
-                                rounded-full
-                                bg-indigo-50
-                                px-3
-                                py-1.5
-                                text-xs
-                                font-medium
-                                text-indigo-600
-                              "
-                            >
-                              {course?.courseLevel ||
-                                "N/A"}
-                            </span>
-
-                          </td>
-
-                          {/* DATE */}
-
-                          <td className="px-6 py-5">
-
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-
-                              <CalendarDays
-                                size={16}
-                                className="text-gray-400"
-                              />
-
-                              {formatDate(
-                                enrollment.enrolledAt
-                              )}
-
-                            </div>
-
-                          </td>
-
-                          {/* EMAIL */}
-
-                          <td className="px-6 py-5">
-
-                            {student?.email ? (
-                              <a
-                                href={`mailto:${student.email}`}
-                                className="
-                                  inline-flex
-                                  max-w-[220px]
-                                  items-center
-                                  gap-2
-                                  text-sm
-                                  text-gray-600
-                                  transition
-                                  hover:text-indigo-600
-                                "
-                              >
-                                <Mail
-                                  size={16}
-                                  className="shrink-0 text-gray-400"
-                                />
-
-                                <span className="truncate">
-                                  {student.email}
-                                </span>
-                              </a>
-                            ) : (
-                              <span className="text-sm text-gray-400">
-                                No email
-                              </span>
-                            )}
-
-                          </td>
-
-                          {/* ACTION */}
-
-                          <td className="px-6 py-5">
-
-                            {studentId ? (
-                              <Link
-                                to={`/instructor/students/${studentId}`}
-                                className="
-                                  inline-flex
-                                  items-center
-                                  gap-2
-                                  rounded-lg
-                                  border
-                                  border-gray-200
-                                  bg-white
-                                  px-3
-                                  py-2
-                                  text-xs
-                                  font-semibold
-                                  text-gray-700
-                                  transition
-                                  hover:border-indigo-200
-                                  hover:bg-indigo-50
-                                  hover:text-indigo-600
-                                "
-                              >
-                                View
-                                <ArrowRight size={14} />
-                              </Link>
-                            ) : (
-                              <span className="text-xs text-gray-400">
-                                Unavailable
-                              </span>
-                            )}
-
-                          </td>
-
-                        </tr>
-                      );
-                    }
-                  )}
-
-                </tbody>
-
-              </table>
+              </div>
 
             </div>
 
-            {/* =================================================
-                MOBILE CARDS
-            ================================================= */}
+            <div className="relative w-full lg:max-w-xl">
 
-            <div className="divide-y divide-gray-100 md:hidden">
+              <Search
+                size={17}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-orange-400/40"
+              />
 
-              {filteredEnrollments.map(
-                (enrollment) => {
-
-                  const student =
-                    enrollment.student;
-
-                  const course =
-                    enrollment.course;
-
-                  const studentId =
-                    student?._id;
-
-                  return (
-                    <div
-                      key={enrollment._id}
-                      className="p-5"
-                    >
-
-                      {/* STUDENT */}
-
-                      <div className="flex items-start gap-4">
-
-                        <StudentAvatar
-                          student={student}
-                          size="mobile"
-                        />
-
-                        <div className="min-w-0 flex-1">
-
-                          {studentId ? (
-                            <Link
-                              to={`/instructor/students/${studentId}`}
-                              className="
-                                font-semibold
-                                text-gray-900
-                                transition
-                                hover:text-indigo-600
-                              "
-                            >
-                              {student?.name ||
-                                "Student"}
-                            </Link>
-                          ) : (
-                            <h3 className="font-semibold text-gray-900">
-                              {student?.name ||
-                                "Student"}
-                            </h3>
-                          )}
-
-                          {student?.email && (
-                            <a
-                              href={`mailto:${student.email}`}
-                              className="
-                                mt-1
-                                flex
-                                items-center
-                                gap-2
-                                text-sm
-                                text-gray-500
-                                hover:text-indigo-600
-                              "
-                            >
-                              <Mail size={14} />
-
-                              <span className="truncate">
-                                {student.email}
-                              </span>
-                            </a>
-                          )}
-
-                        </div>
-
-                      </div>
-
-                      {/* COURSE */}
-
-                      <div className="mt-5 rounded-xl bg-gray-50 p-4">
-
-                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                          Enrolled Course
-                        </p>
-
-                        <p className="mt-1 font-semibold text-gray-900">
-                          {course?.courseTitle ||
-                            "Course"}
-                        </p>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-
-                          <span className="
-                            rounded-full
-                            bg-indigo-50
-                            px-2.5
-                            py-1
-                            text-xs
-                            font-medium
-                            text-indigo-600
-                          ">
-                            {course?.courseLevel ||
-                              "N/A"}
-                          </span>
-
-                          <span className="text-xs text-gray-500">
-                            ₹{course?.coursePrice || 0}
-                          </span>
-
-                        </div>
-
-                        <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
-
-                          <CalendarDays size={14} />
-
-                          Enrolled{" "}
-                          {formatDate(
-                            enrollment.enrolledAt
-                          )}
-
-                        </div>
-
-                      </div>
-
-                      {/* VIEW DETAILS */}
-
-                      {studentId && (
-                        <Link
-                          to={`/instructor/students/${studentId}`}
-                          className="
-                            mt-4
-                            flex
-                            w-full
-                            items-center
-                            justify-center
-                            gap-2
-                            rounded-xl
-                            bg-indigo-600
-                            px-4
-                            py-3
-                            text-sm
-                            font-semibold
-                            text-white
-                            transition
-                            hover:bg-indigo-700
-                          "
-                        >
-                          View Student Details
-                          <ArrowRight size={16} />
-                        </Link>
-                      )}
-
-                    </div>
-                  );
+              <input
+                type="text"
+                value={search}
+                onChange={(event) =>
+                  setSearch(event.target.value)
                 }
+                placeholder="Search student, email or course..."
+                className="
+                  w-full
+                  rounded-xl
+                  border
+                  border-white/8
+                  bg-black/30
+                  py-3.5
+                  pl-11
+                  pr-12
+                  text-sm
+                  text-white
+                  outline-none
+                  transition-all
+                  duration-300
+                  placeholder:text-white/20
+                  focus:border-orange-400/30
+                  focus:bg-orange-500/[0.025]
+                  focus:shadow-[0_0_30px_rgba(249,115,22,0.08)]
+                "
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-lg p-1.5 text-white/30 transition hover:bg-white/5 hover:text-orange-300"
+                >
+                  <X size={15} />
+                </button>
               )}
 
             </div>
 
-          </>
-        )}
+          </div>
+
+        </div>
+
+        {/* =================================================
+            REGISTRY
+        ================================================= */}
+
+        <div className="relative overflow-hidden rounded-[26px] border border-white/8 bg-[#0e0e0e]/95 shadow-[0_30px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+
+          {/* registry top line */}
+
+          <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-orange-500/60 via-transparent to-transparent" />
+
+          {/* HEADER */}
+
+          <div className="border-b border-white/6 px-5 py-5 sm:px-6">
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+              <div>
+
+                <div className="flex items-center gap-2">
+
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-400/10 bg-orange-500/5 text-orange-400">
+                    <Shield size={15} />
+                  </div>
+
+                  <h2 className="text-lg font-bold text-white">
+                    Enrolled Students
+                  </h2>
+
+                </div>
+
+                <p className="mt-2 text-xs text-white/25">
+                  {filteredEnrollments.length}{" "}
+                  {filteredEnrollments.length === 1
+                    ? "enrollment"
+                    : "enrollments"}{" "}
+                  found in the registry
+                </p>
+
+              </div>
+
+              <div className="flex items-center gap-2">
+
+                {search && (
+                  <span className="rounded-full border border-orange-400/10 bg-orange-500/5 px-3 py-1.5 text-[10px] font-bold text-orange-300">
+                    Filtered
+                  </span>
+                )}
+
+                <span className="rounded-full border border-white/7 bg-white/[0.025] px-3 py-1.5 text-[10px] font-semibold text-white/30">
+                  {filteredEnrollments.length} Records
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* EMPTY */}
+
+          {filteredEnrollments.length === 0 ? (
+            <EmptyStudents search={search} />
+          ) : (
+            <>
+              {/* =================================================
+                  DESKTOP TABLE
+              ================================================= */}
+
+              <div className="hidden overflow-x-auto md:block">
+
+                <table className="w-full">
+
+                  <thead>
+
+                    <tr className="border-b border-white/5 bg-white/[0.015]">
+
+                      <TableHeader>
+                        Student
+                      </TableHeader>
+
+                      <TableHeader>
+                        Course
+                      </TableHeader>
+
+                      <TableHeader>
+                        Level
+                      </TableHeader>
+
+                      <TableHeader>
+                        Enrolled
+                      </TableHeader>
+
+                      <TableHeader>
+                        Email
+                      </TableHeader>
+
+                      <TableHeader>
+                        Action
+                      </TableHeader>
+
+                    </tr>
+
+                  </thead>
+
+                  <tbody>
+
+                    {filteredEnrollments.map(
+                      (enrollment, index) => {
+                        const student =
+                          enrollment.student;
+
+                        const course =
+                          enrollment.course;
+
+                        const studentId =
+                          student?._id;
+
+                        return (
+                          <StudentTableRow
+                            key={enrollment._id}
+                            enrollment={enrollment}
+                            student={student}
+                            course={course}
+                            studentId={studentId}
+                            index={index}
+                          />
+                        );
+                      },
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+              {/* =================================================
+                  MOBILE CARDS
+              ================================================= */}
+
+              <div className="divide-y divide-white/5 md:hidden">
+
+                {filteredEnrollments.map(
+                  (enrollment, index) => {
+                    const student =
+                      enrollment.student;
+
+                    const course =
+                      enrollment.course;
+
+                    const studentId =
+                      student?._id;
+
+                    return (
+                      <MobileStudentCard
+                        key={enrollment._id}
+                        enrollment={enrollment}
+                        student={student}
+                        course={course}
+                        studentId={studentId}
+                        index={index}
+                      />
+                    );
+                  },
+                )}
+
+              </div>
+            </>
+          )}
+
+        </div>
 
       </div>
+
+      {/* =================================================
+          STYLES
+      ================================================= */}
+
+      <style>{`
+        /* =================================================
+           CURSOR
+        ================================================= */
+
+        .students-cursor {
+          width: 32px;
+          height: 32px;
+          margin-left: -16px;
+          margin-top: -16px;
+          border: 1px solid rgba(251,146,60,0.75);
+          border-radius: 50%;
+          box-shadow:
+            0 0 18px rgba(249,115,22,0.25),
+            inset 0 0 12px rgba(249,115,22,0.08);
+        }
+
+        .students-cursor-dot {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 4px;
+          height: 4px;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          background: #fb923c;
+          box-shadow:
+            0 0 8px rgba(251,146,60,0.9),
+            0 0 20px rgba(249,115,22,0.6);
+        }
+
+        .students-cursor-glow {
+          width: 130px;
+          height: 130px;
+          margin-left: -65px;
+          margin-top: -65px;
+          border-radius: 50%;
+          background:
+            radial-gradient(
+              circle,
+              rgba(249,115,22,0.09),
+              rgba(249,115,22,0.025) 40%,
+              transparent 72%
+            );
+          filter: blur(4px);
+        }
+
+        /* =================================================
+           BACKGROUND
+        ================================================= */
+
+        .students-grid {
+          position: absolute;
+          inset: 0;
+          opacity: 0.12;
+          background-image:
+            linear-gradient(
+              rgba(255,255,255,0.025) 1px,
+              transparent 1px
+            ),
+            linear-gradient(
+              90deg,
+              rgba(255,255,255,0.025) 1px,
+              transparent 1px
+            );
+          background-size: 52px 52px;
+          mask-image:
+            linear-gradient(
+              to bottom,
+              black,
+              transparent 90%
+            );
+        }
+
+        .students-orb {
+          position: absolute;
+          border-radius: 999px;
+          filter: blur(110px);
+        }
+
+        .students-orb-one {
+          width: 500px;
+          height: 500px;
+          left: -180px;
+          top: -180px;
+          background: rgba(180,60,10,0.10);
+          animation: studentsOrbOne 13s ease-in-out infinite;
+        }
+
+        .students-orb-two {
+          width: 420px;
+          height: 420px;
+          right: -150px;
+          top: 35%;
+          background: rgba(249,115,22,0.07);
+          animation: studentsOrbTwo 16s ease-in-out infinite;
+        }
+
+        .students-orb-three {
+          width: 380px;
+          height: 380px;
+          bottom: -180px;
+          left: 35%;
+          background: rgba(234,179,8,0.045);
+          animation: studentsOrbThree 14s ease-in-out infinite;
+        }
+
+        /* =================================================
+           EMBERS
+        ================================================= */
+
+        .students-ember {
+          position: absolute;
+          bottom: -20px;
+          width: 3px;
+          height: 3px;
+          border-radius: 50%;
+          background: #fb923c;
+          box-shadow:
+            0 0 8px rgba(251,146,60,0.9),
+            0 0 18px rgba(249,115,22,0.45);
+          opacity: 0;
+          animation: studentsEmberRise linear infinite;
+        }
+
+        /* =================================================
+           ROTATING RING
+        ================================================= */
+
+        .students-rotating-ring {
+          animation: studentsRotate 18s linear infinite;
+        }
+
+        /* =================================================
+           ANIMATIONS
+        ================================================= */
+
+        @keyframes studentsOrbOne {
+          0%,100% {
+            transform: translate(0,0) scale(1);
+          }
+
+          50% {
+            transform: translate(90px,70px) scale(1.08);
+          }
+        }
+
+        @keyframes studentsOrbTwo {
+          0%,100% {
+            transform: translate(0,0);
+          }
+
+          50% {
+            transform: translate(-80px,40px);
+          }
+        }
+
+        @keyframes studentsOrbThree {
+          0%,100% {
+            transform: translate(0,0);
+          }
+
+          50% {
+            transform: translate(50px,-60px);
+          }
+        }
+
+        @keyframes studentsEmberRise {
+          0% {
+            transform:
+              translateY(0)
+              translateX(0)
+              scale(0.4);
+            opacity: 0;
+          }
+
+          15% {
+            opacity: 0.7;
+          }
+
+          70% {
+            opacity: 0.35;
+          }
+
+          100% {
+            transform:
+              translateY(-90vh)
+              translateX(35px)
+              scale(1);
+            opacity: 0;
+          }
+        }
+
+        @keyframes studentsRotate {
+          from {
+            transform: rotate(0deg);
+          }
+
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @keyframes studentsAppear {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .students-cursor,
+          .students-cursor-glow {
+            display: none;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .students-orb,
+          .students-ember,
+          .students-rotating-ring {
+            animation: none !important;
+          }
+        }
+      `}</style>
+
     </div>
   );
 }
 
-// =====================================================
-// TABLE HEADER
-// =====================================================
+/* =====================================================
+   REALM TAG
+===================================================== */
+
+function RealmTag({ icon, text }) {
+  return (
+    <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/[0.025] px-3 py-2 text-[10px] font-semibold text-white/40">
+      <span className="text-orange-400/70">
+        {icon}
+      </span>
+
+      {text}
+    </div>
+  );
+}
+
+/* =====================================================
+   INFO CARD
+===================================================== */
+
+function InfoCard({
+  title,
+  value,
+  description,
+  icon,
+  accent,
+}) {
+  const themes = {
+    orange: {
+      icon: "border-orange-400/15 bg-orange-500/10 text-orange-400",
+      glow: "group-hover:shadow-[0_20px_60px_rgba(249,115,22,0.08)]",
+    },
+
+    green: {
+      icon: "border-emerald-400/15 bg-emerald-500/10 text-emerald-400",
+      glow: "group-hover:shadow-[0_20px_60px_rgba(16,185,129,0.06)]",
+    },
+
+    gold: {
+      icon: "border-yellow-400/15 bg-yellow-500/10 text-yellow-400",
+      glow: "group-hover:shadow-[0_20px_60px_rgba(234,179,8,0.07)]",
+    },
+  };
+
+  const theme =
+    themes[accent] || themes.orange;
+
+  return (
+    <div
+      className={`
+        group
+        relative
+        overflow-hidden
+        rounded-2xl
+        border
+        border-white/8
+        bg-[#101010]/90
+        p-5
+        backdrop-blur-xl
+        transition-all
+        duration-500
+        hover:-translate-y-1
+        hover:border-orange-400/15
+        ${theme.glow}
+      `}
+    >
+
+      <div className="absolute left-0 top-0 h-px w-28 bg-gradient-to-r from-orange-500/60 to-transparent" />
+
+      <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-orange-500/5 blur-2xl opacity-0 transition group-hover:opacity-100" />
+
+      <div className="relative flex items-start justify-between">
+
+        <div>
+
+          <p className="text-xs font-semibold text-white/35">
+            {title}
+          </p>
+
+          <p className="mt-3 text-3xl font-black tracking-tight text-white transition group-hover:text-orange-100">
+            {value}
+          </p>
+
+          <p className="mt-1 text-[10px] text-white/20">
+            {description}
+          </p>
+
+        </div>
+
+        <div
+          className={`
+            flex
+            h-11
+            w-11
+            items-center
+            justify-center
+            rounded-xl
+            border
+            transition-all
+            duration-300
+            group-hover:scale-110
+            group-hover:rotate-3
+            ${theme.icon}
+          `}
+        >
+          {icon}
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+
+/* =====================================================
+   TABLE HEADER
+===================================================== */
 
 function TableHeader({ children }) {
   return (
-    <th
-      className="
-        px-6
-        py-4
-        text-left
-        text-xs
-        font-semibold
-        uppercase
-        tracking-wider
-        text-gray-500
-      "
-    >
+    <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.15em] text-white/25">
       {children}
     </th>
   );
 }
 
-// =====================================================
-// STUDENT AVATAR
-// =====================================================
+/* =====================================================
+   DESKTOP STUDENT ROW
+===================================================== */
+
+function StudentTableRow({
+  enrollment,
+  student,
+  course,
+  studentId,
+  index,
+}) {
+  return (
+    <tr
+      className="
+        group
+        border-b
+        border-white/5
+        transition-all
+        duration-300
+        hover:bg-orange-500/[0.025]
+      "
+      style={{
+        animation:
+          "studentsAppear 0.5s ease both",
+        animationDelay: `${index * 50}ms`,
+      }}
+    >
+
+      {/* STUDENT */}
+
+      <td className="px-6 py-5">
+
+        <div className="flex items-center gap-3">
+
+          <StudentAvatar
+            student={student}
+            size="desktop"
+          />
+
+          <div className="min-w-0">
+
+            {studentId ? (
+              <Link
+                to={`/instructor/students/${studentId}`}
+                className="font-semibold text-white/80 transition hover:text-orange-300"
+              >
+                {student?.name || "Student"}
+              </Link>
+            ) : (
+              <p className="font-semibold text-white/80">
+                {student?.name || "Student"}
+              </p>
+            )}
+
+            <p className="mt-1 flex items-center gap-1.5 text-[10px] text-white/20">
+              <Shield size={10} />
+              Registered Learner
+            </p>
+
+          </div>
+
+        </div>
+
+      </td>
+
+      {/* COURSE */}
+
+      <td className="px-6 py-5">
+
+        <div className="flex items-center gap-3">
+
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-orange-400/10 bg-orange-500/5 text-orange-400/70 transition group-hover:border-orange-400/20 group-hover:bg-orange-500/10 group-hover:text-orange-300">
+            <BookOpen size={15} />
+          </div>
+
+          <div className="min-w-0">
+
+            <p className="max-w-[220px] truncate text-sm font-semibold text-white/65">
+              {course?.courseTitle ||
+                "Course"}
+            </p>
+
+            <p className="mt-1 text-[10px] text-white/20">
+              ₹{course?.coursePrice || 0}
+            </p>
+
+          </div>
+
+        </div>
+
+      </td>
+
+      {/* LEVEL */}
+
+      <td className="px-6 py-5">
+
+        <span className="inline-flex rounded-full border border-orange-400/10 bg-orange-500/5 px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-orange-300/70">
+          {course?.courseLevel ||
+            "N/A"}
+        </span>
+
+      </td>
+
+      {/* DATE */}
+
+      <td className="px-6 py-5">
+
+        <div className="flex items-center gap-2 text-xs text-white/35">
+
+          <CalendarDays
+            size={14}
+            className="text-orange-400/50"
+          />
+
+          {formatDate(
+            enrollment.enrolledAt,
+          )}
+
+        </div>
+
+      </td>
+
+      {/* EMAIL */}
+
+      <td className="px-6 py-5">
+
+        {student?.email ? (
+          <a
+            href={`mailto:${student.email}`}
+            className="group/email inline-flex max-w-[220px] items-center gap-2 text-xs text-white/35 transition hover:text-orange-300"
+          >
+            <Mail
+              size={14}
+              className="shrink-0 text-white/20 transition group-hover/email:text-orange-400"
+            />
+
+            <span className="truncate">
+              {student.email}
+            </span>
+          </a>
+        ) : (
+          <span className="text-xs text-white/20">
+            No email
+          </span>
+        )}
+
+      </td>
+
+      {/* ACTION */}
+
+      <td className="px-6 py-5">
+
+        {studentId ? (
+          <Link
+            to={`/instructor/students/${studentId}`}
+            className="
+              group/view
+              inline-flex
+              items-center
+              gap-2
+              rounded-xl
+              border
+              border-white/8
+              bg-white/[0.025]
+              px-3
+              py-2
+              text-[10px]
+              font-bold
+              uppercase
+              tracking-wider
+              text-white/40
+              transition-all
+              duration-300
+              hover:border-orange-400/20
+              hover:bg-orange-500/8
+              hover:text-orange-300
+            "
+          >
+            <Eye size={13} />
+
+            View
+
+            <ArrowRight
+              size={13}
+              className="transition-transform duration-300 group-hover/view:translate-x-0.5"
+            />
+          </Link>
+        ) : (
+          <span className="text-xs text-white/20">
+            Unavailable
+          </span>
+        )}
+
+      </td>
+
+    </tr>
+  );
+}
+
+/* =====================================================
+   MOBILE STUDENT CARD
+===================================================== */
+
+function MobileStudentCard({
+  enrollment,
+  student,
+  course,
+  studentId,
+  index,
+}) {
+  return (
+    <div
+      className="relative overflow-hidden p-5"
+      style={{
+        animation:
+          "studentsAppear 0.5s ease both",
+        animationDelay: `${index * 60}ms`,
+      }}
+    >
+
+      <div className="absolute left-0 top-0 h-px w-20 bg-gradient-to-r from-orange-500/50 to-transparent" />
+
+      {/* STUDENT */}
+
+      <div className="flex items-start gap-4">
+
+        <StudentAvatar
+          student={student}
+          size="mobile"
+        />
+
+        <div className="min-w-0 flex-1">
+
+          <div className="flex items-start justify-between gap-3">
+
+            <div className="min-w-0">
+
+              {studentId ? (
+                <Link
+                  to={`/instructor/students/${studentId}`}
+                  className="font-bold text-white/85 transition hover:text-orange-300"
+                >
+                  {student?.name ||
+                    "Student"}
+                </Link>
+              ) : (
+                <h3 className="font-bold text-white/85">
+                  {student?.name ||
+                    "Student"}
+                </h3>
+              )}
+
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-white/20">
+                Registered Learner
+              </p>
+
+            </div>
+
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-orange-400/10 bg-orange-500/5 text-orange-400/70">
+              <Shield size={14} />
+            </div>
+
+          </div>
+
+          {student?.email && (
+            <a
+              href={`mailto:${student.email}`}
+              className="mt-3 flex items-center gap-2 text-xs text-white/35 transition hover:text-orange-300"
+            >
+              <Mail size={13} />
+
+              <span className="truncate">
+                {student.email}
+              </span>
+            </a>
+          )}
+
+        </div>
+
+      </div>
+
+      {/* COURSE */}
+
+      <div className="mt-5 rounded-2xl border border-white/6 bg-white/[0.02] p-4">
+
+        <div className="flex items-start gap-3">
+
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-400/10 bg-orange-500/5 text-orange-400/70">
+            <BookOpen size={17} />
+          </div>
+
+          <div className="min-w-0 flex-1">
+
+            <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/20">
+              Enrolled Course
+            </p>
+
+            <p className="mt-1 truncate text-sm font-semibold text-white/70">
+              {course?.courseTitle ||
+                "Course"}
+            </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+
+              <span className="rounded-full border border-orange-400/10 bg-orange-500/5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-orange-300/70">
+                {course?.courseLevel ||
+                  "N/A"}
+              </span>
+
+              <span className="text-[10px] text-white/25">
+                ₹{course?.coursePrice || 0}
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div className="mt-4 flex items-center gap-2 border-t border-white/5 pt-3 text-[10px] text-white/25">
+
+          <CalendarDays
+            size={13}
+            className="text-orange-400/50"
+          />
+
+          Enrolled{" "}
+          {formatDate(
+            enrollment.enrolledAt,
+          )}
+
+        </div>
+
+      </div>
+
+      {/* ACTION */}
+
+      {studentId && (
+        <Link
+          to={`/instructor/students/${studentId}`}
+          className="
+            group
+            mt-4
+            flex
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            border
+            border-orange-400/15
+            bg-orange-500/8
+            px-4
+            py-3.5
+            text-xs
+            font-bold
+            uppercase
+            tracking-wider
+            text-orange-300
+            transition-all
+            duration-300
+            hover:border-orange-400/30
+            hover:bg-orange-500/12
+            hover:shadow-[0_0_30px_rgba(249,115,22,0.08)]
+          "
+        >
+          <Eye size={15} />
+
+          View Student Details
+
+          <ChevronRight
+            size={15}
+            className="transition-transform group-hover:translate-x-1"
+          />
+
+        </Link>
+      )}
+
+    </div>
+  );
+}
+
+/* =====================================================
+   STUDENT AVATAR
+===================================================== */
 
 function StudentAvatar({
   student,
@@ -734,49 +1378,170 @@ function StudentAvatar({
 }) {
   const sizeClass =
     size === "mobile"
-      ? "h-12 w-12"
-      : "h-11 w-11";
+      ? "h-14 w-14"
+      : "h-12 w-12";
 
   if (student?.avatar) {
     return (
-      <img
-        src={student.avatar}
-        alt={student.name || "Student"}
-        className={`
-          ${sizeClass}
-          shrink-0
-          rounded-full
-          object-cover
-        `}
-      />
+      <div className="relative shrink-0">
+
+        <div className="absolute -inset-1 rounded-2xl bg-orange-500/10 blur-md opacity-0 transition group-hover:opacity-100" />
+
+        <img
+          src={student.avatar}
+          alt={
+            student.name ||
+            "Student"
+          }
+          className={`
+            relative
+            ${sizeClass}
+            rounded-2xl
+            border
+            border-white/10
+            object-cover
+            shadow-lg
+            transition-transform
+            duration-300
+            group-hover:scale-105
+          `}
+        />
+
+        <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-[#101010] bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+
+      </div>
     );
   }
 
   return (
     <div
       className={`
+        relative
         ${sizeClass}
         flex
         shrink-0
         items-center
         justify-center
-        rounded-full
-        bg-indigo-50
+        rounded-2xl
+        border
+        border-orange-400/10
+        bg-gradient-to-br
+        from-orange-500/15
+        via-white/[0.025]
+        to-red-900/10
         text-sm
-        font-bold
-        text-indigo-600
+        font-black
+        text-orange-300
+        shadow-[0_0_20px_rgba(249,115,22,0.06)]
+        transition-all
+        duration-300
+        group-hover:border-orange-400/20
+        group-hover:shadow-[0_0_25px_rgba(249,115,22,0.12)]
       `}
     >
+
       {student?.name
         ?.charAt(0)
         ?.toUpperCase() || "S"}
+
+      <div className="absolute inset-1.5 rounded-xl border border-orange-400/8" />
+
+      <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-[#101010] bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+
     </div>
   );
 }
 
-// =====================================================
-// FORMAT DATE
-// =====================================================
+/* =====================================================
+   EMPTY STATE
+===================================================== */
+
+function EmptyStudents({ search }) {
+  return (
+    <div className="relative flex min-h-[380px] flex-col items-center justify-center overflow-hidden px-6 text-center">
+
+      <div className="absolute h-80 w-80 rounded-full bg-orange-500/5 blur-[100px]" />
+
+      <div className="relative z-10">
+
+        <div className="relative mx-auto flex h-24 w-24 items-center justify-center rounded-[28px] border border-orange-400/10 bg-orange-500/5 text-orange-400/60">
+
+          <Users size={36} />
+
+          <div className="absolute inset-2 rounded-[22px] border border-orange-400/8" />
+
+        </div>
+
+        <p className="mt-7 text-[10px] font-black uppercase tracking-[0.25em] text-orange-400/50">
+          {search
+            ? "No Match Found"
+            : "Empty Registry"}
+        </p>
+
+        <h3 className="mt-2 text-xl font-bold text-white">
+          {search
+            ? "No students found"
+            : "No students yet"}
+        </h3>
+
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/30">
+          {search
+            ? "Try searching with a different student name, email, or course."
+            : "Students who enroll in your courses will appear here."}
+        </p>
+
+        {search && (
+          <p className="mt-5 text-xs text-orange-300/40">
+            Search query: "{search}"
+          </p>
+        )}
+
+      </div>
+
+    </div>
+  );
+}
+
+/* =====================================================
+   LOADING STATE
+===================================================== */
+
+function StudentsLoading() {
+  return (
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#070707] text-white">
+
+      <div className="absolute h-[500px] w-[500px] rounded-full bg-orange-600/10 blur-[130px]" />
+
+      <div className="relative z-10 flex flex-col items-center">
+
+        <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-orange-400/15 bg-orange-500/5">
+
+          <div className="absolute inset-0 rounded-[28px] border border-orange-400/10 animate-ping" />
+
+          <LoaderCircle
+            size={35}
+            className="animate-spin text-orange-400"
+          />
+
+        </div>
+
+        <p className="mt-6 text-sm font-semibold text-white/60">
+          Opening the student registry...
+        </p>
+
+        <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-orange-400/40">
+          Gathering learner records
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
+/* =====================================================
+   FORMAT DATE
+===================================================== */
 
 function formatDate(date) {
   if (!date) {
@@ -785,95 +1550,15 @@ function formatDate(date) {
 
   const parsedDate = new Date(date);
 
-  if (Number.isNaN(parsedDate.getTime())) {
+  if (
+    Number.isNaN(
+      parsedDate.getTime(),
+    )
+  ) {
     return "N/A";
   }
 
   return parsedDate.toLocaleDateString();
-}
-
-// =====================================================
-// INFO CARD
-// =====================================================
-
-function InfoCard({
-  title,
-  value,
-  icon,
-  iconClass,
-}) {
-  return (
-    <div
-      className="
-        rounded-2xl
-        border
-        border-gray-200
-        bg-white
-        p-6
-        shadow-sm
-        transition
-        hover:-translate-y-0.5
-        hover:shadow-md
-      "
-    >
-      <div className="flex items-start justify-between">
-
-        <div>
-          <p className="text-sm font-medium text-gray-500">
-            {title}
-          </p>
-
-          <p className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
-            {value}
-          </p>
-        </div>
-
-        <div
-          className={`rounded-xl p-3 ${iconClass}`}
-        >
-          {icon}
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-// =====================================================
-// EMPTY STATE
-// =====================================================
-
-function EmptyStudents({ search }) {
-  return (
-    <div className="
-      flex
-      min-h-[350px]
-      flex-col
-      items-center
-      justify-center
-      px-6
-      text-center
-    ">
-      <div className="rounded-full bg-gray-100 p-4">
-        <Users
-          size={28}
-          className="text-gray-400"
-        />
-      </div>
-
-      <h3 className="mt-4 font-semibold text-gray-900">
-        {search
-          ? "No students found"
-          : "No students yet"}
-      </h3>
-
-      <p className="mt-2 max-w-md text-sm text-gray-500">
-        {search
-          ? "Try searching with a different student name, email, or course."
-          : "Students who enroll in your courses will appear here."}
-      </p>
-    </div>
-  );
 }
 
 export default InstructorStudents;

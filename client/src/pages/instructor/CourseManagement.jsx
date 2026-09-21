@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import {
   ArrowLeft,
   BookOpen,
@@ -13,12 +14,250 @@ import {
   Users,
   Film,
   ChevronRight,
+  Crown,
+  Flame,
+  Gem,
+  Shield,
+  Sparkles,
+  X,
+  ScrollText,
+  Swords,
+  Check,
+  LockKeyhole,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
+import { toast } from "react-hot-toast";
 import api from "../../services/api";
 
-function CourseManagement() {
+
+// ============================================================
+// AMBIENT PARTICLES
+// ============================================================
+
+const AmbientParticles = () => {
+  const particles = Array.from({ length: 24 });
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {particles.map((_, index) => (
+        <span
+          key={index}
+          className="absolute h-1 w-1 rounded-full bg-orange-400/30 animate-pulse"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 4}s`,
+            animationDuration: `${2 + Math.random() * 4}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+
+// ============================================================
+// PREMIUM BUTTON
+// ============================================================
+
+const PremiumButton = ({
+  children,
+  onClick,
+  variant = "primary",
+  disabled = false,
+  type = "button",
+  className = "",
+}) => {
+  const base =
+    "group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50";
+
+  const variants = {
+    primary:
+      "bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 text-black shadow-[0_0_25px_rgba(249,115,22,0.18)] hover:-translate-y-0.5 hover:shadow-[0_0_35px_rgba(249,115,22,0.35)]",
+
+    secondary:
+      "border border-orange-400/20 bg-white/[0.04] text-orange-100 hover:border-orange-400/50 hover:bg-orange-400/10",
+
+    danger:
+      "border border-red-500/20 bg-red-500/10 text-red-300 hover:border-red-500/40 hover:bg-red-500/20",
+
+    dark:
+      "border border-white/10 bg-black/30 text-gray-300 hover:border-orange-400/30 hover:text-orange-300",
+  };
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${base} ${variants[variant]} ${className}`}
+    >
+      <span className="absolute inset-0 -translate-x-full bg-white/10 transition-transform duration-500 group-hover:translate-x-full" />
+      <span className="relative z-10 flex items-center gap-2">
+        {children}
+      </span>
+    </button>
+  );
+};
+
+
+// ============================================================
+// INPUT
+// ============================================================
+
+const InputField = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  required = false,
+}) => {
+  return (
+    <div>
+      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-orange-200/70">
+        {label}
+        {required && <span className="ml-1 text-orange-400">*</span>}
+      </label>
+
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition-all placeholder:text-gray-600 focus:border-orange-400/50 focus:bg-black/50 focus:ring-2 focus:ring-orange-400/10"
+      />
+    </div>
+  );
+};
+
+
+// ============================================================
+// SELECT
+// ============================================================
+
+const SelectField = ({ label, value, onChange, children }) => {
+  return (
+    <div>
+      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-orange-200/70">
+        {label}
+      </label>
+
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full rounded-xl border border-white/10 bg-[#100d0b] px-4 py-3 text-sm text-white outline-none transition-all focus:border-orange-400/50 focus:ring-2 focus:ring-orange-400/10"
+      >
+        {children}
+      </select>
+    </div>
+  );
+};
+
+
+// ============================================================
+// INFO BADGE
+// ============================================================
+
+const InfoBadge = ({ icon: Icon, children }) => {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-orange-400/10 bg-orange-400/[0.06] px-3 py-1.5 text-xs text-orange-200/80">
+      <Icon size={13} className="text-orange-400" />
+      {children}
+    </div>
+  );
+};
+
+
+// ============================================================
+// DETAIL ROW
+// ============================================================
+
+const DetailRow = ({ icon: Icon, label, value }) => {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-white/[0.06] py-4 last:border-b-0">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-400/[0.07] text-orange-400">
+          <Icon size={16} />
+        </div>
+
+        <span className="text-sm text-gray-400">{label}</span>
+      </div>
+
+      <span className="text-right text-sm font-medium text-gray-200">
+        {value}
+      </span>
+    </div>
+  );
+};
+
+
+// ============================================================
+// STRUCTURE CARD
+// ============================================================
+
+const StructureCard = ({ icon: Icon, title, description, onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      className="group w-full rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-orange-400/30 hover:bg-orange-400/[0.04]"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-orange-400/10 bg-orange-400/[0.06] text-orange-400 transition-all duration-300 group-hover:scale-110 group-hover:border-orange-400/30">
+            <Icon size={21} />
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-white">{title}</h3>
+            <p className="mt-1 text-xs text-gray-500">{description}</p>
+          </div>
+        </div>
+
+        <ChevronRight
+          size={18}
+          className="text-gray-600 transition-all group-hover:translate-x-1 group-hover:text-orange-400"
+        />
+      </div>
+    </button>
+  );
+};
+
+
+// ============================================================
+// QUICK ACTION
+// ============================================================
+
+const QuickAction = ({ icon: Icon, title, description, onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-black/20 p-3 text-left transition-all hover:border-orange-400/20 hover:bg-orange-400/[0.04]"
+    >
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-400/[0.06] text-orange-400">
+        <Icon size={16} />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-gray-200">{title}</p>
+        <p className="truncate text-xs text-gray-600">{description}</p>
+      </div>
+
+      <ChevronRight
+        size={15}
+        className="text-gray-600 transition-all group-hover:translate-x-1 group-hover:text-orange-400"
+      />
+    </button>
+  );
+};
+
+
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
+
+const CourseManagement = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
 
@@ -27,6 +266,10 @@ function CourseManagement() {
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // ==========================================================
+  // FORM STATE
+  // ==========================================================
 
   const [formData, setFormData] = useState({
     courseTitle: "",
@@ -37,21 +280,40 @@ function CourseManagement() {
     coursePrice: "",
   });
 
-  /* =====================================================
-     NAVIGATION
-  ===================================================== */
+  // NEW
+  const [isFreeCourse, setIsFreeCourse] = useState(false);
 
-  const goToLectures = () => {
-    navigate(`/instructor/courses/${courseId}/lectures`);
-  };
+  // ==========================================================
+  // CURSOR
+  // ==========================================================
 
-  const goToModules = () => {
-    navigate(`/instructor/courses/${courseId}/modules`);
-  };
+  const cursorRef = useRef(null);
 
-  /* =====================================================
-     FETCH COURSE
-  ===================================================== */
+  useEffect(() => {
+    const handleMouseMove = (event) => {
+      if (!cursorRef.current) return;
+
+      cursorRef.current.style.transform = `translate3d(
+        ${event.clientX}px,
+        ${event.clientY}px,
+        0
+      )`;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
+
+  // ==========================================================
+  // FETCH COURSE
+  // ==========================================================
+
+  useEffect(() => {
+    fetchCourse();
+  }, [courseId]);
 
   const fetchCourse = async () => {
     try {
@@ -59,50 +321,49 @@ function CourseManagement() {
 
       const response = await api.get(`/course/${courseId}`);
 
-      if (response.data?.success) {
-        const courseData = response.data.course;
+      const courseData = response?.data?.course || response?.data;
 
-        setCourse(courseData);
-
-        setFormData({
-          courseTitle: courseData.courseTitle || "",
-          subTitle: courseData.subTitle || "",
-          description: courseData.description || "",
-          category: courseData.category || "",
-          courseLevel: courseData.courseLevel || "",
-          coursePrice: courseData.coursePrice ?? "",
-        });
-      } else {
-        toast.error(
-          response.data?.message || "Failed to load course."
-        );
+      if (!courseData) {
+        toast.error("Course not found");
+        return;
       }
+
+      setCourse(courseData);
+
+      setFormData({
+        courseTitle: courseData.courseTitle || "",
+        subTitle: courseData.subTitle || "",
+        description: courseData.description || "",
+        category: courseData.category || "",
+        courseLevel: courseData.courseLevel || "",
+        coursePrice: courseData.coursePrice ?? "",
+      });
+
+      // ======================================================
+      // FREE / PAID DETECTION
+      // ======================================================
+
+      setIsFreeCourse(
+        Number(courseData.coursePrice || 0) === 0
+      );
     } catch (error) {
-      console.error("Course management error:", error);
+      console.error(error);
 
       toast.error(
-        error.response?.data?.message ||
-          "Unable to load course."
+        error?.response?.data?.message ||
+          "Failed to load course"
       );
-
-      navigate("/instructor/courses");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (courseId) {
-      fetchCourse();
-    }
-  }, [courseId]);
+  // ==========================================================
+  // FORM CHANGE
+  // ==========================================================
 
-  /* =====================================================
-     HANDLE INPUT
-  ===================================================== */
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
 
     setFormData((prev) => ({
       ...prev,
@@ -110,32 +371,67 @@ function CourseManagement() {
     }));
   };
 
-  /* =====================================================
-     UPDATE COURSE
-  ===================================================== */
+  // ==========================================================
+  // FREE COURSE
+  // ==========================================================
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
+  const handleFreeCourse = () => {
+    setIsFreeCourse(true);
 
-    if (saving) return;
+    setFormData((prev) => ({
+      ...prev,
+      coursePrice: 0,
+    }));
+  };
+
+  // ==========================================================
+  // PAID COURSE
+  // ==========================================================
+
+  const handlePaidCourse = () => {
+    setIsFreeCourse(false);
+
+    setFormData((prev) => ({
+      ...prev,
+      coursePrice:
+        Number(prev.coursePrice) > 0
+          ? prev.coursePrice
+          : 499,
+    }));
+  };
+
+  // ==========================================================
+  // UPDATE COURSE
+  // ==========================================================
+
+  const handleUpdate = async (event) => {
+    event.preventDefault();
 
     if (!formData.courseTitle.trim()) {
-      toast.error("Course title is required.");
+      toast.error("Course title is required");
       return;
     }
 
     if (!formData.description.trim()) {
-      toast.error("Course description is required.");
+      toast.error("Course description is required");
       return;
     }
 
     if (!formData.category) {
-      toast.error("Please select a category.");
+      toast.error("Please select a category");
       return;
     }
 
     if (!formData.courseLevel) {
-      toast.error("Please select a course level.");
+      toast.error("Please select course level");
+      return;
+    }
+
+    if (
+      !isFreeCourse &&
+      Number(formData.coursePrice) <= 0
+    ) {
+      toast.error("Enter a valid course price");
       return;
     }
 
@@ -148,828 +444,953 @@ function CourseManagement() {
         description: formData.description.trim(),
         category: formData.category,
         courseLevel: formData.courseLevel,
-        coursePrice: Number(formData.coursePrice),
+
+        // ====================================================
+        // IMPORTANT
+        // Free course = 0
+        // Paid course = entered price
+        // ====================================================
+
+        coursePrice: isFreeCourse
+          ? 0
+          : Number(formData.coursePrice),
       });
 
-      if (response.data?.success) {
-        setCourse(response.data.course);
-        setEditing(false);
+      const updatedCourse =
+        response?.data?.course || response?.data;
 
-        toast.success("Course updated successfully.");
-      } else {
-        toast.error(
-          response.data?.message ||
-            "Failed to update course."
-        );
-      }
+      setCourse(updatedCourse);
+
+      setFormData({
+        courseTitle: updatedCourse.courseTitle || "",
+        subTitle: updatedCourse.subTitle || "",
+        description: updatedCourse.description || "",
+        category: updatedCourse.category || "",
+        courseLevel: updatedCourse.courseLevel || "",
+        coursePrice: updatedCourse.coursePrice ?? 0,
+      });
+
+      setIsFreeCourse(
+        Number(updatedCourse.coursePrice || 0) === 0
+      );
+
+      setEditing(false);
+
+      toast.success("Course updated successfully");
     } catch (error) {
-      console.error("Update course error:", error);
+      console.error(error);
 
       toast.error(
-        error.response?.data?.message ||
-          "Unable to update course."
+        error?.response?.data?.message ||
+          "Failed to update course"
       );
     } finally {
       setSaving(false);
     }
   };
 
-  /* =====================================================
-     DELETE COURSE
-  ===================================================== */
+  // ==========================================================
+  // DELETE COURSE
+  // ==========================================================
 
-  const handleDeleteCourse = async () => {
+  const handleDelete = async () => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this course? This action cannot be undone."
+      "Are you sure you want to permanently delete this course?"
     );
 
     if (!confirmed) return;
 
     try {
-      const response = await api.delete(`/course/${courseId}`);
+      await api.delete(`/course/${courseId}`);
 
-      if (response.data?.success) {
-        toast.success("Course deleted successfully.");
+      toast.success("Course deleted successfully");
 
-        navigate("/instructor/courses", {
-          replace: true,
-        });
-      } else {
-        toast.error(
-          response.data?.message ||
-            "Failed to delete course."
-        );
-      }
+      navigate("/instructor/courses");
     } catch (error) {
-      console.error("Delete course error:", error);
+      console.error(error);
 
       toast.error(
-        error.response?.data?.message ||
-          "Unable to delete course."
+        error?.response?.data?.message ||
+          "Failed to delete course"
       );
     }
   };
 
-  /* =====================================================
-     LOADING
-  ===================================================== */
+  // ==========================================================
+  // LOADING
+  // ==========================================================
 
   if (loading) {
     return (
-      <div className="flex min-h-[500px] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
+      <div className="flex min-h-screen items-center justify-center bg-[#080706] text-orange-400">
+        <div className="text-center">
           <LoaderCircle
-            size={36}
-            className="animate-spin text-indigo-600"
+            size={42}
+            className="mx-auto animate-spin"
           />
 
-          <p className="text-sm text-gray-500">
-            Loading course...
+          <p className="mt-4 text-sm tracking-widest text-gray-500">
+            ENTERING THE ROYAL ARCHIVES...
           </p>
         </div>
       </div>
     );
   }
 
-  /* =====================================================
-     COURSE NOT FOUND
-  ===================================================== */
+  // ==========================================================
+  // NOT FOUND
+  // ==========================================================
 
   if (!course) {
     return (
-      <div className="flex min-h-[500px] flex-col items-center justify-center px-6 text-center">
-        <div className="rounded-2xl bg-gray-100 p-4">
-          <BookOpen
-            size={30}
-            className="text-gray-400"
+      <div className="flex min-h-screen items-center justify-center bg-[#080706] text-white">
+        <div className="text-center">
+          <Shield
+            size={50}
+            className="mx-auto mb-5 text-orange-400"
           />
+
+          <h2 className="text-2xl font-bold">
+            Course Not Found
+          </h2>
+
+          <p className="mt-2 text-gray-500">
+            The requested course could not be found.
+          </p>
+
+          <div className="mt-6">
+            <PremiumButton
+              variant="secondary"
+              onClick={() =>
+                navigate("/instructor/courses")
+              }
+            >
+              <ArrowLeft size={16} />
+              Back to Courses
+            </PremiumButton>
+          </div>
         </div>
-
-        <h2 className="mt-4 text-xl font-semibold text-gray-900">
-          Course not found
-        </h2>
-
-        <p className="mt-2 text-sm text-gray-500">
-          The course you're looking for doesn't exist.
-        </p>
-
-        <button
-          type="button"
-          onClick={() =>
-            navigate("/instructor/courses")
-          }
-          className="mt-5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
-        >
-          Back to Courses
-        </button>
       </div>
     );
   }
 
-  const thumbnail =
-    course.courseThumbnail?.url ||
-    "/placeholder-course.jpg";
+  const isCurrentlyFree =
+    Number(course.coursePrice || 0) === 0;
+
+  // ==========================================================
+  // MAIN UI
+  // ==========================================================
 
   return (
-    <div className="min-h-full bg-[#F7F6F2] p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#080706] text-white">
+      {/* Ambient background */}
 
-        {/* =================================================
-            HEADER
-        ================================================= */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-10%] top-[-10%] h-[500px] w-[500px] rounded-full bg-orange-600/10 blur-[140px]" />
 
-        <div className="mb-8">
-          <button
-            type="button"
+        <div className="absolute right-[-10%] top-[20%] h-[500px] w-[500px] rounded-full bg-amber-500/[0.07] blur-[140px]" />
+
+        <div className="absolute bottom-[-20%] left-[25%] h-[500px] w-[500px] rounded-full bg-red-900/[0.08] blur-[150px]" />
+      </div>
+
+      <AmbientParticles />
+
+      {/* Custom cursor */}
+
+      <div
+        ref={cursorRef}
+        className="pointer-events-none fixed left-0 top-0 z-[100] hidden h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border border-orange-400/60 shadow-[0_0_20px_rgba(249,115,22,0.45)] lg:block"
+      />
+
+      <div className="relative z-10 mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+
+        {/* ====================================================
+            TOP BAR
+        ==================================================== */}
+
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <PremiumButton
+            variant="dark"
             onClick={() =>
               navigate("/instructor/courses")
             }
-            className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-gray-900"
           >
-            <ArrowLeft size={18} />
-            Back to Courses
-          </button>
+            <ArrowLeft size={16} />
+            Course Archives
+          </PremiumButton>
 
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-2">
+            <InfoBadge icon={Crown}>
+              INSTRUCTOR COMMAND
+            </InfoBadge>
+
+            <InfoBadge icon={Flame}>
+              ROYAL ACADEMY
+            </InfoBadge>
+          </div>
+        </div>
+
+
+        {/* ====================================================
+            HERO
+        ==================================================== */}
+
+        <section className="relative overflow-hidden rounded-[28px] border border-orange-400/10 bg-gradient-to-br from-[#17110d] via-[#0e0b09] to-[#080706] p-6 shadow-[0_25px_100px_rgba(0,0,0,0.45)] sm:p-8 lg:p-10">
+
+          <div className="absolute right-[-60px] top-[-80px] opacity-[0.04]">
+            <Crown size={360} />
+          </div>
+
+          <div className="absolute bottom-[-100px] left-[30%] opacity-[0.025]">
+            <Swords size={400} />
+          </div>
+
+          <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_400px]">
+
+            {/* Hero information */}
+
             <div>
-              <p className="mb-1 text-sm font-medium text-indigo-600">
-                Course Management
-              </p>
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-400/[0.07] text-orange-400 shadow-[0_0_30px_rgba(249,115,22,0.1)]">
+                  <Crown size={23} />
+                </div>
 
-              <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-[#15121F]">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-orange-400">
+                    COURSE COMMAND
+                  </p>
+
+                  <p className="text-xs text-gray-600">
+                    Royal Learning Realm
+                  </p>
+                </div>
+              </div>
+
+              <h1 className="max-w-4xl text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
                 {course.courseTitle}
               </h1>
 
-              <p className="mt-2 text-sm text-gray-500">
-                Manage your course information, modules,
-                lectures and learning structure.
+              <p className="mt-4 max-w-3xl text-base leading-7 text-gray-400">
+                {course.subTitle ||
+                  "A course crafted for those who seek knowledge and mastery."}
               </p>
+
+              <div className="mt-6 flex flex-wrap gap-2">
+                <InfoBadge icon={BookOpen}>
+                  {course.category || "General"}
+                </InfoBadge>
+
+                <InfoBadge icon={Layers}>
+                  {course.courseLevel || "All Levels"}
+                </InfoBadge>
+
+                <InfoBadge icon={Users}>
+                  {course.enrolledStudents?.length || 0} Students
+                </InfoBadge>
+
+                {isCurrentlyFree ? (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-semibold text-emerald-300">
+                    <Check size={13} />
+                    FREE COURSE
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-400/[0.07] px-3 py-1.5 text-xs font-semibold text-orange-300">
+                    <IndianRupee size={13} />
+                    ₹{Number(course.coursePrice || 0).toLocaleString("en-IN")}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
 
-              {!editing && (
-                <button
-                  type="button"
-                  onClick={() => setEditing(true)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-indigo-200 hover:text-indigo-600"
-                >
-                  <Edit3 size={17} />
-                  Edit Course
-                </button>
-              )}
+            {/* Course preview */}
 
-              {/* MANAGE MODULES */}
+            <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-black/30">
+              <div className="relative aspect-video overflow-hidden">
+                {course.courseThumbnail?.url ? (
+                  <img
+                    src={course.courseThumbnail.url}
+                    alt={course.courseTitle}
+                    className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-gradient-to-br from-orange-950 via-black to-amber-950">
+                    <Crown
+                      size={65}
+                      className="text-orange-500/30"
+                    />
+                  </div>
+                )}
 
-              <button
-                type="button"
-                onClick={goToModules}
-                className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-100"
-              >
-                <Layers size={17} />
-                Manage Modules
-              </button>
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
 
-              {/* MANAGE LECTURES */}
-
-              <button
-                type="button"
-                onClick={goToLectures}
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-              >
-                <Film size={17} />
-                Manage Lectures
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDeleteCourse}
-                className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100"
-              >
-                <Trash2 size={17} />
-                Delete
-              </button>
+                <div className="absolute bottom-4 left-4">
+                  {isCurrentlyFree ? (
+                    <span className="rounded-full border border-emerald-400/30 bg-black/70 px-3 py-1 text-xs font-bold text-emerald-300 backdrop-blur-md">
+                      FREE
+                    </span>
+                  ) : (
+                    <span className="rounded-full border border-orange-400/30 bg-black/70 px-3 py-1 text-xs font-bold text-orange-300 backdrop-blur-md">
+                      ₹{Number(course.coursePrice || 0).toLocaleString("en-IN")}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* =================================================
+
+        {/* ====================================================
             MAIN GRID
-        ================================================= */}
+        ==================================================== */}
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">
 
-          {/* =================================================
+          {/* ==================================================
               LEFT
-          ================================================= */}
+          ================================================== */}
 
-          <div className="space-y-6">
+          <main className="space-y-6">
 
-            {/* COURSE PREVIEW */}
+            {/* Description */}
 
-            <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+            <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 backdrop-blur-xl sm:p-7">
 
-              <div className="relative aspect-[16/6] overflow-hidden bg-gray-100">
-
-                <img
-                  src={thumbnail}
-                  alt={course.courseTitle}
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src =
-                      "/placeholder-course.jpg";
-                  }}
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
-                <div className="absolute bottom-5 left-6 right-6">
-
-                  <span className="inline-flex rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-indigo-600 shadow-sm">
-                    {course.courseLevel}
-                  </span>
-
-                  <h2 className="mt-3 text-2xl font-bold text-white">
-                    {course.courseTitle}
-                  </h2>
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-400/[0.07] text-orange-400">
+                  <ScrollText size={19} />
                 </div>
-              </div>
-
-              <div className="p-6">
-
-                <p className="text-base font-medium text-gray-700">
-                  {course.subTitle}
-                </p>
-
-                <p className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-500">
-                  {course.description}
-                </p>
-
-                <div className="mt-6 flex flex-wrap gap-3">
-
-                  <InfoBadge
-                    icon={<BookOpen size={15} />}
-                    label={course.category}
-                  />
-
-                  <InfoBadge
-                    icon={<IndianRupee size={15} />}
-                    label={`₹${course.coursePrice || 0}`}
-                  />
-
-                  <InfoBadge
-                    icon={<Users size={15} />}
-                    label={`${course.studentCount || 0} Students`}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* =================================================
-                LEARNING STRUCTURE
-            ================================================= */}
-
-            <div className="rounded-3xl border border-gray-200 bg-white shadow-sm">
-
-              <div className="border-b border-gray-100 px-6 py-5">
-                <div className="flex items-start justify-between gap-4">
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                        <Layers size={18} />
-                      </div>
-
-                      <h2 className="text-lg font-semibold text-gray-900">
-                        Learning Structure
-                      </h2>
-                    </div>
-
-                    <p className="mt-2 text-sm leading-6 text-gray-500">
-                      Organize lectures into modules and
-                      prepare module-based quizzes for your
-                      students.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={goToModules}
-                    className="hidden shrink-0 items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 sm:inline-flex"
-                  >
-                    <Plus size={17} />
-                    Manage Modules
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6">
-
-                <div className="grid gap-4 sm:grid-cols-3">
-
-                  <StructureCard
-                    icon={<Layers size={20} />}
-                    title="Modules"
-                    description="Create and organize learning modules."
-                  />
-
-                  <StructureCard
-                    icon={<Film size={20} />}
-                    title="Lectures"
-                    description="Assign your existing lectures to modules."
-                  />
-
-                  <StructureCard
-                    icon={<BookOpen size={20} />}
-                    title="AI Quizzes"
-                    description="Generate quizzes from module lectures."
-                  />
-
-                </div>
-
-                <button
-                  type="button"
-                  onClick={goToModules}
-                  className="mt-5 flex w-full items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-left transition hover:border-indigo-200 hover:bg-indigo-50"
-                >
-                  <div className="flex items-center gap-3">
-
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
-                      <Layers size={18} />
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        Open Module Management
-                      </p>
-
-                      <p className="mt-1 text-xs text-gray-500">
-                        Create modules, organize lectures and
-                        manage quizzes.
-                      </p>
-                    </div>
-                  </div>
-
-                  <ChevronRight
-                    size={19}
-                    className="text-gray-400"
-                  />
-                </button>
-
-              </div>
-            </div>
-
-            {/* =================================================
-                COURSE CONTENT
-            ================================================= */}
-
-            <div className="rounded-3xl border border-gray-200 bg-white shadow-sm">
-
-              <div className="flex flex-col gap-4 border-b border-gray-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
 
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Course Content
+                  <h2 className="font-bold text-white">
+                    Course Chronicle
                   </h2>
 
-                  <p className="mt-1 text-sm text-gray-500">
-                    Add lectures and manage your course
-                    content.
+                  <p className="text-xs text-gray-600">
+                    About this learning realm
                   </p>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={goToLectures}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                >
-                  <Plus size={17} />
-                  Add Lecture
-                </button>
               </div>
 
-              <div className="flex min-h-[240px] flex-col items-center justify-center px-6 py-12 text-center">
+              <p className="whitespace-pre-line text-sm leading-7 text-gray-400">
+                {course.description ||
+                  "No course description has been written yet."}
+              </p>
+            </section>
 
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                  <BookOpen size={25} />
-                </div>
 
-                <h3 className="mt-4 font-semibold text-gray-900">
-                  Manage your lectures
-                </h3>
+            {/* Learning Structure */}
 
-                <p className="mt-1 max-w-sm text-sm leading-6 text-gray-500">
-                  Create lectures, upload videos, edit lecture
-                  titles and assign lectures to modules.
+            <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 backdrop-blur-xl sm:p-7">
+
+              <div className="mb-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-400">
+                  ROYAL STRUCTURE
                 </p>
 
-                <button
-                  type="button"
-                  onClick={goToLectures}
-                  className="mt-5 inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-100"
-                >
-                  <Film size={17} />
-                  Manage Lectures
-                </button>
+                <h2 className="mt-2 text-xl font-bold">
+                  Learning Structure
+                </h2>
+
+                <p className="mt-1 text-sm text-gray-600">
+                  Manage the content that forms this course.
+                </p>
               </div>
-            </div>
-          </div>
 
-          {/* =================================================
-              RIGHT SIDEBAR
-          ================================================= */}
+              <div className="grid gap-3 sm:grid-cols-2">
 
-          <div className="space-y-6">
-
-            {/* COURSE DETAILS */}
-
-            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-
-              <h2 className="text-lg font-semibold text-gray-900">
-                Course Details
-              </h2>
-
-              <div className="mt-5 space-y-4">
-
-                <DetailRow
-                  label="Category"
-                  value={course.category || "—"}
+                <StructureCard
+                  icon={Layers}
+                  title="Modules"
+                  description="Organize course modules"
+                  onClick={() =>
+                    navigate(
+                      `/instructor/course/${courseId}/modules`
+                    )
+                  }
                 />
 
-                <DetailRow
-                  label="Level"
-                  value={course.courseLevel || "—"}
-                />
-
-                <DetailRow
-                  label="Price"
-                  value={`₹${course.coursePrice || 0}`}
-                />
-
-                <DetailRow
-                  label="Students"
-                  value={course.studentCount || 0}
-                />
-
-                <DetailRow
-                  label="Created"
-                  value={
-                    course.createdAt
-                      ? new Date(
-                          course.createdAt
-                        ).toLocaleDateString()
-                      : "—"
+                <StructureCard
+                  icon={Film}
+                  title="Lectures"
+                  description="Manage lessons and videos"
+                  onClick={() =>
+                    navigate(
+                      `/instructor/course/${courseId}/lectures`
+                    )
                   }
                 />
               </div>
-            </div>
+            </section>
 
-            {/* QUICK ACTIONS */}
 
-            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            {/* Quick Actions */}
 
-              <h2 className="text-lg font-semibold text-gray-900">
-                Quick Actions
-              </h2>
+            <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 backdrop-blur-xl sm:p-7">
 
-              <div className="mt-5 space-y-3">
+              <div className="mb-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-400">
+                  COMMANDS
+                </p>
 
-                <button
-                  type="button"
-                  onClick={() => setEditing(true)}
-                  className="flex w-full items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
-                >
-                  <Edit3 size={18} />
-                  Edit Course
-                </button>
-
-                <button
-                  type="button"
-                  onClick={goToModules}
-                  className="flex w-full items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-left text-sm font-semibold text-indigo-600 transition hover:bg-indigo-100"
-                >
-                  <Layers size={18} />
-                  Manage Modules
-                </button>
-
-                <button
-                  type="button"
-                  onClick={goToLectures}
-                  className="flex w-full items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
-                >
-                  <Plus size={18} />
-                  Add Lecture
-                </button>
-
-                <button
-                  type="button"
-                  onClick={goToLectures}
-                  className="flex w-full items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-left text-sm font-semibold text-indigo-600 transition hover:bg-indigo-100"
-                >
-                  <Film size={18} />
-                  Manage Lectures
-                </button>
+                <h2 className="mt-2 text-xl font-bold">
+                  Course Actions
+                </h2>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* =================================================
-            EDIT MODAL
-        ================================================= */}
+              <div className="grid gap-3 sm:grid-cols-2">
 
-        {editing && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
+                <QuickAction
+                  icon={Layers}
+                  title="Manage Modules"
+                  description="Build your course structure"
+                  onClick={() =>
+                    navigate(
+                      `/instructor/course/${courseId}/modules`
+                    )
+                  }
+                />
 
-            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+                <QuickAction
+                  icon={Film}
+                  title="Manage Lectures"
+                  description="Create and arrange lectures"
+                  onClick={() =>
+                    navigate(
+                      `/instructor/course/${courseId}/lectures`
+                    )
+                  }
+                />
 
-              {/* MODAL HEADER */}
+                <QuickAction
+                  icon={Users}
+                  title="View Students"
+                  description="See enrolled learners"
+                  onClick={() =>
+                    navigate("/instructor/students")
+                  }
+                />
 
-              <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+                <QuickAction
+                  icon={Edit3}
+                  title="Edit Course"
+                  description="Update course information"
+                  onClick={() => setEditing(true)}
+                />
+              </div>
+            </section>
+          </main>
+
+
+          {/* ==================================================
+              RIGHT SIDEBAR
+          ================================================== */}
+
+          <aside className="space-y-6">
+
+            {/* Course Details */}
+
+            <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 backdrop-blur-xl">
+
+              <div className="mb-3 flex items-center gap-3">
+                <Gem
+                  size={19}
+                  className="text-orange-400"
+                />
+
+                <h2 className="font-bold">
+                  Course Details
+                </h2>
+              </div>
+
+              <DetailRow
+                icon={BookOpen}
+                label="Category"
+                value={course.category || "—"}
+              />
+
+              <DetailRow
+                icon={Layers}
+                label="Level"
+                value={course.courseLevel || "—"}
+              />
+
+              <DetailRow
+                icon={Users}
+                label="Students"
+                value={
+                  course.enrolledStudents?.length || 0
+                }
+              />
+
+              <DetailRow
+                icon={
+                  isCurrentlyFree
+                    ? Check
+                    : IndianRupee
+                }
+                label="Access"
+                value={
+                  isCurrentlyFree
+                    ? "Free"
+                    : `₹${Number(
+                        course.coursePrice || 0
+                      ).toLocaleString("en-IN")}`
+                }
+              />
+            </section>
+
+
+            {/* Management */}
+
+            <section className="rounded-2xl border border-orange-400/10 bg-gradient-to-br from-orange-500/[0.07] to-transparent p-6">
+
+              <div className="mb-5 flex items-center gap-3">
+                <Shield
+                  size={19}
+                  className="text-orange-400"
+                />
 
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="font-bold">
+                    Course Management
+                  </h2>
+
+                  <p className="text-xs text-gray-600">
+                    Instructor controls
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+
+                <PremiumButton
+                  className="w-full"
+                  onClick={() => setEditing(true)}
+                >
+                  <Edit3 size={16} />
+                  Edit Course
+                </PremiumButton>
+
+                <PremiumButton
+                  variant="danger"
+                  className="w-full"
+                  onClick={handleDelete}
+                >
+                  <Trash2 size={16} />
+                  Delete Course
+                </PremiumButton>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </div>
+
+
+      {/* ======================================================
+          EDIT MODAL
+      ====================================================== */}
+
+      {editing && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-md">
+
+          <div className="relative my-8 w-full max-w-3xl overflow-hidden rounded-3xl border border-orange-400/15 bg-[#100d0b] shadow-[0_30px_120px_rgba(0,0,0,0.7)]">
+
+            {/* Modal glow */}
+
+            <div className="pointer-events-none absolute left-1/2 top-[-150px] h-[300px] w-[500px] -translate-x-1/2 rounded-full bg-orange-500/10 blur-[100px]" />
+
+            {/* Header */}
+
+            <div className="relative flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
+
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-400/[0.07] text-orange-400">
+                  <Crown size={20} />
+                </div>
+
+                <div>
+                  <h2 className="font-bold">
                     Edit Course
                   </h2>
 
-                  <p className="mt-1 text-sm text-gray-500">
-                    Update your course information.
+                  <p className="text-xs text-gray-600">
+                    Modify the royal learning realm
                   </p>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setEditing(false)}
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100"
-                >
-                  Close
-                </button>
               </div>
 
-              {/* FORM */}
-
-              <form
-                onSubmit={handleUpdate}
-                className="space-y-5 p-6"
+              <button
+                onClick={() => setEditing(false)}
+                className="rounded-xl border border-white/10 p-2 text-gray-500 transition hover:border-orange-400/30 hover:text-orange-400"
               >
+                <X size={18} />
+              </button>
+            </div>
+
+
+            {/* Form */}
+
+            <form
+              onSubmit={handleUpdate}
+              className="relative space-y-6 p-6"
+            >
+
+              <div className="grid gap-5 sm:grid-cols-2">
 
                 <InputField
                   label="Course Title"
-                  name="courseTitle"
                   value={formData.courseTitle}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    handleChange({
+                      target: {
+                        name: "courseTitle",
+                        value: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Enter course title"
+                  required
                 />
 
                 <InputField
                   label="Subtitle"
-                  name="subTitle"
                   value={formData.subTitle}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    handleChange({
+                      target: {
+                        name: "subTitle",
+                        value: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Enter course subtitle"
                 />
 
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700">
-                    Description
-                  </label>
+                <SelectField
+                  label="Category"
+                  value={formData.category}
+                  onChange={(e) =>
+                    handleChange({
+                      target: {
+                        name: "category",
+                        value: e.target.value,
+                      },
+                    })
+                  }
+                >
+                  <option value="">
+                    Select Category
+                  </option>
 
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows={6}
-                    required
-                    className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-6 text-gray-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                  />
+                  <option value="Web Development">
+                    Web Development
+                  </option>
+
+                  <option value="Programming">
+                    Programming
+                  </option>
+
+                  <option value="Data Science">
+                    Data Science
+                  </option>
+
+                  <option value="Artificial Intelligence">
+                    Artificial Intelligence
+                  </option>
+
+                  <option value="Database">
+                    Database
+                  </option>
+
+                  <option value="Other">
+                    Other
+                  </option>
+                </SelectField>
+
+
+                <SelectField
+                  label="Course Level"
+                  value={formData.courseLevel}
+                  onChange={(e) =>
+                    handleChange({
+                      target: {
+                        name: "courseLevel",
+                        value: e.target.value,
+                      },
+                    })
+                  }
+                >
+                  <option value="">
+                    Select Level
+                  </option>
+
+                  <option value="Beginner">
+                    Beginner
+                  </option>
+
+                  <option value="Intermediate">
+                    Intermediate
+                  </option>
+
+                  <option value="Advanced">
+                    Advanced
+                  </option>
+                </SelectField>
+              </div>
+
+
+              {/* ==================================================
+                  FREE / PAID SELECTOR
+              ================================================== */}
+
+              <div>
+                <label className="mb-3 block text-xs font-semibold uppercase tracking-[0.18em] text-orange-200/70">
+                  Course Access
+                </label>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+
+                  {/* FREE */}
+
+                  <button
+                    type="button"
+                    onClick={handleFreeCourse}
+                    className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 ${
+                      isFreeCourse
+                        ? "border-emerald-400/50 bg-emerald-400/[0.08] shadow-[0_0_30px_rgba(52,211,153,0.08)]"
+                        : "border-white/[0.08] bg-black/20 hover:border-emerald-400/30 hover:bg-emerald-400/[0.03]"
+                    }`}
+                  >
+                    {isFreeCourse && (
+                      <div className="absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400 text-black">
+                        <Check size={14} />
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-4">
+
+                      <div
+                        className={`flex h-12 w-12 items-center justify-center rounded-xl transition-all ${
+                          isFreeCourse
+                            ? "bg-emerald-400/15 text-emerald-300"
+                            : "bg-white/[0.04] text-gray-500"
+                        }`}
+                      >
+                        <Sparkles size={21} />
+                      </div>
+
+                      <div>
+                        <h3
+                          className={`font-bold ${
+                            isFreeCourse
+                              ? "text-emerald-300"
+                              : "text-gray-200"
+                          }`}
+                        >
+                          Free Course
+                        </h3>
+
+                        <p className="mt-1 text-xs text-gray-600">
+                          Students can enroll without payment
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 text-xs text-gray-500">
+                      Course price will be set to{" "}
+                      <span className="font-semibold text-emerald-400">
+                        ₹0
+                      </span>
+                    </div>
+                  </button>
+
+
+                  {/* PAID */}
+
+                  <button
+                    type="button"
+                    onClick={handlePaidCourse}
+                    className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 ${
+                      !isFreeCourse
+                        ? "border-orange-400/50 bg-orange-400/[0.08] shadow-[0_0_30px_rgba(249,115,22,0.08)]"
+                        : "border-white/[0.08] bg-black/20 hover:border-orange-400/30 hover:bg-orange-400/[0.03]"
+                    }`}
+                  >
+                    {!isFreeCourse && (
+                      <div className="absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full bg-orange-400 text-black">
+                        <Check size={14} />
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-4">
+
+                      <div
+                        className={`flex h-12 w-12 items-center justify-center rounded-xl transition-all ${
+                          !isFreeCourse
+                            ? "bg-orange-400/15 text-orange-300"
+                            : "bg-white/[0.04] text-gray-500"
+                        }`}
+                      >
+                        <IndianRupee size={21} />
+                      </div>
+
+                      <div>
+                        <h3
+                          className={`font-bold ${
+                            !isFreeCourse
+                              ? "text-orange-300"
+                              : "text-gray-200"
+                          }`}
+                        >
+                          Paid Course
+                        </h3>
+
+                        <p className="mt-1 text-xs text-gray-600">
+                          Students purchase access
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 text-xs text-gray-500">
+                      Set your own course price below.
+                    </div>
+                  </button>
                 </div>
+              </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
 
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-gray-700">
-                      Category
-                    </label>
+              {/* ==================================================
+                  PRICE INPUT
+              ================================================== */}
 
-                    <select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                    >
-                      <option value="">
-                        Select category
-                      </option>
+              {!isFreeCourse && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
 
-                      <option value="Web Development">
-                        Web Development
-                      </option>
-
-                      <option value="Programming">
-                        Programming
-                      </option>
-
-                      <option value="Data Science">
-                        Data Science
-                      </option>
-
-                      <option value="Mobile Development">
-                        Mobile Development
-                      </option>
-
-                      <option value="Database">
-                        Database
-                      </option>
-
-                      <option value="DevOps">
-                        DevOps
-                      </option>
-
-                      <option value="Other">
-                        Other
-                      </option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-gray-700">
-                      Course Level
-                    </label>
-
-                    <select
-                      name="courseLevel"
-                      value={formData.courseLevel}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-                    >
-                      <option value="">
-                        Select level
-                      </option>
-
-                      <option value="Beginner">
-                        Beginner
-                      </option>
-
-                      <option value="Intermediate">
-                        Intermediate
-                      </option>
-
-                      <option value="Advanced">
-                        Advanced
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-orange-200/70">
                     Course Price
                   </label>
 
                   <div className="relative">
 
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">
-                      ₹
-                    </span>
+                    <IndianRupee
+                      size={17}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400"
+                    />
 
                     <input
                       type="number"
-                      name="coursePrice"
+                      min="1"
                       value={formData.coursePrice}
-                      onChange={handleChange}
-                      min="0"
-                      required
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-9 pr-4 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          coursePrice: e.target.value,
+                        }))
+                      }
+                      placeholder="Enter course price"
+                      className="w-full rounded-xl border border-white/10 bg-black/30 py-3 pl-11 pr-4 text-sm text-white outline-none transition-all placeholder:text-gray-600 focus:border-orange-400/50 focus:ring-2 focus:ring-orange-400/10"
                     />
                   </div>
+
+                  <p className="mt-2 text-xs text-gray-600">
+                    Enter the amount students need to pay to
+                    access this course.
+                  </p>
                 </div>
+              )}
 
-                {/* BUTTONS */}
 
-                <div className="flex justify-end gap-3 border-t border-gray-100 pt-5">
+              {/* FREE COURSE INFO */}
 
-                  <button
-                    type="button"
-                    onClick={() => setEditing(false)}
-                    disabled={saving}
-                    className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
+              {isFreeCourse && (
+                <div className="flex items-start gap-3 rounded-xl border border-emerald-400/15 bg-emerald-400/[0.05] p-4">
 
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {saving ? (
-                      <>
-                        <LoaderCircle
-                          size={17}
-                          className="animate-spin"
-                        />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save size={17} />
-                        Save Changes
-                      </>
-                    )}
-                  </button>
+                  <Check
+                    size={18}
+                    className="mt-0.5 shrink-0 text-emerald-400"
+                  />
+
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-300">
+                      This is a free course
+                    </p>
+
+                    <p className="mt-1 text-xs leading-5 text-gray-500">
+                      Students will be able to enroll without
+                      making a payment. The course price will be
+                      saved as ₹0.
+                    </p>
+                  </div>
                 </div>
-              </form>
-            </div>
+              )}
+
+
+              {/* Description */}
+
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-orange-200/70">
+                  Description
+                </label>
+
+                <textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    handleChange({
+                      target: {
+                        name: "description",
+                        value: e.target.value,
+                      },
+                    })
+                  }
+                  rows={6}
+                  placeholder="Describe your course..."
+                  className="w-full resize-none rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm leading-6 text-white outline-none transition-all placeholder:text-gray-600 focus:border-orange-400/50 focus:ring-2 focus:ring-orange-400/10"
+                />
+              </div>
+
+
+              {/* Actions */}
+
+              <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
+
+                <PremiumButton
+                  type="button"
+                  variant="dark"
+                  onClick={() => setEditing(false)}
+                  disabled={saving}
+                >
+                  <X size={16} />
+                  Cancel
+                </PremiumButton>
+
+                <PremiumButton
+                  type="submit"
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <>
+                      <LoaderCircle
+                        size={16}
+                        className="animate-spin"
+                      />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      Save Changes
+                    </>
+                  )}
+                </PremiumButton>
+              </div>
+            </form>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
-}
-
-/* =====================================================
-   INPUT FIELD
-===================================================== */
-
-function InputField({
-  label,
-  name,
-  value,
-  onChange,
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-semibold text-gray-700">
-        {label}
-      </label>
-
-      <input
-        type="text"
-        name={name}
-        value={value}
-        onChange={onChange}
-        required
-        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-      />
-    </div>
-  );
-}
-
-/* =====================================================
-   INFO BADGE
-===================================================== */
-
-function InfoBadge({ icon, label }) {
-  return (
-    <div className="inline-flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600">
-      {icon}
-      {label}
-    </div>
-  );
-}
-
-/* =====================================================
-   DETAIL ROW
-===================================================== */
-
-function DetailRow({ label, value }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-      <span className="text-sm text-gray-500">
-        {label}
-      </span>
-
-      <span className="text-right text-sm font-semibold text-gray-900">
-        {value}
-      </span>
-    </div>
-  );
-}
-
-/* =====================================================
-   STRUCTURE CARD
-===================================================== */
-
-function StructureCard({
-  icon,
-  title,
-  description,
-}) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
-        {icon}
-      </div>
-
-      <h3 className="mt-4 text-sm font-semibold text-gray-900">
-        {title}
-      </h3>
-
-      <p className="mt-1 text-xs leading-5 text-gray-500">
-        {description}
-      </p>
-    </div>
-  );
-}
+};
 
 export default CourseManagement;
