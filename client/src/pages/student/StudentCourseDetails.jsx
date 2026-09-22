@@ -269,7 +269,7 @@ const StudentCourseDetails = () => {
       setEnrollmentLoading(true);
 
       const response = await api.post(
-        `/enrollment/enroll/${courseId}`
+        `/enrollment/${courseId}`
       );
 
       if (!response.data?.success) {

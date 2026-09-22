@@ -15,6 +15,7 @@ import achievementRoutes from "./routes/achievement.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import moduleRoutes from "./routes/module.routes.js";
 import quizRoutes from "./routes/quiz.routes.js";
+import noteRouter from "./routes/note.route.js";
 
 const app = express();
 
@@ -71,5 +72,6 @@ app.use("/api/v1", moduleRoutes);
 
 app.use("/api/v1", quizRoutes);
 
+app.use("/api/v1/note", noteRouter);
 
 export default app;

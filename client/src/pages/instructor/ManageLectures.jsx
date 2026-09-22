@@ -24,6 +24,10 @@ import {
   Eye,
   Sword,
   ChevronRight,
+  StickyNote,
+  Paperclip,
+  Download,
+  ExternalLink,
 } from "lucide-react";
 
 import toast from "react-hot-toast";
@@ -31,9 +35,9 @@ import api from "../../services/api";
 
 const EMBERS = Array.from({ length: 22 }, (_, index) => ({
   id: index,
-  left: `${(index * 37) % 100}%`,
-  delay: `${(index * 0.73) % 8}s`,
-  duration: `${6 + ((index * 1.17) % 7)}s`,
+  left: `${(index * 17.3) % 100}%`,
+  delay: `${(index * 0.47) % 7}s`,
+  duration: `${5 + ((index * 0.73) % 5)}s`,
   size: `${2 + (index % 3)}px`,
 }));
 
@@ -41,87 +45,140 @@ function ManageLectures() {
   const { courseId } = useParams();
   const navigate = useNavigate();
 
+  // =====================================================
+  // CURSOR
+  // =====================================================
+
   const cursorRef = useRef(null);
-  const cursorDotRef = useRef(null);
+  const cursorGlowRef = useRef(null);
+
+  // =====================================================
+  // COURSE / LECTURES
+  // =====================================================
 
   const [course, setCourse] = useState(null);
   const [lectures, setLectures] = useState([]);
 
   const [loading, setLoading] = useState(true);
+
+  // =====================================================
+  // CREATE LECTURE
+  // =====================================================
+
   const [creating, setCreating] = useState(false);
-
-  /* =====================================================
-     CREATE STATE
-  ===================================================== */
-
   const [showCreate, setShowCreate] = useState(false);
 
   const [lectureTitle, setLectureTitle] = useState("");
-  const [lectureContent, setLectureContent] = useState("");
+  const [lectureContent, setLectureContent] =
+    useState("");
 
-  /* =====================================================
-     EDIT STATE
-  ===================================================== */
+  // =====================================================
+  // EDIT LECTURE
+  // =====================================================
 
   const [editingId, setEditingId] = useState(null);
-  const [editingTitle, setEditingTitle] = useState("");
-  const [editingContent, setEditingContent] = useState("");
+  const [editingTitle, setEditingTitle] =
+    useState("");
+  const [editingContent, setEditingContent] =
+    useState("");
   const [updatingId, setUpdatingId] = useState(null);
 
-  /* =====================================================
-     OTHER STATES
-  ===================================================== */
+  // =====================================================
+  // VIDEO
+  // =====================================================
 
-  const [uploadingId, setUploadingId] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
-  const [previewLoadingId, setPreviewLoadingId] = useState(null);
+  const [uploadingId, setUploadingId] =
+    useState(null);
 
-  /* =====================================================
-     PREMIUM CURSOR
-  ===================================================== */
+  const [deletingId, setDeletingId] =
+    useState(null);
+
+  const [previewLoadingId, setPreviewLoadingId] =
+    useState(null);
+
+  // =====================================================
+  // NOTES
+  // =====================================================
+
+  const [notesLecture, setNotesLecture] =
+    useState(null);
+
+  const [lectureNotes, setLectureNotes] =
+    useState([]);
+
+  const [notesLoading, setNotesLoading] =
+    useState(false);
+
+  const [noteMode, setNoteMode] =
+    useState("write");
+
+  const [savingNote, setSavingNote] =
+    useState(false);
+
+  const [uploadingNoteFile, setUploadingNoteFile] =
+    useState(false);
+
+  const [deletingNoteId, setDeletingNoteId] =
+    useState(null);
+
+  const [editingNoteId, setEditingNoteId] =
+    useState(null);
+
+  const [noteTitle, setNoteTitle] =
+    useState("");
+
+  const [noteContent, setNoteContent] =
+    useState("");
+
+  const [selectedNoteFile, setSelectedNoteFile] =
+    useState(null);
+
+  // =====================================================
+  // CUSTOM CURSOR
+  // =====================================================
 
   useEffect(() => {
-    const handlePointerMove = (event) => {
+    const handleMouseMove = (event) => {
       if (cursorRef.current) {
-        cursorRef.current.style.transform = `translate3d(
-          ${event.clientX}px,
-          ${event.clientY}px,
-          0
-        )`;
+        cursorRef.current.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
       }
 
-      if (cursorDotRef.current) {
-        cursorDotRef.current.style.transform = `translate3d(
-          ${event.clientX}px,
-          ${event.clientY}px,
-          0
-        )`;
+      if (cursorGlowRef.current) {
+        cursorGlowRef.current.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
       }
     };
 
-    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener(
+      "mousemove",
+      handleMouseMove
+    );
 
     return () => {
       window.removeEventListener(
-        "pointermove",
-        handlePointerMove
+        "mousemove",
+        handleMouseMove
       );
     };
   }, []);
 
-  /* =====================================================
-     FETCH COURSE
-  ===================================================== */
+  // =====================================================
+  // FETCH COURSE
+  // =====================================================
 
   const fetchCourse = async () => {
     try {
-      const response = await api.get(`/course/${courseId}`);
+      const response = await api.get(
+        `/course/${courseId}`
+      );
 
       if (response.data?.success) {
         setCourse(response.data.course);
       }
     } catch (error) {
-      console.error("Fetch course error:", error);
+      console.error(
+        "Fetch course error:",
+        error.response || error
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -130,14 +187,12 @@ function ManageLectures() {
     }
   };
 
-  /* =====================================================
-     FETCH LECTURES
-  ===================================================== */
+  // =====================================================
+  // FETCH LECTURES
+  // =====================================================
 
   const fetchLectures = async () => {
     try {
-      setLoading(true);
-
       const response = await api.get(
         `/lecture/course/${courseId}`
       );
@@ -145,36 +200,49 @@ function ManageLectures() {
       if (response.data?.success) {
         const sortedLectures = [
           ...(response.data.lectures || []),
-        ].sort((a, b) => a.order - b.order);
+        ].sort(
+          (a, b) =>
+            (a.order || 0) -
+            (b.order || 0)
+        );
 
         setLectures(sortedLectures);
       }
     } catch (error) {
-      console.error("Fetch lectures error:", error);
+      console.error(
+        "Fetch lectures error:",
+        error.response || error
+      );
 
       toast.error(
         error.response?.data?.message ||
           "Unable to load lectures"
       );
-    } finally {
-      setLoading(false);
     }
   };
 
-  /* =====================================================
-     INITIAL LOAD
-  ===================================================== */
+  // =====================================================
+  // INITIAL LOAD
+  // =====================================================
 
   useEffect(() => {
-    if (!courseId) return;
+    const loadData = async () => {
+      setLoading(true);
 
-    fetchCourse();
-    fetchLectures();
+      await Promise.all([
+        fetchCourse(),
+        fetchLectures(),
+      ]);
+
+      setLoading(false);
+    };
+
+    loadData();
   }, [courseId]);
 
-  /* =====================================================
-     RESET CREATE FORM
-  ===================================================== */
+  // =====================================================
+  // RESET CREATE FORM
+  // =====================================================
 
   const resetCreateForm = () => {
     setLectureTitle("");
@@ -182,23 +250,17 @@ function ManageLectures() {
     setShowCreate(false);
   };
 
-  /* =====================================================
-     CREATE LECTURE
-  ===================================================== */
+  // =====================================================
+  // CREATE LECTURE
+  // =====================================================
 
   const handleCreateLecture = async (event) => {
     event.preventDefault();
 
-    const title = lectureTitle.trim();
-    const content = lectureContent.trim();
-
-    if (!title) {
-      toast.error("Please enter a lecture title.");
-      return;
-    }
-
-    if (!content) {
-      toast.error("Please add lecture content.");
+    if (!lectureTitle.trim()) {
+      toast.error(
+        "Please enter a lecture title."
+      );
       return;
     }
 
@@ -208,8 +270,11 @@ function ManageLectures() {
       const response = await api.post(
         `/lecture/${courseId}`,
         {
-          lectureTitle: title,
-          lectureContent: content,
+          lectureTitle:
+            lectureTitle.trim(),
+
+          lectureContent:
+            lectureContent.trim(),
         }
       );
 
@@ -221,11 +286,16 @@ function ManageLectures() {
         return;
       }
 
-      toast.success("Lecture created successfully");
+      setLectures((prev) => [
+        ...prev,
+        response.data.lecture,
+      ]);
+
+      toast.success(
+        "Lecture forged successfully."
+      );
 
       resetCreateForm();
-
-      await fetchLectures();
     } catch (error) {
       console.error(
         "Create lecture error:",
@@ -241,21 +311,25 @@ function ManageLectures() {
     }
   };
 
-  /* =====================================================
-     START EDITING
-  ===================================================== */
+  // =====================================================
+  // START EDITING
+  // =====================================================
 
   const startEditing = (lecture) => {
     setEditingId(lecture._id);
-    setEditingTitle(lecture.lectureTitle || "");
+
+    setEditingTitle(
+      lecture.lectureTitle || ""
+    );
+
     setEditingContent(
       lecture.lectureContent || ""
     );
   };
 
-  /* =====================================================
-     CANCEL EDITING
-  ===================================================== */
+  // =====================================================
+  // CANCEL EDITING
+  // =====================================================
 
   const cancelEditing = () => {
     setEditingId(null);
@@ -263,21 +337,20 @@ function ManageLectures() {
     setEditingContent("");
   };
 
-  /* =====================================================
-     UPDATE LECTURE
-  ===================================================== */
+  // =====================================================
+  // UPDATE LECTURE
+  // =====================================================
 
-  const handleUpdateLecture = async (lectureId) => {
-    const title = editingTitle.trim();
-    const content = editingContent.trim();
+  const handleUpdateLecture = async (
+    event,
+    lectureId
+  ) => {
+    event.preventDefault();
 
-    if (!title) {
-      toast.error("Lecture title cannot be empty.");
-      return;
-    }
-
-    if (!content) {
-      toast.error("Lecture content cannot be empty.");
+    if (!editingTitle.trim()) {
+      toast.error(
+        "Lecture title cannot be empty."
+      );
       return;
     }
 
@@ -287,8 +360,11 @@ function ManageLectures() {
       const response = await api.put(
         `/lecture/${lectureId}`,
         {
-          lectureTitle: title,
-          lectureContent: content,
+          lectureTitle:
+            editingTitle.trim(),
+
+          lectureContent:
+            editingContent.trim(),
         }
       );
 
@@ -300,19 +376,19 @@ function ManageLectures() {
         return;
       }
 
-      setLectures((previous) =>
-        previous.map((lecture) =>
+      setLectures((prev) =>
+        prev.map((lecture) =>
           lecture._id === lectureId
             ? response.data.lecture
             : lecture
         )
       );
 
-      cancelEditing();
-
       toast.success(
-        "Lecture updated successfully"
+        "Lecture updated successfully."
       );
+
+      cancelEditing();
     } catch (error) {
       console.error(
         "Update lecture error:",
@@ -328,13 +404,15 @@ function ManageLectures() {
     }
   };
 
-  /* =====================================================
-     DELETE LECTURE
-  ===================================================== */
+  // =====================================================
+  // DELETE LECTURE
+  // =====================================================
 
-  const handleDeleteLecture = async (lectureId) => {
+  const handleDeleteLecture = async (
+    lectureId
+  ) => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this lecture?"
+      "Delete this lecture permanently?"
     );
 
     if (!confirmed) return;
@@ -354,17 +432,16 @@ function ManageLectures() {
         return;
       }
 
-      toast.success(
-        "Lecture deleted successfully"
-      );
-
-      setLectures((previous) =>
-        previous.filter(
-          (lecture) => lecture._id !== lectureId
+      setLectures((prev) =>
+        prev.filter(
+          (lecture) =>
+            lecture._id !== lectureId
         )
       );
 
-      await fetchLectures();
+      toast.success(
+        "Lecture removed from the realm."
+      );
     } catch (error) {
       console.error(
         "Delete lecture error:",
@@ -380,45 +457,47 @@ function ManageLectures() {
     }
   };
 
-  /* =====================================================
-     UPLOAD VIDEO
-  ===================================================== */
+  // =====================================================
+  // UPLOAD VIDEO
+  // =====================================================
 
-  const handleVideoUpload = async (
-    lectureId,
-    file
+  const handleUploadVideo = async (
+    event,
+    lectureId
   ) => {
+    const file =
+      event.target.files?.[0];
+
     if (!file) return;
-
-    if (!file.type.startsWith("video/")) {
-      toast.error(
-        "Please select a valid video file."
-      );
-      return;
-    }
-
-    const formData = new FormData();
-
-    formData.append("video", file);
 
     try {
       setUploadingId(lectureId);
 
+      const formData = new FormData();
+
+      formData.append("video", file);
+
       const response = await api.put(
         `/lecture/video/${lectureId}`,
-        formData
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "multipart/form-data",
+          },
+        }
       );
 
       if (!response.data?.success) {
         toast.error(
           response.data?.message ||
-            "Video upload failed"
+            "Unable to upload video"
         );
         return;
       }
 
-      setLectures((previous) =>
-        previous.map((lecture) =>
+      setLectures((prev) =>
+        prev.map((lecture) =>
           lecture._id === lectureId
             ? response.data.lecture
             : lecture
@@ -426,26 +505,28 @@ function ManageLectures() {
       );
 
       toast.success(
-        "Video uploaded successfully"
+        "Lecture video uploaded successfully."
       );
     } catch (error) {
       console.error(
-        "Video upload error:",
+        "Upload video error:",
         error.response || error
       );
 
       toast.error(
         error.response?.data?.message ||
-          "Video upload failed"
+          "Unable to upload video"
       );
     } finally {
       setUploadingId(null);
+
+      event.target.value = "";
     }
   };
 
-  /* =====================================================
-     TOGGLE PREVIEW
-  ===================================================== */
+  // =====================================================
+  // TOGGLE PREVIEW
+  // =====================================================
 
   const handleTogglePreview = async (
     lectureId
@@ -465,8 +546,8 @@ function ManageLectures() {
         return;
       }
 
-      setLectures((previous) =>
-        previous.map((lecture) =>
+      setLectures((prev) =>
+        prev.map((lecture) =>
           lecture._id === lectureId
             ? response.data.lecture
             : lecture
@@ -474,9 +555,10 @@ function ManageLectures() {
       );
 
       toast.success(
-        response.data.lecture.isPreviewFree
-          ? "Free preview enabled"
-          : "Free preview disabled"
+        response.data.lecture
+          ?.isPreviewFree
+          ? "Preview enabled."
+          : "Preview disabled."
       );
     } catch (error) {
       console.error(
@@ -493,956 +575,1152 @@ function ManageLectures() {
     }
   };
 
-  /* =====================================================
-     FORMAT DURATION
-  ===================================================== */
+  // =====================================================
+  // NOTES — RESET FORM
+  // =====================================================
 
-  const formatDuration = (seconds) => {
-    if (!seconds || seconds <= 0) {
-      return "Not available";
+  const resetNoteForm = () => {
+    setEditingNoteId(null);
+    setNoteTitle("");
+    setNoteContent("");
+    setSelectedNoteFile(null);
+    setNoteMode("write");
+  };
+
+  // =====================================================
+  // NOTES — OPEN
+  // =====================================================
+
+  const openNotes = async (lecture) => {
+    try {
+      setNotesLecture(lecture);
+
+      resetNoteForm();
+
+      setNotesLoading(true);
+
+      const response = await api.get(
+        `/note/lecture/${lecture._id}`
+      );
+
+      if (response.data?.success) {
+        setLectureNotes(
+          response.data.notes || []
+        );
+      } else {
+        setLectureNotes([]);
+
+        toast.error(
+          response.data?.message ||
+            "Unable to load notes"
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Fetch notes error:",
+        error.response || error
+      );
+
+      setLectureNotes([]);
+
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to load notes"
+      );
+    } finally {
+      setNotesLoading(false);
+    }
+  };
+
+  // =====================================================
+  // NOTES — CLOSE
+  // =====================================================
+
+  const closeNotes = () => {
+    setNotesLecture(null);
+    setLectureNotes([]);
+    resetNoteForm();
+  };
+
+  // =====================================================
+  // NOTES — EDIT
+  // =====================================================
+
+  const startEditingNote = (note) => {
+    if (note.fileUrl) {
+      toast.error(
+        "Uploaded files cannot be edited. Delete and upload the new file."
+      );
+
+      return;
     }
 
-    const totalSeconds = Math.floor(seconds);
+    setEditingNoteId(note._id);
+
+    setNoteTitle(
+      note.noteTitle || ""
+    );
+
+    setNoteContent(
+      note.noteContent || ""
+    );
+
+    setNoteMode("write");
+  };
+
+  // =====================================================
+  // NOTES — SAVE WRITTEN NOTE
+  // =====================================================
+
+  const handleSaveWrittenNote = async (
+    event
+  ) => {
+    event.preventDefault();
+
+    const title = noteTitle.trim();
+    const content = noteContent.trim();
+
+    if (!title) {
+      toast.error(
+        "Please enter a note title."
+      );
+      return;
+    }
+
+    if (!content) {
+      toast.error(
+        "Please write some note content."
+      );
+      return;
+    }
+
+    if (!notesLecture) return;
+
+    try {
+      setSavingNote(true);
+
+      if (editingNoteId) {
+        const response = await api.put(
+          `/note/${editingNoteId}`,
+          {
+            noteTitle: title,
+            noteContent: content,
+          }
+        );
+
+        if (!response.data?.success) {
+          toast.error(
+            response.data?.message ||
+              "Unable to update note"
+          );
+
+          return;
+        }
+
+        setLectureNotes((prev) =>
+          prev.map((note) =>
+            note._id === editingNoteId
+              ? response.data.note
+              : note
+          )
+        );
+
+        toast.success(
+          "Note updated successfully."
+        );
+      } else {
+        const response = await api.post(
+          `/note/lecture/${notesLecture._id}`,
+          {
+            noteTitle: title,
+            noteContent: content,
+          }
+        );
+
+        if (!response.data?.success) {
+          toast.error(
+            response.data?.message ||
+              "Unable to create note"
+          );
+
+          return;
+        }
+
+        setLectureNotes((prev) => [
+          response.data.note,
+          ...prev,
+        ]);
+
+        toast.success(
+          "Note forged successfully."
+        );
+      }
+
+      resetNoteForm();
+    } catch (error) {
+      console.error(
+        "Save note error:",
+        error.response || error
+      );
+
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to save note"
+      );
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  // =====================================================
+  // NOTES — UPLOAD FILE
+  // =====================================================
+
+  const handleUploadNoteFile = async (
+    event
+  ) => {
+    event.preventDefault();
+
+    if (!notesLecture) return;
+
+    if (!selectedNoteFile) {
+      toast.error(
+        "Please select a file."
+      );
+
+      return;
+    }
+
+    if (!noteTitle.trim()) {
+      toast.error(
+        "Please enter a title for the file."
+      );
+
+      return;
+    }
+
+    // Client-side 10MB validation
+    if (
+      selectedNoteFile.size >
+      10 * 1024 * 1024
+    ) {
+      toast.error(
+        "File size must be less than 10 MB."
+      );
+
+      return;
+    }
+
+    try {
+      setUploadingNoteFile(true);
+
+      const formData = new FormData();
+
+      formData.append(
+        "noteTitle",
+        noteTitle.trim()
+      );
+
+      formData.append(
+        "noteContent",
+        noteContent.trim()
+      );
+
+      formData.append(
+        "file",
+        selectedNoteFile
+      );
+
+      const response = await api.post(
+        `/note/lecture/${notesLecture._id}/file`,
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "multipart/form-data",
+          },
+        }
+      );
+
+      if (!response.data?.success) {
+        toast.error(
+          response.data?.message ||
+            "Unable to upload file"
+        );
+
+        return;
+      }
+
+      setLectureNotes((prev) => [
+        response.data.note,
+        ...prev,
+      ]);
+
+      toast.success(
+        "Note file uploaded successfully."
+      );
+
+      resetNoteForm();
+    } catch (error) {
+      console.error(
+        "Upload note file error:",
+        error.response || error
+      );
+
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to upload note file"
+      );
+    } finally {
+      setUploadingNoteFile(false);
+    }
+  };
+
+  // =====================================================
+  // NOTES — DELETE
+  // =====================================================
+
+  const handleDeleteNote = async (
+    noteId
+  ) => {
+    const confirmed = window.confirm(
+      "Delete this note permanently?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingNoteId(noteId);
+
+      const response = await api.delete(
+        `/note/${noteId}`
+      );
+
+      if (!response.data?.success) {
+        toast.error(
+          response.data?.message ||
+            "Unable to delete note"
+        );
+
+        return;
+      }
+
+      setLectureNotes((prev) =>
+        prev.filter(
+          (note) =>
+            note._id !== noteId
+        )
+      );
+
+      if (
+        editingNoteId === noteId
+      ) {
+        resetNoteForm();
+      }
+
+      toast.success(
+        "Note deleted."
+      );
+    } catch (error) {
+      console.error(
+        "Delete note error:",
+        error.response || error
+      );
+
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to delete note"
+      );
+    } finally {
+      setDeletingNoteId(null);
+    }
+  };
+
+  // =====================================================
+  // FORMAT FILE SIZE
+  // =====================================================
+
+  const formatFileSize = (
+    bytes = 0
+  ) => {
+    if (!bytes) return "0 KB";
+
+    const units = [
+      "Bytes",
+      "KB",
+      "MB",
+      "GB",
+    ];
+
+    const index = Math.floor(
+      Math.log(bytes) /
+        Math.log(1024)
+    );
+
+    return `${(
+      bytes /
+      Math.pow(1024, index)
+    ).toFixed(
+      index === 0 ? 0 : 1
+    )} ${units[index]}`;
+  };
+
+  // =====================================================
+  // FILE EXTENSION
+  // =====================================================
+
+  const getFileExtension = (
+    fileName = ""
+  ) => {
+    const parts =
+      fileName.split(".");
+
+    return parts.length > 1
+      ? parts.pop().toUpperCase()
+      : "FILE";
+  };
+
+  // =====================================================
+  // FORMAT VIDEO DURATION
+  // =====================================================
+
+  const formatDuration = (
+    seconds = 0
+  ) => {
+    if (!seconds) return "00:00";
+
+    const hours = Math.floor(
+      seconds / 3600
+    );
 
     const minutes = Math.floor(
-      totalSeconds / 60
+      (seconds % 3600) / 60
     );
 
     const remainingSeconds =
-      totalSeconds % 60;
+      Math.floor(seconds % 60);
 
-    return `${minutes}:${String(
+    if (hours > 0) {
+      return `${String(hours).padStart(
+        2,
+        "0"
+      )}:${String(minutes).padStart(
+        2,
+        "0"
+      )}:${String(
+        remainingSeconds
+      ).padStart(2, "0")}`;
+    }
+
+    return `${String(minutes).padStart(
+      2,
+      "0"
+    )}:${String(
       remainingSeconds
     ).padStart(2, "0")}`;
   };
 
-  /* =====================================================
-     LOADING
-  ===================================================== */
+  // =====================================================
+  // LOADING SCREEN
+  // =====================================================
 
   if (loading) {
     return (
-      <div className="relative flex min-h-[70vh] items-center justify-center overflow-hidden bg-[#070504] text-white">
+      <div className="flex min-h-screen items-center justify-center bg-[#050403]">
 
-        {/* AMBIENT GLOW */}
+        <div className="text-center">
 
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(245,158,11,0.12),transparent_35%),radial-gradient(circle_at_20%_80%,rgba(127,29,29,0.14),transparent_30%)]" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/[0.05]">
 
-        <div className="relative z-10 flex flex-col items-center">
+            <Crown
+              size={28}
+              className="animate-pulse text-amber-400"
+            />
 
-          <div className="relative mb-6">
-
-            <div className="absolute inset-0 animate-ping rounded-full bg-amber-500/10" />
-
-            <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-amber-400/20 bg-white/[0.04] shadow-[0_0_60px_rgba(245,158,11,0.12)] backdrop-blur-xl">
-
-              <Crown
-                size={38}
-                className="text-amber-400"
-              />
-
-            </div>
           </div>
 
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-400">
-            Opening the Lecture Hall
+          <p className="mt-5 text-[10px] font-black uppercase tracking-[0.3em] text-amber-400/60">
+            Entering the archives
           </p>
 
-          <p className="mt-3 text-sm text-white/40">
-            Summoning your lessons...
-          </p>
+          <LoaderCircle
+            size={20}
+            className="mx-auto mt-4 animate-spin text-white/30"
+          />
+
         </div>
+
       </div>
     );
   }
 
-  /* =====================================================
-     UI
-  ===================================================== */
+  // =====================================================
+  // MAIN UI
+  // =====================================================
 
   return (
-    <div className="lecture-realm relative min-h-full overflow-hidden bg-[#070504] text-white">
+    <div className="relative min-h-screen overflow-hidden bg-[#050403] text-white">
 
-      {/* =================================================
-         PREMIUM CURSOR
-      ================================================= */}
+      {/* ================================================= */}
+      {/* CUSTOM CURSOR */}
+      {/* ================================================= */}
+
+      <div
+        ref={cursorGlowRef}
+        className="pointer-events-none fixed left-0 top-0 z-[100] hidden h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-400/[0.035] blur-2xl md:block"
+      />
 
       <div
         ref={cursorRef}
-        className="pointer-events-none fixed left-0 top-0 z-[100] hidden h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-400/40 bg-amber-400/5 shadow-[0_0_25px_rgba(245,158,11,0.18)] lg:block"
+        className="pointer-events-none fixed left-0 top-0 z-[101] hidden h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_18px_rgba(245,158,11,0.8)] md:block"
       />
 
-      <div
-        ref={cursorDotRef}
-        className="pointer-events-none fixed left-0 top-0 z-[101] hidden h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.9)] lg:block"
-      />
+      {/* ================================================= */}
+      {/* AMBIENT BACKGROUND */}
+      {/* ================================================= */}
 
-      {/* =================================================
-         BACKGROUND ATMOSPHERE
-      ================================================= */}
+      <div className="pointer-events-none absolute inset-0">
 
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(245,158,11,0.10),transparent_28%),radial-gradient(circle_at_85%_20%,rgba(127,29,29,0.13),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(180,83,9,0.08),transparent_35%)]" />
+        <div className="absolute left-[-10%] top-[-10%] h-[500px] w-[500px] rounded-full bg-orange-500/[0.035] blur-[130px]" />
 
-      <div className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.5)_1px,transparent_1px)] [background-size:42px_42px]" />
+        <div className="absolute bottom-[-15%] right-[-10%] h-[600px] w-[600px] rounded-full bg-amber-400/[0.025] blur-[150px]" />
 
-      {/* VIGNETTE */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:70px_70px]" />
 
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(0,0,0,0.55)_100%)]" />
-
-      {/* =================================================
-         EMBERS
-      ================================================= */}
-
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {EMBERS.map((ember) => (
           <span
             key={ember.id}
-            className="absolute bottom-[-10px] rounded-full bg-amber-300 opacity-0 blur-[0.5px] animate-[emberFloat_var(--duration)_linear_var(--delay)_infinite]"
+            className="absolute bottom-[-20px] rounded-full bg-amber-400/60 shadow-[0_0_12px_rgba(245,158,11,0.5)]"
             style={{
               left: ember.left,
               width: ember.size,
               height: ember.size,
-              "--duration": ember.duration,
-              "--delay": ember.delay,
+              animation: `emberFloat ${ember.duration} linear ${ember.delay} infinite`,
             }}
           />
         ))}
+
       </div>
 
-      <div className="relative z-10 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      {/* ================================================= */}
+      {/* PAGE */}
+      {/* ================================================= */}
 
-        <div className="mx-auto max-w-7xl">
+      <div className="relative z-10 mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
 
-          {/* =================================================
-             BACK BUTTON
-          ================================================= */}
+        {/* ================================================= */}
+        {/* TOP NAV */}
+        {/* ================================================= */}
+
+        <div className="mb-8 flex items-center justify-between">
 
           <button
             type="button"
             onClick={() =>
-              navigate("/instructor/courses")
+              navigate(
+                `/dashboard/instructor/courses`
+              )
             }
-            className="group mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/50 backdrop-blur-xl transition duration-300 hover:border-amber-400/30 hover:bg-amber-400/[0.06] hover:text-amber-300"
+            className="group inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.16em] text-white/45 transition duration-300 hover:-translate-y-0.5 hover:border-amber-400/20 hover:bg-amber-400/[0.04] hover:text-amber-300"
           >
             <ArrowLeft
               size={15}
               className="transition-transform duration-300 group-hover:-translate-x-1"
             />
 
-            Return to Courses
+            Back To Courses
           </button>
 
-          {/* =================================================
-             HERO
-          ================================================= */}
+          <div className="hidden items-center gap-2 sm:flex">
 
-          <section className="relative mb-8 overflow-hidden rounded-[30px] border border-amber-400/10 bg-white/[0.035] p-6 shadow-[0_25px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-8">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-400/15 bg-amber-400/[0.05] text-amber-300">
 
-            <div className="pointer-events-none absolute right-[-80px] top-[-100px] h-72 w-72 rounded-full bg-amber-500/10 blur-[100px]" />
-
-            <div className="pointer-events-none absolute bottom-[-100px] left-[20%] h-60 w-60 rounded-full bg-red-900/10 blur-[90px]" />
-
-            <div className="relative flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
-
-              <div className="flex min-w-0 items-start gap-5">
-
-                {/* SIGIL */}
-
-                <div className="group relative hidden shrink-0 sm:block">
-
-                  <div className="absolute inset-[-7px] rounded-[24px] border border-amber-400/10 transition duration-500 group-hover:rotate-6 group-hover:border-amber-400/30" />
-
-                  <div className="relative flex h-20 w-20 items-center justify-center rounded-[22px] border border-amber-400/20 bg-gradient-to-br from-amber-500/15 to-red-950/20 shadow-[0_0_45px_rgba(245,158,11,0.12)]">
-
-                    <div className="absolute inset-2 rounded-[16px] border border-amber-400/10" />
-
-                    <Film
-                      size={32}
-                      className="text-amber-400 transition duration-500 group-hover:scale-110 group-hover:rotate-3"
-                    />
-
-                  </div>
-
-                </div>
-
-                <div className="min-w-0">
-
-                  <div className="mb-3 flex flex-wrap items-center gap-2">
-
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/15 bg-amber-400/[0.06] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
-
-                      <Crown size={12} />
-
-                      Instructor Realm
-                    </span>
-
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/10 bg-emerald-400/[0.05] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">
-
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-
-                      Live Course
-                    </span>
-
-                  </div>
-
-                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.3em] text-amber-500/70">
-                    The Lecture Hall
-                  </p>
-
-                  <h1 className="max-w-3xl truncate text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
-                    {course?.courseTitle ||
-                      "Course Lectures"}
-                  </h1>
-
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-white/40 sm:text-base">
-                    Forge your course lesson by lesson.
-                    Create knowledge, upload your
-                    teachings and decide which
-                    chapters students may preview.
-                  </p>
-
-                </div>
-              </div>
-
-              {/* ADD BUTTON */}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setShowCreate(true)
-                }
-                className="group relative inline-flex shrink-0 items-center justify-center gap-2 overflow-hidden rounded-2xl border border-amber-400/25 bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3.5 text-sm font-black text-black shadow-[0_12px_40px_rgba(245,158,11,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(245,158,11,0.28)]"
-              >
-
-                <span className="absolute inset-0 -translate-x-full bg-white/20 transition duration-700 group-hover:translate-x-full" />
-
-                <Plus
-                  size={18}
-                  className="relative transition-transform duration-300 group-hover:rotate-90"
-                />
-
-                <span className="relative">
-                  Add Lecture
-                </span>
-
-              </button>
-            </div>
-
-            {/* HERO FOOTER */}
-
-            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/[0.06] pt-5">
-
-              <div className="flex items-center gap-2 text-xs text-white/35">
-                <ScrollText
-                  size={14}
-                  className="text-amber-400"
-                />
-
-                <span>
-                  {lectures.length}{" "}
-                  {lectures.length === 1
-                    ? "chapter"
-                    : "chapters"}{" "}
-                  forged
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-white/35">
-                <BookOpen
-                  size={14}
-                  className="text-amber-400"
-                />
-
-                <span>
-                  Learning content
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-white/35">
-                <Sparkles
-                  size={14}
-                  className="text-amber-400"
-                />
-
-                <span>
-                  AI Mentor compatible
-                </span>
-              </div>
+              <Sword size={15} />
 
             </div>
-          </section>
 
-          {/* =================================================
-             CREATE LECTURE
-          ================================================= */}
+            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/25">
+              Lecture Command
+            </span>
 
-          {showCreate && (
-            <section className="relative mb-8 overflow-hidden rounded-[30px] border border-amber-400/20 bg-[#0e0b08]/90 shadow-[0_25px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+          </div>
 
-              <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+        </div>
 
-              <div className="border-b border-white/[0.06] bg-gradient-to-r from-amber-500/[0.06] to-transparent px-6 py-6 sm:px-7">
+        {/* ================================================= */}
+        {/* HERO */}
+        {/* ================================================= */}
 
-                <div className="flex items-start justify-between gap-4">
+        <section className="relative mb-8 overflow-hidden rounded-[30px] border border-amber-400/10 bg-white/[0.025] p-6 shadow-[0_25px_100px_rgba(0,0,0,0.35)] sm:p-8 lg:p-10">
 
-                  <div className="flex items-start gap-4">
+          <div className="absolute right-[-80px] top-[-100px] h-[300px] w-[300px] rounded-full bg-amber-400/[0.06] blur-[90px]" />
 
-                    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/[0.07]">
+          <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
 
-                      <FileText
-                        size={22}
-                        className="text-amber-400"
-                      />
+            <div className="max-w-3xl">
 
-                      <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.8)]" />
+              <div className="mb-5 flex items-center gap-3">
 
-                    </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] text-amber-300">
 
-                    <div>
-
-                      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500/70">
-                        Forge New Knowledge
-                      </p>
-
-                      <h2 className="mt-1 text-xl font-black text-white">
-                        Add New Lecture
-                      </h2>
-
-                      <p className="mt-1 text-sm text-white/35">
-                        Create the next chapter of
-                        your course.
-                      </p>
-
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={resetCreateForm}
-                    className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-white/35 transition hover:border-red-400/20 hover:bg-red-400/10 hover:text-red-300"
-                  >
-                    <X size={18} />
-                  </button>
+                  <Crown size={20} />
 
                 </div>
-              </div>
-
-              <form
-                onSubmit={handleCreateLecture}
-                className="space-y-6 p-6 sm:p-7"
-              >
-
-                {/* TITLE */}
 
                 <div>
 
-                  <label className="mb-2.5 block text-xs font-bold uppercase tracking-[0.16em] text-white/55">
-                    Lecture Title
-                  </label>
+                  <p className="text-[9px] font-black uppercase tracking-[0.32em] text-amber-400/70">
+                    Royal Lecture Archives
+                  </p>
 
-                  <div className="group relative">
-
-                    <BookOpen
-                      size={17}
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition group-focus-within:text-amber-400"
-                    />
-
-                    <input
-                      type="text"
-                      value={lectureTitle}
-                      onChange={(event) =>
-                        setLectureTitle(
-                          event.target.value
-                        )
-                      }
-                      placeholder="e.g. Introduction to React"
-                      className="w-full rounded-2xl border border-white/10 bg-black/30 py-4 pl-11 pr-4 text-sm text-white outline-none transition duration-300 placeholder:text-white/20 focus:border-amber-400/40 focus:bg-amber-400/[0.025] focus:shadow-[0_0_30px_rgba(245,158,11,0.07)]"
-                    />
-
-                  </div>
-                </div>
-
-                {/* CONTENT */}
-
-                <div>
-
-                  <div className="mb-2.5 flex items-center justify-between">
-
-                    <label className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
-                      Lecture Content
-                    </label>
-
-                    <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-semibold text-white/30">
-                      {lectureContent.length}{" "}
-                      characters
-                    </span>
-
-                  </div>
-
-                  <textarea
-                    value={lectureContent}
-                    onChange={(event) =>
-                      setLectureContent(
-                        event.target.value
-                      )
-                    }
-                    rows={11}
-                    placeholder={`Write the concepts taught in this lecture...
-
-Example:
-
-A React component is a reusable piece of UI.
-
-Functional components are JavaScript functions that return JSX.
-
-Example:
-
-function Welcome() {
-  return <h1>Hello World</h1>;
-}
-
-Explain the important concepts, examples,
-and notes students should understand.`}
-                    className="w-full resize-y rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-sm leading-7 text-white outline-none transition duration-300 placeholder:text-white/20 focus:border-amber-400/40 focus:bg-amber-400/[0.025] focus:shadow-[0_0_30px_rgba(245,158,11,0.07)]"
-                  />
-
-                  <div className="mt-3 flex items-start gap-2 text-xs leading-5 text-white/30">
-
-                    <Sparkles
-                      size={14}
-                      className="mt-0.5 shrink-0 text-amber-400/60"
-                    />
-
-                    <p>
-                      This content will be available
-                      to students and used by the AI
-                      Mentor to answer lecture-related
-                      questions.
-                    </p>
-
-                  </div>
+                  <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white/20">
+                    {lectures.length}{" "}
+                    {lectures.length === 1
+                      ? "Lecture"
+                      : "Lectures"}
+                  </p>
 
                 </div>
 
-                {/* ACTIONS */}
-
-                <div className="flex flex-col-reverse gap-3 border-t border-white/[0.06] pt-5 sm:flex-row sm:justify-end">
-
-                  <button
-                    type="button"
-                    onClick={resetCreateForm}
-                    className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-bold text-white/50 transition hover:bg-white/[0.07] hover:text-white"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={creating}
-                    className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3 text-sm font-black text-black shadow-[0_10px_30px_rgba(245,158,11,0.15)] transition hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(245,158,11,0.25)] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-
-                    {creating ? (
-                      <>
-                        <LoaderCircle
-                          size={17}
-                          className="animate-spin"
-                        />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Plus size={17} />
-                        Forge Lecture
-                      </>
-                    )}
-
-                  </button>
-
-                </div>
-              </form>
-            </section>
-          )}
-
-          {/* =================================================
-             LECTURE HEADER
-          ================================================= */}
-
-          <section className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-
-            <div>
-
-              <div className="flex items-center gap-2">
-                <Sword
-                  size={15}
-                  className="text-amber-400"
-                />
-
-                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500/70">
-                  The Chapters
-                </p>
               </div>
 
-              <h2 className="mt-2 text-2xl font-black text-white">
-                Course Lectures
-              </h2>
+              <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
 
-              <p className="mt-1 text-sm text-white/30">
-                Manage every lesson forged inside
-                this course.
+                Manage{" "}
+
+                <span className="bg-gradient-to-r from-amber-200 via-amber-400 to-orange-500 bg-clip-text text-transparent">
+                  Lectures
+                </span>
+
+              </h1>
+
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/35 sm:text-base">
+                Forge, organize and enrich every
+                lesson inside your course archive.
               </p>
 
-            </div>
+              {course && (
+                <div className="mt-5 flex items-center gap-2">
 
-            {lectures.length > 0 && (
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-400/10 bg-amber-400/[0.05] px-3.5 py-2 text-xs font-bold text-amber-400">
-                <BookOpen size={14} />
-                {lectures.length}{" "}
-                {lectures.length === 1
-                  ? "Lecture"
-                  : "Lectures"}
-              </div>
-            )}
+                  <BookOpen
+                    size={14}
+                    className="text-amber-400/60"
+                  />
 
-          </section>
-
-          {/* =================================================
-             LECTURE LIST
-          ================================================= */}
-
-          <section className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#0b0907]/90 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
-
-            <div className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
-
-            {lectures.length === 0 ? (
-
-              /* =================================================
-                 EMPTY STATE
-              ================================================= */
-
-              <div className="flex min-h-[430px] flex-col items-center justify-center px-6 text-center">
-
-                <div className="relative mb-7">
-
-                  <div className="absolute inset-[-25px] rounded-full bg-amber-500/5 blur-2xl" />
-
-                  <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-amber-400/15 bg-amber-400/[0.04] shadow-[0_0_50px_rgba(245,158,11,0.08)]">
-
-                    <ScrollText
-                      size={34}
-                      className="text-amber-400/80"
-                    />
-
-                  </div>
-
-                  <div className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border border-amber-400/20 bg-[#0b0907] text-amber-400">
-                    <Plus size={15} />
-                  </div>
+                  <span className="text-xs font-bold text-white/50">
+                    {course.courseTitle}
+                  </span>
 
                 </div>
+              )}
 
-                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-500/60">
-                  The Hall Awaits
-                </p>
+            </div>
 
-                <h3 className="mt-2 text-2xl font-black text-white">
-                  No lectures yet
-                </h3>
+            <button
+              type="button"
+              onClick={() =>
+                setShowCreate(
+                  (prev) => !prev
+                )
+              }
+              className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3.5 text-[10px] font-black uppercase tracking-[0.18em] text-black shadow-[0_0_35px_rgba(245,158,11,0.15)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_0_45px_rgba(245,158,11,0.25)]"
+            >
 
-                <p className="mt-2 max-w-md text-sm leading-6 text-white/35">
-                  Every great course begins with
-                  its first chapter. Forge your
-                  first lecture and begin building
-                  your learning realm.
-                </p>
+              <Plus
+                size={16}
+                className={`transition-transform duration-300 ${
+                  showCreate
+                    ? "rotate-45"
+                    : "group-hover:rotate-90"
+                }`}
+              />
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowCreate(true)
-                  }
-                  className="mt-7 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-5 py-3 text-sm font-black text-black shadow-[0_10px_35px_rgba(245,158,11,0.16)] transition hover:-translate-y-1 hover:shadow-[0_15px_45px_rgba(245,158,11,0.25)]"
-                >
-                  <Plus size={17} />
-                  Forge First Lecture
-                </button>
+              {showCreate
+                ? "Close Forge"
+                : "Add Lecture"}
+
+            </button>
+
+          </div>
+
+        </section>
+
+        {/* ================================================= */}
+        {/* CREATE LECTURE */}
+        {/* ================================================= */}
+
+        {showCreate && (
+          <section className="mb-8 overflow-hidden rounded-[28px] border border-amber-400/15 bg-amber-400/[0.025] p-5 shadow-[0_20px_80px_rgba(0,0,0,0.25)] sm:p-7">
+
+            <div className="mb-6 flex items-center gap-3">
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-400/[0.06] text-amber-300">
+
+                <Sparkles size={17} />
 
               </div>
 
-            ) : (
+              <div>
 
-              /* =================================================
-                 LECTURES
-              ================================================= */
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-400/70">
+                  Forge New Lesson
+                </p>
 
-              <div className="divide-y divide-white/[0.06]">
+                <h2 className="mt-1 text-lg font-black text-white">
+                  Create Lecture
+                </h2>
 
-                {lectures.map((lecture) => {
+              </div>
 
-                  const hasContent =
-                    Boolean(
-                      lecture.lectureContent?.trim()
-                    );
+            </div>
 
-                  const hasVideo =
-                    Boolean(lecture.videoUrl);
+            <form
+              onSubmit={
+                handleCreateLecture
+              }
+              className="space-y-5"
+            >
 
-                  const isEditing =
-                    editingId === lecture._id;
+              <div>
 
-                  return (
-                    <div
-                      key={lecture._id}
-                      className="group relative p-5 transition duration-500 hover:bg-amber-400/[0.018] sm:p-6 lg:p-7"
-                    >
+                <label className="mb-2 block text-[9px] font-black uppercase tracking-[0.2em] text-white/30">
+                  Lecture Title
+                </label>
 
-                      {/* HOVER RAIL */}
+                <input
+                  type="text"
+                  value={lectureTitle}
+                  onChange={(event) =>
+                    setLectureTitle(
+                      event.target.value
+                    )
+                  }
+                  placeholder="Enter lecture title..."
+                  className="w-full rounded-xl border border-white/10 bg-black/25 px-4 py-3.5 text-sm font-semibold text-white outline-none transition placeholder:text-white/20 focus:border-amber-400/30 focus:bg-amber-400/[0.03]"
+                />
 
-                      <div className="absolute bottom-0 left-0 top-0 w-0.5 origin-bottom scale-y-0 bg-gradient-to-b from-amber-300 via-orange-500 to-transparent transition duration-500 group-hover:scale-y-100" />
+              </div>
 
-                      {isEditing ? (
+              <div>
 
-                        /* =================================================
-                           EDIT MODE
-                        ================================================= */
+                <label className="mb-2 block text-[9px] font-black uppercase tracking-[0.2em] text-white/30">
+                  Lecture Content
+                </label>
 
-                        <div className="relative overflow-hidden rounded-[25px] border border-amber-400/20 bg-gradient-to-br from-amber-400/[0.07] to-transparent shadow-[0_15px_60px_rgba(0,0,0,0.25)]">
+                <textarea
+                  value={lectureContent}
+                  onChange={(event) =>
+                    setLectureContent(
+                      event.target.value
+                    )
+                  }
+                  rows={5}
+                  placeholder="Describe what students will learn..."
+                  className="w-full resize-none rounded-xl border border-white/10 bg-black/25 px-4 py-3.5 text-sm leading-6 text-white outline-none transition placeholder:text-white/20 focus:border-amber-400/30 focus:bg-amber-400/[0.03]"
+                />
 
-                          <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-700" />
+              </div>
 
-                          <div className="border-b border-white/[0.06] px-5 py-5 sm:px-6">
+              <button
+                type="submit"
+                disabled={creating}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+              >
 
-                            <div className="flex items-center justify-between gap-4">
+                {creating ? (
+                  <LoaderCircle
+                    size={15}
+                    className="animate-spin"
+                  />
+                ) : (
+                  <Sword size={15} />
+                )}
 
-                              <div className="flex items-center gap-4">
+                {creating
+                  ? "Forging..."
+                  : "Forge Lecture"}
 
-                                <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] text-sm font-black text-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.08)]">
+              </button>
 
-                                  {lecture.order}
+            </form>
 
-                                </div>
+          </section>
+        )}
 
-                                <div>
+        {/* ================================================= */}
+        {/* LECTURES HEADER */}
+        {/* ================================================= */}
 
-                                  <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500/70">
-                                    Editing Chapter
-                                  </p>
+        <div className="mb-5 flex items-center justify-between">
 
-                                  <h3 className="mt-1 font-black text-white">
-                                    Update Lecture
-                                  </h3>
+          <div>
 
-                                </div>
+            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-400/60">
+              Course Structure
+            </p>
 
-                              </div>
+            <h2 className="mt-1 text-xl font-black text-white">
+              Lecture Archive
+            </h2>
 
-                              <button
-                                type="button"
-                                onClick={
-                                  cancelEditing
-                                }
-                                className="rounded-xl border border-white/10 bg-white/[0.04] p-2 text-white/35 transition hover:border-red-400/20 hover:bg-red-400/10 hover:text-red-300"
-                              >
-                                <X size={18} />
-                              </button>
+          </div>
+
+          <div className="hidden items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 sm:flex">
+
+            <Shield
+              size={13}
+              className="text-amber-400/50"
+            />
+
+            <span className="text-[9px] font-black uppercase tracking-wider text-white/25">
+              Instructor Control
+            </span>
+
+          </div>
+
+        </div>
+
+        {/* ================================================= */}
+        {/* LECTURE LIST */}
+        {/* ================================================= */}
+
+        {lectures.length === 0 ? (
+
+          <div className="rounded-[28px] border border-dashed border-amber-400/15 bg-white/[0.02] p-12 text-center">
+
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-400/15 bg-amber-400/[0.04] text-amber-300/60">
+
+              <Film size={28} />
+
+            </div>
+
+            <h3 className="mt-5 text-lg font-black text-white">
+              No lectures yet
+            </h3>
+
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/30">
+              Begin building your course by
+              forging your first lecture.
+            </p>
+
+          </div>
+
+        ) : (
+
+          <div className="space-y-4">
+
+            {lectures.map(
+              (lecture, index) => {
+
+                const isEditing =
+                  editingId ===
+                  lecture._id;
+
+                return (
+                  <article
+                    key={lecture._id}
+                    className="group relative overflow-hidden rounded-[26px] border border-white/[0.07] bg-white/[0.025] shadow-[0_15px_60px_rgba(0,0,0,0.22)] transition duration-500 hover:border-amber-400/15 hover:bg-white/[0.035]"
+                  >
+
+                    <div className="absolute left-0 top-0 h-full w-[2px] bg-gradient-to-b from-amber-500/70 via-orange-500/20 to-transparent opacity-60" />
+
+                    {/* ================================================= */}
+                    {/* EDIT MODE */}
+                    {/* ================================================= */}
+
+                    {isEditing ? (
+
+                      <form
+                        onSubmit={(event) =>
+                          handleUpdateLecture(
+                            event,
+                            lecture._id
+                          )
+                        }
+                        className="p-5 sm:p-7"
+                      >
+
+                        <div className="mb-6 flex items-center justify-between">
+
+                          <div className="flex items-center gap-3">
+
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-400/[0.06] text-amber-300">
+
+                              <Edit3 size={16} />
 
                             </div>
-                          </div>
-
-                          <div className="space-y-6 p-5 sm:p-6">
-
-                            {/* TITLE */}
 
                             <div>
 
-                              <label className="mb-2.5 block text-xs font-bold uppercase tracking-[0.16em] text-white/50">
-                                Lecture Title
-                              </label>
+                              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-400/60">
+                                Editing
+                              </p>
 
-                              <input
-                                autoFocus
-                                type="text"
-                                value={
-                                  editingTitle
-                                }
-                                onChange={(
-                                  event
-                                ) =>
-                                  setEditingTitle(
-                                    event.target
-                                      .value
-                                  )
-                                }
-                                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm font-semibold text-white outline-none transition focus:border-amber-400/40 focus:shadow-[0_0_30px_rgba(245,158,11,0.06)]"
-                              />
+                              <h3 className="mt-1 text-sm font-black text-white">
+                                Lecture {index + 1}
+                              </h3>
 
                             </div>
 
-                            {/* CONTENT */}
-
-                            <div>
-
-                              <div className="mb-2.5 flex items-center justify-between">
-
-                                <label className="text-xs font-bold uppercase tracking-[0.16em] text-white/50">
-                                  Lecture Content
-                                </label>
-
-                                <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] text-white/30">
-                                  {
-                                    editingContent.length
-                                  }{" "}
-                                  characters
-                                </span>
-
-                              </div>
-
-                              <textarea
-                                value={
-                                  editingContent
-                                }
-                                onChange={(
-                                  event
-                                ) =>
-                                  setEditingContent(
-                                    event.target
-                                      .value
-                                  )
-                                }
-                                rows={12}
-                                className="w-full resize-y rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-sm leading-7 text-white outline-none transition focus:border-amber-400/40 focus:shadow-[0_0_30px_rgba(245,158,11,0.06)]"
-                              />
-
-                              {!editingContent.trim() && (
-                                <div className="mt-3 flex items-center gap-2 text-xs text-amber-400/70">
-                                  <Sparkles
-                                    size={13}
-                                  />
-                                  Add lecture content so
-                                  the AI Mentor can use
-                                  this lesson as context.
-                                </div>
-                              )}
-
-                            </div>
-
-                            {/* ACTIONS */}
-
-                            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.06] pt-5 sm:flex-row sm:justify-end">
-
-                              <button
-                                type="button"
-                                onClick={
-                                  cancelEditing
-                                }
-                                disabled={
-                                  updatingId ===
-                                  lecture._id
-                                }
-                                className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-bold text-white/45 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-50"
-                              >
-                                Cancel
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleUpdateLecture(
-                                    lecture._id
-                                  )
-                                }
-                                disabled={
-                                  updatingId ===
-                                  lecture._id
-                                }
-                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3 text-sm font-black text-black shadow-[0_10px_30px_rgba(245,158,11,0.12)] transition hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(245,158,11,0.22)] disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-
-                                {updatingId ===
-                                lecture._id ? (
-                                  <>
-                                    <LoaderCircle
-                                      size={17}
-                                      className="animate-spin"
-                                    />
-                                    Saving...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Save
-                                      size={17}
-                                    />
-                                    Save Changes
-                                  </>
-                                )}
-
-                              </button>
-
-                            </div>
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={
+                              cancelEditing
+                            }
+                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/35 transition hover:bg-red-400/[0.08] hover:text-red-300"
+                          >
+                            <X size={15} />
+                          </button>
+
                         </div>
 
-                      ) : (
+                        <div className="space-y-5">
 
-                        /* =================================================
-                           NORMAL MODE
-                        ================================================= */
+                          <div>
 
-                        <div className="flex flex-col gap-6 xl:flex-row xl:items-center">
+                            <label className="mb-2 block text-[9px] font-black uppercase tracking-wider text-white/30">
+                              Lecture Title
+                            </label>
 
-                          {/* ORDER / INFO */}
+                            <input
+                              type="text"
+                              value={
+                                editingTitle
+                              }
+                              onChange={(
+                                event
+                              ) =>
+                                setEditingTitle(
+                                  event.target
+                                    .value
+                                )
+                              }
+                              className="w-full rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-amber-400/30"
+                            />
 
-                          <div className="flex min-w-0 flex-1 items-start gap-4">
+                          </div>
 
-                            <div className="relative shrink-0">
+                          <div>
 
-                              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-400/15 bg-gradient-to-br from-amber-400/[0.12] to-orange-900/[0.12] text-lg font-black text-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.05)] transition duration-500 group-hover:border-amber-400/30 group-hover:shadow-[0_0_35px_rgba(245,158,11,0.12)]">
+                            <label className="mb-2 block text-[9px] font-black uppercase tracking-wider text-white/30">
+                              Lecture Content
+                            </label>
 
-                                {lecture.order}
+                            <textarea
+                              value={
+                                editingContent
+                              }
+                              onChange={(
+                                event
+                              ) =>
+                                setEditingContent(
+                                  event.target
+                                    .value
+                                )
+                              }
+                              rows={6}
+                              className="w-full resize-none rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-sm leading-6 text-white outline-none transition focus:border-amber-400/30"
+                            />
 
-                              </div>
+                          </div>
 
-                              <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-[#0b0907] bg-amber-500 text-[9px] font-black text-black">
-                                <Gem size={9} />
+                          <div className="flex flex-wrap gap-2">
+
+                            <button
+                              type="submit"
+                              disabled={
+                                updatingId ===
+                                lecture._id
+                              }
+                              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3 text-[10px] font-black uppercase tracking-wider text-black transition hover:-translate-y-0.5 disabled:opacity-50"
+                            >
+
+                              {updatingId ===
+                              lecture._id ? (
+                                <LoaderCircle
+                                  size={14}
+                                  className="animate-spin"
+                                />
+                              ) : (
+                                <Save
+                                  size={14}
+                                />
+                              )}
+
+                              Save Changes
+
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={
+                                cancelEditing
+                              }
+                              className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3 text-[10px] font-black uppercase tracking-wider text-white/40 transition hover:bg-white/[0.06] hover:text-white"
+                            >
+                              Cancel
+                            </button>
+
+                          </div>
+
+                        </div>
+
+                      </form>
+
+                    ) : (
+
+                      <div className="p-5 sm:p-7">
+
+                        {/* ================================================= */}
+                        {/* LECTURE HEADER */}
+                        {/* ================================================= */}
+
+                        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+
+                          <div className="flex min-w-0 gap-4">
+
+                            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-400/15 bg-amber-400/[0.04] text-amber-300">
+
+                              <span className="text-sm font-black">
+                                {String(
+                                  index + 1
+                                ).padStart(
+                                  2,
+                                  "0"
+                                )}
                               </span>
+
+                              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
 
                             </div>
 
                             <div className="min-w-0">
 
-                              <div className="flex items-start gap-3">
+                              <div className="mb-2 flex flex-wrap items-center gap-2">
 
-                                <div className="min-w-0">
+                                <span className="rounded-md border border-amber-400/10 bg-amber-400/[0.04] px-2 py-1 text-[8px] font-black uppercase tracking-[0.15em] text-amber-300/60">
+                                  Lesson
+                                </span>
 
-                                  <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-500/55">
-                                    Chapter{" "}
-                                    {lecture.order}
-                                  </p>
-
-                                  <h3 className="break-words text-lg font-black text-white transition group-hover:text-amber-300 sm:text-xl">
-                                    {
-                                      lecture.lectureTitle
-                                    }
-                                  </h3>
-
-                                </div>
-
-                              </div>
-
-                              {/* STATUS */}
-
-                              <div className="mt-3 flex flex-wrap items-center gap-2">
-
-                                {hasContent ? (
-                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/10 bg-emerald-400/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-400">
-                                    <FileText
-                                      size={12}
-                                    />
-                                    Content Ready
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/10 bg-amber-400/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-400">
-                                    <FileText
-                                      size={12}
-                                    />
-                                    Content Missing
-                                  </span>
-                                )}
-
-                                {hasVideo ? (
-                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/10 bg-emerald-400/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-400">
+                                {lecture.videoUrl && (
+                                  <span className="flex items-center gap-1 rounded-md border border-emerald-400/10 bg-emerald-400/[0.04] px-2 py-1 text-[8px] font-black uppercase tracking-wider text-emerald-300/60">
                                     <Check
-                                      size={12}
+                                      size={10}
                                     />
                                     Video Ready
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/10 bg-red-400/[0.05] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-red-300">
-                                    <Film
-                                      size={12}
-                                    />
-                                    Video Pending
                                   </span>
                                 )}
 
                                 {lecture.isPreviewFree && (
-                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/15 bg-amber-400/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-300">
+                                  <span className="flex items-center gap-1 rounded-md border border-orange-400/10 bg-orange-400/[0.04] px-2 py-1 text-[8px] font-black uppercase tracking-wider text-orange-300/60">
                                     <Eye
-                                      size={12}
+                                      size={10}
                                     />
-                                    Free Preview
+                                    Preview
+                                  </span>
+                                )}
+
+                              </div>
+
+                              <h3 className="text-lg font-black tracking-tight text-white sm:text-xl">
+                                {
+                                  lecture.lectureTitle
+                                }
+                              </h3>
+
+                              {lecture.lectureContent && (
+                                <p className="mt-2 max-w-3xl text-xs leading-5 text-white/30 sm:text-sm">
+                                  {
+                                    lecture.lectureContent
+                                  }
+                                </p>
+                              )}
+
+                              <div className="mt-4 flex flex-wrap items-center gap-2">
+
+                                <span className="flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[9px] font-bold text-white/25">
+
+                                  <PlayCircle
+                                    size={11}
+                                  />
+
+                                  {formatDuration(
+                                    lecture.videoDuration
+                                  )}
+
+                                </span>
+
+                                {lecture.module && (
+                                  <span className="flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[9px] font-bold text-white/25">
+
+                                    <BookOpen
+                                      size={11}
+                                    />
+
+                                    {
+                                      lecture
+                                        .module
+                                        .moduleTitle
+                                    }
+
                                   </span>
                                 )}
 
                               </div>
 
                             </div>
+
                           </div>
 
-                          {/* META */}
-
-                          <div className="hidden items-center gap-7 border-x border-white/[0.06] px-6 xl:flex">
-
-                            <div className="text-center">
-
-                              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
-                                Duration
-                              </p>
-
-                              <p className="mt-1.5 text-sm font-black text-white/75">
-                                {formatDuration(
-                                  lecture.videoDuration
-                                )}
-                              </p>
-
-                            </div>
-
-                            <div className="h-8 w-px bg-white/[0.06]" />
-
-                            <div className="text-center">
-
-                              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
-                                Preview
-                              </p>
-
-                              <p
-                                className={`mt-1.5 text-xs font-black ${
-                                  lecture.isPreviewFree
-                                    ? "text-amber-400"
-                                    : "text-white/30"
-                                }`}
-                              >
-                                {lecture.isPreviewFree
-                                  ? "ENABLED"
-                                  : "LOCKED"}
-                              </p>
-
-                            </div>
-                          </div>
-
+                          {/* ================================================= */}
                           {/* ACTIONS */}
+                          {/* ================================================= */}
 
-                          <div className="flex flex-wrap items-center gap-2.5 xl:justify-end">
+                          <div className="flex flex-wrap items-center gap-2">
+
+                            {/* NOTES */}
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openNotes(
+                                  lecture
+                                )
+                              }
+                              className="group/notes inline-flex items-center gap-2 rounded-xl border border-amber-400/10 bg-amber-400/[0.04] px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-amber-300/80 transition duration-300 hover:-translate-y-0.5 hover:border-amber-400/30 hover:bg-amber-400/[0.09] hover:text-amber-200 hover:shadow-[0_0_25px_rgba(245,158,11,0.1)]"
+                            >
+
+                              <StickyNote
+                                size={14}
+                                className="transition duration-300 group-hover/notes:-rotate-6 group-hover/notes:scale-110"
+                              />
+
+                              Notes
+
+                            </button>
 
                             {/* PREVIEW */}
 
                             <button
                               type="button"
-                              disabled={
-                                previewLoadingId ===
-                                lecture._id
-                              }
                               onClick={() =>
                                 handleTogglePreview(
                                   lecture._id
                                 )
                               }
-                              className={`group/btn inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-[11px] font-black uppercase tracking-wide transition duration-300 disabled:cursor-not-allowed disabled:opacity-50 ${
+                              disabled={
+                                previewLoadingId ===
+                                lecture._id
+                              }
+                              className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider transition ${
                                 lecture.isPreviewFree
-                                  ? "border-amber-400/20 bg-amber-400/10 text-amber-300 hover:bg-amber-400/15 hover:shadow-[0_0_25px_rgba(245,158,11,0.12)]"
-                                  : "border-white/10 bg-white/[0.04] text-white/40 hover:border-amber-400/20 hover:bg-amber-400/[0.05] hover:text-amber-300"
+                                  ? "border-orange-400/20 bg-orange-400/[0.08] text-orange-300"
+                                  : "border-white/10 bg-white/[0.025] text-white/35 hover:border-amber-400/20 hover:text-amber-300"
                               }`}
                             >
+
                               {previewLoadingId ===
                               lecture._id ? (
                                 <LoaderCircle
@@ -1450,27 +1728,34 @@ and notes students should understand.`}
                                   className="animate-spin"
                                 />
                               ) : (
-                                <PlayCircle
+                                <Eye
                                   size={14}
-                                  className="transition group-hover/btn:scale-110"
                                 />
                               )}
 
                               {lecture.isPreviewFree
                                 ? "Preview On"
-                                : "Preview Off"}
+                                : "Preview"}
+
                             </button>
 
-                            {/* UPLOAD */}
+                            {/* UPLOAD VIDEO */}
 
-                            <label
-                              className={`group/upload inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-[11px] font-black uppercase tracking-wide text-white/45 transition duration-300 hover:border-amber-400/20 hover:bg-amber-400/[0.05] hover:text-amber-300 ${
-                                uploadingId ===
-                                lecture._id
-                                  ? "pointer-events-none opacity-50"
-                                  : ""
-                              }`}
-                            >
+                            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.025] px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white/40 transition hover:border-amber-400/20 hover:text-amber-300">
+
+                              <input
+                                type="file"
+                                accept="video/*"
+                                className="hidden"
+                                onChange={(
+                                  event
+                                ) =>
+                                  handleUploadVideo(
+                                    event,
+                                    lecture._id
+                                  )
+                                }
+                              />
 
                               {uploadingId ===
                               lecture._id ? (
@@ -1481,41 +1766,14 @@ and notes students should understand.`}
                               ) : (
                                 <Upload
                                   size={14}
-                                  className="transition group-hover/upload:-translate-y-0.5"
                                 />
                               )}
 
-                              <span className="hidden sm:inline">
-                                {uploadingId ===
-                                lecture._id
-                                  ? "Uploading..."
-                                  : lecture.videoUrl
-                                  ? "Replace Video"
-                                  : "Upload Video"}
-                              </span>
+                              {uploadingId ===
+                              lecture._id
+                                ? "Uploading"
+                                : "Video"}
 
-                              <input
-                                type="file"
-                                accept="video/*"
-                                className="hidden"
-                                disabled={
-                                  uploadingId ===
-                                  lecture._id
-                                }
-                                onChange={(event) => {
-                                  const file =
-                                    event.target
-                                      .files?.[0];
-
-                                  handleVideoUpload(
-                                    lecture._id,
-                                    file
-                                  );
-
-                                  event.target.value =
-                                    "";
-                                }}
-                              />
                             </label>
 
                             {/* EDIT */}
@@ -1527,143 +1785,949 @@ and notes students should understand.`}
                                   lecture
                                 )
                               }
-                              className="group/edit rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-white/40 transition duration-300 hover:-translate-y-0.5 hover:border-amber-400/20 hover:bg-amber-400/[0.07] hover:text-amber-300 hover:shadow-[0_0_25px_rgba(245,158,11,0.08)]"
-                              title="Edit lecture"
+                              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.025] px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white/40 transition hover:border-amber-400/20 hover:text-amber-300"
                             >
+
                               <Edit3
-                                size={16}
-                                className="transition group-hover/edit:rotate-12"
+                                size={14}
                               />
+
+                              Edit
+
                             </button>
 
                             {/* DELETE */}
 
                             <button
                               type="button"
-                              disabled={
-                                deletingId ===
-                                lecture._id
-                              }
                               onClick={() =>
                                 handleDeleteLecture(
                                   lecture._id
                                 )
                               }
-                              className="group/delete rounded-xl border border-red-400/10 bg-red-400/[0.04] p-2.5 text-red-400/60 transition duration-300 hover:-translate-y-0.5 hover:border-red-400/30 hover:bg-red-500/10 hover:text-red-300 hover:shadow-[0_0_25px_rgba(239,68,68,0.08)] disabled:cursor-not-allowed disabled:opacity-40"
-                              title="Delete lecture"
+                              disabled={
+                                deletingId ===
+                                lecture._id
+                              }
+                              className="inline-flex items-center gap-2 rounded-xl border border-red-400/10 bg-red-400/[0.025] px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-red-300/50 transition hover:border-red-400/25 hover:bg-red-400/[0.06] hover:text-red-300 disabled:opacity-40"
                             >
 
                               {deletingId ===
                               lecture._id ? (
                                 <LoaderCircle
-                                  size={16}
+                                  size={14}
                                   className="animate-spin"
                                 />
                               ) : (
                                 <Trash2
-                                  size={16}
-                                  className="transition group-hover/delete:scale-110"
+                                  size={14}
                                 />
                               )}
+
+                              Delete
 
                             </button>
 
                           </div>
+
                         </div>
-                      )}
+
+                      </div>
+                    )}
+
+                  </article>
+                );
+              }
+            )}
+
+          </div>
+        )}
+
+        {/* ================================================= */}
+        {/* FOOTER */}
+        {/* ================================================= */}
+
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.05] pt-6 text-center sm:flex-row sm:text-left">
+
+          <div className="flex items-center gap-2">
+
+            <Flame
+              size={14}
+              className="text-orange-400/40"
+            />
+
+            <span className="text-[9px] font-black uppercase tracking-[0.22em] text-white/15">
+              Knowledge is forged, not given.
+            </span>
+
+          </div>
+
+          <div className="flex items-center gap-2">
+
+            <Gem
+              size={12}
+              className="text-amber-400/30"
+            />
+
+            <span className="text-[9px] font-bold uppercase tracking-wider text-white/15">
+              Smart LMS
+            </span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* ================================================= */}
+      {/* NOTES MODAL */}
+      {/* ================================================= */}
+
+      {notesLecture && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6">
+
+          {/* Backdrop */}
+
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+            onClick={closeNotes}
+          />
+
+          {/* Modal */}
+
+          <div className="relative flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-[30px] border border-amber-400/20 bg-[#0b0806]/95 shadow-[0_30px_120px_rgba(0,0,0,0.85)]">
+
+            {/* ================================================= */}
+            {/* MODAL HEADER */}
+            {/* ================================================= */}
+
+            <div className="relative border-b border-white/[0.06] px-5 py-5 sm:px-7">
+
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.10),transparent_35%)]" />
+
+              <div className="relative flex items-center justify-between gap-4">
+
+                <div className="flex min-w-0 items-center gap-4">
+
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] text-amber-300 shadow-[0_0_30px_rgba(245,158,11,0.08)]">
+
+                    <StickyNote size={21} />
+
+                  </div>
+
+                  <div className="min-w-0">
+
+                    <div className="mb-1 flex items-center gap-2">
+
+                      <span className="text-[9px] font-black uppercase tracking-[0.28em] text-amber-400/70">
+                        Royal Archive
+                      </span>
+
+                      <span className="h-1 w-1 rounded-full bg-amber-400/50" />
+
+                      <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
+                        {lectureNotes.length}{" "}
+                        {lectureNotes.length ===
+                        1
+                          ? "Note"
+                          : "Notes"}
+                      </span>
+
                     </div>
-                  );
-                })}
+
+                    <h2 className="truncate text-lg font-black tracking-tight text-white sm:text-xl">
+                      {
+                        notesLecture.lectureTitle
+                      }
+                    </h2>
+
+                  </div>
+
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeNotes}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/50 transition hover:border-red-400/30 hover:bg-red-400/[0.08] hover:text-red-300"
+                >
+                  <X size={18} />
+                </button>
 
               </div>
-            )}
-          </section>
 
-          {/* =================================================
-             FOOTER
-          ================================================= */}
-
-          <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-white/[0.05] pt-5 text-center sm:flex-row sm:text-left">
-
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">
-
-              <Shield
-                size={13}
-                className="text-amber-500/50"
-              />
-
-              Your course realm is protected
             </div>
 
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">
+            {/* ================================================= */}
+            {/* MODAL CONTENT */}
+            {/* ================================================= */}
 
-              <Flame
-                size={13}
-                className="text-orange-500/60"
-              />
+            <div className="grid min-h-0 flex-1 lg:grid-cols-[1.08fr_.92fr]">
 
-              Forge. Teach. Inspire.
+              {/* ================================================= */}
+              {/* NOTES LIST */}
+              {/* ================================================= */}
+
+              <div className="min-h-0 overflow-y-auto border-b border-white/[0.06] p-5 sm:p-7 lg:border-b-0 lg:border-r">
+
+                <div className="mb-5 flex items-center justify-between">
+
+                  <div>
+
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-400/70">
+                      Archive
+                    </p>
+
+                    <h3 className="mt-1 text-base font-black text-white">
+                      Lecture Notes
+                    </h3>
+
+                  </div>
+
+                  <div className="rounded-xl border border-amber-400/10 bg-amber-400/[0.04] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-300/70">
+                    {lectureNotes.length}{" "}
+                    Items
+                  </div>
+
+                </div>
+
+                {notesLoading ? (
+
+                  <div className="flex min-h-[300px] items-center justify-center">
+
+                    <div className="text-center">
+
+                      <LoaderCircle
+                        size={28}
+                        className="mx-auto animate-spin text-amber-400"
+                      />
+
+                      <p className="mt-3 text-xs font-bold uppercase tracking-wider text-white/30">
+                        Opening the royal archives...
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                ) : lectureNotes.length ===
+                  0 ? (
+
+                  <div className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-dashed border-amber-400/15 bg-amber-400/[0.02] p-8 text-center">
+
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-400/15 bg-amber-400/[0.05] text-amber-300/60">
+
+                      <ScrollText
+                        size={28}
+                      />
+
+                    </div>
+
+                    <h4 className="text-sm font-black text-white">
+                      The archive is empty
+                    </h4>
+
+                    <p className="mt-2 max-w-xs text-xs leading-5 text-white/35">
+                      Forge your first written
+                      note or upload a study
+                      document for this lecture.
+                    </p>
+
+                  </div>
+
+                ) : (
+
+                  <div className="space-y-3">
+
+                    {lectureNotes.map(
+                      (note) => {
+                        const isFileNote =
+                          Boolean(
+                            note.fileUrl
+                          );
+
+                        return (
+                          <div
+                            key={
+                              note._id
+                            }
+                            className="group rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 transition duration-300 hover:-translate-y-0.5 hover:border-amber-400/20 hover:bg-amber-400/[0.035] hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]"
+                          >
+
+                            <div className="flex gap-3">
+
+                              {/* ICON */}
+
+                              <div
+                                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${
+                                  isFileNote
+                                    ? "border-orange-400/20 bg-orange-400/[0.07] text-orange-300"
+                                    : "border-amber-400/20 bg-amber-400/[0.07] text-amber-300"
+                                }`}
+                              >
+
+                                {isFileNote ? (
+                                  <Paperclip
+                                    size={
+                                      17
+                                    }
+                                  />
+                                ) : (
+                                  <ScrollText
+                                    size={
+                                      17
+                                    }
+                                  />
+                                )}
+
+                              </div>
+
+                              {/* CONTENT */}
+
+                              <div className="min-w-0 flex-1">
+
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+
+                                  <div className="min-w-0">
+
+                                    <h4 className="truncate text-sm font-black text-white">
+                                      {
+                                        note.noteTitle
+                                      }
+                                    </h4>
+
+                                    <div className="mt-1 flex flex-wrap items-center gap-2">
+
+                                      <span className="rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white/35">
+                                        {isFileNote
+                                          ? getFileExtension(
+                                              note.fileName
+                                            )
+                                          : "Written Note"}
+                                      </span>
+
+                                      <span className="text-[9px] text-white/25">
+                                        {new Date(
+                                          note.createdAt
+                                        ).toLocaleDateString()}
+                                      </span>
+
+                                    </div>
+
+                                  </div>
+
+                                  {/* ACTIONS */}
+
+                                  <div className="flex shrink-0 items-center gap-1">
+
+                                    {isFileNote && (
+                                      <>
+                                        <a
+                                          href={
+                                            note.fileUrl
+                                          }
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition hover:bg-amber-400/10 hover:text-amber-300"
+                                          title="Open file"
+                                        >
+                                          <ExternalLink
+                                            size={
+                                              14
+                                            }
+                                          />
+                                        </a>
+
+                                        <a
+                                          href={
+                                            note.fileUrl
+                                          }
+                                          download={
+                                            note.fileName
+                                          }
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition hover:bg-amber-400/10 hover:text-amber-300"
+                                          title="Download file"
+                                        >
+                                          <Download
+                                            size={
+                                              14
+                                            }
+                                          />
+                                        </a>
+                                      </>
+                                    )}
+
+                                    {!isFileNote && (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          startEditingNote(
+                                            note
+                                          )
+                                        }
+                                        className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition hover:bg-amber-400/10 hover:text-amber-300"
+                                        title="Edit note"
+                                      >
+                                        <Edit3
+                                          size={
+                                            14
+                                          }
+                                        />
+                                      </button>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleDeleteNote(
+                                          note._id
+                                        )
+                                      }
+                                      disabled={
+                                        deletingNoteId ===
+                                        note._id
+                                      }
+                                      className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition hover:bg-red-400/10 hover:text-red-300 disabled:opacity-40"
+                                      title="Delete note"
+                                    >
+
+                                      {deletingNoteId ===
+                                      note._id ? (
+                                        <LoaderCircle
+                                          size={
+                                            14
+                                          }
+                                          className="animate-spin"
+                                        />
+                                      ) : (
+                                        <Trash2
+                                          size={
+                                            14
+                                          }
+                                        />
+                                      )}
+
+                                    </button>
+
+                                  </div>
+
+                                </div>
+
+                                {/* WRITTEN CONTENT */}
+
+                                {note.noteContent && (
+                                  <p className="mt-3 whitespace-pre-wrap text-xs leading-5 text-white/45">
+                                    {
+                                      note.noteContent
+                                    }
+                                  </p>
+                                )}
+
+                                {/* FILE INFO */}
+
+                                {isFileNote && (
+                                  <div className="mt-3 flex flex-wrap items-center gap-2">
+
+                                    <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+
+                                      <FileText
+                                        size={
+                                          13
+                                        }
+                                        className="text-amber-400/70"
+                                      />
+
+                                      <span className="max-w-[220px] truncate text-[10px] font-bold text-white/40">
+                                        {
+                                          note.fileName
+                                        }
+                                      </span>
+
+                                    </div>
+
+                                    <span className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-[10px] font-bold text-white/30">
+                                      {formatFileSize(
+                                        note.fileSize
+                                      )}
+                                    </span>
+
+                                  </div>
+                                )}
+
+                              </div>
+
+                            </div>
+
+                          </div>
+                        );
+                      }
+                    )}
+
+                  </div>
+                )}
+
+              </div>
+
+              {/* ================================================= */}
+              {/* NOTE CREATOR */}
+              {/* ================================================= */}
+
+              <div className="min-h-0 overflow-y-auto p-5 sm:p-7">
+
+                {/* MODE SWITCH */}
+
+                <div className="mb-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-1.5">
+
+                  <div className="grid grid-cols-2 gap-1">
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNoteMode(
+                          "write"
+                        );
+
+                        setSelectedNoteFile(
+                          null
+                        );
+                      }}
+                      className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition ${
+                        noteMode ===
+                        "write"
+                          ? "bg-amber-400/[0.10] text-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.07)]"
+                          : "text-white/30 hover:text-white/60"
+                      }`}
+                    >
+
+                      <ScrollText
+                        size={14}
+                      />
+
+                      Write Note
+
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNoteMode(
+                          "file"
+                        );
+
+                        setEditingNoteId(
+                          null
+                        );
+                      }}
+                      className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] transition ${
+                        noteMode ===
+                        "file"
+                          ? "bg-orange-400/[0.10] text-orange-300 shadow-[0_0_25px_rgba(249,115,22,0.07)]"
+                          : "text-white/30 hover:text-white/60"
+                      }`}
+                    >
+
+                      <Paperclip
+                        size={14}
+                      />
+
+                      Upload File
+
+                    </button>
+
+                  </div>
+
+                </div>
+
+                {/* ================================================= */}
+                {/* FORM */}
+                {/* ================================================= */}
+
+                <form
+                  onSubmit={
+                    noteMode ===
+                    "write"
+                      ? handleSaveWrittenNote
+                      : handleUploadNoteFile
+                  }
+                >
+
+                  {/* TITLE */}
+
+                  <div className="mb-5">
+
+                    <label className="mb-2 block text-[9px] font-black uppercase tracking-[0.22em] text-white/35">
+                      {noteMode ===
+                      "write"
+                        ? "Note Title"
+                        : "File Title"}
+                    </label>
+
+                    <input
+                      type="text"
+                      value={
+                        noteTitle
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setNoteTitle(
+                          event.target
+                            .value
+                        )
+                      }
+                      placeholder={
+                        noteMode ===
+                        "write"
+                          ? "Enter your note title..."
+                          : "Enter a title for this file..."
+                      }
+                      className="w-full rounded-xl border border-white/10 bg-black/25 px-4 py-3.5 text-sm font-semibold text-white outline-none transition placeholder:text-white/20 focus:border-amber-400/30 focus:bg-amber-400/[0.03] focus:shadow-[0_0_25px_rgba(245,158,11,0.06)]"
+                    />
+
+                  </div>
+
+                  {/* ================================================= */}
+                  {/* WRITTEN NOTE */}
+                  {/* ================================================= */}
+
+                  {noteMode ===
+                    "write" && (
+                    <>
+
+                      <div className="mb-5">
+
+                        <div className="mb-2 flex items-center justify-between">
+
+                          <label className="text-[9px] font-black uppercase tracking-[0.22em] text-white/35">
+                            Note Content
+                          </label>
+
+                          <span className="text-[9px] text-white/20">
+                            {
+                              noteContent.length
+                            }{" "}
+                            characters
+                          </span>
+
+                        </div>
+
+                        <textarea
+                          value={
+                            noteContent
+                          }
+                          onChange={(
+                            event
+                          ) =>
+                            setNoteContent(
+                              event.target
+                                .value
+                            )
+                          }
+                          rows={10}
+                          placeholder="Write important concepts, explanations, examples, reminders..."
+                          className="w-full resize-none rounded-xl border border-white/10 bg-black/25 px-4 py-3.5 text-sm leading-6 text-white outline-none transition placeholder:text-white/20 focus:border-amber-400/30 focus:bg-amber-400/[0.03] focus:shadow-[0_0_25px_rgba(245,158,11,0.06)]"
+                        />
+
+                      </div>
+
+                      <div className="flex gap-2">
+
+                        {editingNoteId && (
+                          <button
+                            type="button"
+                            onClick={
+                              resetNoteForm
+                            }
+                            className="flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[10px] font-black uppercase tracking-wider text-white/40 transition hover:bg-white/[0.06] hover:text-white"
+                          >
+                            Cancel
+                          </button>
+                        )}
+
+                        <button
+                          type="submit"
+                          disabled={
+                            savingNote
+                          }
+                          className="group flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-[10px] font-black uppercase tracking-wider text-black shadow-[0_0_25px_rgba(245,158,11,0.15)] transition hover:-translate-y-0.5 hover:shadow-[0_0_35px_rgba(245,158,11,0.25)] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+
+                          {savingNote ? (
+                            <LoaderCircle
+                              size={
+                                14
+                              }
+                              className="animate-spin"
+                            />
+                          ) : (
+                            <Save
+                              size={
+                                14
+                              }
+                            />
+                          )}
+
+                          {editingNoteId
+                            ? "Update Note"
+                            : "Forge Note"}
+
+                        </button>
+
+                      </div>
+
+                    </>
+                  )}
+
+                  {/* ================================================= */}
+                  {/* FILE UPLOAD */}
+                  {/* ================================================= */}
+
+                  {noteMode ===
+                    "file" && (
+                    <>
+
+                      <div className="mb-5">
+
+                        <label
+                          htmlFor="lecture-note-file"
+                          className="group block cursor-pointer rounded-2xl border border-dashed border-amber-400/20 bg-amber-400/[0.025] p-6 text-center transition duration-300 hover:border-amber-400/40 hover:bg-amber-400/[0.05] hover:shadow-[0_0_35px_rgba(245,158,11,0.06)]"
+                        >
+
+                          <input
+                            id="lecture-note-file"
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,.ppt,.pptx,.txt"
+                            onChange={(
+                              event
+                            ) => {
+                              const file =
+                                event
+                                  .target
+                                  .files?.[0];
+
+                              setSelectedNoteFile(
+                                file ||
+                                  null
+                              );
+
+                              if (
+                                file &&
+                                !noteTitle
+                              ) {
+                                setNoteTitle(
+                                  file.name.replace(
+                                    /\.[^/.]+$/,
+                                    ""
+                                  )
+                                );
+                              }
+                            }}
+                          />
+
+                          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/[0.07] text-amber-300 transition duration-300 group-hover:scale-110 group-hover:rotate-3">
+
+                            {selectedNoteFile ? (
+                              <FileText
+                                size={
+                                  25
+                                }
+                              />
+                            ) : (
+                              <Upload
+                                size={
+                                  25
+                                }
+                              />
+                            )}
+
+                          </div>
+
+                          {selectedNoteFile ? (
+
+                            <>
+                              <p className="mt-4 text-sm font-black text-white">
+                                {
+                                  selectedNoteFile.name
+                                }
+                              </p>
+
+                              <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-amber-400/60">
+                                {getFileExtension(
+                                  selectedNoteFile.name
+                                )}{" "}
+                                •{" "}
+                                {formatFileSize(
+                                  selectedNoteFile.size
+                                )}
+                              </p>
+
+                              <p className="mt-3 text-[10px] text-white/25">
+                                Click to choose another
+                                file
+                              </p>
+                            </>
+
+                          ) : (
+
+                            <>
+                              <p className="mt-4 text-sm font-black text-white">
+                                Choose a study
+                                document
+                              </p>
+
+                              <p className="mt-2 text-xs text-white/30">
+                                PDF, DOC, DOCX,
+                                PPT, PPTX or TXT
+                              </p>
+
+                              <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-amber-400/45">
+                                Maximum size: 10 MB
+                              </p>
+                            </>
+
+                          )}
+
+                        </label>
+
+                      </div>
+
+                      <div className="mb-5">
+
+                        <label className="mb-2 block text-[9px] font-black uppercase tracking-[0.22em] text-white/35">
+                          Description{" "}
+                          <span className="text-white/15">
+                            Optional
+                          </span>
+                        </label>
+
+                        <textarea
+                          value={
+                            noteContent
+                          }
+                          onChange={(
+                            event
+                          ) =>
+                            setNoteContent(
+                              event.target
+                                .value
+                            )
+                          }
+                          rows={4}
+                          placeholder="Add a short description about this document..."
+                          className="w-full resize-none rounded-xl border border-white/10 bg-black/25 px-4 py-3.5 text-sm leading-6 text-white outline-none transition placeholder:text-white/20 focus:border-amber-400/30 focus:bg-amber-400/[0.03]"
+                        />
+
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={
+                          uploadingNoteFile ||
+                          !selectedNoteFile
+                        }
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3.5 text-[10px] font-black uppercase tracking-[0.15em] text-black shadow-[0_0_30px_rgba(249,115,22,0.14)] transition hover:-translate-y-0.5 hover:shadow-[0_0_40px_rgba(249,115,22,0.25)] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+
+                        {uploadingNoteFile ? (
+                          <LoaderCircle
+                            size={
+                              15
+                            }
+                            className="animate-spin"
+                          />
+                        ) : (
+                          <Upload
+                            size={
+                              15
+                            }
+                          />
+                        )}
+
+                        {uploadingNoteFile
+                          ? "Uploading..."
+                          : "Upload To Archive"}
+
+                      </button>
+
+                    </>
+                  )}
+
+                </form>
+
+                {/* ================================================= */}
+                {/* TIP */}
+                {/* ================================================= */}
+
+                <div className="mt-6 rounded-2xl border border-amber-400/10 bg-amber-400/[0.025] p-4">
+
+                  <div className="flex gap-3">
+
+                    <Gem
+                      size={16}
+                      className="mt-0.5 shrink-0 text-amber-400/60"
+                    />
+
+                    <div>
+
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300/60">
+                        Archive Tip
+                      </p>
+
+                      <p className="mt-1 text-[10px] leading-5 text-white/25">
+                        Keep your lecture notes
+                        concise and organized.
+                        Uploaded study material
+                        can be opened directly
+                        from the archive.
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
             </div>
 
           </div>
-        </div>
-      </div>
 
-      {/* =================================================
-         ANIMATION STYLES
-      ================================================= */}
+        </div>
+      )}
+
+      {/* ================================================= */}
+      {/* ANIMATIONS */}
+      {/* ================================================= */}
 
       <style>{`
         @keyframes emberFloat {
           0% {
-            transform: translate3d(0, 0, 0) scale(0.7);
+            transform: translate3d(0, 0, 0) scale(0.8);
             opacity: 0;
           }
 
           10% {
-            opacity: 0.7;
+            opacity: 0.65;
           }
 
           50% {
-            transform: translate3d(
-              25px,
-              -45vh,
-              0
-            ) scale(1);
-            opacity: 0.45;
+            opacity: 0.35;
           }
 
           100% {
             transform: translate3d(
-              -15px,
-              -100vh,
+              40px,
+              -105vh,
               0
-            ) scale(0.4);
+            ) scale(1.2);
             opacity: 0;
           }
         }
-
-        .lecture-realm {
-          isolation: isolate;
-        }
-
-        .lecture-realm button,
-        .lecture-realm label,
-        .lecture-realm a {
-          -webkit-tap-highlight-color: transparent;
-        }
-
-        @media (max-width: 1023px) {
-          .lecture-realm {
-            cursor: auto;
-          }
-        }
-
-        ::selection {
-          background: rgba(245, 158, 11, 0.25);
-          color: #fff;
-        }
       `}</style>
+
     </div>
   );
 }

@@ -28,6 +28,10 @@ import {
   Sword,
   Trophy,
   ClipboardCheck,
+  Download,
+  ExternalLink,
+  NotebookPen,
+  Paperclip,
   X,
 } from "lucide-react";
 
@@ -140,6 +144,16 @@ const StudentCourseLearning = () => {
   // ---------------------------------------------------
 
   const [showAIMentor, setShowAIMentor] =
+    useState(false);
+
+  // ---------------------------------------------------
+  // LECTURE NOTES
+  // ---------------------------------------------------
+
+  const [lectureNotes, setLectureNotes] =
+    useState([]);
+
+  const [notesLoading, setNotesLoading] =
     useState(false);
 
   // ---------------------------------------------------
@@ -835,6 +849,56 @@ const StudentCourseLearning = () => {
       unassignedLectures,
       normalizedSearch,
     ]);
+
+  // ===================================================
+  // FETCH LECTURE NOTES
+  // ===================================================
+
+  const fetchLectureNotes = async (
+    lectureId,
+  ) => {
+    if (!lectureId) {
+      setLectureNotes([]);
+      return;
+    }
+
+    try {
+      setNotesLoading(true);
+
+      const response = await api.get(
+        `/note/lecture/${lectureId}`,
+      );
+
+      if (response.data?.success) {
+        setLectureNotes(
+          response.data.notes || [],
+        );
+      } else {
+        setLectureNotes([]);
+      }
+    } catch (error) {
+      console.error(
+        "Fetch lecture notes error:",
+        error,
+      );
+
+      // Notes should never break the learning page.
+      setLectureNotes([]);
+    } finally {
+      setNotesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedLecture?._id) {
+      setLectureNotes([]);
+      return;
+    }
+
+    fetchLectureNotes(
+      selectedLecture._id,
+    );
+  }, [selectedLecture?._id]);
 
   // ===================================================
   // CURRENT LECTURE
@@ -1706,6 +1770,13 @@ const StudentCourseLearning = () => {
               }
             />
 
+            {/* LECTURE NOTES */}
+
+            <LectureNotes
+              notes={lectureNotes}
+              loading={notesLoading}
+            />
+
             {/* NAVIGATION */}
 
             <LectureNavigation
@@ -1789,6 +1860,191 @@ const StudentCourseLearning = () => {
           />
         )}
     </div>
+  );
+};
+
+// =====================================================
+// LECTURE NOTES
+// =====================================================
+
+const LectureNotes = ({
+  notes = [],
+  loading,
+}) => {
+  return (
+    <section className="relative mt-6 overflow-hidden rounded-2xl border border-amber-900/40 bg-[#0d1012] shadow-[0_20px_70px_rgba(0,0,0,0.35)]">
+
+      <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-amber-600/10 blur-[80px]" />
+
+      <div className="relative">
+
+        <div className="flex flex-col gap-4 border-b border-slate-800/80 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+
+          <div className="flex items-center gap-3">
+
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-700/40 bg-amber-950/30 text-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.08)]">
+              <NotebookPen size={20} />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-black uppercase tracking-[0.15em] text-slate-100">
+                  Maester's Notes
+                </h2>
+
+                {notes.length > 0 && (
+                  <span className="rounded-full border border-amber-800/40 bg-amber-950/30 px-2 py-0.5 text-[9px] font-bold text-amber-400">
+                    {notes.length}
+                  </span>
+                )}
+              </div>
+
+              <p className="mt-1 text-[10px] text-slate-600">
+                Knowledge scrolls and resources for this lecture
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.18em] text-amber-700">
+            <Paperclip size={12} />
+            Lecture Resources
+          </div>
+        </div>
+
+        <div className="p-5">
+          {loading ? (
+            <div className="flex min-h-[120px] items-center justify-center">
+              <div className="flex items-center gap-2 text-xs text-slate-600">
+                <LoaderCircle
+                  size={17}
+                  className="animate-spin text-amber-500"
+                />
+                Reading the scrolls...
+              </div>
+            </div>
+          ) : notes.length === 0 ? (
+            <div className="flex min-h-[120px] flex-col items-center justify-center text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-slate-700">
+                <FileText size={20} />
+              </div>
+
+              <p className="mt-3 text-xs font-bold text-slate-500">
+                No notes for this lecture
+              </p>
+
+              <p className="mt-1 max-w-sm text-[10px] leading-5 text-slate-700">
+                The instructor has not added any lecture notes or resources yet.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {notes.map((note) => (
+                <NoteCard
+                  key={note._id}
+                  note={note}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// =====================================================
+// NOTE CARD
+// =====================================================
+
+const NoteCard = ({ note }) => {
+  const hasContent = Boolean(
+    note.noteContent?.trim(),
+  );
+
+  const hasFile = Boolean(note.fileUrl);
+
+  return (
+    <article className="group relative overflow-hidden rounded-xl border border-slate-800 bg-[#090b0d] p-5 transition-all duration-300 hover:border-amber-800/60 hover:bg-[#0c0f11] hover:shadow-[0_15px_50px_rgba(245,158,11,0.06)]">
+
+      <div className="absolute left-0 top-0 h-full w-[2px] bg-gradient-to-b from-transparent via-amber-500 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-amber-900/40 bg-amber-950/20 text-amber-500 transition-transform duration-300 group-hover:scale-105">
+            <FileText size={18} />
+          </div>
+
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-bold text-slate-200 transition-colors group-hover:text-amber-300">
+              {note.noteTitle || "Lecture Note"}
+            </h3>
+
+            <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-slate-700">
+              {note.createdAt
+                ? new Date(
+                    note.createdAt,
+                  ).toLocaleDateString()
+                : "Lecture Resource"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {hasContent && (
+        <div className="mt-4 rounded-xl border border-slate-800/70 bg-black/20 p-4">
+          <p className="whitespace-pre-wrap text-xs leading-6 text-slate-400">
+            {note.noteContent}
+          </p>
+        </div>
+      )}
+
+      {hasFile && (
+        <div className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-900/30 bg-amber-950/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-amber-800/40 bg-amber-950/30 text-amber-400">
+              <FileText size={18} />
+            </div>
+
+            <div className="min-w-0">
+              <p className="truncate text-xs font-bold text-slate-300">
+                {note.fileName || "Attached Resource"}
+              </p>
+
+              {note.fileType && (
+                <p className="mt-1 text-[9px] uppercase tracking-wider text-slate-700">
+                  {note.fileType}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 gap-2">
+            <a
+              href={note.fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-300 transition hover:border-amber-700 hover:text-amber-400"
+            >
+              <ExternalLink size={13} />
+              View
+            </a>
+
+            <a
+              href={note.fileUrl}
+              download={note.fileName || true}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-700/40 bg-amber-950/20 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-amber-400 transition hover:border-amber-500 hover:bg-amber-900/30"
+            >
+              <Download size={13} />
+              Download
+            </a>
+          </div>
+        </div>
+      )}
+    </article>
   );
 };
 
