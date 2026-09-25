@@ -13,7 +13,8 @@ const uploadToCloudinary = (
         {
           folder,
 
-          resource_type: resourceType,
+          resource_type:
+            resourceType,
 
           use_filename: true,
 
@@ -21,7 +22,6 @@ const uploadToCloudinary = (
 
           ...options,
         },
-
         (error, result) => {
           if (error) {
             return reject(error);

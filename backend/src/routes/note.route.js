@@ -6,6 +6,7 @@ import {
   updateNote,
   deleteNote,
   uploadNoteFile,
+  downloadNoteFile,
 } from "../controllers/note.controller.js";
 
 import {
@@ -25,7 +26,7 @@ router.post(
   "/lecture/:lectureId",
   isAuthenticated,
   authorizeRoles("instructor"),
-  createNote
+  createNote,
 );
 
 // =====================================================
@@ -37,18 +38,14 @@ router.post(
   isAuthenticated,
   authorizeRoles("instructor"),
   upload.single("file"),
-  uploadNoteFile
+  uploadNoteFile,
 );
 
 // =====================================================
 // GET LECTURE NOTES
 // =====================================================
 
-router.get(
-  "/lecture/:lectureId",
-  isAuthenticated,
-  getLectureNotes
-);
+router.get("/lecture/:lectureId", isAuthenticated, getLectureNotes);
 
 // =====================================================
 // UPDATE NOTE
@@ -58,7 +55,7 @@ router.put(
   "/:noteId",
   isAuthenticated,
   authorizeRoles("instructor"),
-  updateNote
+  updateNote,
 );
 
 // =====================================================
@@ -69,7 +66,13 @@ router.delete(
   "/:noteId",
   isAuthenticated,
   authorizeRoles("instructor"),
-  deleteNote
+  deleteNote,
+);
+
+router.get(
+  "/download/:noteId",
+  isAuthenticated,
+  downloadNoteFile
 );
 
 export default router;

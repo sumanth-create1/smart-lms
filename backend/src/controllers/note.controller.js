@@ -9,10 +9,7 @@ import cloudinary from "../config/cloudinary.js";
 // HELPER — CHECK INSTRUCTOR OWNERSHIP
 // =====================================================
 
-const checkInstructorOwnership = async (
-  lectureId,
-  userId
-) => {
+const checkInstructorOwnership = async (lectureId, userId) => {
   const lecture = await Lecture.findById(lectureId);
 
   if (!lecture) {
@@ -24,9 +21,7 @@ const checkInstructorOwnership = async (
     };
   }
 
-  const course = await Course.findById(
-    lecture.course
-  );
+  const course = await Course.findById(lecture.course);
 
   if (!course) {
     return {
@@ -37,15 +32,11 @@ const checkInstructorOwnership = async (
     };
   }
 
-  if (
-    course.instructor.toString() !==
-    userId.toString()
-  ) {
+  if (course.instructor.toString() !== userId.toString()) {
     return {
       error: {
         status: 403,
-        message:
-          "You are not authorized to manage notes for this lecture.",
+        message: "You are not authorized to manage notes for this lecture.",
       },
     };
   }
@@ -57,66 +48,59 @@ const checkInstructorOwnership = async (
 };
 
 // =====================================================
+// HELPER — DETERMINE CLOUDINARY RESOURCE TYPE
+// =====================================================
+
+const getCloudinaryResourceType = (mimeType = "") => {
+  // Images
+  if (mimeType.startsWith("image/")) {
+    return "image";
+  }
+
+  // Videos
+  if (mimeType.startsWith("video/")) {
+    return "video";
+  }
+
+  // Audio
+  if (mimeType.startsWith("audio/")) {
+    return "video";
+  }
+
+  // PDF
+  if (mimeType === "application/pdf") {
+    return "image";
+  }
+
+  // DOCX, DOC, PPTX, PPT, XLSX, XLS,
+  // ZIP, TXT, etc.
+  return "raw";
+};
+
+// =====================================================
 // HELPER — CREATE DOWNLOAD URL
 // =====================================================
 
 const createDownloadUrl = (note) => {
-  if (!note.filePublicId) {
+  if (!note?._id) {
     return "";
   }
 
-  const originalName =
-    note.fileName || "lecture-note";
-
-  // Make filename safe for Content-Disposition
-  const safeFileName = originalName
-    .replace(/[^\w.\-() ]/g, "_")
-    .replace(/\s+/g, "_");
-
-  try {
-    return cloudinary.url(
-      note.filePublicId,
-      {
-        resource_type:
-          note.fileResourceType || "raw",
-
-        type: "upload",
-
-        secure: true,
-
-        // Force downloaded file to use
-        // the original filename
-        flags: `attachment:${safeFileName}`,
-      }
-    );
-  } catch (error) {
-    console.error(
-      "Create download URL error:",
-      error
-    );
-
-    return note.fileUrl || "";
-  }
+  return `/api/v1/note/download/${note._id}`;
 };
 
 // =====================================================
 // CREATE WRITTEN NOTE
 // =====================================================
 
-export const createNote = async (
-  req,
-  res
-) => {
+export const createNote = async (req, res) => {
   try {
     const { lectureId } = req.params;
 
-    const {
-      noteTitle,
-      noteContent,
-    } = req.body;
+    const { noteTitle, noteContent } = req.body;
 
     // -------------------------------------------------
-    // Validate title
+    // VALIDATE TITLE
     // -------------------------------------------------
 
     if (!noteTitle?.trim()) {
@@ -127,39 +111,31 @@ export const createNote = async (
     }
 
     // -------------------------------------------------
-    // Validate content
+    // VALIDATE CONTENT
     // -------------------------------------------------
 
     if (!noteContent?.trim()) {
       return res.status(400).json({
         success: false,
-        message:
-          "Note content is required",
+        message: "Note content is required",
       });
     }
 
     // -------------------------------------------------
-    // Check ownership
+    // CHECK OWNERSHIP
     // -------------------------------------------------
 
-    const ownership =
-      await checkInstructorOwnership(
-        lectureId,
-        req.user._id
-      );
+    const ownership = await checkInstructorOwnership(lectureId, req.user._id);
 
     if (ownership.error) {
-      return res
-        .status(ownership.error.status)
-        .json({
-          success: false,
-          message:
-            ownership.error.message,
-        });
+      return res.status(ownership.error.status).json({
+        success: false,
+        message: ownership.error.message,
+      });
     }
 
     // -------------------------------------------------
-    // Create note
+    // CREATE NOTE
     // -------------------------------------------------
 
     const note = await Note.create({
@@ -176,22 +152,18 @@ export const createNote = async (
       fileName: "",
       fileType: "",
       fileSize: 0,
-
       fileResourceType: "raw",
     });
 
     return res.status(201).json({
       success: true,
-      message:
-        "Note created successfully",
+
+      message: "Note created successfully",
 
       note,
     });
   } catch (error) {
-    console.error(
-      "Create note error:",
-      error
-    );
+    console.error("Create note error:", error);
 
     return res.status(500).json({
       success: false,
@@ -199,75 +171,187 @@ export const createNote = async (
     });
   }
 };
+// =====================================================
+// DOWNLOAD NOTE FILE
+// =====================================================
 
+export const downloadNoteFile = async (req, res) => {
+  try {
+    const { noteId } = req.params;
+
+    // -------------------------------------------------
+    // FIND NOTE
+    // -------------------------------------------------
+
+    const note = await Note.findById(noteId);
+
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: "Note not found",
+      });
+    }
+
+    // -------------------------------------------------
+    // CHECK FILE
+    // -------------------------------------------------
+
+    if (!note.fileUrl) {
+      return res.status(404).json({
+        success: false,
+        message: "This note does not contain a file.",
+      });
+    }
+
+    // -------------------------------------------------
+    // FETCH FILE FROM CLOUDINARY
+    // -------------------------------------------------
+
+    const cloudinaryResponse = await fetch(note.fileUrl);
+
+    if (!cloudinaryResponse.ok) {
+      console.error(
+        "Cloudinary download failed:",
+        cloudinaryResponse.status,
+        cloudinaryResponse.statusText,
+      );
+
+      return res.status(502).json({
+        success: false,
+        message: "Unable to download file from Cloudinary.",
+      });
+    }
+
+    // -------------------------------------------------
+    // FILE NAME
+    // -------------------------------------------------
+
+    const fileName = note.fileName || "lecture-note";
+
+    const safeFileName = fileName
+      .replace(/[^\w.\-() ]/g, "_")
+      .replace(/\s+/g, "_");
+
+    // -------------------------------------------------
+    // CONTENT TYPE
+    // -------------------------------------------------
+
+    const contentType =
+      cloudinaryResponse.headers.get("content-type") ||
+      note.fileType ||
+      "application/octet-stream";
+
+    res.setHeader("Content-Type", contentType);
+
+    // -------------------------------------------------
+    // FORCE DOWNLOAD
+    // -------------------------------------------------
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${safeFileName}"`,
+    );
+
+    // -------------------------------------------------
+    // CONTENT LENGTH
+    // -------------------------------------------------
+
+    const contentLength = cloudinaryResponse.headers.get("content-length");
+
+    if (contentLength) {
+      res.setHeader("Content-Length", contentLength);
+    }
+
+    // -------------------------------------------------
+    // SEND FILE
+    // -------------------------------------------------
+
+    const arrayBuffer = await cloudinaryResponse.arrayBuffer();
+
+    const buffer = Buffer.from(arrayBuffer);
+
+    return res.send(buffer);
+  } catch (error) {
+    console.error("Download note file error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to download note file.",
+    });
+  }
+};
 // =====================================================
 // UPLOAD FILE NOTE
 // =====================================================
 
-export const uploadNoteFile = async (
-  req,
-  res
-) => {
+export const uploadNoteFile = async (req, res) => {
   try {
     const { lectureId } = req.params;
 
     // -------------------------------------------------
-    // Check file
+    // CHECK FILE
     // -------------------------------------------------
 
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message:
-          "Please select a file to upload.",
+        message: "Please select a file to upload.",
       });
     }
 
     // -------------------------------------------------
-    // Check instructor ownership
+    // CHECK INSTRUCTOR OWNERSHIP
     // -------------------------------------------------
 
-    const ownership =
-      await checkInstructorOwnership(
-        lectureId,
-        req.user._id
-      );
+    const ownership = await checkInstructorOwnership(lectureId, req.user._id);
 
     if (ownership.error) {
-      return res
-        .status(ownership.error.status)
-        .json({
-          success: false,
-          message:
-            ownership.error.message,
-        });
+      return res.status(ownership.error.status).json({
+        success: false,
+        message: ownership.error.message,
+      });
     }
 
     // -------------------------------------------------
-    // Get title/content
+    // NOTE DETAILS
     // -------------------------------------------------
 
-    const noteTitle =
-      req.body.noteTitle?.trim() ||
-      req.file.originalname;
+    const noteTitle = req.body.noteTitle?.trim() || req.file.originalname;
 
-    const noteContent =
-      req.body.noteContent?.trim() ||
-      "";
+    const noteContent = req.body.noteContent?.trim() || "";
 
     // -------------------------------------------------
-    // Upload file to Cloudinary
+    // DETERMINE RESOURCE TYPE
     // -------------------------------------------------
 
-    const result =
-      await uploadToCloudinary(
-        req.file.buffer,
-        "smart-lms/lecture-notes",
-        "raw"
-      );
+    const resourceType = getCloudinaryResourceType(req.file.mimetype);
+
+    console.log("Uploading note:", {
+      name: req.file.originalname,
+      type: req.file.mimetype,
+      resourceType,
+    });
 
     // -------------------------------------------------
-    // Create note
+    // UPLOAD TO CLOUDINARY
+    // -------------------------------------------------
+
+    const result = await uploadToCloudinary(
+      req.file.buffer,
+
+      "smart-lms/lecture-notes",
+
+      resourceType,
+
+      {
+        use_filename: true,
+
+        unique_filename: true,
+      },
+    );
+
+    // -------------------------------------------------
+    // CREATE DATABASE NOTE
     // -------------------------------------------------
 
     const note = await Note.create({
@@ -283,30 +367,25 @@ export const uploadNoteFile = async (
 
       filePublicId: result.public_id,
 
-      // Original filename from user's computer
       fileName: req.file.originalname,
 
       fileType: req.file.mimetype,
 
       fileSize: req.file.size,
 
-      // Important for Cloudinary operations
-      fileResourceType:
-        result.resource_type || "raw",
+      fileResourceType: result.resource_type || resourceType,
     });
 
     // -------------------------------------------------
-    // Generate download URL
+    // CREATE DOWNLOAD URL
     // -------------------------------------------------
 
-    const downloadUrl =
-      createDownloadUrl(note);
+    const downloadUrl = createDownloadUrl(note);
 
     return res.status(201).json({
       success: true,
 
-      message:
-        "Note file uploaded successfully",
+      message: "Note file uploaded successfully",
 
       note: {
         ...note.toObject(),
@@ -315,10 +394,7 @@ export const uploadNoteFile = async (
       },
     });
   } catch (error) {
-    console.error(
-      "Upload note file error:",
-      error
-    );
+    console.error("Upload note file error:", error);
 
     return res.status(500).json({
       success: false,
@@ -331,19 +407,15 @@ export const uploadNoteFile = async (
 // GET NOTES FOR LECTURE
 // =====================================================
 
-export const getLectureNotes = async (
-  req,
-  res
-) => {
+export const getLectureNotes = async (req, res) => {
   try {
     const { lectureId } = req.params;
 
     // -------------------------------------------------
-    // Check lecture
+    // CHECK LECTURE
     // -------------------------------------------------
 
-    const lecture =
-      await Lecture.findById(lectureId);
+    const lecture = await Lecture.findById(lectureId);
 
     if (!lecture) {
       return res.status(404).json({
@@ -353,7 +425,7 @@ export const getLectureNotes = async (
     }
 
     // -------------------------------------------------
-    // Get notes
+    // GET NOTES
     // -------------------------------------------------
 
     const notes = await Note.find({
@@ -365,25 +437,24 @@ export const getLectureNotes = async (
       });
 
     // -------------------------------------------------
-    // Add download URL
+    // FORMAT NOTES
     // -------------------------------------------------
 
-    const formattedNotes =
-      notes.map((note) => {
-        const noteObject =
-          note.toObject();
+    const formattedNotes = notes.map((note) => {
+      const noteObject = note.toObject();
 
-        return {
-          ...noteObject,
+      return {
+        ...noteObject,
 
-          // Used for View
-          fileUrl: note.fileUrl,
+        // NORMAL URL
+        // Used by VIEW
+        fileUrl: note.fileUrl || "",
 
-          // Used for Download
-          downloadUrl:
-            createDownloadUrl(note),
-        };
-      });
+        // ATTACHMENT URL
+        // Used ONLY by DOWNLOAD
+        downloadUrl: createDownloadUrl(note),
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -393,10 +464,7 @@ export const getLectureNotes = async (
       notes: formattedNotes,
     });
   } catch (error) {
-    console.error(
-      "Get lecture notes error:",
-      error
-    );
+    console.error("Get lecture notes error:", error);
 
     return res.status(500).json({
       success: false,
@@ -409,24 +477,17 @@ export const getLectureNotes = async (
 // UPDATE NOTE
 // =====================================================
 
-export const updateNote = async (
-  req,
-  res
-) => {
+export const updateNote = async (req, res) => {
   try {
     const { noteId } = req.params;
 
-    const {
-      noteTitle,
-      noteContent,
-    } = req.body;
+    const { noteTitle, noteContent } = req.body;
 
     // -------------------------------------------------
-    // Find note
+    // FIND NOTE
     // -------------------------------------------------
 
-    const note =
-      await Note.findById(noteId);
+    const note = await Note.findById(noteId);
 
     if (!note) {
       return res.status(404).json({
@@ -436,46 +497,35 @@ export const updateNote = async (
     }
 
     // -------------------------------------------------
-    // Check ownership
+    // CHECK OWNERSHIP
     // -------------------------------------------------
 
-    const ownership =
-      await checkInstructorOwnership(
-        note.lecture,
-        req.user._id
-      );
+    const ownership = await checkInstructorOwnership(
+      note.lecture,
+      req.user._id,
+    );
 
     if (ownership.error) {
-      return res
-        .status(ownership.error.status)
-        .json({
-          success: false,
-          message:
-            ownership.error.message,
-        });
+      return res.status(ownership.error.status).json({
+        success: false,
+        message: ownership.error.message,
+      });
     }
 
     // -------------------------------------------------
-    // Update title
+    // UPDATE TITLE
     // -------------------------------------------------
 
-    if (
-      typeof noteTitle === "string" &&
-      noteTitle.trim()
-    ) {
-      note.noteTitle =
-        noteTitle.trim();
+    if (typeof noteTitle === "string" && noteTitle.trim()) {
+      note.noteTitle = noteTitle.trim();
     }
 
     // -------------------------------------------------
-    // Update content
+    // UPDATE CONTENT
     // -------------------------------------------------
 
-    if (
-      typeof noteContent === "string"
-    ) {
-      note.noteContent =
-        noteContent.trim();
+    if (typeof noteContent === "string") {
+      note.noteContent = noteContent.trim();
     }
 
     await note.save();
@@ -483,16 +533,12 @@ export const updateNote = async (
     return res.status(200).json({
       success: true,
 
-      message:
-        "Note updated successfully",
+      message: "Note updated successfully",
 
       note,
     });
   } catch (error) {
-    console.error(
-      "Update note error:",
-      error
-    );
+    console.error("Update note error:", error);
 
     return res.status(500).json({
       success: false,
@@ -505,19 +551,15 @@ export const updateNote = async (
 // DELETE NOTE
 // =====================================================
 
-export const deleteNote = async (
-  req,
-  res
-) => {
+export const deleteNote = async (req, res) => {
   try {
     const { noteId } = req.params;
 
     // -------------------------------------------------
-    // Find note
+    // FIND NOTE
     // -------------------------------------------------
 
-    const note =
-      await Note.findById(noteId);
+    const note = await Note.findById(noteId);
 
     if (!note) {
       return res.status(404).json({
@@ -527,68 +569,50 @@ export const deleteNote = async (
     }
 
     // -------------------------------------------------
-    // Check ownership
+    // CHECK OWNERSHIP
     // -------------------------------------------------
 
-    const ownership =
-      await checkInstructorOwnership(
-        note.lecture,
-        req.user._id
-      );
+    const ownership = await checkInstructorOwnership(
+      note.lecture,
+      req.user._id,
+    );
 
     if (ownership.error) {
-      return res
-        .status(ownership.error.status)
-        .json({
-          success: false,
-          message:
-            ownership.error.message,
-        });
+      return res.status(ownership.error.status).json({
+        success: false,
+        message: ownership.error.message,
+      });
     }
 
     // -------------------------------------------------
-    // Delete Cloudinary file
+    // DELETE CLOUDINARY FILE
     // -------------------------------------------------
 
     if (note.filePublicId) {
       try {
-        await cloudinary.uploader.destroy(
-          note.filePublicId,
-          {
-            resource_type:
-              note.fileResourceType ||
-              "raw",
+        await cloudinary.uploader.destroy(note.filePublicId, {
+          resource_type: note.fileResourceType || "raw",
 
-            type: "upload",
-          }
-        );
+          type: "upload",
+        });
       } catch (cloudinaryError) {
-        console.error(
-          "Cloudinary note delete error:",
-          cloudinaryError
-        );
+        console.error("Cloudinary note delete error:", cloudinaryError);
       }
     }
 
     // -------------------------------------------------
-    // Delete database record
+    // DELETE DATABASE RECORD
     // -------------------------------------------------
 
-    await Note.findByIdAndDelete(
-      noteId
-    );
+    await Note.findByIdAndDelete(noteId);
 
     return res.status(200).json({
       success: true,
 
-      message:
-        "Note deleted successfully",
+      message: "Note deleted successfully",
     });
   } catch (error) {
-    console.error(
-      "Delete note error:",
-      error
-    );
+    console.error("Delete note error:", error);
 
     return res.status(500).json({
       success: false,
