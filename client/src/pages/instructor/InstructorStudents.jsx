@@ -1,172 +1,445 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import {
-  Users,
-  Search,
-  LoaderCircle,
-  Mail,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import { Link } from "react-router-dom";
+
+import {
+  ArrowRight,
   BookOpen,
   CalendarDays,
-  UserRound,
-  ArrowRight,
+  ChevronRight,
   Crown,
+  Eye,
   Flame,
+  Gem,
+  Mail,
+  Search,
   Shield,
   Sparkles,
   Swords,
-  Eye,
-  Gem,
+  UserRound,
+  Users,
   X,
-  ChevronRight,
 } from "lucide-react";
+
 import toast from "react-hot-toast";
 
 import api from "../../services/api";
 
+// =====================================================
+// CONSTANTS
+// =====================================================
+
+const EMPTY_ARRAY = [];
+
+const EMBER_COUNT = 16;
+
+// =====================================================
+// MAIN COMPONENT
+// =====================================================
+
 function InstructorStudents() {
-  const [enrollments, setEnrollments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  // ---------------------------------------------------
+  // DATA
+  // ---------------------------------------------------
+
+  const [enrollments, setEnrollments] =
+    useState(EMPTY_ARRAY);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  // ---------------------------------------------------
+  // SEARCH
+  // ---------------------------------------------------
+
+  const [search, setSearch] =
+    useState("");
+
+  // ---------------------------------------------------
+  // CURSOR
+  // ---------------------------------------------------
 
   const cursorRef = useRef(null);
+
   const cursorGlowRef = useRef(null);
 
-  /* =====================================================
-     PREMIUM CURSOR
-  ===================================================== */
+  // ===================================================
+  // FETCH STUDENTS
+  // ===================================================
 
   useEffect(() => {
-    let frame;
+    let mounted = true;
 
-    const moveCursor = (event) => {
-      const { clientX, clientY } = event;
+    const fetchStudents = async () => {
+      try {
+        setLoading(true);
 
-      cancelAnimationFrame(frame);
+        const response = await api.get(
+          "/dashboard/instructor/students",
+        );
 
-      frame = requestAnimationFrame(() => {
-        if (cursorRef.current) {
-          cursorRef.current.style.transform = `
-            translate3d(${clientX}px, ${clientY}px, 0)
-          `;
+        if (!mounted) return;
+
+        if (response.data?.success) {
+          setEnrollments(
+            Array.isArray(response.data.data)
+              ? response.data.data
+              : EMPTY_ARRAY,
+          );
+        } else {
+          toast.error(
+            response.data?.message ||
+              "Failed to load students",
+          );
         }
+      } catch (error) {
+        if (!mounted) return;
 
-        if (cursorGlowRef.current) {
-          cursorGlowRef.current.style.transform = `
-            translate3d(${clientX}px, ${clientY}px, 0)
-          `;
+        console.error(
+          "Instructor students error:",
+          error,
+        );
+
+        toast.error(
+          error.response?.data?.message ||
+            "Unable to load students",
+        );
+      } finally {
+        if (mounted) {
+          setLoading(false);
         }
-      });
+      }
     };
 
-    window.addEventListener("mousemove", moveCursor);
+    fetchStudents();
 
     return () => {
-      window.removeEventListener("mousemove", moveCursor);
-      cancelAnimationFrame(frame);
+      mounted = false;
     };
   }, []);
 
-  /* =====================================================
-     FETCH STUDENTS
-  ===================================================== */
-
-  const fetchStudents = async () => {
-    try {
-      setLoading(true);
-
-      const response = await api.get(
-        "/dashboard/instructor/students",
-      );
-
-      if (response.data?.success) {
-        setEnrollments(response.data.data || []);
-      } else {
-        toast.error(
-          response.data?.message ||
-            "Failed to load students",
-        );
-      }
-    } catch (error) {
-      console.error(
-        "Instructor students error:",
-        error,
-      );
-
-      toast.error(
-        error.response?.data?.message ||
-          "Unable to load students",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ===================================================
+  // PREMIUM CURSOR
+  // ===================================================
 
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    // Avoid cursor animation on touch devices.
+    const isTouchDevice =
+      window.matchMedia(
+        "(pointer: coarse)",
+      ).matches;
 
-  /* =====================================================
-     FILTER STUDENTS
-  ===================================================== */
+    const reducedMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
 
-  const filteredEnrollments = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    if (!query) {
-      return enrollments;
+    if (isTouchDevice || reducedMotion) {
+      return;
     }
 
-    return enrollments.filter((enrollment) => {
-      const studentName =
-        enrollment.student?.name?.toLowerCase() || "";
+    let frameId = null;
 
-      const studentEmail =
-        enrollment.student?.email?.toLowerCase() || "";
+    const moveCursor = (event) => {
+      if (frameId !== null) {
+        return;
+      }
 
-      const courseTitle =
-        enrollment.course?.courseTitle?.toLowerCase() || "";
+      frameId =
+        requestAnimationFrame(() => {
+          const { clientX, clientY } =
+            event;
 
-      return (
-        studentName.includes(query) ||
-        studentEmail.includes(query) ||
-        courseTitle.includes(query)
+          if (cursorRef.current) {
+            cursorRef.current.style.transform =
+              `translate3d(${clientX}px, ${clientY}px, 0)`;
+          }
+
+          if (
+            cursorGlowRef.current
+          ) {
+            cursorGlowRef.current.style.transform =
+              `translate3d(${clientX}px, ${clientY}px, 0)`;
+          }
+
+          frameId = null;
+        });
+    };
+
+    window.addEventListener(
+      "mousemove",
+      moveCursor,
+      { passive: true },
+    );
+
+    return () => {
+      window.removeEventListener(
+        "mousemove",
+        moveCursor,
       );
+
+      if (frameId !== null) {
+        cancelAnimationFrame(
+          frameId,
+        );
+      }
+    };
+  }, []);
+
+  // ===================================================
+  // NORMALIZED SEARCH
+  // ===================================================
+
+  const normalizedSearch = useMemo(
+    () =>
+      search
+        .trim()
+        .toLowerCase(),
+    [search],
+  );
+
+  // ===================================================
+  // GROUP ENROLLMENTS BY STUDENT
+  // ===================================================
+  //
+  // BEFORE:
+  //
+  // Sumanth -> Course A
+  // Sumanth -> Course B
+  //
+  // AFTER:
+  //
+  // Sumanth
+  //   ├── Course A
+  //   └── Course B
+  //
+  // ===================================================
+
+  const students = useMemo(() => {
+    if (!enrollments.length) {
+      return EMPTY_ARRAY;
+    }
+
+    const studentMap =
+      new Map();
+
+    for (const enrollment of enrollments) {
+      const student =
+        enrollment?.student;
+
+      const course =
+        enrollment?.course;
+
+      // ------------------------------------------------
+      // Student identity
+      // ------------------------------------------------
+
+      const studentId =
+        student?._id
+          ? String(student._id)
+          : student?.email
+            ? `email:${student.email.toLowerCase()}`
+            : `unknown:${student?.name || "student"}`;
+
+      // ------------------------------------------------
+      // First time seeing student
+      // ------------------------------------------------
+
+      if (!studentMap.has(studentId)) {
+        studentMap.set(studentId, {
+          student,
+          studentId:
+            student?._id
+              ? String(student._id)
+              : null,
+
+          enrollments: [],
+
+          courses: new Map(),
+
+          latestEnrollment: null,
+
+          searchText: "",
+        });
+      }
+
+      const record =
+        studentMap.get(studentId);
+
+      // ------------------------------------------------
+      // Store enrollment
+      // ------------------------------------------------
+
+      record.enrollments.push(
+        enrollment,
+      );
+
+      // ------------------------------------------------
+      // Course identity
+      // ------------------------------------------------
+
+      if (course) {
+        const courseId =
+          course?._id
+            ? String(course._id)
+            : `course:${course?.courseTitle || "course"}`;
+
+        if (
+          !record.courses.has(
+            courseId,
+          )
+        ) {
+          record.courses.set(
+            courseId,
+            course,
+          );
+        }
+      }
+
+      // ------------------------------------------------
+      // Latest enrollment
+      // ------------------------------------------------
+
+      const currentDate =
+        enrollment?.enrolledAt
+          ? new Date(
+              enrollment.enrolledAt,
+            ).getTime()
+          : 0;
+
+      const previousDate =
+        record.latestEnrollment
+          ?.enrolledAt
+          ? new Date(
+              record.latestEnrollment.enrolledAt,
+            ).getTime()
+          : 0;
+
+      if (
+        !record.latestEnrollment ||
+        currentDate > previousDate
+      ) {
+        record.latestEnrollment =
+          enrollment;
+      }
+    }
+
+    // --------------------------------------------------
+    // Convert Map → array
+    // --------------------------------------------------
+
+    return Array.from(
+      studentMap.values(),
+    ).map((record) => {
+      const courses =
+        Array.from(
+          record.courses.values(),
+        );
+
+      const name =
+        record.student?.name ||
+        "Student";
+
+      const email =
+        record.student?.email ||
+        "";
+
+      const courseNames =
+        courses
+          .map(
+            (course) =>
+              course?.courseTitle ||
+              "",
+          )
+          .join(" ");
+
+      // Pre-compute searchable text.
+      //
+      // This means search doesn't repeatedly
+      // traverse nested objects.
+      record.searchText =
+        `${name} ${email} ${courseNames}`
+          .toLowerCase();
+
+      return {
+        ...record,
+
+        courses,
+
+        enrollmentCount:
+          record.enrollments.length,
+
+        courseCount:
+          courses.length,
+      };
     });
-  }, [enrollments, search]);
-
-  /* =====================================================
-     STATS
-  ===================================================== */
-
-  const totalEnrollments = enrollments.length;
-
-  const activeStudents = useMemo(() => {
-    return new Set(
-      enrollments
-        .map((item) => item.student?._id)
-        .filter(Boolean),
-    ).size;
   }, [enrollments]);
 
-  const enrolledCourses = useMemo(() => {
-    return new Set(
-      enrollments
-        .map((item) => item.course?._id)
-        .filter(Boolean),
-    ).size;
-  }, [enrollments]);
+  // ===================================================
+  // FILTER UNIQUE STUDENTS
+  // ===================================================
 
-  /* =====================================================
-     LOADING
-  ===================================================== */
+  const filteredStudents =
+    useMemo(() => {
+      if (!normalizedSearch) {
+        return students;
+      }
+
+      return students.filter(
+        (student) =>
+          student.searchText.includes(
+            normalizedSearch,
+          ),
+      );
+    }, [
+      students,
+      normalizedSearch,
+    ]);
+
+  // ===================================================
+  // STATS
+  // ===================================================
+
+  const totalEnrollments =
+    enrollments.length;
+
+  const totalStudents =
+    students.length;
+
+  const totalCourses =
+    useMemo(() => {
+      const courseIds =
+        new Set();
+
+      for (const enrollment of enrollments) {
+        if (enrollment?.course?._id) {
+          courseIds.add(
+            String(
+              enrollment.course._id,
+            ),
+          );
+        }
+      }
+
+      return courseIds.size;
+    }, [enrollments]);
+
+  // ===================================================
+  // LOADING
+  // ===================================================
 
   if (loading) {
     return <StudentsLoading />;
   }
 
-  /* =====================================================
-     PAGE
-  ===================================================== */
+  // ===================================================
+  // PAGE
+  // ===================================================
 
   return (
     <div className="students-realm relative min-h-screen overflow-hidden bg-[#070707] text-white">
@@ -201,37 +474,36 @@ function InstructorStudents() {
 
         <div className="students-grid" />
 
-        {Array.from({ length: 22 }).map((_, index) => (
+        {Array.from({
+          length: EMBER_COUNT,
+        }).map((_, index) => (
           <span
             key={index}
             className="students-ember"
             style={{
-              left: `${2 + index * 4.7}%`,
-              animationDelay: `${index * 0.42}s`,
-              animationDuration: `${5 + (index % 5)}s`,
+              left: `${5 + index * 6}%`,
+              animationDelay:
+                `${index * 0.55}s`,
+              animationDuration:
+                `${6 + (index % 4)}s`,
             }}
           />
         ))}
-
       </div>
 
       {/* =================================================
           CONTENT
       ================================================= */}
 
-      <div className="relative z-10 space-y-7 p-5 sm:p-6 lg:p-8">
+      <div className="relative z-10 space-y-7 p-4 sm:p-6 lg:p-8">
 
         {/* =================================================
             HERO
         ================================================= */}
 
-        <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#101010]/90 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
-
-          {/* top energy line */}
+        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[#101010]/90 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
 
           <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-400 to-transparent opacity-70" />
-
-          {/* ambient glow */}
 
           <div className="absolute -right-32 -top-40 h-96 w-96 rounded-full bg-orange-600/10 blur-[110px]" />
 
@@ -241,7 +513,7 @@ function InstructorStudents() {
 
             <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
 
-              {/* TITLE */}
+              {/* HERO TEXT */}
 
               <div>
 
@@ -272,21 +544,22 @@ function InstructorStudents() {
                 </h1>
 
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-white/35 sm:text-base">
-                  Monitor every learner enrolled in your courses,
-                  explore their journey, and enter their individual
-                  learning realm.
+                  One learner. One realm.
+                  Explore every course
+                  under your command
+                  from a single registry.
                 </p>
 
                 <div className="mt-6 flex flex-wrap gap-2">
 
                   <RealmTag
                     icon={<Users size={13} />}
-                    text={`${activeStudents} Active Learners`}
+                    text={`${totalStudents} Learners`}
                   />
 
                   <RealmTag
                     icon={<BookOpen size={13} />}
-                    text={`${enrolledCourses} Courses`}
+                    text={`${totalCourses} Courses`}
                   />
 
                   <RealmTag
@@ -332,45 +605,45 @@ function InstructorStudents() {
 
           </div>
 
-        </div>
+        </section>
 
         {/* =================================================
             STATS
         ================================================= */}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
 
           <InfoCard
             title="Total Enrollments"
             value={totalEnrollments}
-            description="Enrollment records"
+            description="All enrollment records"
             icon={<Users size={21} />}
             accent="orange"
           />
 
           <InfoCard
-            title="Active Students"
-            value={activeStudents}
-            description="Unique learners"
+            title="Unique Students"
+            value={totalStudents}
+            description="Distinct learners"
             icon={<UserRound size={21} />}
             accent="green"
           />
 
           <InfoCard
-            title="Courses Enrolled"
-            value={enrolledCourses}
-            description="Unique courses"
+            title="Courses"
+            value={totalCourses}
+            description="Courses under your command"
             icon={<BookOpen size={21} />}
             accent="gold"
           />
 
-        </div>
+        </section>
 
         {/* =================================================
-            SEARCH COMMAND CENTER
+            SEARCH
         ================================================= */}
 
-        <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-[#0f0f0f]/90 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.25)] backdrop-blur-xl sm:p-5">
+        <section className="relative overflow-hidden rounded-2xl border border-white/8 bg-[#0f0f0f]/90 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.25)] backdrop-blur-xl sm:p-5">
 
           <div className="absolute left-0 top-0 h-px w-40 bg-gradient-to-r from-orange-500/70 to-transparent" />
 
@@ -407,34 +680,21 @@ function InstructorStudents() {
                 type="text"
                 value={search}
                 onChange={(event) =>
-                  setSearch(event.target.value)
+                  setSearch(
+                    event.target.value,
+                  )
                 }
                 placeholder="Search student, email or course..."
-                className="
-                  w-full
-                  rounded-xl
-                  border
-                  border-white/8
-                  bg-black/30
-                  py-3.5
-                  pl-11
-                  pr-12
-                  text-sm
-                  text-white
-                  outline-none
-                  transition-all
-                  duration-300
-                  placeholder:text-white/20
-                  focus:border-orange-400/30
-                  focus:bg-orange-500/[0.025]
-                  focus:shadow-[0_0_30px_rgba(249,115,22,0.08)]
-                "
+                className="w-full rounded-xl border border-white/8 bg-black/30 py-3.5 pl-11 pr-12 text-sm text-white outline-none transition-all duration-300 placeholder:text-white/20 focus:border-orange-400/30 focus:bg-orange-500/[0.025] focus:shadow-[0_0_30px_rgba(249,115,22,0.08)]"
               />
 
               {search && (
                 <button
                   type="button"
-                  onClick={() => setSearch("")}
+                  onClick={() =>
+                    setSearch("")
+                  }
+                  aria-label="Clear search"
                   className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-lg p-1.5 text-white/30 transition hover:bg-white/5 hover:text-orange-300"
                 >
                   <X size={15} />
@@ -445,15 +705,13 @@ function InstructorStudents() {
 
           </div>
 
-        </div>
+        </section>
 
         {/* =================================================
             REGISTRY
         ================================================= */}
 
-        <div className="relative overflow-hidden rounded-[26px] border border-white/8 bg-[#0e0e0e]/95 shadow-[0_30px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-
-          {/* registry top line */}
+        <section className="relative overflow-hidden rounded-[26px] border border-white/8 bg-[#0e0e0e]/95 shadow-[0_30px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl">
 
           <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-orange-500/60 via-transparent to-transparent" />
 
@@ -472,17 +730,17 @@ function InstructorStudents() {
                   </div>
 
                   <h2 className="text-lg font-bold text-white">
-                    Enrolled Students
+                    Student Registry
                   </h2>
 
                 </div>
 
                 <p className="mt-2 text-xs text-white/25">
-                  {filteredEnrollments.length}{" "}
-                  {filteredEnrollments.length === 1
-                    ? "enrollment"
-                    : "enrollments"}{" "}
-                  found in the registry
+                  {filteredStudents.length}{" "}
+                  {filteredStudents.length === 1
+                    ? "student"
+                    : "students"}{" "}
+                  displayed
                 </p>
 
               </div>
@@ -496,7 +754,7 @@ function InstructorStudents() {
                 )}
 
                 <span className="rounded-full border border-white/7 bg-white/[0.025] px-3 py-1.5 text-[10px] font-semibold text-white/30">
-                  {filteredEnrollments.length} Records
+                  {filteredStudents.length} Students
                 </span>
 
               </div>
@@ -507,12 +765,14 @@ function InstructorStudents() {
 
           {/* EMPTY */}
 
-          {filteredEnrollments.length === 0 ? (
-            <EmptyStudents search={search} />
+          {filteredStudents.length === 0 ? (
+            <EmptyStudents
+              search={search}
+            />
           ) : (
             <>
               {/* =================================================
-                  DESKTOP TABLE
+                  DESKTOP
               ================================================= */}
 
               <div className="hidden overflow-x-auto md:block">
@@ -520,7 +780,6 @@ function InstructorStudents() {
                 <table className="w-full">
 
                   <thead>
-
                     <tr className="border-b border-white/5 bg-white/[0.015]">
 
                       <TableHeader>
@@ -528,15 +787,15 @@ function InstructorStudents() {
                       </TableHeader>
 
                       <TableHeader>
-                        Course
+                        Courses
                       </TableHeader>
 
                       <TableHeader>
-                        Level
+                        Enrollments
                       </TableHeader>
 
                       <TableHeader>
-                        Enrolled
+                        Latest Joined
                       </TableHeader>
 
                       <TableHeader>
@@ -548,33 +807,24 @@ function InstructorStudents() {
                       </TableHeader>
 
                     </tr>
-
                   </thead>
 
                   <tbody>
 
-                    {filteredEnrollments.map(
-                      (enrollment, index) => {
-                        const student =
-                          enrollment.student;
-
-                        const course =
-                          enrollment.course;
-
-                        const studentId =
-                          student?._id;
-
-                        return (
-                          <StudentTableRow
-                            key={enrollment._id}
-                            enrollment={enrollment}
-                            student={student}
-                            course={course}
-                            studentId={studentId}
-                            index={index}
-                          />
-                        );
-                      },
+                    {filteredStudents.map(
+                      (
+                        student,
+                        index,
+                      ) => (
+                        <StudentTableRow
+                          key={
+                            student.studentId ||
+                            student.searchText
+                          }
+                          student={student}
+                          index={index}
+                        />
+                      ),
                     )}
 
                   </tbody>
@@ -584,40 +834,38 @@ function InstructorStudents() {
               </div>
 
               {/* =================================================
-                  MOBILE CARDS
+                  MOBILE
               ================================================= */}
 
               <div className="divide-y divide-white/5 md:hidden">
 
-                {filteredEnrollments.map(
-                  (enrollment, index) => {
-                    const student =
-                      enrollment.student;
-
-                    const course =
-                      enrollment.course;
-
-                    const studentId =
-                      student?._id;
-
-                    return (
-                      <MobileStudentCard
-                        key={enrollment._id}
-                        enrollment={enrollment}
-                        student={student}
-                        course={course}
-                        studentId={studentId}
-                        index={index}
-                      />
-                    );
-                  },
+                {filteredStudents.map(
+                  (
+                    student,
+                    index,
+                  ) => (
+                    <MobileStudentCard
+                      key={
+                        student.studentId ||
+                        student.searchText
+                      }
+                      student={student}
+                      index={index}
+                    />
+                  ),
                 )}
 
               </div>
             </>
           )}
 
-        </div>
+        </section>
+
+        {/* =================================================
+            FOOTER
+        ================================================= */}
+
+        <PremiumFooter />
 
       </div>
 
@@ -640,6 +888,7 @@ function InstructorStudents() {
           box-shadow:
             0 0 18px rgba(249,115,22,0.25),
             inset 0 0 12px rgba(249,115,22,0.08);
+          will-change: transform;
         }
 
         .students-cursor-dot {
@@ -670,6 +919,7 @@ function InstructorStudents() {
               transparent 72%
             );
           filter: blur(4px);
+          will-change: transform;
         }
 
         /* =================================================
@@ -703,6 +953,7 @@ function InstructorStudents() {
           position: absolute;
           border-radius: 999px;
           filter: blur(110px);
+          will-change: transform;
         }
 
         .students-orb-one {
@@ -711,7 +962,7 @@ function InstructorStudents() {
           left: -180px;
           top: -180px;
           background: rgba(180,60,10,0.10);
-          animation: studentsOrbOne 13s ease-in-out infinite;
+          animation: studentsOrbOne 16s ease-in-out infinite;
         }
 
         .students-orb-two {
@@ -720,7 +971,7 @@ function InstructorStudents() {
           right: -150px;
           top: 35%;
           background: rgba(249,115,22,0.07);
-          animation: studentsOrbTwo 16s ease-in-out infinite;
+          animation: studentsOrbTwo 19s ease-in-out infinite;
         }
 
         .students-orb-three {
@@ -729,7 +980,7 @@ function InstructorStudents() {
           bottom: -180px;
           left: 35%;
           background: rgba(234,179,8,0.045);
-          animation: studentsOrbThree 14s ease-in-out infinite;
+          animation: studentsOrbThree 17s ease-in-out infinite;
         }
 
         /* =================================================
@@ -751,11 +1002,15 @@ function InstructorStudents() {
         }
 
         /* =================================================
-           ROTATING RING
+           RING
         ================================================= */
 
         .students-rotating-ring {
-          animation: studentsRotate 18s linear infinite;
+          animation:
+            studentsRotate
+            20s
+            linear
+            infinite;
         }
 
         /* =================================================
@@ -764,39 +1019,46 @@ function InstructorStudents() {
 
         @keyframes studentsOrbOne {
           0%,100% {
-            transform: translate(0,0) scale(1);
+            transform:
+              translate3d(0,0,0)
+              scale(1);
           }
 
           50% {
-            transform: translate(90px,70px) scale(1.08);
+            transform:
+              translate3d(70px,55px,0)
+              scale(1.06);
           }
         }
 
         @keyframes studentsOrbTwo {
           0%,100% {
-            transform: translate(0,0);
+            transform:
+              translate3d(0,0,0);
           }
 
           50% {
-            transform: translate(-80px,40px);
+            transform:
+              translate3d(-65px,35px,0);
           }
         }
 
         @keyframes studentsOrbThree {
           0%,100% {
-            transform: translate(0,0);
+            transform:
+              translate3d(0,0,0);
           }
 
           50% {
-            transform: translate(50px,-60px);
+            transform:
+              translate3d(40px,-50px,0);
           }
         }
 
         @keyframes studentsEmberRise {
           0% {
             transform:
-              translateY(0)
-              translateX(0)
+              translate3d(0,0,0)
               scale(0.4);
             opacity: 0;
           }
@@ -811,8 +1073,7 @@ function InstructorStudents() {
 
           100% {
             transform:
-              translateY(-90vh)
-              translateX(35px)
+              translate3d(35px,-90vh,0)
               scale(1);
             opacity: 0;
           }
@@ -831,12 +1092,14 @@ function InstructorStudents() {
         @keyframes studentsAppear {
           from {
             opacity: 0;
-            transform: translateY(10px);
+            transform:
+              translate3d(0,8px,0);
           }
 
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform:
+              translate3d(0,0,0);
           }
         }
 
@@ -860,11 +1123,14 @@ function InstructorStudents() {
   );
 }
 
-/* =====================================================
-   REALM TAG
-===================================================== */
+// =====================================================
+// REALM TAG
+// =====================================================
 
-function RealmTag({ icon, text }) {
+function RealmTag({
+  icon,
+  text,
+}) {
   return (
     <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/[0.025] px-3 py-2 text-[10px] font-semibold text-white/40">
       <span className="text-orange-400/70">
@@ -876,9 +1142,9 @@ function RealmTag({ icon, text }) {
   );
 }
 
-/* =====================================================
-   INFO CARD
-===================================================== */
+// =====================================================
+// INFO CARD
+// =====================================================
 
 function InfoCard({
   title,
@@ -890,43 +1156,33 @@ function InfoCard({
   const themes = {
     orange: {
       icon: "border-orange-400/15 bg-orange-500/10 text-orange-400",
-      glow: "group-hover:shadow-[0_20px_60px_rgba(249,115,22,0.08)]",
+      glow:
+        "group-hover:shadow-[0_20px_60px_rgba(249,115,22,0.08)]",
     },
 
     green: {
-      icon: "border-emerald-400/15 bg-emerald-500/10 text-emerald-400",
-      glow: "group-hover:shadow-[0_20px_60px_rgba(16,185,129,0.06)]",
+      icon:
+        "border-emerald-400/15 bg-emerald-500/10 text-emerald-400",
+      glow:
+        "group-hover:shadow-[0_20px_60px_rgba(16,185,129,0.06)]",
     },
 
     gold: {
-      icon: "border-yellow-400/15 bg-yellow-500/10 text-yellow-400",
-      glow: "group-hover:shadow-[0_20px_60px_rgba(234,179,8,0.07)]",
+      icon:
+        "border-yellow-400/15 bg-yellow-500/10 text-yellow-400",
+      glow:
+        "group-hover:shadow-[0_20px_60px_rgba(234,179,8,0.07)]",
     },
   };
 
   const theme =
-    themes[accent] || themes.orange;
+    themes[accent] ||
+    themes.orange;
 
   return (
     <div
-      className={`
-        group
-        relative
-        overflow-hidden
-        rounded-2xl
-        border
-        border-white/8
-        bg-[#101010]/90
-        p-5
-        backdrop-blur-xl
-        transition-all
-        duration-500
-        hover:-translate-y-1
-        hover:border-orange-400/15
-        ${theme.glow}
-      `}
+      className={`group relative overflow-hidden rounded-2xl border border-white/8 bg-[#101010]/90 p-5 backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:border-orange-400/15 ${theme.glow}`}
     >
-
       <div className="absolute left-0 top-0 h-px w-28 bg-gradient-to-r from-orange-500/60 to-transparent" />
 
       <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-orange-500/5 blur-2xl opacity-0 transition group-hover:opacity-100" />
@@ -934,7 +1190,6 @@ function InfoCard({
       <div className="relative flex items-start justify-between">
 
         <div>
-
           <p className="text-xs font-semibold text-white/35">
             {title}
           </p>
@@ -946,39 +1201,26 @@ function InfoCard({
           <p className="mt-1 text-[10px] text-white/20">
             {description}
           </p>
-
         </div>
 
         <div
-          className={`
-            flex
-            h-11
-            w-11
-            items-center
-            justify-center
-            rounded-xl
-            border
-            transition-all
-            duration-300
-            group-hover:scale-110
-            group-hover:rotate-3
-            ${theme.icon}
-          `}
+          className={`flex h-11 w-11 items-center justify-center rounded-xl border transition-all duration-300 group-hover:rotate-3 group-hover:scale-110 ${theme.icon}`}
         >
           {icon}
         </div>
 
       </div>
-
     </div>
   );
 }
 
-/* =====================================================
-   TABLE HEADER
-===================================================== */
+// =====================================================
+// TABLE HEADER
+// =====================================================
 
-function TableHeader({ children }) {
+function TableHeader({
+  children,
+}) {
   return (
     <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.15em] text-white/25">
       {children}
@@ -986,31 +1228,30 @@ function TableHeader({ children }) {
   );
 }
 
-/* =====================================================
-   DESKTOP STUDENT ROW
-===================================================== */
+// =====================================================
+// DESKTOP STUDENT ROW
+// =====================================================
 
 function StudentTableRow({
-  enrollment,
   student,
-  course,
-  studentId,
   index,
 }) {
+  const {
+    student: user,
+    studentId,
+    courses,
+    enrollmentCount,
+    latestEnrollment,
+  } = student;
+
   return (
     <tr
-      className="
-        group
-        border-b
-        border-white/5
-        transition-all
-        duration-300
-        hover:bg-orange-500/[0.025]
-      "
+      className="group border-b border-white/5 transition-all duration-300 hover:bg-orange-500/[0.025]"
       style={{
         animation:
-          "studentsAppear 0.5s ease both",
-        animationDelay: `${index * 50}ms`,
+          "studentsAppear 0.45s ease both",
+        animationDelay:
+          `${Math.min(index * 35, 350)}ms`,
       }}
     >
 
@@ -1021,7 +1262,7 @@ function StudentTableRow({
         <div className="flex items-center gap-3">
 
           <StudentAvatar
-            student={student}
+            student={user}
             size="desktop"
           />
 
@@ -1032,11 +1273,13 @@ function StudentTableRow({
                 to={`/instructor/students/${studentId}`}
                 className="font-semibold text-white/80 transition hover:text-orange-300"
               >
-                {student?.name || "Student"}
+                {user?.name ||
+                  "Student"}
               </Link>
             ) : (
               <p className="font-semibold text-white/80">
-                {student?.name || "Student"}
+                {user?.name ||
+                  "Student"}
               </p>
             )}
 
@@ -1051,45 +1294,65 @@ function StudentTableRow({
 
       </td>
 
-      {/* COURSE */}
+      {/* COURSES */}
 
       <td className="px-6 py-5">
 
-        <div className="flex items-center gap-3">
+        <div className="flex max-w-[330px] flex-wrap gap-1.5">
 
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-orange-400/10 bg-orange-500/5 text-orange-400/70 transition group-hover:border-orange-400/20 group-hover:bg-orange-500/10 group-hover:text-orange-300">
-            <BookOpen size={15} />
-          </div>
+          {courses
+            .slice(0, 2)
+            .map((course) => (
+              <span
+                key={
+                  course?._id ||
+                  course?.courseTitle
+                }
+                className="inline-flex max-w-[150px] items-center gap-1.5 truncate rounded-lg border border-orange-400/10 bg-orange-500/5 px-2.5 py-1.5 text-[9px] font-bold text-orange-300/70"
+                title={
+                  course?.courseTitle
+                }
+              >
+                <BookOpen
+                  size={11}
+                  className="shrink-0"
+                />
 
-          <div className="min-w-0">
+                <span className="truncate">
+                  {course?.courseTitle ||
+                    "Course"}
+                </span>
+              </span>
+            ))}
 
-            <p className="max-w-[220px] truncate text-sm font-semibold text-white/65">
-              {course?.courseTitle ||
-                "Course"}
-            </p>
-
-            <p className="mt-1 text-[10px] text-white/20">
-              ₹{course?.coursePrice || 0}
-            </p>
-
-          </div>
+          {courses.length > 2 && (
+            <span className="inline-flex items-center rounded-lg border border-white/8 bg-white/[0.025] px-2.5 py-1.5 text-[9px] font-bold text-white/35">
+              +{courses.length - 2} more
+            </span>
+          )}
 
         </div>
 
       </td>
 
-      {/* LEVEL */}
+      {/* ENROLLMENTS */}
 
       <td className="px-6 py-5">
 
-        <span className="inline-flex rounded-full border border-orange-400/10 bg-orange-500/5 px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-orange-300/70">
-          {course?.courseLevel ||
-            "N/A"}
-        </span>
+        <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.025] px-3 py-2">
+          <Sparkles
+            size={12}
+            className="text-orange-400/60"
+          />
+
+          <span className="text-xs font-bold text-white/60">
+            {enrollmentCount}
+          </span>
+        </div>
 
       </td>
 
-      {/* DATE */}
+      {/* LATEST JOINED */}
 
       <td className="px-6 py-5">
 
@@ -1101,7 +1364,7 @@ function StudentTableRow({
           />
 
           {formatDate(
-            enrollment.enrolledAt,
+            latestEnrollment?.enrolledAt,
           )}
 
         </div>
@@ -1112,9 +1375,9 @@ function StudentTableRow({
 
       <td className="px-6 py-5">
 
-        {student?.email ? (
+        {user?.email ? (
           <a
-            href={`mailto:${student.email}`}
+            href={`mailto:${user.email}`}
             className="group/email inline-flex max-w-[220px] items-center gap-2 text-xs text-white/35 transition hover:text-orange-300"
           >
             <Mail
@@ -1123,7 +1386,7 @@ function StudentTableRow({
             />
 
             <span className="truncate">
-              {student.email}
+              {user.email}
             </span>
           </a>
         ) : (
@@ -1141,28 +1404,7 @@ function StudentTableRow({
         {studentId ? (
           <Link
             to={`/instructor/students/${studentId}`}
-            className="
-              group/view
-              inline-flex
-              items-center
-              gap-2
-              rounded-xl
-              border
-              border-white/8
-              bg-white/[0.025]
-              px-3
-              py-2
-              text-[10px]
-              font-bold
-              uppercase
-              tracking-wider
-              text-white/40
-              transition-all
-              duration-300
-              hover:border-orange-400/20
-              hover:bg-orange-500/8
-              hover:text-orange-300
-            "
+            className="group/view inline-flex items-center gap-2 rounded-xl border border-white/8 bg-white/[0.025] px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white/40 transition-all duration-300 hover:border-orange-400/20 hover:bg-orange-500/8 hover:text-orange-300"
           >
             <Eye size={13} />
 
@@ -1185,24 +1427,30 @@ function StudentTableRow({
   );
 }
 
-/* =====================================================
-   MOBILE STUDENT CARD
-===================================================== */
+// =====================================================
+// MOBILE STUDENT CARD
+// =====================================================
 
 function MobileStudentCard({
-  enrollment,
   student,
-  course,
-  studentId,
   index,
 }) {
+  const {
+    student: user,
+    studentId,
+    courses,
+    enrollmentCount,
+    latestEnrollment,
+  } = student;
+
   return (
     <div
       className="relative overflow-hidden p-5"
       style={{
         animation:
-          "studentsAppear 0.5s ease both",
-        animationDelay: `${index * 60}ms`,
+          "studentsAppear 0.45s ease both",
+        animationDelay:
+          `${Math.min(index * 40, 300)}ms`,
       }}
     >
 
@@ -1213,7 +1461,7 @@ function MobileStudentCard({
       <div className="flex items-start gap-4">
 
         <StudentAvatar
-          student={student}
+          student={user}
           size="mobile"
         />
 
@@ -1228,18 +1476,21 @@ function MobileStudentCard({
                   to={`/instructor/students/${studentId}`}
                   className="font-bold text-white/85 transition hover:text-orange-300"
                 >
-                  {student?.name ||
+                  {user?.name ||
                     "Student"}
                 </Link>
               ) : (
                 <h3 className="font-bold text-white/85">
-                  {student?.name ||
+                  {user?.name ||
                     "Student"}
                 </h3>
               )}
 
               <p className="mt-1 text-[10px] uppercase tracking-wider text-white/20">
-                Registered Learner
+                {enrollmentCount}{" "}
+                {enrollmentCount === 1
+                  ? "Enrollment"
+                  : "Enrollments"}
               </p>
 
             </div>
@@ -1250,15 +1501,15 @@ function MobileStudentCard({
 
           </div>
 
-          {student?.email && (
+          {user?.email && (
             <a
-              href={`mailto:${student.email}`}
+              href={`mailto:${user.email}`}
               className="mt-3 flex items-center gap-2 text-xs text-white/35 transition hover:text-orange-300"
             >
               <Mail size={13} />
 
               <span className="truncate">
-                {student.email}
+                {user.email}
               </span>
             </a>
           )}
@@ -1267,41 +1518,62 @@ function MobileStudentCard({
 
       </div>
 
-      {/* COURSE */}
+      {/* COURSES */}
 
       <div className="mt-5 rounded-2xl border border-white/6 bg-white/[0.02] p-4">
 
-        <div className="flex items-start gap-3">
+        <div className="mb-3 flex items-center justify-between">
 
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-400/10 bg-orange-500/5 text-orange-400/70">
-            <BookOpen size={17} />
-          </div>
+          <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/20">
+            Enrolled Courses
+          </p>
 
-          <div className="min-w-0 flex-1">
+          <span className="text-[9px] font-bold text-orange-400/60">
+            {courses.length}{" "}
+            {courses.length === 1
+              ? "Course"
+              : "Courses"}
+          </span>
 
-            <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/20">
-              Enrolled Course
-            </p>
+        </div>
 
-            <p className="mt-1 truncate text-sm font-semibold text-white/70">
-              {course?.courseTitle ||
-                "Course"}
-            </p>
+        <div className="space-y-2">
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+          {courses.map(
+            (course) => (
+              <div
+                key={
+                  course?._id ||
+                  course?.courseTitle
+                }
+                className="flex items-center gap-3 rounded-xl border border-white/5 bg-black/20 p-3"
+              >
 
-              <span className="rounded-full border border-orange-400/10 bg-orange-500/5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-orange-300/70">
-                {course?.courseLevel ||
-                  "N/A"}
-              </span>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-orange-400/10 bg-orange-500/5 text-orange-400/70">
+                  <BookOpen size={15} />
+                </div>
 
-              <span className="text-[10px] text-white/25">
-                ₹{course?.coursePrice || 0}
-              </span>
+                <div className="min-w-0">
 
-            </div>
+                  <p className="truncate text-xs font-semibold text-white/65">
+                    {course?.courseTitle ||
+                      "Course"}
+                  </p>
 
-          </div>
+                  <p className="mt-1 text-[9px] text-white/20">
+                    {course?.courseLevel ||
+                      "N/A"}
+                    {" • "}
+                    ₹
+                    {course?.coursePrice ||
+                      0}
+                  </p>
+
+                </div>
+
+              </div>
+            ),
+          )}
 
         </div>
 
@@ -1312,9 +1584,9 @@ function MobileStudentCard({
             className="text-orange-400/50"
           />
 
-          Enrolled{" "}
+          Latest enrollment{" "}
           {formatDate(
-            enrollment.enrolledAt,
+            latestEnrollment?.enrolledAt,
           )}
 
         </div>
@@ -1326,31 +1598,7 @@ function MobileStudentCard({
       {studentId && (
         <Link
           to={`/instructor/students/${studentId}`}
-          className="
-            group
-            mt-4
-            flex
-            w-full
-            items-center
-            justify-center
-            gap-2
-            rounded-xl
-            border
-            border-orange-400/15
-            bg-orange-500/8
-            px-4
-            py-3.5
-            text-xs
-            font-bold
-            uppercase
-            tracking-wider
-            text-orange-300
-            transition-all
-            duration-300
-            hover:border-orange-400/30
-            hover:bg-orange-500/12
-            hover:shadow-[0_0_30px_rgba(249,115,22,0.08)]
-          "
+          className="group mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-orange-400/15 bg-orange-500/8 px-4 py-3.5 text-xs font-bold uppercase tracking-wider text-orange-300 transition-all duration-300 hover:border-orange-400/30 hover:bg-orange-500/12 hover:shadow-[0_0_30px_rgba(249,115,22,0.08)]"
         >
           <Eye size={15} />
 
@@ -1360,7 +1608,6 @@ function MobileStudentCard({
             size={15}
             className="transition-transform group-hover:translate-x-1"
           />
-
         </Link>
       )}
 
@@ -1368,9 +1615,9 @@ function MobileStudentCard({
   );
 }
 
-/* =====================================================
-   STUDENT AVATAR
-===================================================== */
+// =====================================================
+// STUDENT AVATAR
+// =====================================================
 
 function StudentAvatar({
   student,
@@ -1393,18 +1640,8 @@ function StudentAvatar({
             student.name ||
             "Student"
           }
-          className={`
-            relative
-            ${sizeClass}
-            rounded-2xl
-            border
-            border-white/10
-            object-cover
-            shadow-lg
-            transition-transform
-            duration-300
-            group-hover:scale-105
-          `}
+          loading="lazy"
+          className={`relative ${sizeClass} rounded-2xl border border-white/10 object-cover shadow-lg transition-transform duration-300 group-hover:scale-105`}
         />
 
         <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-[#101010] bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
@@ -1415,34 +1652,13 @@ function StudentAvatar({
 
   return (
     <div
-      className={`
-        relative
-        ${sizeClass}
-        flex
-        shrink-0
-        items-center
-        justify-center
-        rounded-2xl
-        border
-        border-orange-400/10
-        bg-gradient-to-br
-        from-orange-500/15
-        via-white/[0.025]
-        to-red-900/10
-        text-sm
-        font-black
-        text-orange-300
-        shadow-[0_0_20px_rgba(249,115,22,0.06)]
-        transition-all
-        duration-300
-        group-hover:border-orange-400/20
-        group-hover:shadow-[0_0_25px_rgba(249,115,22,0.12)]
-      `}
+      className={`relative ${sizeClass} flex shrink-0 items-center justify-center rounded-2xl border border-orange-400/10 bg-gradient-to-br from-orange-500/15 via-white/[0.025] to-red-900/10 text-sm font-black text-orange-300 shadow-[0_0_20px_rgba(249,115,22,0.06)] transition-all duration-300 group-hover:border-orange-400/20 group-hover:shadow-[0_0_25px_rgba(249,115,22,0.12)]`}
     >
 
       {student?.name
         ?.charAt(0)
-        ?.toUpperCase() || "S"}
+        ?.toUpperCase() ||
+        "S"}
 
       <div className="absolute inset-1.5 rounded-xl border border-orange-400/8" />
 
@@ -1452,11 +1668,13 @@ function StudentAvatar({
   );
 }
 
-/* =====================================================
-   EMPTY STATE
-===================================================== */
+// =====================================================
+// EMPTY STATE
+// =====================================================
 
-function EmptyStudents({ search }) {
+function EmptyStudents({
+  search,
+}) {
   return (
     <div className="relative flex min-h-[380px] flex-col items-center justify-center overflow-hidden px-6 text-center">
 
@@ -1465,11 +1683,9 @@ function EmptyStudents({ search }) {
       <div className="relative z-10">
 
         <div className="relative mx-auto flex h-24 w-24 items-center justify-center rounded-[28px] border border-orange-400/10 bg-orange-500/5 text-orange-400/60">
-
           <Users size={36} />
 
           <div className="absolute inset-2 rounded-[22px] border border-orange-400/8" />
-
         </div>
 
         <p className="mt-7 text-[10px] font-black uppercase tracking-[0.25em] text-orange-400/50">
@@ -1502,9 +1718,9 @@ function EmptyStudents({ search }) {
   );
 }
 
-/* =====================================================
-   LOADING STATE
-===================================================== */
+// =====================================================
+// LOADING
+// =====================================================
 
 function StudentsLoading() {
   return (
@@ -1516,11 +1732,11 @@ function StudentsLoading() {
 
         <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-orange-400/15 bg-orange-500/5">
 
-          <div className="absolute inset-0 rounded-[28px] border border-orange-400/10 animate-ping" />
+          <div className="absolute inset-0 animate-ping rounded-[28px] border border-orange-400/10" />
 
-          <LoaderCircle
+          <Swords
             size={35}
-            className="animate-spin text-orange-400"
+            className="text-orange-400"
           />
 
         </div>
@@ -1539,16 +1755,47 @@ function StudentsLoading() {
   );
 }
 
-/* =====================================================
-   FORMAT DATE
-===================================================== */
+// =====================================================
+// FOOTER
+// =====================================================
+
+function PremiumFooter() {
+  return (
+    <div className="flex items-center justify-center gap-3 pb-4 pt-2">
+
+      <div className="h-px w-16 bg-gradient-to-r from-transparent to-stone-800" />
+
+      <Gem
+        size={11}
+        className="text-[#67200f]"
+      />
+
+      <span className="font-serif text-[9px] uppercase tracking-[0.4em] text-stone-800">
+        Forge Your Legacy
+      </span>
+
+      <Gem
+        size={11}
+        className="text-[#67200f]"
+      />
+
+      <div className="h-px w-16 bg-gradient-to-l from-transparent to-stone-800" />
+
+    </div>
+  );
+}
+
+// =====================================================
+// DATE FORMATTER
+// =====================================================
 
 function formatDate(date) {
   if (!date) {
     return "N/A";
   }
 
-  const parsedDate = new Date(date);
+  const parsedDate =
+    new Date(date);
 
   if (
     Number.isNaN(
@@ -1558,7 +1805,14 @@ function formatDate(date) {
     return "N/A";
   }
 
-  return parsedDate.toLocaleDateString();
+  return parsedDate.toLocaleDateString(
+    undefined,
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    },
+  );
 }
 
 export default InstructorStudents;

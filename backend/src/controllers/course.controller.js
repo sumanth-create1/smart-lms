@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
+
 import Course from "../models/course.model.js";
+import Enrollment from "../models/enrollment.model.js";
+import Lecture from "../models/lecture.model.js";
+
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 
 /* =========================================================
@@ -90,6 +94,12 @@ export const getAllCourses = async (req, res) => {
 
 /* =========================================================
    GET INSTRUCTOR COURSES
+   WITH DYNAMIC STUDENT COUNT
+========================================================= */
+
+/* =========================================================
+   GET INSTRUCTOR COURSES
+   Dynamic students + lectures
 ========================================================= */
 
 export const getInstructorCourses = async (req, res) => {
@@ -100,16 +110,42 @@ export const getInstructorCourses = async (req, res) => {
             instructor: instructorId,
         })
             .populate("instructor", "name email")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
+
+        const coursesWithStats = await Promise.all(
+            courses.map(async (course) => {
+
+                const [studentCount, lectureCount] =
+                    await Promise.all([
+                        Enrollment.countDocuments({
+                            course: course._id,
+                        }),
+
+                        Lecture.countDocuments({
+                            course: course._id,
+                        }),
+                    ]);
+
+                return {
+                    ...course,
+                    studentCount,
+                    lectureCount,
+                };
+            })
+        );
 
         res.status(200).json({
             success: true,
-            count: courses.length,
-            courses,
+            count: coursesWithStats.length,
+            courses: coursesWithStats,
         });
 
     } catch (error) {
-        console.error("Get instructor courses error:", error);
+        console.error(
+            "Get instructor courses error:",
+            error
+        );
 
         res.status(500).json({
             success: false,
@@ -153,7 +189,10 @@ export const getCourseById = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Get course by ID error:", error);
+        console.error(
+            "Get course by ID error:",
+            error
+        );
 
         res.status(500).json({
             success: false,
@@ -216,7 +255,10 @@ export const updateCourse = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Update course error:", error);
+        console.error(
+            "Update course error:",
+            error
+        );
 
         res.status(500).json({
             success: false,
@@ -270,7 +312,10 @@ export const deleteCourse = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Delete course error:", error);
+        console.error(
+            "Delete course error:",
+            error
+        );
 
         res.status(500).json({
             success: false,

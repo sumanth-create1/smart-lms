@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import {
   ArrowRight,
   BookOpen,
@@ -23,6 +30,7 @@ import {
   Users,
   Video,
 } from "lucide-react";
+
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -38,48 +46,76 @@ function InstructorDashboard() {
 
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [openCourseMenu, setOpenCourseMenu] = useState(null);
 
-  const [cursorPosition, setCursorPosition] = useState({
+  const [openCourseMenu, setOpenCourseMenu] =
+    useState(null);
+
+  const [courseSearch, setCourseSearch] =
+    useState("");
+
+  const [courseSort, setCourseSort] =
+    useState("students");
+
+  const [cursorPosition, setCursorPosition] =
+    useState({
+      x: -100,
+      y: -100,
+    });
+
+  const [mouseInside, setMouseInside] =
+    useState(false);
+
+  const cursorFrame = useRef(null);
+  const latestCursor = useRef({
     x: -100,
     y: -100,
   });
-
-  const [mouseInside, setMouseInside] = useState(false);
 
   // ==========================================================
   // FETCH DASHBOARD
   // ==========================================================
 
-  const fetchDashboard = async () => {
-    try {
-      setLoading(true);
+  const fetchDashboard = useCallback(
+    async (showLoader = true) => {
+      try {
+        if (showLoader) {
+          setLoading(true);
+        }
 
-      const response = await api.get("/dashboard/instructor");
-
-      if (response.data?.success) {
-        setDashboard(response.data.data);
-      } else {
-        toast.error(
-          response.data?.message ||
-            "Failed to load instructor dashboard"
+        const response = await api.get(
+          "/dashboard/instructor"
         );
-      }
-    } catch (error) {
-      console.error("Instructor dashboard error:", error);
 
-      toast.error(
-        error.response?.data?.message ||
-          "Unable to load instructor dashboard"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (response.data?.success) {
+          setDashboard(response.data.data);
+        } else {
+          toast.error(
+            response.data?.message ||
+              "Failed to load instructor dashboard"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Instructor dashboard error:",
+          error
+        );
+
+        toast.error(
+          error.response?.data?.message ||
+            "Unable to load instructor dashboard"
+        );
+      } finally {
+        if (showLoader) {
+          setLoading(false);
+        }
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [fetchDashboard]);
 
   // ==========================================================
   // PREMIUM CURSOR
@@ -87,16 +123,41 @@ function InstructorDashboard() {
 
   useEffect(() => {
     const moveCursor = (event) => {
-      setCursorPosition({
+      latestCursor.current = {
         x: event.clientX,
         y: event.clientY,
-      });
+      };
+
+      if (cursorFrame.current) return;
+
+      cursorFrame.current =
+        requestAnimationFrame(() => {
+          setCursorPosition({
+            x: latestCursor.current.x,
+            y: latestCursor.current.y,
+          });
+
+          cursorFrame.current = null;
+        });
     };
 
-    window.addEventListener("mousemove", moveCursor);
+    window.addEventListener(
+      "mousemove",
+      moveCursor,
+      { passive: true }
+    );
 
     return () => {
-      window.removeEventListener("mousemove", moveCursor);
+      window.removeEventListener(
+        "mousemove",
+        moveCursor
+      );
+
+      if (cursorFrame.current) {
+        cancelAnimationFrame(
+          cursorFrame.current
+        );
+      }
     };
   }, []);
 
@@ -106,12 +167,19 @@ function InstructorDashboard() {
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
-      if (!event.target.closest("[data-course-menu]")) {
+      if (
+        !event.target.closest(
+          "[data-course-menu]"
+        )
+      ) {
         setOpenCourseMenu(null);
       }
     };
 
-    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
 
     return () => {
       document.removeEventListener(
@@ -120,6 +188,203 @@ function InstructorDashboard() {
       );
     };
   }, []);
+
+  // ==========================================================
+  // DATA
+  // ==========================================================
+
+  const stats = dashboard?.stats || {};
+
+  const courses = dashboard?.courses || [];
+
+  const recentEnrollments =
+    dashboard?.recentEnrollments || [];
+
+  // ==========================================================
+  // FILTER + SORT COURSES
+  // ==========================================================
+
+  const filteredCourses = useMemo(() => {
+    const query =
+      courseSearch.trim().toLowerCase();
+
+    const filtered = query
+      ? courses.filter((course) => {
+          const title =
+            course.courseTitle
+              ?.toLowerCase() || "";
+
+          const category =
+            course.category
+              ?.toLowerCase() || "";
+
+          const level =
+            course.courseLevel
+              ?.toLowerCase() || "";
+
+          return (
+            title.includes(query) ||
+            category.includes(query) ||
+            level.includes(query)
+          );
+        })
+      : [...courses];
+
+    filtered.sort((a, b) => {
+      if (courseSort === "students") {
+        return (
+          (Number(b.studentCount) || 0) -
+          (Number(a.studentCount) || 0)
+        );
+      }
+
+      if (courseSort === "price") {
+        return (
+          (Number(b.coursePrice) || 0) -
+          (Number(a.coursePrice) || 0)
+        );
+      }
+
+      if (courseSort === "title") {
+        return (
+          a.courseTitle || ""
+        ).localeCompare(
+          b.courseTitle || ""
+        );
+      }
+
+      return 0;
+    });
+
+    return filtered;
+  }, [
+    courses,
+    courseSearch,
+    courseSort,
+  ]);
+
+  // ==========================================================
+  // GROUP RECENT ENROLLMENTS BY STUDENT
+  // ==========================================================
+
+  const groupedRecentStudents = useMemo(() => {
+    const grouped = new Map();
+
+    recentEnrollments.forEach(
+      (enrollment) => {
+        const student =
+          enrollment?.student;
+
+        if (!student?._id) return;
+
+        const studentId =
+          String(student._id);
+
+        if (!grouped.has(studentId)) {
+          grouped.set(studentId, {
+            student,
+            enrollments: [],
+            courses: [],
+            latestEnrollmentDate:
+              enrollment.enrolledAt ||
+              enrollment.createdAt ||
+              null,
+          });
+        }
+
+        const record =
+          grouped.get(studentId);
+
+        record.enrollments.push(
+          enrollment
+        );
+
+        // ------------------------------------------------------
+        // ADD UNIQUE COURSE
+        // ------------------------------------------------------
+
+        if (enrollment.course) {
+          const courseExists =
+            record.courses.some(
+              (course) =>
+                String(course._id) ===
+                String(
+                  enrollment.course._id
+                )
+            );
+
+          if (!courseExists) {
+            record.courses.push(
+              enrollment.course
+            );
+          }
+        }
+
+        // ------------------------------------------------------
+        // FIND LATEST ENROLLMENT
+        // ------------------------------------------------------
+
+        const currentDate =
+          new Date(
+            enrollment.enrolledAt ||
+              enrollment.createdAt ||
+              0
+          );
+
+        const latestDate =
+          new Date(
+            record.latestEnrollmentDate ||
+              0
+          );
+
+        if (currentDate > latestDate) {
+          record.latestEnrollmentDate =
+            enrollment.enrolledAt ||
+            enrollment.createdAt;
+        }
+      }
+    );
+
+    return Array.from(
+      grouped.values()
+    )
+      .sort(
+        (a, b) =>
+          new Date(
+            b.latestEnrollmentDate || 0
+          ) -
+          new Date(
+            a.latestEnrollmentDate || 0
+          )
+      )
+      .slice(0, 5);
+  }, [recentEnrollments]);
+
+  // ==========================================================
+  // MAX STUDENTS
+  // ==========================================================
+
+  const maxStudents = useMemo(() => {
+    if (!courses.length) return 1;
+
+    return Math.max(
+      ...courses.map(
+        (course) =>
+          Number(
+            course.studentCount
+          ) || 0
+      ),
+      1
+    );
+  }, [courses]);
+
+  // ==========================================================
+  // USER
+  // ==========================================================
+
+  const firstName =
+    user?.name?.split(" ")[0] ||
+    "Instructor";
 
   // ==========================================================
   // LOADING
@@ -164,33 +429,18 @@ function InstructorDashboard() {
   }
 
   // ==========================================================
-  // DATA
-  // ==========================================================
-
-  const stats = dashboard?.stats || {};
-  const courses = dashboard?.courses || [];
-  const recentEnrollments =
-    dashboard?.recentEnrollments || [];
-
-  const firstName =
-    user?.name?.split(" ")[0] || "Instructor";
-
-  const maxStudents = Math.max(
-    ...courses.map(
-      (course) => Number(course.studentCount) || 0
-    ),
-    1
-  );
-
-  // ==========================================================
   // MAIN UI
   // ==========================================================
 
   return (
     <div
       className="relative min-h-screen overflow-hidden bg-[#050403] text-stone-200 selection:bg-[#ff6a00]/40 selection:text-[#f3dc7c]"
-      onMouseEnter={() => setMouseInside(true)}
-      onMouseLeave={() => setMouseInside(false)}
+      onMouseEnter={() =>
+        setMouseInside(true)
+      }
+      onMouseLeave={() =>
+        setMouseInside(false)
+      }
     >
       {/* ======================================================
           BACKGROUND
@@ -230,7 +480,9 @@ function InstructorDashboard() {
             HERO
         ==================================================== */}
 
-        <PremiumHero firstName={firstName} />
+        <PremiumHero
+          firstName={firstName}
+        />
 
         {/* ====================================================
             STATISTICS
@@ -257,7 +509,9 @@ function InstructorDashboard() {
 
           <PremiumStatCard
             title="Enrollments"
-            value={stats.totalEnrollments || 0}
+            value={
+              stats.totalEnrollments || 0
+            }
             subtitle="Student journeys"
             icon={<UserPlus size={21} />}
             accent="red"
@@ -266,7 +520,9 @@ function InstructorDashboard() {
 
           <PremiumStatCard
             title="Course Value"
-            value={`₹${stats.totalCourseValue || 0}`}
+            value={`₹${
+              stats.totalCourseValue || 0
+            }`}
             subtitle="Combined course pricing"
             icon={<IndianRupee size={21} />}
             accent="green"
@@ -275,18 +531,24 @@ function InstructorDashboard() {
         </section>
 
         {/* ====================================================
-            COURSES + ENROLLMENTS
+            COURSES + RECENT STUDENTS
         ==================================================== */}
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
 
-          {/* COURSES */}
+          {/* ==================================================
+              COURSES
+          ================================================== */}
 
           <PremiumPanel className="xl:col-span-2">
             <PanelHeader
               eyebrow="YOUR DOMAINS"
               title="The Learning Realm"
-              description="Courses under your command"
+              description={`${courses.length} ${
+                courses.length === 1
+                  ? "course"
+                  : "courses"
+              } under your command`}
               icon={<Castle size={18} />}
               action={
                 <Link
@@ -303,50 +565,143 @@ function InstructorDashboard() {
               }
             />
 
+            {/* COURSE SEARCH + SORT */}
+
+            {courses.length > 0 && (
+              <div className="border-b border-stone-800/70 p-3 sm:p-4">
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <div className="relative flex-1">
+                    <BookOpen
+                      size={15}
+                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-stone-700"
+                    />
+
+                    <input
+                      value={courseSearch}
+                      onChange={(event) =>
+                        setCourseSearch(
+                          event.target.value
+                        )
+                      }
+                      placeholder="Search courses, category, level..."
+                      className="w-full rounded-xl border border-stone-800 bg-black/30 py-3 pl-11 pr-4 text-xs text-stone-300 outline-none transition-all placeholder:text-stone-800 focus:border-[#ff6a00]/30 focus:bg-[#ff6a00]/[0.02]"
+                    />
+                  </div>
+
+                  <select
+                    value={courseSort}
+                    onChange={(event) =>
+                      setCourseSort(
+                        event.target.value
+                      )
+                    }
+                    className="rounded-xl border border-stone-800 bg-[#0a0908] px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-stone-500 outline-none transition-all focus:border-[#ff6a00]/30"
+                  >
+                    <option value="students">
+                      Most Students
+                    </option>
+
+                    <option value="price">
+                      Highest Price
+                    </option>
+
+                    <option value="title">
+                      Course Name
+                    </option>
+                  </select>
+                </div>
+              </div>
+            )}
+
             {courses.length === 0 ? (
               <EmptyCourses />
+            ) : filteredCourses.length === 0 ? (
+              <EmptyCourseSearch
+                onClear={() =>
+                  setCourseSearch("")
+                }
+              />
             ) : (
               <div className="p-3 sm:p-4">
-                {courses.slice(0, 5).map((course, index) => (
-                  <PremiumCourseCard
-                    key={course._id}
-                    course={course}
-                    index={index}
-                    menuOpen={
-                      openCourseMenu === course._id
-                    }
-                    setOpenCourseMenu={
-                      setOpenCourseMenu
-                    }
-                  />
-                ))}
+                {filteredCourses
+                  .slice(0, 5)
+                  .map(
+                    (course, index) => (
+                      <PremiumCourseCard
+                        key={course._id}
+                        course={course}
+                        index={index}
+                        menuOpen={
+                          openCourseMenu ===
+                          course._id
+                        }
+                        setOpenCourseMenu={
+                          setOpenCourseMenu
+                        }
+                      />
+                    )
+                  )}
               </div>
             )}
           </PremiumPanel>
 
-          {/* RECENT ENROLLMENTS */}
+          {/* ==================================================
+              RECENT OATHS
+          ================================================== */}
 
-          <PremiumPanel>
+          <PremiumPanel className="h-fit min-h-[360px]">
             <PanelHeader
               eyebrow="NEW ARRIVALS"
               title="Recent Oaths"
-              description="Students entering your realm"
+              description="Latest learners across your courses"
               icon={<Shield size={18} />}
+              action={
+                <Link
+                  to="/instructor/students"
+                  className="hidden items-center gap-1.5 text-[8px] font-bold uppercase tracking-[0.18em] text-stone-700 transition-colors hover:text-[#ff8a2a] sm:flex"
+                >
+                  Registry
+                  <ArrowRight size={12} />
+                </Link>
+              }
             />
 
-            {recentEnrollments.length === 0 ? (
+            {groupedRecentStudents.length ===
+            0 ? (
               <EmptyEnrollments />
             ) : (
               <div className="p-3 sm:p-4">
-                {recentEnrollments.map(
-                  (enrollment, index) => (
-                    <PremiumEnrollment
-                      key={enrollment._id}
-                      enrollment={enrollment}
-                      index={index}
-                    />
-                  )
-                )}
+                <div className="space-y-2">
+                  {groupedRecentStudents.map(
+                    (
+                      studentRecord,
+                      index
+                    ) => (
+                      <PremiumStudentOath
+                        key={
+                          studentRecord
+                            .student._id
+                        }
+                        studentRecord={
+                          studentRecord
+                        }
+                        index={index}
+                      />
+                    )
+                  )}
+                </div>
+
+                <Link
+                  to="/instructor/students"
+                  className="group mt-4 flex items-center justify-center gap-2 rounded-xl border border-stone-800 bg-white/[0.015] px-4 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-stone-600 transition-all duration-300 hover:border-[#ff6a00]/20 hover:bg-[#ff6a00]/[0.035] hover:text-[#ff8a2a]"
+                >
+                  View Student Registry
+
+                  <ArrowRight
+                    size={13}
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  />
+                </Link>
               </div>
             )}
           </PremiumPanel>
@@ -366,6 +721,7 @@ function InstructorDashboard() {
               <div className="hidden items-center gap-2 rounded-full border border-emerald-900/40 bg-amber-950/10 px-4 py-2 sm:flex">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
+
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
                 </span>
 
@@ -380,24 +736,37 @@ function InstructorDashboard() {
             <EmptyOverview />
           ) : (
             <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-2">
-              {courses.slice(0, 6).map((course, index) => {
-                const students =
-                  Number(course.studentCount) || 0;
+              {courses
+                .slice(0, 6)
+                .map(
+                  (course, index) => {
+                    const students =
+                      Number(
+                        course.studentCount
+                      ) || 0;
 
-                const percentage = Math.round(
-                  (students / maxStudents) * 100
-                );
+                    const percentage =
+                      Math.round(
+                        (students /
+                          maxStudents) *
+                          100
+                      );
 
-                return (
-                  <EnrollmentDomain
-                    key={course._id}
-                    course={course}
-                    index={index}
-                    students={students}
-                    percentage={percentage}
-                  />
-                );
-              })}
+                    return (
+                      <EnrollmentDomain
+                        key={course._id}
+                        course={course}
+                        index={index}
+                        students={
+                          students
+                        }
+                        percentage={
+                          percentage
+                        }
+                      />
+                    );
+                  }
+                )}
             </div>
           )}
         </PremiumPanel>
@@ -486,9 +855,13 @@ function InstructorDashboard() {
 // ============================================================
 
 function PremiumBackground() {
-  const particles = Array.from(
-    { length: 34 },
-    (_, index) => index
+  const particles = useMemo(
+    () =>
+      Array.from(
+        { length: 34 },
+        (_, index) => index
+      ),
+    []
   );
 
   return (
@@ -504,23 +877,30 @@ function PremiumBackground() {
       <div className="pointer-events-none fixed inset-0 opacity-[0.025] [background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 180 180%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%22.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%22.45%22/%3E%3C/svg%3E')]" />
 
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        {particles.map((particle) => (
-          <span
-            key={particle}
-            className="absolute h-[2px] w-[2px] rounded-full bg-[#ff8a2a]/60 shadow-[0_0_8px_rgba(251,146,60,0.5)]"
-            style={{
-              left: `${(particle * 29) % 100}%`,
-              top: `${(particle * 47) % 100}%`,
-              animation: `emberFloat ${
-                6 + (particle % 7)
-              }s ease-in-out ${
-                -(particle % 8)
-              }s infinite`,
-              opacity:
-                0.2 + (particle % 5) * 0.1,
-            }}
-          />
-        ))}
+        {particles.map(
+          (particle) => (
+            <span
+              key={particle}
+              className="absolute h-[2px] w-[2px] rounded-full bg-[#ff8a2a]/60 shadow-[0_0_8px_rgba(251,146,60,0.5)]"
+              style={{
+                left: `${
+                  (particle * 29) % 100
+                }%`,
+                top: `${
+                  (particle * 47) % 100
+                }%`,
+                animation: `emberFloat ${
+                  6 + (particle % 7)
+                }s ease-in-out ${
+                  -(particle % 8)
+                }s infinite`,
+                opacity:
+                  0.2 +
+                  (particle % 5) * 0.1,
+              }}
+            />
+          )
+        )}
       </div>
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 h-80 bg-gradient-to-t from-black via-black/20 to-transparent" />
@@ -600,7 +980,11 @@ function PremiumBackground() {
 // PREMIUM CURSOR
 // ============================================================
 
-function PremiumCursor({ x, y, visible }) {
+function PremiumCursor({
+  x,
+  y,
+  visible,
+}) {
   if (!visible) return null;
 
   return (
@@ -662,7 +1046,9 @@ function PremiumCursor({ x, y, visible }) {
 // HERO
 // ============================================================
 
-function PremiumHero({ firstName }) {
+function PremiumHero({
+  firstName,
+}) {
   return (
     <section className="warroom-panel warroom-float group relative overflow-hidden rounded-[30px] border border-[#ff6a00]/20 bg-[#090908]/90 shadow-[0_30px_120px_rgba(0,0,0,0.65)]">
 
@@ -721,6 +1107,7 @@ function PremiumHero({ firstName }) {
               primary
             >
               <Plus size={17} />
+
               Forge New Course
 
               <ArrowRight
@@ -776,7 +1163,8 @@ function MagneticButton({
   const buttonRef = useRef(null);
 
   const handleMove = (event) => {
-    const element = buttonRef.current;
+    const element =
+      buttonRef.current;
 
     if (!element) return;
 
@@ -794,7 +1182,9 @@ function MagneticButton({
       rect.height / 2;
 
     element.style.transform =
-      `translate(${x * 0.06}px, ${y * 0.06}px)`;
+      `translate(${x * 0.06}px, ${
+        y * 0.06
+      }px)`;
   };
 
   const reset = () => {
@@ -870,6 +1260,7 @@ function PremiumSigil() {
       <div className="absolute h-[190px] w-[190px] animate-[sigilPulse_5s_ease-in-out_infinite] rounded-full bg-[#ff6a00]/[0.025] blur-2xl" />
 
       <div className="relative flex h-36 w-36 flex-col items-center justify-center rounded-full border border-[#ff8a2a]/35 bg-[#0b0a07]/95 shadow-[inset_0_0_40px_rgba(249,115,22,0.04),0_0_60px_rgba(249,115,22,0.08)]">
+
         <Castle
           size={45}
           strokeWidth={1}
@@ -941,7 +1332,8 @@ function PremiumStatCard({
   };
 
   const theme =
-    accents[accent] || accents.gold;
+    accents[accent] ||
+    accents.gold;
 
   return (
     <div
@@ -1051,26 +1443,31 @@ function PremiumCourseCard({
   menuOpen,
   setOpenCourseMenu,
 }) {
-  const [tilt, setTilt] = useState({
-    x: 0,
-    y: 0,
-  });
+  const [tilt, setTilt] =
+    useState({
+      x: 0,
+      y: 0,
+    });
 
   const handleMove = (event) => {
     const rect =
       event.currentTarget.getBoundingClientRect();
 
     const x =
-      event.clientX - rect.left;
+      event.clientX -
+      rect.left;
 
     const y =
-      event.clientY - rect.top;
+      event.clientY -
+      rect.top;
 
     const rotateY =
-      ((x / rect.width) - 0.5) * 5;
+      ((x / rect.width) - 0.5) *
+      5;
 
     const rotateX =
-      ((y / rect.height) - 0.5) * -5;
+      ((y / rect.height) - 0.5) *
+      -5;
 
     setTilt({
       x: rotateX,
@@ -1110,7 +1507,12 @@ function PremiumCourseCard({
               course.courseThumbnail?.url ||
               "/placeholder-course.jpg"
             }
-            alt={course.courseTitle}
+            alt={
+              course.courseTitle ||
+              "Course"
+            }
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover opacity-75 transition duration-700 group-hover:scale-110 group-hover:opacity-100"
           />
 
@@ -1121,7 +1523,9 @@ function PremiumCourseCard({
 
             <span className="text-[8px] font-bold uppercase tracking-wider text-stone-300">
               Domain{" "}
-              {String(index + 1).padStart(2, "0")}
+              {String(
+                index + 1
+              ).padStart(2, "0")}
             </span>
           </div>
         </div>
@@ -1144,7 +1548,8 @@ function PremiumCourseCard({
                 )}
 
                 <span className="rounded-full border border-[#ff6a00]/10 bg-[#ff6a00]/[0.035] px-2 py-1 text-[8px] font-bold uppercase tracking-wider text-[#9b3417]">
-                  {course.courseLevel || "Course"}
+                  {course.courseLevel ||
+                    "Course"}
                 </span>
               </div>
             </div>
@@ -1167,7 +1572,9 @@ function PremiumCourseCard({
                 }
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-700 transition-all hover:bg-stone-900 hover:text-[#ff8a2a]"
               >
-                <MoreVertical size={17} />
+                <MoreVertical
+                  size={17}
+                />
               </button>
 
               {menuOpen && (
@@ -1175,38 +1582,58 @@ function PremiumCourseCard({
 
                   <MenuItem
                     to={`/courses/${course._id}`}
-                    icon={<Eye size={15} />}
+                    icon={
+                      <Eye size={15} />
+                    }
                     label="View Course"
                     onClick={() =>
-                      setOpenCourseMenu(null)
+                      setOpenCourseMenu(
+                        null
+                      )
                     }
                   />
 
                   <MenuItem
                     to={`/instructor/courses/edit/${course._id}`}
-                    icon={<Pencil size={15} />}
+                    icon={
+                      <Pencil
+                        size={15}
+                      />
+                    }
                     label="Edit Course"
                     onClick={() =>
-                      setOpenCourseMenu(null)
+                      setOpenCourseMenu(
+                        null
+                      )
                     }
                   />
 
                   <MenuItem
                     to={`/instructor/courses/${course._id}/lectures`}
-                    icon={<Video size={15} />}
+                    icon={
+                      <Video size={15} />
+                    }
                     label="Manage Lectures"
                     onClick={() =>
-                      setOpenCourseMenu(null)
+                      setOpenCourseMenu(
+                        null
+                      )
                     }
                   />
 
                   <MenuItem
                     to={`/instructor/courses/${course._id}/modules`}
-                    icon={<Layers size={15} />}
+                    icon={
+                      <Layers
+                        size={15}
+                      />
+                    }
                     label="Manage Modules + AI Quiz"
                     featured
                     onClick={() =>
-                      setOpenCourseMenu(null)
+                      setOpenCourseMenu(
+                        null
+                      )
                     }
                   />
                 </div>
@@ -1218,15 +1645,27 @@ function PremiumCourseCard({
 
           <div className="mt-4 flex flex-wrap items-center gap-5">
             <CourseMiniStat
-              icon={<Users size={13} />}
+              icon={
+                <Users size={13} />
+              }
               label="Students"
-              value={course.studentCount || 0}
+              value={
+                course.studentCount ||
+                0
+              }
             />
 
             <CourseMiniStat
-              icon={<IndianRupee size={13} />}
+              icon={
+                <IndianRupee
+                  size={13}
+                />
+              }
               label="Price"
-              value={course.coursePrice || 0}
+              value={
+                course.coursePrice ||
+                0
+              }
               currency
             />
 
@@ -1270,7 +1709,9 @@ function CourseMiniStat({
         </p>
 
         <p className="mt-0.5 text-[11px] font-semibold text-stone-400">
-          {currency ? `₹${value}` : value}
+          {currency
+            ? `₹${value}`
+            : value}
         </p>
       </div>
     </div>
@@ -1308,64 +1749,131 @@ function MenuItem({
 }
 
 // ============================================================
-// RECENT ENROLLMENT
+// PREMIUM STUDENT OATH
 // ============================================================
 
-function PremiumEnrollment({
-  enrollment,
+function PremiumStudentOath({
+  studentRecord,
   index,
 }) {
+  const student =
+    studentRecord?.student;
+
   const name =
-    enrollment.student?.name || "Student";
+    student?.name || "Student";
 
   const initial =
-    name.charAt(0).toUpperCase();
+    name.charAt(0).toUpperCase() ||
+    "S";
+
+  const courses =
+    studentRecord?.courses || [];
+
+  const courseCount =
+    courses.length;
+
+  const latestDate =
+    studentRecord?.latestEnrollmentDate;
+
+  const formattedDate =
+    latestDate
+      ? new Date(
+          latestDate
+        ).toLocaleDateString(
+          "en-IN",
+          {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }
+        )
+      : "Recently";
 
   return (
     <div
-      className="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 transition-all duration-300 hover:border-stone-800 hover:bg-white/[0.02] hover:-translate-y-0.5"
+      className="group relative overflow-hidden rounded-xl border border-transparent px-3 py-3.5 transition-all duration-300 hover:border-stone-800 hover:bg-white/[0.025]"
       style={{
         animation:
-          "fadeUp .6s ease-out both",
-        animationDelay:
-          `${index * 80}ms`,
+          "fadeUp .5s ease-out both",
+        animationDelay: `${index * 70}ms`,
       }}
     >
-      {enrollment.student?.avatar ? (
-        <img
-          src={enrollment.student.avatar}
-          alt={name}
-          className="h-10 w-10 shrink-0 rounded-full border border-stone-800 object-cover transition-all duration-300 group-hover:border-[#ff6a00]/30 group-hover:shadow-[0_0_20px_rgba(249,115,22,0.1)]"
-        />
-      ) : (
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#ff6a00]/15 bg-[#ff6a00]/[0.04] font-serif font-semibold text-[#d44a16] transition-all duration-300 group-hover:border-[#ff6a00]/30 group-hover:bg-[#ff6a00]/[0.08]">
-          {initial || "S"}
+      <div className="pointer-events-none absolute -right-10 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-[#ff6a00]/[0.035] opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
+
+      <div className="relative flex items-center gap-3">
+
+        {/* AVATAR */}
+
+        <div className="relative shrink-0">
+          {student?.avatar ? (
+            <img
+              src={student.avatar}
+              alt={name}
+              loading="lazy"
+              decoding="async"
+              className="h-10 w-10 rounded-full border border-stone-800 object-cover transition-all duration-300 group-hover:border-[#ff6a00]/30 group-hover:shadow-[0_0_20px_rgba(249,115,22,0.12)]"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ff6a00]/15 bg-[#ff6a00]/[0.045] font-serif text-sm font-semibold text-[#d44a16] transition-all duration-300 group-hover:border-[#ff6a00]/30 group-hover:bg-[#ff6a00]/[0.08]">
+              {initial}
+            </div>
+          )}
+
+          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#080808] bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]" />
         </div>
-      )}
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-semibold text-stone-400 transition-colors group-hover:text-stone-200">
-          {name}
-        </p>
+        {/* STUDENT INFO */}
 
-        <p className="mt-1 truncate text-[9px] text-stone-700">
-          {enrollment.course?.courseTitle ||
-            "Course"}
-        </p>
-      </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-xs font-semibold text-stone-300 transition-colors group-hover:text-stone-100">
+              {name}
+            </p>
 
-      <div className="text-right">
-        <p className="text-[8px] uppercase tracking-wider text-stone-800">
-          Joined
-        </p>
+            <span className="shrink-0 rounded-full border border-[#ff6a00]/15 bg-[#ff6a00]/[0.035] px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wider text-[#a84419]">
+              {courseCount}{" "}
+              {courseCount === 1
+                ? "Course"
+                : "Courses"}
+            </span>
+          </div>
 
-        <p className="mt-1 text-[9px] text-stone-600">
-          {enrollment.enrolledAt
-            ? new Date(
-                enrollment.enrolledAt
-              ).toLocaleDateString()
-            : ""}
-        </p>
+          <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+            <BookOpen
+              size={10}
+              className="shrink-0 text-stone-700"
+            />
+
+            <p className="truncate text-[9px] text-stone-600">
+              {courses.length > 0
+                ? courses
+                    .map(
+                      (course) =>
+                        course.courseTitle
+                    )
+                    .join(" • ")
+                : "Learning journey"}
+            </p>
+          </div>
+
+          <p className="mt-1 text-[8px] uppercase tracking-wider text-stone-800">
+            Last joined{" "}
+            {formattedDate}
+          </p>
+        </div>
+
+        {/* ACTION */}
+
+        <Link
+          to="/instructor/students"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-stone-800 transition-all duration-300 hover:border-[#ff6a00]/20 hover:bg-[#ff6a00]/[0.05] hover:text-[#ff8a2a]"
+          title={`View ${name}`}
+        >
+          <ChevronRight
+            size={15}
+            className="transition-transform duration-300 group-hover:translate-x-0.5"
+          />
+        </Link>
       </div>
     </div>
   );
@@ -1391,7 +1899,9 @@ function EnrollmentDomain({
           <div className="mb-2 flex items-center gap-2">
             <span className="text-[8px] font-bold uppercase tracking-[0.25em] text-stone-700">
               Domain{" "}
-              {String(index + 1).padStart(2, "0")}
+              {String(
+                index + 1
+              ).padStart(2, "0")}
             </span>
 
             <span className="h-1 w-1 rounded-full bg-[#67200f]" />
@@ -1430,9 +1940,13 @@ function EnrollmentDomain({
         </div>
 
         <div className="mt-3 flex justify-between text-[8px] uppercase tracking-wider text-stone-700">
-          <span>Realm Population</span>
+          <span>
+            Realm Population
+          </span>
 
-          <span>{percentage}% peak</span>
+          <span>
+            {percentage}% peak
+          </span>
         </div>
       </div>
     </div>
@@ -1499,6 +2013,38 @@ function PremiumQuickAction({
 }
 
 // ============================================================
+// EMPTY COURSE SEARCH
+// ============================================================
+
+function EmptyCourseSearch({
+  onClear,
+}) {
+  return (
+    <div className="flex min-h-[250px] flex-col items-center justify-center px-6 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full border border-stone-800 bg-stone-900/40 text-stone-700">
+        <BookOpen size={22} />
+      </div>
+
+      <h3 className="mt-4 font-serif text-lg font-semibold text-stone-300">
+        No Domains Found
+      </h3>
+
+      <p className="mt-2 max-w-sm text-xs leading-6 text-stone-700">
+        No course matches your current search.
+      </p>
+
+      <button
+        type="button"
+        onClick={onClear}
+        className="mt-5 rounded-xl border border-[#ff6a00]/20 bg-[#ff6a00]/[0.04] px-4 py-2.5 text-[9px] font-bold uppercase tracking-wider text-[#ff8a2a] transition-all hover:bg-[#ff6a00]/10"
+      >
+        Clear Search
+      </button>
+    </div>
+  );
+}
+
+// ============================================================
 // EMPTY STATES
 // ============================================================
 
@@ -1541,7 +2087,7 @@ function EmptyCourses() {
 
 function EmptyEnrollments() {
   return (
-    <div className="flex min-h-[330px] flex-col items-center justify-center px-6 text-center">
+    <div className="flex min-h-[280px] flex-col items-center justify-center px-6 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-full border border-stone-800 bg-stone-900/40 text-stone-700">
         <Shield size={24} />
       </div>
