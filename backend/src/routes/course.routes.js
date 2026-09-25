@@ -25,10 +25,11 @@ const router = express.Router();
 ========================================================= */
 
 router.post(
-    "/create",
-    isAuthenticated,
-    authorizeRoles("instructor"),
-    createCourse
+  "/create",
+  isAuthenticated,
+  authorizeRoles("instructor"),
+  upload.single("courseThumbnail"),
+  createCourse
 );
 
 
