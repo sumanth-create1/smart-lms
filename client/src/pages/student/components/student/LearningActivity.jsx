@@ -1,8 +1,4 @@
-import {
-  memo,
-  useCallback,
-  useMemo,
-} from "react";
+import { memo, useMemo } from "react";
 
 import {
   BarChart3,
@@ -24,171 +20,94 @@ import {
 // CONSTANTS
 // =====================================================
 
-const EMPTY_ACTIVITY = [];
+const EMPTY_ACTIVITY = Object.freeze([]);
 
 const BAR_HEIGHTS = [40, 65, 30, 80, 55, 70, 45];
 
 // =====================================================
-// ANIMATION STYLES
+// STATIC STYLES
 // =====================================================
 
 const ACTIVITY_STYLES = `
-  @keyframes activityIconFloat {
+  @keyframes activityFloat {
     0%, 100% {
-      transform: translateY(0) rotate(0deg);
+      transform: translate3d(0, 0, 0);
     }
-
     50% {
-      transform: translateY(-4px) rotate(1deg);
+      transform: translate3d(0, -4px, 0);
     }
   }
 
-  @keyframes activityFloatIcon {
-    0%, 100% {
-      transform: translateY(0);
-    }
-
-    50% {
-      transform: translateY(-7px);
-    }
-  }
-
-  @keyframes activitySwordFloat {
-    0%, 100% {
-      transform: translateY(0) rotate(-20deg);
-    }
-
-    50% {
-      transform: translateY(-5px) rotate(-12deg);
-    }
-  }
-
-  @keyframes activityCrownFloat {
-    0%, 100% {
-      transform: translateY(0) rotate(0deg);
-    }
-
-    50% {
-      transform: translateY(-5px) rotate(3deg);
-    }
-  }
-
-  @keyframes activityShieldPulse {
+  @keyframes activityFlame {
     0%, 100% {
       transform: scale(1);
-      opacity: .45;
+      opacity: .75;
     }
 
     50% {
-      transform: scale(1.12);
-      opacity: .8;
-    }
-  }
-
-  @keyframes activityFlameFlicker {
-    0%, 100% {
-      transform: scale(1) rotate(-2deg);
-      opacity: .8;
-    }
-
-    25% {
-      transform: scale(1.08) rotate(2deg);
+      transform: scale(1.06);
       opacity: 1;
     }
+  }
 
-    50% {
-      transform: scale(.94) rotate(-3deg);
-      opacity: .7;
+  @keyframes activityCrown {
+    0%, 100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
     }
 
-    75% {
-      transform: scale(1.05) rotate(3deg);
-      opacity: .95;
+    50% {
+      transform: translate3d(0, -3px, 0) rotate(2deg);
     }
   }
 
-  @keyframes activityEmberFloat {
+  @keyframes activitySnow {
     0% {
-      transform: translateY(0) translateX(0);
+      transform: translate3d(0, -15px, 0);
       opacity: 0;
     }
 
     20% {
-      opacity: .7;
-    }
-
-    50% {
-      transform: translateY(-25px) translateX(8px);
       opacity: .5;
     }
 
-    80% {
-      opacity: .3;
-    }
-
     100% {
-      transform: translateY(-55px) translateX(-5px);
+      transform: translate3d(8px, 120px, 0);
       opacity: 0;
     }
   }
 
-  @keyframes activitySnowFall {
+  @keyframes activityEmber {
     0% {
-      transform: translateY(-20px) translateX(0);
+      transform: translate3d(0, 0, 0);
       opacity: 0;
     }
 
-    15% {
-      opacity: .7;
-    }
-
-    50% {
-      transform: translateY(90px) translateX(15px);
+    20% {
       opacity: .5;
     }
 
     100% {
-      transform: translateY(190px) translateX(-10px);
+      transform: translate3d(5px, -45px, 0);
       opacity: 0;
     }
   }
 
-  @keyframes activityFogDrift {
+  @keyframes activityFog {
     0%, 100% {
-      transform: translateX(-5%);
-      opacity: .25;
+      transform: translate3d(-3%, 0, 0);
+      opacity: .2;
     }
 
     50% {
-      transform: translateX(5%);
-      opacity: .55;
-    }
-  }
-
-  @keyframes activityMoonPulse {
-    0%, 100% {
-      transform: scale(1);
-      opacity: .7;
-    }
-
-    50% {
-      transform: scale(1.04);
-      opacity: 1;
-    }
-  }
-
-  @keyframes activityFeatherFloat {
-    0%, 100% {
-      transform: translateY(0) rotate(-10deg);
-    }
-
-    50% {
-      transform: translateY(-10px) rotate(8deg);
+      transform: translate3d(3%, 0, 0);
+      opacity: .35;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .learning-activity-motion {
+    .learning-activity-motion,
+    .learning-activity-motion::before,
+    .learning-activity-motion::after {
       animation: none !important;
       transition: none !important;
     }
@@ -202,24 +121,16 @@ const ACTIVITY_STYLES = `
 const getSafeNumber = (value, fallback = 0) => {
   const number = Number(value);
 
-  return Number.isFinite(number)
-    ? number
-    : fallback;
+  return Number.isFinite(number) ? number : fallback;
 };
 
 const getHours = (item = {}) => {
   if (item.hours != null) {
-    return Math.max(
-      getSafeNumber(item.hours),
-      0
-    );
+    return Math.max(getSafeNumber(item.hours), 0);
   }
 
   if (item.minutes != null) {
-    return Math.max(
-      getSafeNumber(item.minutes) / 60,
-      0
-    );
+    return Math.max(getSafeNumber(item.minutes) / 60, 0);
   }
 
   if (item.durationSeconds != null) {
@@ -244,15 +155,15 @@ const getHours = (item = {}) => {
 // =====================================================
 
 const normalizeActivity = (activity) => {
-  if (!Array.isArray(activity)) {
+  if (!Array.isArray(activity) || activity.length === 0) {
     return EMPTY_ACTIVITY;
   }
 
   return activity.map((item) => ({
     day:
-      item?.day ||
-      item?.label ||
-      item?.name ||
+      item?.day ??
+      item?.label ??
+      item?.name ??
       "",
 
     hours: getHours(item),
@@ -275,11 +186,10 @@ const ActivityLoading = memo(() => {
         border-slate-700/50
         bg-[#07090b]
         shadow-2xl
-        shadow-black/60
+        shadow-black/50
       "
     >
-      {/* BACKGROUND */}
-
+      {/* STATIC BACKGROUND */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="
@@ -295,27 +205,26 @@ const ActivityLoading = memo(() => {
         <div
           className="
             absolute
-            right-[-60px]
-            top-[-70px]
-            h-56
-            w-56
-            animate-pulse
+            right-[-50px]
+            top-[-60px]
+            h-48
+            w-48
             rounded-full
-            bg-slate-200/[0.035]
-            blur-[45px]
+            bg-slate-200/[0.025]
+            blur-[40px]
           "
         />
 
         <div
           className="
             absolute
-            bottom-[-100px]
-            left-[-100px]
-            h-72
-            w-72
+            bottom-[-80px]
+            left-[-80px]
+            h-56
+            w-56
             rounded-full
-            bg-amber-600/[0.04]
-            blur-[90px]
+            bg-amber-600/[0.035]
+            blur-[70px]
           "
         />
 
@@ -323,30 +232,14 @@ const ActivityLoading = memo(() => {
           className="
             absolute
             inset-0
-            opacity-[0.04]
+            opacity-[0.035]
             [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%)]
             [background-size:24px_24px]
-          "
-        />
-
-        <div
-          className="
-            learning-activity-motion
-            absolute
-            bottom-0
-            left-[-20%]
-            h-24
-            w-[140%]
-            animate-[activityFogDrift_12s_ease-in-out_infinite]
-            rounded-full
-            bg-slate-200/[0.025]
-            blur-3xl
           "
         />
       </div>
 
       <div className="relative z-10">
-
         {/* HEADER */}
 
         <div
@@ -373,7 +266,6 @@ const ActivityLoading = memo(() => {
         {/* CONTENT */}
 
         <div className="p-5 sm:p-6">
-
           <div className="mb-7 flex items-end justify-between">
             <div>
               <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
@@ -385,9 +277,9 @@ const ActivityLoading = memo(() => {
           </div>
 
           <div className="flex h-56 items-end gap-2 sm:gap-4">
-            {BAR_HEIGHTS.map((height) => (
+            {BAR_HEIGHTS.map((height, index) => (
               <div
-                key={height}
+                key={`${height}-${index}`}
                 className="
                   flex
                   h-full
@@ -447,7 +339,7 @@ const EmptyActivity = memo(() => {
         text-center
       "
     >
-      {/* MOON */}
+      {/* STATIC MOON */}
 
       <div
         className="
@@ -458,8 +350,8 @@ const EmptyActivity = memo(() => {
           h-14
           w-14
           rounded-full
-          bg-slate-200/[0.035]
-          shadow-[0_0_40px_rgba(186,230,253,0.06)]
+          bg-slate-200/[0.03]
+          shadow-[0_0_30px_rgba(186,230,253,0.04)]
         "
       >
         <Moon
@@ -475,7 +367,7 @@ const EmptyActivity = memo(() => {
         />
       </div>
 
-      {/* FLAME */}
+      {/* DECORATIVE ICONS */}
 
       <Flame
         size={20}
@@ -484,50 +376,39 @@ const EmptyActivity = memo(() => {
           absolute
           left-8
           top-8
-          animate-[activityFlameFlicker_1.8s_ease-in-out_infinite]
+          animate-[activityFlame_2.4s_ease-in-out_infinite]
           text-amber-500/20
         "
       />
 
-      {/* SWORD */}
-
       <Sword
         size={22}
         className="
-          learning-activity-motion
           absolute
           bottom-8
           right-8
           rotate-[-20deg]
-          animate-[activitySwordFloat_4s_ease-in-out_infinite]
           text-slate-300/20
         "
       />
 
-      {/* FEATHER */}
-
       <Feather
         size={18}
         className="
-          learning-activity-motion
           absolute
           bottom-12
           left-20
-          animate-[activityFeatherFloat_6s_ease-in-out_infinite]
+          rotate-[-10deg]
           text-sky-300/20
         "
       />
 
-      {/* SPARKLES */}
-
       <Sparkles
         size={16}
         className="
-          learning-activity-motion
           absolute
           right-20
           top-12
-          animate-pulse
           text-amber-400/20
         "
       />
@@ -541,30 +422,26 @@ const EmptyActivity = memo(() => {
           flex
           h-14
           w-14
-          animate-[activityFloatIcon_4s_ease-in-out_infinite]
+          animate-[activityFloat_4s_ease-in-out_infinite]
           items-center
           justify-center
           rounded-2xl
           border
           border-amber-500/20
           bg-amber-500/[0.07]
-          shadow-[0_0_35px_rgba(245,158,11,0.06)]
+          shadow-[0_0_25px_rgba(245,158,11,0.05)]
         "
       >
         <Shield
           size={24}
-          className="
-            text-amber-400
-            drop-shadow-[0_0_9px_rgba(245,158,11,0.45)]
-          "
+          className="text-amber-400"
         />
 
+        {/* STATIC RING */}
         <div
           className="
-            learning-activity-motion
             absolute
             inset-0
-            animate-ping
             rounded-2xl
             border
             border-amber-500/[0.08]
@@ -591,20 +468,12 @@ EmptyActivity.displayName = "EmptyActivity";
 // =====================================================
 
 const ActivityBar = memo(
-  ({
-    item,
-    index,
-    maxHours,
-    strongestDay,
-  }) => {
+  ({ item, maxHours, strongestDay }) => {
     const hours = item.hours;
 
     const height =
       hours > 0
-        ? Math.max(
-            (hours / maxHours) * 100,
-            5
-          )
+        ? Math.max((hours / maxHours) * 100, 5)
         : 2;
 
     const isStrongest =
@@ -635,24 +504,19 @@ const ActivityBar = memo(
             items-center
             justify-center
             transition-opacity
-            duration-500
-            ${
-              isStrongest
-                ? "opacity-100"
-                : "opacity-0"
-            }
+            duration-300
+            ${isStrongest ? "opacity-100" : "opacity-0"}
           `}
         >
           <Crown
             size={14}
             className={`
+              text-amber-400
               ${
                 isStrongest
-                  ? "learning-activity-motion animate-[activityCrownFloat_2.5s_ease-in-out_infinite]"
+                  ? "learning-activity-motion animate-[activityCrown_3s_ease-in-out_infinite]"
                   : ""
               }
-              text-amber-400
-              drop-shadow-[0_0_7px_rgba(245,158,11,0.8)]
             `}
             fill="currentColor"
           />
@@ -668,7 +532,7 @@ const ActivityBar = memo(
             font-semibold
             text-slate-500
             transition-colors
-            duration-300
+            duration-200
             group-hover/bar:text-slate-200
           "
         >
@@ -691,7 +555,7 @@ const ActivityBar = memo(
             border-white/[0.05]
             bg-white/[0.02]
             transition-[border-color]
-            duration-300
+            duration-200
             group-hover/bar:border-amber-700/40
           "
         >
@@ -699,15 +563,16 @@ const ActivityBar = memo(
 
           <div
             className="
+              pointer-events-none
               absolute
               inset-0
-              opacity-30
+              opacity-25
               [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%)]
               [background-size:9px_9px]
             "
           />
 
-          {/* ACTUAL BAR */}
+          {/* BAR */}
 
           <div
             className={`
@@ -718,15 +583,9 @@ const ActivityBar = memo(
               from-[#15191c]
               via-[#37434a]
               to-amber-400
-              shadow-lg
-              transition-[height,box-shadow]
-              duration-1000
+              transition-[height]
+              duration-700
               ease-out
-              ${
-                isStrongest
-                  ? "shadow-amber-500/40"
-                  : "shadow-black/40"
-              }
             `}
             style={{
               height: `${height}%`,
@@ -741,43 +600,26 @@ const ActivityBar = memo(
                 right-0
                 top-0
                 h-px
-                bg-amber-300/90
-                shadow-[0_0_8px_rgba(252,211,77,0.8)]
+                bg-amber-300/80
               "
             />
 
-            {/* SHINE */}
+            {/* HOVER SHINE */}
 
             <div
               className="
+                pointer-events-none
                 absolute
-                left-0
+                inset-x-0
                 top-0
-                h-full
-                w-full
+                h-1/2
                 -translate-y-full
                 bg-gradient-to-b
-                from-white/20
-                via-transparent
+                from-white/15
                 to-transparent
                 transition-transform
-                duration-700
-                group-hover/bar:translate-y-full
-              "
-            />
-
-            {/* ICE HIGHLIGHT */}
-
-            <div
-              className="
-                absolute
-                bottom-0
-                left-1/2
-                h-1/2
-                w-px
-                -translate-x-1/2
-                bg-sky-300/20
-                blur-sm
+                duration-500
+                group-hover/bar:translate-y-0
               "
             />
           </div>
@@ -793,7 +635,7 @@ const ActivityBar = memo(
             font-semibold
             text-slate-500
             transition-colors
-            duration-300
+            duration-200
             group-hover/bar:text-slate-200
           "
         >
@@ -816,7 +658,7 @@ const LearningActivity = memo(
     loading = false,
   }) => {
     // =================================================
-    // NORMALIZE ONLY WHEN ACTIVITY CHANGES
+    // NORMALIZE
     // =================================================
 
     const normalizedActivity = useMemo(
@@ -825,7 +667,7 @@ const LearningActivity = memo(
     );
 
     // =================================================
-    // ALL STATISTICS IN ONE PASS
+    // STATISTICS
     // =================================================
 
     const statistics = useMemo(() => {
@@ -874,10 +716,6 @@ const LearningActivity = memo(
       };
     }, [normalizedActivity]);
 
-    // =================================================
-    // DESTRUCTURE
-    // =================================================
-
     const {
       totalHours,
       activeDays,
@@ -910,20 +748,18 @@ const LearningActivity = memo(
           border-slate-700/50
           bg-[#07090b]
           shadow-2xl
-          shadow-black/60
-          transition-[transform,border-color,box-shadow]
-          duration-500
+          shadow-black/50
+          transition-[transform,border-color]
+          duration-300
           hover:-translate-y-1
           hover:border-amber-700/40
-          hover:shadow-[0_30px_90px_rgba(0,0,0,0.65)]
         "
       >
         {/* =================================================
-            CINEMATIC BACKGROUND
+            BACKGROUND
         ================================================= */}
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-
           {/* BASE */}
 
           <div
@@ -941,28 +777,16 @@ const LearningActivity = memo(
 
           <div
             className="
-              learning-activity-motion
               absolute
               right-[7%]
               top-[7%]
-              h-24
-              w-24
-              animate-[activityMoonPulse_7s_ease-in-out_infinite]
+              h-20
+              w-20
               rounded-full
-              bg-slate-200/[0.035]
-              shadow-[0_0_70px_rgba(186,230,253,0.06)]
+              bg-slate-200/[0.03]
+              shadow-[0_0_45px_rgba(186,230,253,0.04)]
             "
-          >
-            <div
-              className="
-                absolute
-                inset-3
-                rounded-full
-                border
-                border-slate-300/[0.04]
-              "
-            />
-          </div>
+          />
 
           {/* CASTLE */}
 
@@ -973,27 +797,23 @@ const LearningActivity = memo(
               left-0
               h-24
               w-full
-              opacity-[0.16]
+              opacity-[0.12]
             "
           >
-            <div className="absolute bottom-0 left-[5%] h-16 w-20 border-x border-t border-slate-500/20" />
+            <div className="absolute bottom-0 left-[7%] h-16 w-20 border-x border-t border-slate-500/20" />
 
-            <div className="absolute bottom-0 left-[12%] h-24 w-7 border-x border-t border-slate-500/20" />
+            <div className="absolute bottom-0 left-[16%] h-24 w-7 border-x border-t border-slate-500/20" />
 
-            <div className="absolute bottom-0 left-[18%] h-14 w-12 border-x border-t border-slate-500/20" />
-
-            <div className="absolute bottom-0 right-[12%] h-20 w-9 border-x border-t border-slate-500/20" />
-
-            <div className="absolute bottom-0 right-[5%] h-14 w-16 border-x border-t border-slate-500/20" />
+            <div className="absolute bottom-0 right-[14%] h-20 w-9 border-x border-t border-slate-500/20" />
 
             <Castle
-              size={75}
+              size={70}
               className="
                 absolute
                 bottom-[-5px]
                 left-1/2
                 -translate-x-1/2
-                text-slate-400/[0.08]
+                text-slate-400/[0.07]
               "
             />
           </div>
@@ -1007,11 +827,11 @@ const LearningActivity = memo(
               left-[-5%]
               h-20
               w-[110%]
-              opacity-[0.07]
+              opacity-[0.05]
             "
           >
             <Mountain
-              size={180}
+              size={160}
               className="
                 absolute
                 bottom-[-45px]
@@ -1020,7 +840,7 @@ const LearningActivity = memo(
             />
 
             <Mountain
-              size={150}
+              size={140}
               className="
                 absolute
                 bottom-[-50px]
@@ -1029,40 +849,31 @@ const LearningActivity = memo(
             />
           </div>
 
-          {/* GOLD GLOW */}
+          {/* STATIC GLOWS */}
 
           <div
             className="
               absolute
-              -bottom-28
-              -left-28
-              h-80
-              w-80
+              -bottom-24
+              -left-24
+              h-72
+              w-72
               rounded-full
-              bg-amber-700/[0.07]
-              blur-[100px]
-              transition-[transform,background-color]
-              duration-1000
-              group-hover:scale-125
-              group-hover:bg-amber-600/[0.11]
+              bg-amber-700/[0.05]
+              blur-[75px]
             "
           />
 
-          {/* ICE GLOW */}
-
           <div
             className="
               absolute
-              -right-28
-              -top-28
-              h-80
-              w-80
+              -right-24
+              -top-24
+              h-72
+              w-72
               rounded-full
-              bg-sky-800/[0.08]
-              blur-[110px]
-              transition-transform
-              duration-1000
-              group-hover:scale-125
+              bg-sky-800/[0.055]
+              blur-[80px]
             "
           />
 
@@ -1072,66 +883,72 @@ const LearningActivity = memo(
             className="
               absolute
               inset-0
-              opacity-[0.045]
+              opacity-[0.035]
               [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%),linear-gradient(45deg,transparent_45%,white_46%,transparent_47%)]
               [background-size:25px_25px]
             "
           />
 
-          {/* FOG */}
+          {/* ONE FOG LAYER */}
 
           <div
             className="
               learning-activity-motion
               absolute
               bottom-[-20px]
-              left-[-20%]
-              h-28
-              w-[140%]
-              animate-[activityFogDrift_14s_ease-in-out_infinite]
+              left-[-15%]
+              h-24
+              w-[130%]
+              animate-[activityFog_18s_ease-in-out_infinite]
               rounded-[50%]
-              bg-slate-300/[0.025]
-              blur-3xl
+              bg-slate-300/[0.02]
+              blur-2xl
             "
           />
 
-          {/* SNOW */}
+          {/* REDUCED SNOW */}
 
-          <span className="learning-activity-motion absolute left-[8%] top-[18%] h-1 w-1 animate-[activitySnowFall_8s_linear_infinite] rounded-full bg-sky-100/40" />
-
-          <span className="learning-activity-motion absolute left-[22%] top-[8%] h-1 w-1 animate-[activitySnowFall_11s_linear_infinite_1s] rounded-full bg-white/30" />
-
-          <span className="learning-activity-motion absolute left-[40%] top-[25%] h-1.5 w-1.5 animate-[activitySnowFall_9s_linear_infinite_2s] rounded-full bg-sky-100/30" />
-
-          <span className="learning-activity-motion absolute right-[28%] top-[12%] h-1 w-1 animate-[activitySnowFall_10s_linear_infinite_1.5s] rounded-full bg-white/35" />
-
-          <span className="learning-activity-motion absolute right-[12%] top-[30%] h-1.5 w-1.5 animate-[activitySnowFall_12s_linear_infinite_3s] rounded-full bg-sky-100/30" />
-
-          {/* EMBERS */}
-
-          <span className="learning-activity-motion absolute bottom-[20%] left-[15%] h-1 w-1 animate-[activityEmberFloat_5s_ease-in-out_infinite] rounded-full bg-amber-400/60" />
-
-          <span className="learning-activity-motion absolute bottom-[18%] left-[32%] h-1.5 w-1.5 animate-[activityEmberFloat_6s_ease-in-out_infinite_1s] rounded-full bg-amber-300/50" />
-
-          <span className="learning-activity-motion absolute bottom-[25%] right-[18%] h-1 w-1 animate-[activityEmberFloat_7s_ease-in-out_infinite_2s] rounded-full bg-orange-400/50" />
-
-          {/* LIGHT SWEEP */}
-
-          <div
+          <span
             className="
+              learning-activity-motion
               absolute
-              left-[-30%]
-              top-0
-              h-full
-              w-[25%]
-              -skew-x-12
-              bg-gradient-to-r
-              from-transparent
-              via-amber-300/[0.025]
-              to-transparent
-              transition-[left]
-              duration-[1800ms]
-              group-hover:left-[120%]
+              left-[18%]
+              top-[8%]
+              h-1
+              w-1
+              animate-[activitySnow_10s_linear_infinite]
+              rounded-full
+              bg-sky-100/30
+            "
+          />
+
+          <span
+            className="
+              learning-activity-motion
+              absolute
+              right-[20%]
+              top-[15%]
+              h-1
+              w-1
+              animate-[activitySnow_12s_linear_infinite_2s]
+              rounded-full
+              bg-white/25
+            "
+          />
+
+          {/* ONE EMBER */}
+
+          <span
+            className="
+              learning-activity-motion
+              absolute
+              bottom-[20%]
+              left-[25%]
+              h-1
+              w-1
+              animate-[activityEmber_7s_ease-in-out_infinite]
+              rounded-full
+              bg-amber-400/50
             "
           />
         </div>
@@ -1155,7 +972,6 @@ const LearningActivity = memo(
           "
         >
           <div className="flex items-center gap-3">
-
             <div
               className="
                 learning-activity-motion
@@ -1163,28 +979,25 @@ const LearningActivity = memo(
                 flex
                 h-11
                 w-11
-                animate-[activityIconFloat_4s_ease-in-out_infinite]
+                animate-[activityFloat_4s_ease-in-out_infinite]
                 items-center
                 justify-center
                 rounded-xl
                 border
                 border-amber-500/20
                 bg-amber-500/[0.07]
-                shadow-[0_0_30px_rgba(245,158,11,0.07)]
                 transition-[transform,border-color]
-                duration-300
-                group-hover:scale-110
+                duration-200
+                group-hover:scale-105
                 group-hover:border-amber-500/40
               "
             >
               <BarChart3
                 size={19}
-                className="
-                  text-amber-400
-                  drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]
-                "
+                className="text-amber-400"
               />
 
+              {/* STATIC DOT */}
               <span
                 className="
                   absolute
@@ -1192,17 +1005,14 @@ const LearningActivity = memo(
                   -top-1
                   h-2
                   w-2
-                  animate-pulse
                   rounded-full
                   bg-amber-400
-                  shadow-[0_0_10px_rgba(245,158,11,0.9)]
                 "
               />
             </div>
 
             <div>
               <div className="flex items-center gap-2">
-
                 <h2
                   className="
                     m-0
@@ -1219,13 +1029,7 @@ const LearningActivity = memo(
 
                 <Swords
                   size={13}
-                  className="
-                    learning-activity-motion
-                    hidden
-                    animate-[activitySwordFloat_4s_ease-in-out_infinite]
-                    text-slate-400/60
-                    sm:block
-                  "
+                  className="hidden text-slate-400/50 sm:block"
                 />
               </div>
 
@@ -1246,7 +1050,7 @@ const LearningActivity = memo(
             </div>
           </div>
 
-          {/* REALM STATUS */}
+          {/* STATUS */}
 
           <div
             className="
@@ -1259,7 +1063,6 @@ const LearningActivity = memo(
               bg-amber-500/[0.06]
               px-3
               py-1.5
-              shadow-[0_0_20px_rgba(245,158,11,0.06)]
               sm:flex
             "
           >
@@ -1267,9 +1070,8 @@ const LearningActivity = memo(
               size={13}
               className="
                 learning-activity-motion
-                animate-[activityFlameFlicker_1.4s_ease-in-out_infinite]
+                animate-[activityFlame_2.5s_ease-in-out_infinite]
                 text-amber-400
-                drop-shadow-[0_0_6px_rgba(245,158,11,0.7)]
               "
             />
 
@@ -1292,7 +1094,6 @@ const LearningActivity = memo(
         ================================================= */}
 
         <div className="relative z-10 p-5 sm:p-6">
-
           {/* SUMMARY */}
 
           <div
@@ -1307,17 +1108,10 @@ const LearningActivity = memo(
             "
           >
             <div>
-
               <div className="flex items-center gap-2">
-
                 <Sword
                   size={14}
-                  className="
-                    learning-activity-motion
-                    animate-[activitySwordFloat_3.5s_ease-in-out_infinite]
-                    text-sky-400/70
-                    drop-shadow-[0_0_7px_rgba(56,189,248,0.5)]
-                  "
+                  className="text-sky-400/70"
                 />
 
                 <p
@@ -1335,14 +1129,12 @@ const LearningActivity = memo(
               </div>
 
               <div className="mt-1 flex items-baseline gap-2">
-
                 <span
                   className="
                     text-4xl
                     font-black
                     tracking-tight
                     text-white
-                    drop-shadow-[0_0_15px_rgba(255,255,255,0.08)]
                   "
                 >
                   {totalHours.toFixed(1)}
@@ -1363,7 +1155,6 @@ const LearningActivity = memo(
             {/* STATS */}
 
             <div className="flex flex-wrap gap-2">
-
               <div
                 className="
                   group/stat
@@ -1380,18 +1171,11 @@ const LearningActivity = memo(
                   font-semibold
                   text-sky-400
                   transition-transform
-                  duration-300
+                  duration-200
                   hover:scale-105
                 "
               >
-                <Clock3
-                  size={13}
-                  className="
-                    transition-transform
-                    duration-300
-                    group-hover/stat:rotate-12
-                  "
-                />
+                <Clock3 size={13} />
 
                 <span>
                   {activeDays}{" "}
@@ -1418,18 +1202,11 @@ const LearningActivity = memo(
                     font-semibold
                     text-amber-400
                     transition-transform
-                    duration-300
+                    duration-200
                     hover:scale-105
                   "
                 >
-                  <TrendingUp
-                    size={13}
-                    className="
-                      transition-transform
-                      duration-300
-                      group-hover/stat:-translate-y-0.5
-                    "
-                  />
+                  <TrendingUp size={13} />
 
                   <span>
                     {averageHours.toFixed(1)}h/day
@@ -1439,7 +1216,9 @@ const LearningActivity = memo(
             </div>
           </div>
 
-          {/* EMPTY / CHART */}
+          {/* =================================================
+              EMPTY / CHART
+          ================================================= */}
 
           {normalizedActivity.length === 0 ? (
             <EmptyActivity />
@@ -1448,7 +1227,6 @@ const LearningActivity = memo(
               {/* CHART */}
 
               <div className="w-full">
-
                 <div
                   className="
                     flex
@@ -1463,7 +1241,6 @@ const LearningActivity = memo(
                       <ActivityBar
                         key={`${item.day}-${index}`}
                         item={item}
-                        index={index}
                         maxHours={maxHours}
                         strongestDay={strongestDay}
                       />
@@ -1494,24 +1271,28 @@ const LearningActivity = memo(
                       to-transparent
                       p-4
                       transition-[border-color]
-                      duration-300
+                      duration-200
                       hover:border-amber-500/30
                     "
                   >
+                    {/* STATIC GLOW */}
+
                     <div
                       className="
+                        pointer-events-none
                         absolute
                         -right-10
                         top-1/2
-                        h-24
-                        w-24
+                        h-20
+                        w-20
                         -translate-y-1/2
-                        animate-pulse
                         rounded-full
-                        bg-amber-500/[0.05]
-                        blur-2xl
+                        bg-amber-500/[0.045]
+                        blur-xl
                       "
                     />
+
+                    {/* CROWN */}
 
                     <div
                       className="
@@ -1521,39 +1302,33 @@ const LearningActivity = memo(
                         h-11
                         w-11
                         shrink-0
-                        animate-[activityCrownFloat_3s_ease-in-out_infinite]
+                        animate-[activityCrown_3.5s_ease-in-out_infinite]
                         items-center
                         justify-center
                         rounded-xl
                         border
                         border-amber-500/20
                         bg-amber-500/[0.07]
-                        shadow-[0_0_25px_rgba(245,158,11,0.08)]
                       "
                     >
                       <Crown
                         size={21}
-                        className="
-                          text-amber-400
-                          drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]
-                        "
+                        className="text-amber-400"
                         fill="currentColor"
                       />
 
                       <Sparkles
-                        size={10}
+                        size={9}
                         className="
                           absolute
                           -right-1
                           -top-1
-                          animate-ping
                           text-amber-300
                         "
                       />
                     </div>
 
                     <div className="min-w-0 flex-1">
-
                       <p
                         className="
                           m-0
@@ -1574,45 +1349,29 @@ const LearningActivity = memo(
                           text-slate-500
                         "
                       >
-                        Your strongest learning battle —
-                        {" "}
-                        {strongestDay.hours.toFixed(1)}
-                        {" "}
+                        Your strongest learning battle —{" "}
+                        {strongestDay.hours.toFixed(1)}{" "}
                         hours of study.
                       </p>
                     </div>
 
-                    <div className="relative hidden sm:block">
-
-                      <Shield
-                        size={21}
-                        className="
-                          learning-activity-motion
-                          animate-[activityShieldPulse_3s_ease-in-out_infinite]
-                          text-slate-300/40
-                        "
-                      />
-
-                      <div
-                        className="
-                          absolute
-                          inset-0
-                          animate-ping
-                          rounded-full
-                          bg-amber-500/[0.07]
-                        "
-                      />
-                    </div>
+                    <Shield
+                      size={21}
+                      className="hidden text-slate-300/30 sm:block"
+                    />
                   </div>
                 )}
             </>
           )}
         </div>
 
-        {/* FOOTER */}
+        {/* =================================================
+            FOOTER
+        ================================================= */}
 
         <div
           className="
+            pointer-events-none
             absolute
             bottom-0
             left-0
@@ -1622,23 +1381,7 @@ const LearningActivity = memo(
             from-transparent
             via-amber-700
             to-transparent
-            opacity-70
-          "
-        />
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            bottom-0
-            left-[-20%]
-            h-px
-            w-[20%]
-            bg-amber-300
-            shadow-[0_0_12px_rgba(245,158,11,0.8)]
-            transition-[left]
-            duration-[1600ms]
-            group-hover:left-[100%]
+            opacity-60
           "
         />
 
@@ -1651,4 +1394,3 @@ const LearningActivity = memo(
 LearningActivity.displayName = "LearningActivity";
 
 export default LearningActivity;
-

@@ -19,7 +19,6 @@ const router = express.Router();
 // INSTRUCTOR
 // =====================================================
 
-// Create a normal/manual quiz
 router.post(
   "/module/:moduleId/quiz",
   isAuthenticated,
@@ -27,7 +26,6 @@ router.post(
   createQuiz
 );
 
-// Generate AI quiz for a module
 router.post(
   "/module/:moduleId/quiz/generate",
   isAuthenticated,
@@ -39,14 +37,12 @@ router.post(
 // STUDENT
 // =====================================================
 
-// Get module quiz
 router.get(
   "/module/:moduleId/quiz",
   isAuthenticated,
   getModuleQuiz
 );
 
-// Submit quiz
 router.post(
   "/quiz/:quizId/submit",
   isAuthenticated,
@@ -54,7 +50,6 @@ router.post(
   submitQuiz
 );
 
-// Get student's latest attempt
 router.get(
   "/quiz/:quizId/my-attempt",
   isAuthenticated,

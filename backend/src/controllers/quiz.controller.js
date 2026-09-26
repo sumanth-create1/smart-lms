@@ -14,11 +14,7 @@ export const createQuiz = async (req, res) => {
   try {
     const { moduleId } = req.params;
 
-    const {
-      title,
-      questions,
-      passingScore = 70,
-    } = req.body;
+    const { title, questions, passingScore = 70 } = req.body;
 
     // -------------------------------------------------
     // Validate module
@@ -56,8 +52,7 @@ export const createQuiz = async (req, res) => {
     ) {
       return res.status(403).json({
         success: false,
-        message:
-          "You are not authorized to create a quiz for this course",
+        message: "You are not authorized to create a quiz for this course",
       });
     }
 
@@ -90,8 +85,7 @@ export const createQuiz = async (req, res) => {
       if (!question.options.includes(question.correctAnswer)) {
         return res.status(400).json({
           success: false,
-          message:
-            "Correct answer must match one of the provided options",
+          message: "Correct answer must match one of the provided options",
         });
       }
     }
@@ -150,9 +144,7 @@ export const generateAIQuiz = async (req, res) => {
   try {
     const { moduleId } = req.params;
 
-    const {
-      numberOfQuestions = 10,
-    } = req.body;
+    const { numberOfQuestions = 10 } = req.body;
 
     // -------------------------------------------------
     // Validate question count
@@ -207,8 +199,7 @@ export const generateAIQuiz = async (req, res) => {
     ) {
       return res.status(403).json({
         success: false,
-        message:
-          "You are not authorized to generate a quiz for this course",
+        message: "You are not authorized to generate a quiz for this course",
       });
     }
 
@@ -250,16 +241,10 @@ export const generateAIQuiz = async (req, res) => {
     // -------------------------------------------------
 
     const lectureData = lectures.map((lecture) => ({
-      lectureTitle:
-        lecture.lectureTitle ||
-        lecture.title ||
-        "Untitled Lecture",
+      lectureTitle: lecture.lectureTitle || lecture.title || "Untitled Lecture",
 
       lectureContent:
-        lecture.lectureContent ||
-        lecture.content ||
-        lecture.description ||
-        "",
+        lecture.lectureContent || lecture.content || lecture.description || "",
     }));
 
     // -------------------------------------------------
@@ -275,26 +260,15 @@ export const generateAIQuiz = async (req, res) => {
     console.log("=================================");
 
     const generatedQuestions = await generateModuleQuiz({
-      courseTitle:
-        course.title ||
-        course.courseTitle ||
-        "Course",
+      courseTitle: course.title || course.courseTitle || "Course",
 
-      courseCategory:
-        course.category ||
-        "",
+      courseCategory: course.category || "",
 
-      courseLevel:
-        course.level ||
-        "",
+      courseLevel: course.level || "",
 
-      moduleTitle:
-        module.moduleTitle ||
-        "Module",
+      moduleTitle: module.moduleTitle || "Module",
 
-      moduleDescription:
-        module.description ||
-        "",
+      moduleDescription: module.description || "",
 
       lectures: lectureData,
 
@@ -311,8 +285,7 @@ export const generateAIQuiz = async (req, res) => {
     ) {
       return res.status(500).json({
         success: false,
-        message:
-          "AI generated an invalid quiz. Please try again.",
+        message: "AI generated an invalid quiz. Please try again.",
       });
     }
 
@@ -364,8 +337,7 @@ export const generateAIQuiz = async (req, res) => {
     ) {
       return res.status(429).json({
         success: false,
-        message:
-          "AI quiz generation limit reached. Please try again later.",
+        message: "AI quiz generation limit reached. Please try again later.",
       });
     }
 
@@ -388,30 +360,24 @@ export const getModuleQuiz = async (req, res) => {
 
     const quiz = await Quiz.findOne({
       module: moduleId,
-    }).populate(
-      "module",
-      "moduleTitle description order"
-    );
+    }).populate("module", "moduleTitle description order");
 
+    // No quiz for this module is NOT a server error.
+    // The student simply has no quiz yet.
     if (!quiz) {
-      return res.status(404).json({
-        success: false,
-        message: "Quiz not found for this module",
+      return res.status(200).json({
+        success: true,
+        quiz: null,
+        message: "No quiz available for this module",
       });
     }
 
-    // -------------------------------------------------
-    // IMPORTANT:
-    // Never send correctAnswer to student
-    // -------------------------------------------------
-
-    const safeQuestions = quiz.questions.map(
-      (question) => ({
-        _id: question._id,
-        question: question.question,
-        options: question.options,
-      })
-    );
+    // Never expose correct answers to students
+    const safeQuestions = quiz.questions.map((question) => ({
+      _id: question._id,
+      question: question.question,
+      options: question.options,
+    }));
 
     return res.status(200).json({
       success: true,
@@ -434,7 +400,6 @@ export const getModuleQuiz = async (req, res) => {
     });
   }
 };
-
 // =====================================================
 // SUBMIT QUIZ
 // POST /api/v1/quiz/:quizId/submit
@@ -480,17 +445,12 @@ export const submitQuiz = async (req, res) => {
 
     for (const question of quiz.questions) {
       const submittedAnswer = answers.find(
-        (answer) =>
-          answer.questionId?.toString() ===
-          question._id.toString()
+        (answer) => answer.questionId?.toString() === question._id.toString(),
       );
 
-      const selectedAnswer =
-        submittedAnswer?.selectedAnswer || "";
+      const selectedAnswer = submittedAnswer?.selectedAnswer || "";
 
-      const isCorrect =
-        selectedAnswer.trim() ===
-        question.correctAnswer.trim();
+      const isCorrect = selectedAnswer.trim() === question.correctAnswer.trim();
 
       if (isCorrect) {
         correctAnswers++;
@@ -510,13 +470,10 @@ export const submitQuiz = async (req, res) => {
 
     const percentage =
       totalQuestions > 0
-        ? Math.round(
-            (correctAnswers / totalQuestions) * 100
-          )
+        ? Math.round((correctAnswers / totalQuestions) * 100)
         : 0;
 
-    const passed =
-      percentage >= quiz.passingScore;
+    const passed = percentage >= quiz.passingScore;
 
     // -------------------------------------------------
     // Save attempt
@@ -529,8 +486,7 @@ export const submitQuiz = async (req, res) => {
       module: quiz.module,
       answers: answers.map((answer) => ({
         questionId: answer.questionId,
-        selectedAnswer:
-          answer.selectedAnswer || "",
+        selectedAnswer: answer.selectedAnswer || "",
       })),
       score: correctAnswers,
       totalQuestions,
@@ -608,5 +564,3 @@ export const getMyQuizAttempt = async (req, res) => {
     });
   }
 };
-
-

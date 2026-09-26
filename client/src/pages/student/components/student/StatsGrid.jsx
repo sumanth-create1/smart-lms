@@ -1,3 +1,5 @@
+import { memo, useMemo } from "react";
+
 import {
   ArrowUpRight,
   BookOpen,
@@ -12,7 +14,6 @@ import {
 
 /* =========================================================
    STATIC CONFIG
-   Created once instead of on every render
 ========================================================= */
 
 const STAT_CONFIG = [
@@ -20,19 +21,26 @@ const STAT_CONFIG = [
     key: "enrolled",
     title: "Enrolled Courses",
     label: "THE NORTH",
+
     icon: BookOpen,
     secondaryIcon: Feather,
+
     iconBg:
       "bg-gradient-to-br from-sky-950 via-slate-900 to-slate-950",
+
     iconColor: "text-sky-300",
+
     cardGradient:
       "from-[#0d151b] via-[#0b1014] to-[#080b0e]",
+
     progressBg: "bg-sky-950",
+
     progressGradient:
       "from-sky-900 via-sky-500 to-cyan-300",
+
     progressIcon: BookOpen,
     progressIconClass: "text-sky-500/70",
-    accent: "sky",
+
     bottomText: "COURSES UNDER YOUR BANNER",
   },
 
@@ -40,19 +48,26 @@ const STAT_CONFIG = [
     key: "completed",
     title: "Completed Courses",
     label: "THE CROWN",
+
     icon: CheckCircle2,
     secondaryIcon: Crown,
+
     iconBg:
       "bg-gradient-to-br from-amber-950 via-yellow-950 to-zinc-950",
+
     iconColor: "text-amber-400",
+
     cardGradient:
       "from-[#17130a] via-[#100f0b] to-[#090909]",
+
     progressBg: "bg-amber-950",
+
     progressGradient:
       "from-amber-900 via-amber-500 to-yellow-300",
+
     progressIcon: Crown,
     progressIconClass: "text-amber-400",
-    accent: "amber",
+
     bottomText: "VICTORIES EARNED",
   },
 
@@ -60,19 +75,26 @@ const STAT_CONFIG = [
     key: "hours",
     title: "Learning Hours",
     label: "THE TRAINING HALL",
+
     icon: Clock3,
     secondaryIcon: Sword,
+
     iconBg:
       "bg-gradient-to-br from-slate-800 via-zinc-900 to-black",
+
     iconColor: "text-slate-300",
+
     cardGradient:
       "from-[#111417] via-[#0d1012] to-[#08090a]",
+
     progressBg: "bg-slate-900",
+
     progressGradient:
       "from-slate-700 via-slate-400 to-sky-300",
+
     progressIcon: Sword,
     progressIconClass: "text-slate-300",
-    accent: "steel",
+
     bottomText: "WEEKLY TRAINING PROGRESS",
   },
 
@@ -80,111 +102,142 @@ const STAT_CONFIG = [
     key: "streak",
     title: "Study Streak",
     label: "THE FIRE WITHIN",
+
     icon: Flame,
     secondaryIcon: Flame,
+
     iconBg:
       "bg-gradient-to-br from-red-950 via-orange-950 to-zinc-950",
+
     iconColor: "text-orange-400",
+
     cardGradient:
       "from-[#180d0b] via-[#110b0a] to-[#090909]",
+
     progressBg: "bg-red-950",
+
     progressGradient:
       "from-red-900 via-orange-600 to-amber-300",
+
     progressIcon: Flame,
     progressIconClass: "text-orange-400",
-    accent: "fire",
+
     bottomText: "30 DAY STREAK CHALLENGE",
   },
 ];
 
 /* =========================================================
-   SMALL HELPERS
+   HELPERS
 ========================================================= */
 
-function clampPercentage(value) {
-  return Math.min(100, Math.max(0, Math.round(value)));
-}
+const clampPercentage = (value) => {
+  if (!Number.isFinite(value)) return 0;
 
-function getProgress(stat, values) {
-  switch (stat.key) {
+  return Math.min(100, Math.max(0, Math.round(value)));
+};
+
+const getProgress = (key, values) => {
+  switch (key) {
     case "enrolled":
       return Math.min(100, values.enrolledCourses * 10);
 
     case "completed":
       return values.enrolledCourses > 0
         ? clampPercentage(
-            (values.completedCourses / values.enrolledCourses) * 100
+            (values.completedCourses /
+              values.enrolledCourses) *
+              100
           )
         : 0;
 
     case "hours":
-      return clampPercentage((values.learningHours / 20) * 100);
+      return clampPercentage(
+        (values.learningHours / 20) * 100
+      );
 
     case "streak":
-      return clampPercentage((values.studyStreak / 30) * 100);
+      return clampPercentage(
+        (values.studyStreak / 30) * 100
+      );
 
     default:
       return 0;
   }
-}
+};
 
 /* =========================================================
    PROGRESS BAR
 ========================================================= */
 
-function ProgressBar({ progress, stat }) {
+const ProgressBar = memo(function ProgressBar({
+  progress,
+  stat,
+}) {
   const Icon = stat.progressIcon;
 
   return (
     <div className="flex items-center gap-3">
       <div
-        className={`relative h-1.5 flex-1 overflow-hidden rounded-full ${stat.progressBg}`}
+        className={`
+          relative
+          h-1.5
+          flex-1
+          overflow-hidden
+          rounded-full
+          ${stat.progressBg}
+        `}
       >
         <div
           className={`
-            relative h-full rounded-full
-            bg-gradient-to-r ${stat.progressGradient}
-            transition-[width] duration-700 ease-out
+            h-full
+            rounded-full
+            bg-gradient-to-r
+            ${stat.progressGradient}
+            transition-[width]
+            duration-500
+            ease-out
           `}
-          style={{ width: `${progress}%` }}
+          style={{
+            width: `${progress}%`,
+          }}
         >
+          {/* Lightweight progress endpoint */}
           <span
             aria-hidden="true"
             className="
               absolute
               right-0
               top-1/2
-              h-2
-              w-2
+              h-1.5
+              w-1.5
               -translate-y-1/2
               rounded-full
               bg-white
-              shadow-[0_0_8px_rgba(255,255,255,0.75)]
             "
           />
         </div>
       </div>
 
       <Icon
-        size={16}
+        size={15}
         aria-hidden="true"
         className={`
           shrink-0
           ${stat.progressIconClass}
           transition-transform
-          duration-300
-          group-hover:scale-110
+          duration-200
+          group-hover:scale-105
         `}
       />
     </div>
   );
-}
+});
 
 /* =========================================================
    STAT CARD
 ========================================================= */
 
-function StatCard({
+const StatCard = memo(function StatCard({
   stat,
   value,
   description,
@@ -201,54 +254,42 @@ function StatCard({
         min-w-0
         w-full
         overflow-hidden
-        rounded-[26px]
+        rounded-[24px]
         border
         border-slate-700/60
         bg-gradient-to-br
         ${stat.cardGradient}
         p-5
-        shadow-xl
+        shadow-lg
         shadow-black/20
+        transform-gpu
         transition-[transform,border-color,box-shadow]
-        duration-300
+        duration-200
+        ease-out
         hover:-translate-y-1
         hover:border-slate-500/70
-        hover:shadow-2xl
-        hover:shadow-black/40
+        hover:shadow-xl
+        hover:shadow-black/30
         sm:p-6
       `}
     >
       {/* =====================================================
-          DECORATIVE BACKGROUND
+          LIGHTWEIGHT DECORATION
       ===================================================== */}
 
+      {/* Small static glow instead of huge blur layers */}
       <div
         aria-hidden="true"
         className="
           pointer-events-none
           absolute
-          -right-16
-          -top-16
-          h-40
-          w-40
+          -right-12
+          -top-12
+          h-28
+          w-28
           rounded-full
           bg-white/[0.025]
-          blur-3xl
-        "
-      />
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          -bottom-20
-          -left-16
-          h-40
-          w-40
-          rounded-full
-          bg-slate-500/[0.025]
-          blur-3xl
+          blur-2xl
         "
       />
 
@@ -259,13 +300,13 @@ function StatCard({
           pointer-events-none
           absolute
           inset-0
-          opacity-[0.035]
-          bg-[linear-gradient(rgba(255,255,255,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.15)_1px,transparent_1px)]
+          opacity-[0.025]
+          bg-[linear-gradient(rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px)]
           bg-[size:24px_24px]
         "
       />
 
-      {/* Top line */}
+      {/* Top realm line */}
       <div
         aria-hidden="true"
         className="
@@ -277,11 +318,11 @@ function StatCard({
           h-px
           bg-gradient-to-r
           from-transparent
-          via-slate-500/40
+          via-slate-500/30
           to-transparent
-          transition-colors
-          duration-300
-          group-hover:via-amber-400/60
+          transition-opacity
+          duration-200
+          group-hover:opacity-100
         "
       />
 
@@ -293,13 +334,13 @@ function StatCard({
           absolute
           right-4
           top-4
-          h-8
-          w-8
+          h-7
+          w-7
           border-r
           border-t
           border-slate-700/50
           transition-colors
-          duration-300
+          duration-200
           group-hover:border-amber-500/40
         "
       />
@@ -311,48 +352,14 @@ function StatCard({
           absolute
           bottom-4
           left-4
-          h-8
-          w-8
+          h-7
+          w-7
           border-b
           border-l
           border-slate-700/40
           transition-colors
-          duration-300
+          duration-200
           group-hover:border-sky-500/30
-        "
-      />
-
-      {/* =====================================================
-          PARTICLES
-      ===================================================== */}
-
-      <span
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          right-10
-          top-24
-          h-1
-          w-1
-          rounded-full
-          bg-amber-400/50
-          animate-pulse
-        "
-      />
-
-      <span
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          bottom-20
-          right-24
-          h-1
-          w-1
-          rounded-full
-          bg-sky-300/50
-          animate-pulse
         "
       />
 
@@ -362,6 +369,7 @@ function StatCard({
 
       <div className="relative z-10 flex items-start justify-between">
         {/* Main icon */}
+
         <div
           className={`
             relative
@@ -375,9 +383,10 @@ function StatCard({
             border
             border-slate-700/60
             ${stat.iconBg}
-            shadow-lg
+            shadow-md
+            transform-gpu
             transition-transform
-            duration-300
+            duration-200
             group-hover:scale-105
             group-hover:rotate-2
           `}
@@ -387,11 +396,10 @@ function StatCard({
             strokeWidth={1.8}
             aria-hidden="true"
             className={`
-              relative
-              z-10
               ${stat.iconColor}
+              transform-gpu
               transition-transform
-              duration-300
+              duration-200
               group-hover:scale-105
             `}
           />
@@ -406,12 +414,12 @@ function StatCard({
               w-2
               rounded-full
               bg-slate-300
-              shadow-[0_0_8px_rgba(255,255,255,0.7)]
             "
           />
         </div>
 
-        {/* House label */}
+        {/* Realm label */}
+
         <div
           className="
             flex
@@ -430,8 +438,9 @@ function StatCard({
             aria-hidden="true"
             className="
               text-amber-500/80
+              transform-gpu
               transition-transform
-              duration-300
+              duration-200
               group-hover:rotate-12
             "
           />
@@ -475,9 +484,6 @@ function StatCard({
               font-black
               tracking-tight
               text-slate-100
-              transition-colors
-              duration-300
-              group-hover:text-white
             "
           >
             {value}
@@ -496,8 +502,9 @@ function StatCard({
               border-slate-800
               bg-black/30
               text-slate-600
+              transform-gpu
               transition-[transform,border-color,color]
-              duration-300
+              duration-200
               group-hover:rotate-45
               group-hover:border-slate-600
               group-hover:text-slate-300
@@ -517,7 +524,7 @@ function StatCard({
             leading-5
             text-slate-500
             transition-colors
-            duration-300
+            duration-200
             group-hover:text-slate-400
           "
         >
@@ -537,7 +544,7 @@ function StatCard({
       </div>
 
       {/* =====================================================
-          BOTTOM INFORMATION
+          FOOTER
       ===================================================== */}
 
       <div
@@ -560,8 +567,9 @@ function StatCard({
             className="
               shrink-0
               text-amber-500/70
+              transform-gpu
               transition-transform
-              duration-300
+              duration-200
               group-hover:rotate-90
             "
           />
@@ -575,7 +583,7 @@ function StatCard({
               tracking-[0.16em]
               text-slate-600
               transition-colors
-              duration-300
+              duration-200
               group-hover:text-slate-500
             "
           >
@@ -592,36 +600,15 @@ function StatCard({
             shrink-0
             rounded-full
             bg-slate-700
-            transition-all
-            duration-300
+            transition-colors
+            duration-200
             group-hover:bg-amber-500
-            group-hover:shadow-[0_0_8px_rgba(245,158,11,0.7)]
           "
         />
       </div>
 
-      {/* =====================================================
-          HOVER SWEEP
-      ===================================================== */}
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          inset-y-0
-          -left-24
-          w-10
-          rotate-[18deg]
-          bg-white/[0.035]
-          blur-lg
-          transition-[left]
-          duration-[1000ms]
-          group-hover:left-[120%]
-        "
-      />
-
       {/* Bottom realm line */}
+
       <div
         aria-hidden="true"
         className="
@@ -629,76 +616,94 @@ function StatCard({
           absolute
           bottom-0
           left-0
-          h-[2px]
+          h-px
           w-full
           bg-gradient-to-r
           from-transparent
           via-slate-700
           to-transparent
           opacity-70
-          transition-colors
-          duration-300
-          group-hover:via-amber-600
+          transition-opacity
+          duration-200
+          group-hover:opacity-100
         "
       />
     </article>
   );
-}
+});
 
 /* =========================================================
    MAIN COMPONENT
 ========================================================= */
 
 function StatsGrid({ stats }) {
-  const enrolledCourses = Number(stats?.enrolledCourses ?? 0);
-  const completedCourses = Number(stats?.completedCourses ?? 0);
-  const learningHours = Number(stats?.learningHours ?? 0);
-  const studyStreak = Number(stats?.studyStreak ?? 0);
+  /*
+   * Calculate everything once.
+   * Prevents unnecessary object creation and repeated calculations.
+   */
 
-  const values = {
-    enrolledCourses,
-    completedCourses,
-    learningHours,
-    studyStreak,
-  };
+  const dashboard = useMemo(() => {
+    const enrolledCourses = Number(stats?.enrolledCourses) || 0;
+    const completedCourses = Number(stats?.completedCourses) || 0;
+    const learningHours = Number(stats?.learningHours) || 0;
+    const studyStreak = Number(stats?.studyStreak) || 0;
 
-  const courseCompletion =
-    enrolledCourses > 0
-      ? clampPercentage(
-          (completedCourses / enrolledCourses) * 100
-        )
-      : 0;
+    const completion =
+      enrolledCourses > 0
+        ? clampPercentage(
+            (completedCourses / enrolledCourses) * 100
+          )
+        : 0;
 
-  const dashboardValues = {
-    enrolled: {
-      value: enrolledCourses,
-      description:
-        enrolledCourses === 1
-          ? "Active course in your realm"
-          : "Active courses in your realm",
-    },
+    const values = {
+      enrolledCourses,
+      completedCourses,
+      learningHours,
+      studyStreak,
+    };
 
-    completed: {
-      value: completedCourses,
-      description:
-        completedCourses === 0
-          ? "Your first victory awaits"
-          : `${courseCompletion}% of enrolled courses conquered`,
-    },
+    return {
+      values,
 
-    hours: {
-      value: `${learningHours.toFixed(1)}h`,
-      description: "Time spent sharpening your skills",
-    },
+      enrolled: {
+        value: enrolledCourses,
+        description:
+          enrolledCourses === 1
+            ? "Active course in your realm"
+            : "Active courses in your realm",
+        progress: getProgress("enrolled", values),
+      },
 
-    streak: {
-      value: studyStreak,
-      description:
-        studyStreak === 1
-          ? "Day defending your streak"
-          : "Days defending your streak",
-    },
-  };
+      completed: {
+        value: completedCourses,
+        description:
+          completedCourses === 0
+            ? "Your first victory awaits"
+            : `${completion}% of enrolled courses conquered`,
+        progress: getProgress("completed", values),
+      },
+
+      hours: {
+        value: `${learningHours.toFixed(1)}h`,
+        description: "Time spent sharpening your skills",
+        progress: getProgress("hours", values),
+      },
+
+      streak: {
+        value: studyStreak,
+        description:
+          studyStreak === 1
+            ? "Day defending your streak"
+            : "Days defending your streak",
+        progress: getProgress("streak", values),
+      },
+    };
+  }, [
+    stats?.enrolledCourses,
+    stats?.completedCourses,
+    stats?.learningHours,
+    stats?.studyStreak,
+  ]);
 
   return (
     <div
@@ -712,15 +717,15 @@ function StatsGrid({ stats }) {
       "
     >
       {STAT_CONFIG.map((stat) => {
-        const statValue = dashboardValues[stat.key];
+        const item = dashboard[stat.key];
 
         return (
           <StatCard
             key={stat.key}
             stat={stat}
-            value={statValue.value}
-            description={statValue.description}
-            progress={getProgress(stat, values)}
+            value={item.value}
+            description={item.description}
+            progress={item.progress}
           />
         );
       })}
@@ -728,4 +733,8 @@ function StatsGrid({ stats }) {
   );
 }
 
-export default StatsGrid;
+/* =========================================================
+   EXPORT
+========================================================= */
+
+export default memo(StatsGrid);
