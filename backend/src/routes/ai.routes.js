@@ -1,9 +1,26 @@
 import express from "express";
-import { mentorChat } from "../controllers/ai.controller.js";
+
+import {
+  mentorChat,
+  courseAISuggestions,
+} from "../controllers/ai.controller.js";
+
 import { isAuthenticated } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/mentor", isAuthenticated, mentorChat);
+/* AI Mentor */
+router.post(
+  "/mentor",
+  isAuthenticated,
+  mentorChat
+);
+
+/* Course AI Architect */
+router.post(
+  "/course-suggestions",
+  isAuthenticated,
+  courseAISuggestions
+);
 
 export default router;

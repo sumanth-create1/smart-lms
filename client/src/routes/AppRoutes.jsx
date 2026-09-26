@@ -115,9 +115,7 @@ function AppRoutes() {
 
         <Route
           element={
-            <ProtectedRoute
-              allowedRoles={["student"]}
-            />
+            <ProtectedRoute allowedRoles={["student"]} />
           }
         >
 
@@ -190,9 +188,7 @@ function AppRoutes() {
 
         <Route
           element={
-            <ProtectedRoute
-              allowedRoles={["instructor"]}
-            />
+            <ProtectedRoute allowedRoles={["instructor"]} />
           }
         >
 
@@ -202,21 +198,27 @@ function AppRoutes() {
 
           <Route element={<InstructorDashboardLayout />}>
 
-            {/* Dashboard */}
+            {/* =================================================
+                DASHBOARD
+            ================================================= */}
 
             <Route
               path="/instructor/dashboard"
               element={<InstructorDashboard />}
             />
 
-            {/* Courses */}
+            {/* =================================================
+                ALL INSTRUCTOR COURSES
+            ================================================= */}
 
             <Route
               path="/instructor/courses"
               element={<InstructorCourses />}
             />
 
-            {/* Create Course */}
+            {/* =================================================
+                CREATE NEW COURSE
+            ================================================= */}
 
             <Route
               path="/instructor/create-course"
@@ -229,6 +231,15 @@ function AppRoutes() {
 
             <Route
               path="/instructor/courses/:courseId"
+              element={<CourseManagement />}
+            />
+
+            {/* =================================================
+                EDIT COURSE
+            ================================================= */}
+
+            <Route
+              path="/instructor/courses/edit/:courseId"
               element={<CourseManagement />}
             />
 
@@ -259,21 +270,27 @@ function AppRoutes() {
               element={<InstructorStudents />}
             />
 
-            {/* Student Details */}
+            {/* =================================================
+                STUDENT DETAILS
+            ================================================= */}
 
             <Route
               path="/instructor/students/:studentId"
               element={<InstructorStudentDetails />}
             />
 
-            {/* Analytics */}
+            {/* =================================================
+                ANALYTICS
+            ================================================= */}
 
             <Route
               path="/instructor/analytics"
               element={<InstructorAnalytics />}
             />
 
-            {/* Profile */}
+            {/* =================================================
+                PROFILE
+            ================================================= */}
 
             <Route
               path="/instructor/profile"
@@ -281,6 +298,7 @@ function AppRoutes() {
             />
 
           </Route>
+
         </Route>
 
       </Routes>

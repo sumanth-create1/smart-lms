@@ -1,98 +1,137 @@
-import { askAIMentor } from "../services/ai.service.js";
+import {
+  askAIMentor,
+  generateCourseSuggestions,
+} from "../services/ai.service.js";
 
-// =====================================================
-// AI MENTOR CHAT CONTROLLER
-// =====================================================
+/* =========================================================
+   AI MENTOR
+========================================================= */
 
 export const mentorChat = async (req, res) => {
   try {
     const {
       question,
       courseTitle,
-      courseCategory,
-      courseLevel,
+      category,
+      level,
       lectureTitle,
       lectureContent,
-      conversationHistory, // 🧠 NEW
+      history = [],
     } = req.body;
-
-    // ============================================
-    // VALIDATE QUESTION
-    // ============================================
 
     if (!question?.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Please enter a question.",
+        message: "Question is required.",
       });
     }
-
-    // ============================================
-    // ASK AI MENTOR
-    // ============================================
 
     const answer = await askAIMentor({
       question,
       courseTitle,
-      courseCategory,
-      courseLevel,
+      category,
+      level,
       lectureTitle,
       lectureContent,
-
-      // 🧠 Pass previous conversation to AI service
-      conversationHistory,
+      history,
     });
-
-    // ============================================
-    // SUCCESS
-    // ============================================
 
     return res.status(200).json({
       success: true,
       answer,
     });
   } catch (error) {
-    // ============================================
-    // ERROR LOGGING
-    // ============================================
+    console.error("AI Mentor Error:", error);
 
-    console.error("=================================");
-    console.error("❌ AI MENTOR ERROR");
-    console.error("Message:", error.message);
-    console.error("Status:", error.status);
-    console.error("Code:", error.code);
-    console.error("Name:", error.name);
-    console.error("=================================");
-
-    // ============================================
-    // GEMINI QUOTA / RATE LIMIT ERROR
-    // ============================================
-
-    const status = Number(
-      error?.status ||
-      error?.statusCode
-    );
-
-    if (
-      status === 429 ||
-      error?.code === "too_many_requests" ||
-      error?.code === "quota_exceeded" ||
-      error?.code === "AI_QUOTA_EXCEEDED"
-    ) {
+    if (error?.code === "AI_QUOTA_EXCEEDED") {
       return res.status(429).json({
         success: false,
+        code: "AI_QUOTA_EXCEEDED",
         message:
-          "AI Mentor is temporarily unavailable because the Gemini API quota has been reached. Please try again later.",
+          "AI usage limit has been reached. Please try again later.",
       });
     }
 
-    // ============================================
-    // OTHER AI ERRORS
-    // ============================================
+    return res.status(500).json({
+      success: false,
+      message: "AI Mentor failed.",
+    });
+  }
+};
+
+
+/* =========================================================
+   COURSE AI ARCHITECT
+========================================================= */
+
+export const courseAISuggestions = async (req, res) => {
+  try {
+    const {
+      action,
+      title,
+      subtitle,
+      description,
+      category,
+      level,
+      price,
+    } = req.body;
+
+    console.log("=================================");
+    console.log("COURSE AI REQUEST");
+    console.log("action:", action);
+    console.log("title:", title);
+    console.log("subtitle:", subtitle);
+    console.log("description:", description);
+    console.log("category:", category);
+    console.log("level:", level);
+    console.log("price:", price);
+    console.log("=================================");
+
+    if (!action?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "AI action is required.",
+      });
+    }
+
+    const result = await generateCourseSuggestions({
+      courseTitle: title,
+      subTitle: subtitle,
+      description,
+      category,
+      courseLevel: level,
+      coursePrice: price,
+      action,
+    });
+
+    console.log("COURSE AI RESULT:", result);
+
+    return res.status(200).json({
+      success: true,
+      result,
+    });
+  } catch (error) {
+    console.error("=================================");
+    console.error("COURSE AI ERROR");
+    console.error("message:", error?.message);
+    console.error("name:", error?.name);
+    console.error("code:", error?.code);
+    console.error("stack:", error?.stack);
+    console.error("=================================");
+
+    if (error?.code === "AI_QUOTA_EXCEEDED") {
+      return res.status(429).json({
+        success: false,
+        code: "AI_QUOTA_EXCEEDED",
+        message:
+          "AI usage limit has been reached. Please try again later.",
+      });
+    }
 
     return res.status(500).json({
       success: false,
-      message: "Unable to get response from AI Mentor.",
+      message:
+        error?.message || "Course AI generation failed.",
     });
   }
 };

@@ -21,7 +21,6 @@ export const createCourse = async (req, res) => {
             coursePrice,
         } = req.body;
 
-        // Basic validation
         if (
             !courseTitle ||
             !subTitle ||
@@ -43,12 +42,10 @@ export const createCourse = async (req, res) => {
             category,
             courseLevel,
             coursePrice: Number(coursePrice),
-
-            // Instructor comes from authenticated user
             instructor: req.user._id,
         });
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Course created successfully",
             course,
@@ -57,7 +54,7 @@ export const createCourse = async (req, res) => {
     } catch (error) {
         console.error("Create course error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -75,7 +72,7 @@ export const getAllCourses = async (req, res) => {
             .populate("instructor", "name email")
             .sort({ createdAt: -1 });
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             count: courses.length,
             courses,
@@ -84,7 +81,7 @@ export const getAllCourses = async (req, res) => {
     } catch (error) {
         console.error("Get all courses error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -94,12 +91,6 @@ export const getAllCourses = async (req, res) => {
 
 /* =========================================================
    GET INSTRUCTOR COURSES
-   WITH DYNAMIC STUDENT COUNT
-========================================================= */
-
-/* =========================================================
-   GET INSTRUCTOR COURSES
-   Dynamic students + lectures
 ========================================================= */
 
 export const getInstructorCourses = async (req, res) => {
@@ -115,7 +106,6 @@ export const getInstructorCourses = async (req, res) => {
 
         const coursesWithStats = await Promise.all(
             courses.map(async (course) => {
-
                 const [studentCount, lectureCount] =
                     await Promise.all([
                         Enrollment.countDocuments({
@@ -135,7 +125,7 @@ export const getInstructorCourses = async (req, res) => {
             })
         );
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             count: coursesWithStats.length,
             courses: coursesWithStats,
@@ -147,7 +137,7 @@ export const getInstructorCourses = async (req, res) => {
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -163,7 +153,6 @@ export const getCourseById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Prevent invalid MongoDB ObjectId errors
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
@@ -171,10 +160,8 @@ export const getCourseById = async (req, res) => {
             });
         }
 
-        const course = await Course.findById(id).populate(
-            "instructor",
-            "name email"
-        );
+        const course = await Course.findById(id)
+            .populate("instructor", "name email");
 
         if (!course) {
             return res.status(404).json({
@@ -183,7 +170,7 @@ export const getCourseById = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             course,
         });
@@ -194,7 +181,7 @@ export const getCourseById = async (req, res) => {
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -226,7 +213,6 @@ export const updateCourse = async (req, res) => {
             });
         }
 
-        // Only instructor who created course can update it
         if (
             course.instructor.toString() !==
             req.user._id.toString()
@@ -248,7 +234,7 @@ export const updateCourse = async (req, res) => {
                 }
             );
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Course updated successfully",
             course: updatedCourse,
@@ -260,7 +246,7 @@ export const updateCourse = async (req, res) => {
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -292,7 +278,6 @@ export const deleteCourse = async (req, res) => {
             });
         }
 
-        // Only course creator can delete
         if (
             course.instructor.toString() !==
             req.user._id.toString()
@@ -306,7 +291,7 @@ export const deleteCourse = async (req, res) => {
 
         await Course.findByIdAndDelete(id);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Course deleted successfully",
         });
@@ -317,7 +302,7 @@ export const deleteCourse = async (req, res) => {
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -333,10 +318,17 @@ export const uploadCourseThumbnail = async (req, res) => {
     try {
         const { courseId } = req.params;
 
-        console.log("Thumbnail upload:", {
-            courseId,
-            file: req.file?.originalname,
-        });
+        console.log("====================================");
+        console.log("COURSE THUMBNAIL UPLOAD");
+        console.log("Course ID:", courseId);
+        console.log("File:", req.file?.originalname);
+        console.log("Mimetype:", req.file?.mimetype);
+        console.log("Size:", req.file?.size);
+        console.log("====================================");
+
+        /* -----------------------------------------
+           Validate course ID
+        ----------------------------------------- */
 
         if (!mongoose.Types.ObjectId.isValid(courseId)) {
             return res.status(400).json({
@@ -345,16 +337,23 @@ export const uploadCourseThumbnail = async (req, res) => {
             });
         }
 
+        /* -----------------------------------------
+           Find course
+        ----------------------------------------- */
+
         const course = await Course.findById(courseId);
 
         if (!course) {
             return res.status(404).json({
                 success: false,
-                message: "Course not found",
+                message: "Course not found.",
             });
         }
 
-        // Only course creator can upload thumbnail
+        /* -----------------------------------------
+           Authorization
+        ----------------------------------------- */
+
         if (
             course.instructor.toString() !==
             req.user._id.toString()
@@ -366,6 +365,10 @@ export const uploadCourseThumbnail = async (req, res) => {
             });
         }
 
+        /* -----------------------------------------
+           Check file
+        ----------------------------------------- */
+
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -373,10 +376,26 @@ export const uploadCourseThumbnail = async (req, res) => {
             });
         }
 
+        /* -----------------------------------------
+           Upload to Cloudinary
+        ----------------------------------------- */
+
         const result = await uploadToCloudinary(
             req.file.buffer,
             "smart-lms/course-thumbnails"
         );
+
+        if (!result?.secure_url) {
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Cloudinary did not return an image URL.",
+            });
+        }
+
+        /* -----------------------------------------
+           Save thumbnail
+        ----------------------------------------- */
 
         course.courseThumbnail = {
             url: result.secure_url,
@@ -385,9 +404,18 @@ export const uploadCourseThumbnail = async (req, res) => {
 
         await course.save();
 
-        res.status(200).json({
+        console.log(
+            "Thumbnail saved:",
+            course.courseThumbnail
+        );
+
+        /* -----------------------------------------
+           Response
+        ----------------------------------------- */
+
+        return res.status(200).json({
             success: true,
-            message: "Thumbnail uploaded successfully",
+            message: "Thumbnail uploaded successfully.",
             course,
         });
 
@@ -397,9 +425,11 @@ export const uploadCourseThumbnail = async (req, res) => {
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            message: error.message,
+            message:
+                error?.message ||
+                "Failed to upload course thumbnail.",
         });
     }
 };
