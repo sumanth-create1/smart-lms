@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import {
   Search,
   Bell,
@@ -13,10 +14,34 @@ import {
   Crown,
   Shield,
 } from "lucide-react";
-
-import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { useAuth } from "../../../../context/AuthContext";
+
+const ROLE_LABELS = {
+  student: "Learner",
+  instructor: "Instructor",
+  admin: "Administrator",
+};
+
+const NOTIFICATIONS = [
+  {
+    id: 1,
+    type: "completed",
+    title: "Mission completed",
+    message:
+      "You completed a lecture. Your knowledge grows stronger.",
+    unread: true,
+  },
+  {
+    id: 2,
+    type: "course",
+    title: "New learning mission",
+    message:
+      "Continue your current course and strengthen your skills.",
+    unread: true,
+  },
+];
 
 function StudentHeader() {
   const { user, logout } = useAuth();
@@ -26,73 +51,24 @@ function StudentHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  const [mousePosition, setMousePosition] = useState({
-    x: 0,
-    y: 0,
-  });
-
   const notificationRef = useRef(null);
   const profileRef = useRef(null);
-  const headerRef = useRef(null);
-
-  // =====================================================
-  // DYNAMIC USER DATA
-  // =====================================================
-
-  const roleLabels = {
-    student: "Learner",
-    instructor: "Instructor",
-    admin: "Administrator",
-  };
-
-  const displayRole = roleLabels[user?.role] || "Learner";
 
   const displayName = user?.name || "Student";
-
   const displayEmail = user?.email || "student@example.com";
+  const displayRole = ROLE_LABELS[user?.role] || "Learner";
+  const avatarInitial = displayName.charAt(0).toUpperCase();
 
-  const avatarInitial =
-    user?.name?.charAt(0)?.toUpperCase() || "S";
-
-  // =====================================================
-  // TEMPORARY NOTIFICATIONS
-  // =====================================================
-  // These are currently UI mock data.
-  // Later you can replace this with API data.
-
-  const notifications = [
-    {
-      id: 1,
-      type: "completed",
-      title: "Mission completed",
-      message:
-        "You completed a lecture. Your knowledge grows stronger.",
-      unread: true,
-    },
-    {
-      id: 2,
-      type: "course",
-      title: "New learning mission",
-      message:
-        "Continue your current course and strengthen your skills.",
-      unread: true,
-    },
-  ];
-
-  const unreadNotificationCount = notifications.filter(
+  const unreadNotificationCount = NOTIFICATIONS.filter(
     (notification) => notification.unread
   ).length;
 
-  // =====================================================
+  // ============================================================
   // SEARCH
-  // =====================================================
+  // ============================================================
 
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
 
     const query = search.trim();
 
@@ -105,9 +81,9 @@ function StudentHeader() {
     setSearch("");
   };
 
-  // =====================================================
-  // PROFILE
-  // =====================================================
+  // ============================================================
+  // PROFILE ACTIONS
+  // ============================================================
 
   const handleProfile = () => {
     setShowProfile(false);
@@ -119,17 +95,15 @@ function StudentHeader() {
     navigate("/settings");
   };
 
-  // =====================================================
+  // ============================================================
   // LOGOUT
-  // =====================================================
+  // ============================================================
 
   const handleLogout = async () => {
     try {
       setShowProfile(false);
 
-      if (logout) {
-        await logout();
-      }
+      await logout?.();
 
       navigate("/login");
     } catch (error) {
@@ -137,9 +111,9 @@ function StudentHeader() {
     }
   };
 
-  // =====================================================
+  // ============================================================
   // CLOSE DROPDOWNS
-  // =====================================================
+  // ============================================================
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -168,16 +142,16 @@ function StudentHeader() {
     };
   }, []);
 
-  // =====================================================
-  // ESCAPE
-  // =====================================================
+  // ============================================================
+  // ESCAPE KEY
+  // ============================================================
 
   useEffect(() => {
     const handleEscape = (event) => {
-      if (event.key === "Escape") {
-        setShowNotifications(false);
-        setShowProfile(false);
-      }
+      if (event.key !== "Escape") return;
+
+      setShowNotifications(false);
+      setShowProfile(false);
     };
 
     document.addEventListener("keydown", handleEscape);
@@ -190,37 +164,8 @@ function StudentHeader() {
     };
   }, []);
 
-  // =====================================================
-  // MOUSE FOLLOW EFFECT
-  // =====================================================
-
-  useEffect(() => {
-    const header = headerRef.current;
-
-    if (!header) return;
-
-    const handleMouseMove = (event) => {
-      const rect = header.getBoundingClientRect();
-
-      setMousePosition({
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-      });
-    };
-
-    header.addEventListener("mousemove", handleMouseMove);
-
-    return () => {
-      header.removeEventListener(
-        "mousemove",
-        handleMouseMove
-      );
-    };
-  }, []);
-
   return (
     <header
-      ref={headerRef}
       className="
         fixed
         left-0
@@ -234,38 +179,13 @@ function StudentHeader() {
         bg-[#0a0a09]/95
         text-white
         shadow-[0_10px_40px_rgba(0,0,0,0.35)]
-        backdrop-blur-xl
+        backdrop-blur-md
         lg:left-64
       "
     >
-      {/* =====================================================
-          MOUSE FOLLOW LIGHT
-      ===================================================== */}
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          z-0
-          h-48
-          w-48
-          -translate-x-1/2
-          -translate-y-1/2
-          rounded-full
-          bg-amber-500/[0.045]
-          blur-3xl
-          transition-[left,top]
-          duration-150
-        "
-        style={{
-          left: mousePosition.x,
-          top: mousePosition.y,
-        }}
-      />
-
-      {/* =====================================================
+      {/* ========================================================
           AMBIENT BACKGROUND
-      ===================================================== */}
+      ======================================================== */}
 
       <div
         className="
@@ -295,9 +215,9 @@ function StudentHeader() {
         "
       />
 
-      {/* =====================================================
+      {/* ========================================================
           MEDIEVAL TEXTURE
-      ===================================================== */}
+      ======================================================== */}
 
       <div
         className="
@@ -322,9 +242,9 @@ function StudentHeader() {
         }}
       />
 
-      {/* =====================================================
+      {/* ========================================================
           TOP GOLD LINE
-      ===================================================== */}
+      ======================================================== */}
 
       <div
         className="
@@ -341,9 +261,9 @@ function StudentHeader() {
         "
       />
 
-      {/* =====================================================
+      {/* ========================================================
           HEADER CONTENT
-      ===================================================== */}
+      ======================================================== */}
 
       <div
         className="
@@ -358,12 +278,12 @@ function StudentHeader() {
           lg:px-8
         "
       >
-        {/* ===================================================
+        {/* ======================================================
             LEFT SIDE
-        =================================================== */}
+        ====================================================== */}
 
         <div className="flex items-center gap-3">
-          {/* House Sigil */}
+          {/* Sigil */}
 
           <div
             className="
@@ -394,8 +314,8 @@ function StudentHeader() {
               size={19}
               strokeWidth={1.5}
               className="
-                transition-all
-                duration-700
+                transition-transform
+                duration-500
                 group-hover/sigil:rotate-12
                 group-hover/sigil:scale-110
               "
@@ -434,11 +354,7 @@ function StudentHeader() {
             <div className="mb-0.5 flex items-center gap-2">
               <Crown
                 size={10}
-                className="
-                  hidden
-                  text-amber-600
-                  sm:block
-                "
+                className="hidden text-amber-600 sm:block"
               />
 
               <span
@@ -481,14 +397,14 @@ function StudentHeader() {
           </div>
         </div>
 
-        {/* ===================================================
+        {/* ======================================================
             RIGHT SIDE
-        =================================================== */}
+        ====================================================== */}
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* =================================================
+          {/* ====================================================
               SEARCH
-          ================================================= */}
+          ==================================================== */}
 
           <form
             onSubmit={handleSearchSubmit}
@@ -525,7 +441,7 @@ function StudentHeader() {
             <input
               type="text"
               value={search}
-              onChange={handleSearch}
+              onChange={(event) => setSearch(event.target.value)}
               placeholder="Search the realm..."
               className="
                 w-full
@@ -541,9 +457,10 @@ function StudentHeader() {
               <button
                 type="button"
                 onClick={clearSearch}
+                aria-label="Clear search"
                 className="
                   text-[#575249]
-                  transition
+                  transition-colors
                   hover:text-amber-500
                 "
               >
@@ -552,9 +469,9 @@ function StudentHeader() {
             )}
           </form>
 
-          {/* =================================================
+          {/* ====================================================
               NOTIFICATIONS
-          ================================================= */}
+          ==================================================== */}
 
           <div
             ref={notificationRef}
@@ -563,11 +480,9 @@ function StudentHeader() {
             <button
               type="button"
               aria-label="Notifications"
+              aria-expanded={showNotifications}
               onClick={() => {
-                setShowNotifications(
-                  (previous) => !previous
-                );
-
+                setShowNotifications((previous) => !previous);
                 setShowProfile(false);
               }}
               className="
@@ -593,14 +508,11 @@ function StudentHeader() {
               <Bell
                 size={17}
                 className="
-                  transition-all
-                  duration-500
+                  transition-transform
+                  duration-300
                   group-hover:rotate-12
-                  group-hover:scale-110
                 "
               />
-
-              {/* Dynamic unread indicator */}
 
               {unreadNotificationCount > 0 && (
                 <span
@@ -627,10 +539,6 @@ function StudentHeader() {
               )}
             </button>
 
-            {/* =================================================
-                NOTIFICATION DROPDOWN
-            ================================================= */}
-
             {showNotifications && (
               <div
                 className="
@@ -646,8 +554,6 @@ function StudentHeader() {
                   animate-dropdown
                 "
               >
-                {/* Decorative top */}
-
                 <div
                   className="
                     h-[2px]
@@ -728,8 +634,8 @@ function StudentHeader() {
 
                 {/* Notifications */}
 
-                {notifications.length > 0 ? (
-                  notifications.map((notification) => (
+                {NOTIFICATIONS.length > 0 ? (
+                  NOTIFICATIONS.map((notification) => (
                     <div
                       key={notification.id}
                       className="
@@ -741,7 +647,7 @@ function StudentHeader() {
                         border-[#292722]
                         px-4
                         py-4
-                        transition-all
+                        transition-colors
                         duration-300
                         hover:bg-amber-950/[0.08]
                       "
@@ -757,24 +663,23 @@ function StudentHeader() {
                           border
                           transition-transform
                           duration-300
-                          group-hover/notification:scale-110
+                          group-hover/notification:scale-105
+
                           ${
-                            notification.type ===
-                            "completed"
+                            notification.type === "completed"
                               ? "border-emerald-900/40 bg-emerald-950/20 text-emerald-500"
                               : "border-[#38342c] bg-[#171613] text-amber-600"
                           }
                         `}
                       >
-                        {notification.type ===
-                        "completed" ? (
+                        {notification.type === "completed" ? (
                           <CheckCircle2 size={16} />
                         ) : (
                           <BookOpen size={16} />
                         )}
                       </div>
 
-                      <div>
+                      <div className="min-w-0 pr-3">
                         <p
                           className="
                             text-xs
@@ -853,7 +758,7 @@ function StudentHeader() {
                     uppercase
                     tracking-[0.22em]
                     text-amber-600
-                    transition-all
+                    transition-colors
                     duration-300
                     hover:bg-amber-950/10
                     hover:text-amber-400
@@ -874,9 +779,9 @@ function StudentHeader() {
             )}
           </div>
 
-          {/* =================================================
+          {/* ====================================================
               PROFILE
-          ================================================= */}
+          ==================================================== */}
 
           <div
             ref={profileRef}
@@ -884,11 +789,9 @@ function StudentHeader() {
           >
             <button
               type="button"
+              aria-expanded={showProfile}
               onClick={() => {
-                setShowProfile(
-                  (previous) => !previous
-                );
-
+                setShowProfile((previous) => !previous);
                 setShowNotifications(false);
               }}
               className="
@@ -927,7 +830,7 @@ function StudentHeader() {
                   text-amber-500
                   shadow-[inset_0_0_15px_rgba(212,175,55,.04)]
                   transition-all
-                  duration-500
+                  duration-300
                   group-hover:border-amber-600/60
                   group-hover:shadow-[0_0_18px_rgba(212,175,55,.1)]
                 "
@@ -942,8 +845,6 @@ function StudentHeader() {
                   avatarInitial
                 )}
 
-                {/* Online */}
-
                 <span
                   className="
                     absolute
@@ -954,7 +855,6 @@ function StudentHeader() {
                     border
                     border-black
                     bg-emerald-500
-                    shadow-[0_0_8px_rgba(34,197,94,.7)]
                   "
                 />
               </div>
@@ -1010,9 +910,7 @@ function StudentHeader() {
               />
             </button>
 
-            {/* =================================================
-                PROFILE DROPDOWN
-            ================================================= */}
+            {/* Profile Dropdown */}
 
             {showProfile && (
               <div
@@ -1029,8 +927,6 @@ function StudentHeader() {
                   animate-dropdown
                 "
               >
-                {/* Top gold line */}
-
                 <div
                   className="
                     h-[2px]
@@ -1042,7 +938,7 @@ function StudentHeader() {
                   "
                 />
 
-                {/* Profile header */}
+                {/* Profile Header */}
 
                 <div
                   className="
@@ -1078,6 +974,7 @@ function StudentHeader() {
                         flex
                         h-11
                         w-11
+                        shrink-0
                         items-center
                         justify-center
                         overflow-hidden
@@ -1143,189 +1040,38 @@ function StudentHeader() {
 
                 {/* Profile */}
 
-                <button
-                  type="button"
+                <DropdownAction
+                  icon={User}
+                  label="Profile"
                   onClick={handleProfile}
-                  className="
-                    group/item
-                    flex
-                    w-full
-                    items-center
-                    gap-3
-                    border-b
-                    border-[#201f1b]
-                    px-4
-                    py-3
-                    text-left
-                    text-xs
-                    font-semibold
-                    text-[#777066]
-                    transition-all
-                    duration-300
-                    hover:bg-amber-950/[0.08]
-                    hover:pl-5
-                    hover:text-[#d7d0c2]
-                  "
-                >
-                  <span
-                    className="
-                      flex
-                      h-7
-                      w-7
-                      items-center
-                      justify-center
-                      border
-                      border-[#292722]
-                      bg-[#131311]
-                      transition-all
-                      duration-300
-                      group-hover/item:border-amber-800/40
-                      group-hover/item:text-amber-500
-                    "
-                  >
-                    <User size={14} />
-                  </span>
-
-                  <span>Profile</span>
-
-                  <ChevronRight
-                    size={12}
-                    className="
-                      ml-auto
-                      opacity-0
-                      transition-all
-                      duration-300
-                      group-hover/item:translate-x-1
-                      group-hover/item:opacity-100
-                    "
-                  />
-                </button>
+                />
 
                 {/* Settings */}
 
-                <button
-                  type="button"
+                <DropdownAction
+                  icon={Settings}
+                  label="Settings"
                   onClick={handleSettings}
-                  className="
-                    group/item
-                    flex
-                    w-full
-                    items-center
-                    gap-3
-                    border-b
-                    border-[#201f1b]
-                    px-4
-                    py-3
-                    text-left
-                    text-xs
-                    font-semibold
-                    text-[#777066]
-                    transition-all
-                    duration-300
-                    hover:bg-amber-950/[0.08]
-                    hover:pl-5
-                    hover:text-[#d7d0c2]
-                  "
-                >
-                  <span
-                    className="
-                      flex
-                      h-7
-                      w-7
-                      items-center
-                      justify-center
-                      border
-                      border-[#292722]
-                      bg-[#131311]
-                      transition-all
-                      duration-300
-                      group-hover/item:border-amber-800/40
-                      group-hover/item:text-amber-500
-                    "
-                  >
-                    <Settings size={14} />
-                  </span>
-
-                  <span>Settings</span>
-
-                  <ChevronRight
-                    size={12}
-                    className="
-                      ml-auto
-                      opacity-0
-                      transition-all
-                      duration-300
-                      group-hover/item:translate-x-1
-                      group-hover/item:opacity-100
-                    "
-                  />
-                </button>
+                />
 
                 {/* Logout */}
 
-                <button
-                  type="button"
+                <DropdownAction
+                  icon={LogOut}
+                  label="Leave the Realm"
                   onClick={handleLogout}
-                  className="
-                    group/logout
-                    flex
-                    w-full
-                    items-center
-                    gap-3
-                    px-4
-                    py-3
-                    text-left
-                    text-xs
-                    font-bold
-                    text-red-600
-                    transition-all
-                    duration-300
-                    hover:bg-red-950/10
-                    hover:pl-5
-                    hover:text-red-400
-                  "
-                >
-                  <span
-                    className="
-                      flex
-                      h-7
-                      w-7
-                      items-center
-                      justify-center
-                      border
-                      border-red-950/40
-                      bg-red-950/10
-                      transition-all
-                      duration-300
-                      group-hover/logout:border-red-800/50
-                    "
-                  >
-                    <LogOut size={14} />
-                  </span>
-
-                  <span>Leave the Realm</span>
-
-                  <ChevronRight
-                    size={12}
-                    className="
-                      ml-auto
-                      opacity-0
-                      transition-all
-                      duration-300
-                      group-hover/logout:translate-x-1
-                      group-hover/logout:opacity-100
-                    "
-                  />
-                </button>
+                  danger
+                  last
+                />
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* =====================================================
-          BOTTOM DECORATIVE LINE
-      ===================================================== */}
+      {/* ========================================================
+          BOTTOM DECORATION
+      ======================================================== */}
 
       <div
         className="
@@ -1342,8 +1088,6 @@ function StudentHeader() {
         "
       />
 
-      {/* Animated center glow */}
-
       <div
         className="
           absolute
@@ -1357,10 +1101,6 @@ function StudentHeader() {
           animate-goldPulse
         "
       />
-
-      {/* =====================================================
-          ANIMATIONS
-      ===================================================== */}
 
       <style>{`
         @keyframes dropdown {
@@ -1398,13 +1138,109 @@ function StudentHeader() {
 
         @media (prefers-reduced-motion: reduce) {
           .animate-dropdown,
-          .animate-goldPulse,
-          .animate-pulse {
+          .animate-goldPulse {
             animation: none !important;
           }
         }
       `}</style>
     </header>
+  );
+}
+
+// ================================================================
+// DROPDOWN ACTION
+// ================================================================
+
+function DropdownAction({
+  icon: Icon,
+  label,
+  onClick,
+  danger = false,
+  last = false,
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`
+        group/item
+        flex
+        w-full
+        items-center
+        gap-3
+        px-4
+        py-3
+        text-left
+        text-xs
+        font-semibold
+        transition-all
+        duration-300
+
+        ${
+          !last
+            ? "border-b border-[#201f1b]"
+            : ""
+        }
+
+        ${
+          danger
+            ? `
+              text-red-600
+              hover:bg-red-950/10
+              hover:text-red-400
+            `
+            : `
+              text-[#777066]
+              hover:bg-amber-950/[0.08]
+              hover:text-[#d7d0c2]
+            `
+        }
+      `}
+    >
+      <span
+        className={`
+          flex
+          h-7
+          w-7
+          items-center
+          justify-center
+          border
+          transition-all
+          duration-300
+
+          ${
+            danger
+              ? `
+                border-red-950/40
+                bg-red-950/10
+                group-hover/item:border-red-800/50
+              `
+              : `
+                border-[#292722]
+                bg-[#131311]
+                group-hover/item:border-amber-800/40
+                group-hover/item:text-amber-500
+              `
+          }
+        `}
+      >
+        <Icon size={14} />
+      </span>
+
+      <span>{label}</span>
+
+      <ChevronRight
+        size={12}
+        className="
+          ml-auto
+          opacity-0
+          transition-all
+          duration-300
+          group-hover/item:translate-x-1
+          group-hover/item:opacity-100
+        "
+      />
+    </button>
   );
 }
 

@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AtSign,
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   Check,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Crown,
   Eye,
   EyeOff,
@@ -26,137 +26,506 @@ import {
 import toast from "react-hot-toast";
 
 import { useAuth } from "../../context/AuthContext";
-
 import {
   updateProfile,
   changePassword,
   changeEmail,
 } from "../../services/profileService";
 
-// ======================================================
-// AVATARS
-// ======================================================
+/* =========================================================
+   STATIC CONFIG
+========================================================= */
 
 const AVATARS = [
-  {
-    id: "knight",
-    name: "The Knight",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Knight&backgroundColor=1a1a1a",
-  },
-  {
-    id: "warrior",
-    name: "The Warrior",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Warrior&backgroundColor=1a1a1a",
-  },
-  {
-    id: "mage",
-    name: "The Mage",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Mage&backgroundColor=1a1a1a",
-  },
-  {
-    id: "king",
-    name: "The King",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=King&backgroundColor=1a1a1a",
-  },
-  {
-    id: "ranger",
-    name: "The Ranger",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Ranger&backgroundColor=1a1a1a",
-  },
-  {
-    id: "rogue",
-    name: "The Rogue",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Rogue&backgroundColor=1a1a1a",
-  },
-  {
-    id: "paladin",
-    name: "The Paladin",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Paladin&backgroundColor=1a1a1a",
-  },
-  {
-    id: "wizard",
-    name: "The Wizard",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Wizard&backgroundColor=1a1a1a",
-  },
-  {
-    id: "guardian",
-    name: "The Guardian",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Guardian&backgroundColor=1a1a1a",
-  },
-  {
-    id: "hunter",
-    name: "The Hunter",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Hunter&backgroundColor=1a1a1a",
-  },
-  {
-    id: "captain",
-    name: "The Captain",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Captain&backgroundColor=1a1a1a",
-  },
-  {
-    id: "lord",
-    name: "The Lord",
-    url: "https://api.dicebear.com/9.x/adventurer/svg?seed=Lord&backgroundColor=1a1a1a",
-  },
-];
+  ["knight", "The Knight", "Knight"],
+  ["warrior", "The Warrior", "Warrior"],
+  ["mage", "The Mage", "Mage"],
+  ["king", "The King", "King"],
+  ["ranger", "The Ranger", "Ranger"],
+  ["rogue", "The Rogue", "Rogue"],
+  ["paladin", "The Paladin", "Paladin"],
+  ["wizard", "The Wizard", "Wizard"],
+  ["guardian", "The Guardian", "Guardian"],
+  ["hunter", "The Hunter", "Hunter"],
+  ["captain", "The Captain", "Captain"],
+  ["lord", "The Lord", "Lord"],
+].map(([id, name, seed]) => ({
+  id,
+  name,
+  url: `https://api.dicebear.com/9.x/adventurer/svg?seed=${seed}&backgroundColor=1a1a1a`,
+}));
 
-// ======================================================
-// HELPERS
-// ======================================================
+const WEEK_DAYS = ["M", "T", "W", "T", "F", "S", "S"];
+
+const SECTION_COLORS = {
+  red: {
+    icon:
+      "border-red-500/20 bg-red-500/[0.05] text-red-300",
+    text: "text-red-300",
+    eyebrow: "text-red-300/60",
+  },
+  amber: {
+    icon:
+      "border-amber-500/20 bg-amber-500/[0.05] text-amber-300",
+    text: "text-amber-300",
+    eyebrow: "text-amber-300/60",
+  },
+  sky: {
+    icon:
+      "border-sky-500/20 bg-sky-500/[0.05] text-sky-300",
+    text: "text-sky-300",
+    eyebrow: "text-sky-300/60",
+  },
+};
+
+const CARD_ACCENTS = {
+  red: "via-red-500/30",
+  amber: "via-amber-500/30",
+  sky: "via-sky-400/40",
+};
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/* =========================================================
+   HELPERS
+========================================================= */
 
 const formatDate = (date) => {
   if (!date) return "Unknown";
 
-  const parsedDate = new Date(date);
+  const parsed = new Date(date);
 
-  if (Number.isNaN(parsedDate.getTime())) {
+  if (Number.isNaN(parsed.getTime())) {
     return "Unknown";
   }
 
-  return parsedDate.toLocaleDateString("en-IN", {
+  return parsed.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
 };
 
-const getInitials = (name = "") => {
-  return (
-    name
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join("") || "U"
-  );
+const formatShortDate = (date) =>
+  date.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  });
+
+const formatTime = (date) =>
+  date.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+const getAvatar = (user) =>
+  user?.avatar?.url ||
+  user?.avatar ||
+  AVATARS[0].url;
+
+const isSameDay = (a, b) =>
+  Boolean(a && b) &&
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
+const getJoinedDate = (user) => {
+  const value = user?.createdAt || user?.created_at;
+
+  if (!value) return null;
+
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? null : date;
 };
 
-// ======================================================
-// MAIN COMPONENT
-// ======================================================
+/* =========================================================
+   REUSABLE UI
+========================================================= */
+
+function SectionHeader({
+  icon: Icon,
+  eyebrow,
+  title,
+  description,
+  color = "red",
+}) {
+  const colors = SECTION_COLORS[color] || SECTION_COLORS.red;
+
+  return (
+    <div className="mb-7 flex items-center gap-4">
+      <div
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${colors.icon}`}
+      >
+        <Icon className="h-5 w-5" />
+      </div>
+
+      <div>
+        <p
+          className={`text-[10px] font-bold uppercase tracking-[0.3em] ${colors.eyebrow}`}
+        >
+          {eyebrow}
+        </p>
+
+        <h3 className="mt-1 font-serif text-xl font-bold text-slate-100">
+          {title}
+        </h3>
+
+        {description && (
+          <p className="mt-1 text-xs text-slate-600">
+            {description}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PasswordInput({
+  label,
+  value,
+  onChange,
+  visible,
+  setVisible,
+  placeholder,
+  disabled,
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+        {label}
+      </label>
+
+      <div className="relative">
+        <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+
+        <input
+          type={visible ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoComplete="new-password"
+          className="w-full rounded-xl border border-slate-800 bg-[#050607] py-3.5 pl-11 pr-12 text-sm text-slate-200 outline-none transition focus:border-red-500/30 focus:ring-2 focus:ring-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+
+        <button
+          type="button"
+          onClick={() => setVisible((value) => !value)}
+          disabled={disabled}
+          aria-label={
+            visible
+              ? `Hide ${label}`
+              : `Show ${label}`
+          }
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-600 transition hover:bg-slate-800/50 hover:text-slate-300 disabled:opacity-50"
+        >
+          {visible ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Card({
+  children,
+  accent = "red",
+  className = "",
+}) {
+  return (
+    <section
+      className={`relative overflow-hidden rounded-[2rem] border border-slate-800/80 bg-[#0a0c0f]/95 shadow-2xl shadow-black/30 ${className}`}
+    >
+      <div
+        className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent ${
+          CARD_ACCENTS[accent] || CARD_ACCENTS.red
+        } to-transparent`}
+      />
+
+      {children}
+    </section>
+  );
+}
+
+/* =========================================================
+   LEARNING CALENDAR
+========================================================= */
+
+function LearningCalendar({
+  liveNow,
+  joinedDate,
+  studyStreak,
+}) {
+  const [calendarDate, setCalendarDate] = useState(
+    () => new Date()
+  );
+
+  const calendarMonthLabel =
+    calendarDate.toLocaleDateString("en-IN", {
+      month: "long",
+      year: "numeric",
+    });
+
+  const calendarDays = (() => {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+
+    const firstDay = new Date(
+      year,
+      month,
+      1
+    ).getDay();
+
+    const daysInMonth = new Date(
+      year,
+      month + 1,
+      0
+    ).getDate();
+
+    const offset = (firstDay + 6) % 7;
+
+    const days = Array(offset).fill(null);
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(
+        new Date(year, month, day)
+      );
+    }
+
+    while (days.length % 7 !== 0) {
+      days.push(null);
+    }
+
+    return days;
+  })();
+
+  const changeMonth = (amount) => {
+    setCalendarDate(
+      (current) =>
+        new Date(
+          current.getFullYear(),
+          current.getMonth() + amount,
+          1
+        )
+    );
+  };
+
+  const goToCurrentMonth = () => {
+    const now = new Date();
+
+    setCalendarDate(
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+      )
+    );
+  };
+
+  return (
+    <Card>
+      <div className="relative p-6">
+        <div className="mb-5 flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/[0.06]">
+              <CalendarDays className="h-5 w-5 text-red-300" />
+            </div>
+
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-400/60">
+                Journey Timeline
+              </p>
+
+              <h3 className="mt-1 font-serif text-lg font-bold text-slate-100">
+                Learning Calendar
+              </h3>
+            </div>
+          </div>
+
+          <div className="text-right">
+            <p className="text-[9px] font-bold uppercase text-slate-600">
+              Live
+            </p>
+
+            <p className="mt-1 text-[11px] text-emerald-400">
+              {formatTime(liveNow)}
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-slate-800 bg-[#07090c]/90 p-3">
+          <button
+            type="button"
+            onClick={() => changeMonth(-1)}
+            aria-label="Previous month"
+            className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={goToCurrentMonth}
+            className="font-serif text-sm font-semibold text-slate-200 hover:text-amber-300"
+          >
+            {calendarMonthLabel}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => changeMonth(1)}
+            aria-label="Next month"
+            className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {WEEK_DAYS.map((day, index) => (
+            <div
+              key={`${day}-${index}`}
+              className="py-1 text-[9px] font-bold text-slate-700"
+            >
+              {day}
+            </div>
+          ))}
+
+          {calendarDays.map((date, index) => {
+            if (!date) {
+              return (
+                <div
+                  key={`empty-${index}`}
+                  className="aspect-square"
+                  aria-hidden="true"
+                />
+              );
+            }
+
+            const today = isSameDay(
+              date,
+              liveNow
+            );
+
+            const joined = isSameDay(
+              date,
+              joinedDate
+            );
+
+            return (
+              <div
+                key={date.toISOString()}
+                title={
+                  today
+                    ? "Today"
+                    : joined
+                      ? "Your Smart LMS journey started here"
+                      : formatDate(date)
+                }
+                className={`relative flex aspect-square items-center justify-center rounded-lg text-[11px] transition ${
+                  today
+                    ? "bg-gradient-to-br from-red-500/25 to-amber-500/15 font-bold text-amber-300 ring-1 ring-red-400/40"
+                    : joined
+                      ? "bg-slate-800/80 font-semibold text-slate-200 ring-1 ring-slate-600"
+                      : "text-slate-500 hover:bg-slate-800/50 hover:text-slate-200"
+                }`}
+              >
+                {date.getDate()}
+
+                {(today || joined) && (
+                  <span
+                    className={`absolute bottom-1 h-1 w-1 rounded-full ${
+                      today
+                        ? "bg-amber-300"
+                        : "bg-slate-400"
+                    }`}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-slate-800 bg-[#07090c] p-3">
+            <p className="text-[9px] font-bold uppercase text-slate-600">
+              Today
+            </p>
+
+            <p className="mt-1 text-xs font-semibold text-slate-300">
+              {liveNow.toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+              })}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-[#07090c] p-3">
+            <p className="text-[9px] font-bold uppercase text-slate-600">
+              Streak
+            </p>
+
+            <p className="mt-1 text-xs font-semibold text-orange-300">
+              {studyStreak || 0} days
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 flex gap-4 text-[9px] text-slate-600">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-amber-300" />
+            Today
+          </span>
+
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-slate-400" />
+            Joined
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/* =========================================================
+   PROFILE
+========================================================= */
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
 
-  // ====================================================
-  // PROFILE STATE
-  // ====================================================
+  /* -------------------------------------------------------
+     PROFILE
+  ------------------------------------------------------- */
 
   const [name, setName] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState(
     AVATARS[0].url
   );
 
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] =
+    useState(false);
 
-  // ====================================================
-  // PASSWORD STATE
-  // ====================================================
+  const [savingProfile, setSavingProfile] =
+    useState(false);
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  /* -------------------------------------------------------
+     PASSWORD
+  ------------------------------------------------------- */
+
+  const [currentPassword, setCurrentPassword] =
+    useState("");
+
+  const [newPassword, setNewPassword] =
+    useState("");
+
+  const [confirmPassword, setConfirmPassword] =
+    useState("");
 
   const [showCurrentPassword, setShowCurrentPassword] =
     useState(false);
@@ -170,162 +539,80 @@ const Profile = () => {
   const [changingPassword, setChangingPassword] =
     useState(false);
 
-  // ====================================================
-  // EMAIL STATE
-  // ====================================================
+  /* -------------------------------------------------------
+     EMAIL
+  ------------------------------------------------------- */
 
-  const [showEmailForm, setShowEmailForm] = useState(false);
-  const [newEmail, setNewEmail] = useState("");
-  const [changingEmail, setChangingEmail] = useState(false);
-
-  // ====================================================
-  // AVATAR STATE
-  // ====================================================
-
-  const [showAvatarPicker, setShowAvatarPicker] =
+  const [showEmailForm, setShowEmailForm] =
     useState(false);
 
-  // ====================================================
-  // LIVE CALENDAR STATE
-  // ====================================================
+  const [newEmail, setNewEmail] = useState("");
 
-  const [calendarDate, setCalendarDate] = useState(() => new Date());
-  const [liveNow, setLiveNow] = useState(() => new Date());
+  const [changingEmail, setChangingEmail] =
+    useState(false);
 
-  // Keeps the profile/calendar visually fresh without a page refresh.
-  // The calendar itself is client-side, while profile mutations below
-  // immediately update AuthContext when updateUser is available.
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setLiveNow(new Date());
-    }, 30_000);
+  /* -------------------------------------------------------
+     LIVE CLOCK
+  ------------------------------------------------------- */
 
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const calendarMonthLabel = useMemo(
-    () =>
-      calendarDate.toLocaleDateString("en-IN", {
-        month: "long",
-        year: "numeric",
-      }),
-    [calendarDate]
+  const [liveNow, setLiveNow] = useState(
+    () => new Date()
   );
 
-  const calendarDays = useMemo(() => {
-    const year = calendarDate.getFullYear();
-    const month = calendarDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveNow(new Date());
+    }, 30000);
 
-    // Monday-first calendar.
-    const mondayFirstOffset = (firstDay + 6) % 7;
-    const cells = [];
+    return () => clearInterval(timer);
+  }, []);
 
-    for (let i = 0; i < mondayFirstOffset; i += 1) {
-      cells.push(null);
-    }
-
-    for (let day = 1; day <= daysInMonth; day += 1) {
-      cells.push(new Date(year, month, day));
-    }
-
-    while (cells.length % 7 !== 0) {
-      cells.push(null);
-    }
-
-    return cells;
-  }, [calendarDate]);
-
-  const todayKey = useMemo(() => {
-    const d = liveNow;
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  }, [liveNow]);
-
-  const joinedDate = useMemo(() => {
-    const raw = user?.createdAt || user?.created_at;
-    if (!raw) return null;
-    const date = new Date(raw);
-    return Number.isNaN(date.getTime()) ? null : date;
-  }, [user]);
-
-  const isSameDay = (a, b) =>
-    Boolean(a && b) &&
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-
-  const goToPreviousMonth = () => {
-    setCalendarDate(
-      (current) =>
-        new Date(current.getFullYear(), current.getMonth() - 1, 1)
-    );
-  };
-
-  const goToNextMonth = () => {
-    setCalendarDate(
-      (current) =>
-        new Date(current.getFullYear(), current.getMonth() + 1, 1)
-    );
-  };
-
-  const goToCurrentMonth = () => {
-    const now = new Date();
-    setCalendarDate(new Date(now.getFullYear(), now.getMonth(), 1));
-  };
-
-  // ====================================================
-  // INITIALIZE USER DATA
-  // ====================================================
+  /* -------------------------------------------------------
+     SYNC USER
+  ------------------------------------------------------- */
 
   useEffect(() => {
     if (!user) return;
 
     setName(user.name || "");
-
-    const existingAvatar =
-      user.avatar?.url ||
-      user.avatar ||
-      AVATARS[0].url;
-
-    setSelectedAvatar(existingAvatar);
+    setSelectedAvatar(getAvatar(user));
   }, [user]);
 
-  // ====================================================
-  // PROFILE COMPLETION
-  // ====================================================
+  /* -------------------------------------------------------
+     DERIVED DATA
+  ------------------------------------------------------- */
 
-  const completion = useMemo(() => {
-    if (!user) return 0;
+  const joinedDate = getJoinedDate(user);
 
-    const fields = [
-      Boolean(name?.trim()),
-      Boolean(user.email),
-      Boolean(selectedAvatar),
-      Boolean(user.isVerified),
-    ];
+  const completion = user
+    ? Math.round(
+        (
+          [
+            Boolean(name.trim()),
+            Boolean(user.email),
+            Boolean(selectedAvatar),
+            Boolean(user.isVerified),
+          ].filter(Boolean).length /
+          4
+        ) * 100
+      )
+    : 0;
 
-    const completed = fields.filter(Boolean).length;
-
-    return Math.round((completed / fields.length) * 100);
-  }, [name, selectedAvatar, user]);
-
-  // ====================================================
-  // PROFILE SAVE
-  // ====================================================
+  /* =======================================================
+     PROFILE ACTIONS
+  ======================================================= */
 
   const handleSaveProfile = async (event) => {
-    event.preventDefault();
+    event?.preventDefault();
+
+    if (savingProfile) return;
 
     const trimmedName = name.trim();
 
-    if (!trimmedName) {
-      toast.error("Please enter your name.");
-      return;
-    }
-
     if (trimmedName.length < 2) {
-      toast.error("Name must contain at least 2 characters.");
+      toast.error(
+        "Name must contain at least 2 characters."
+      );
       return;
     }
 
@@ -337,24 +624,17 @@ const Profile = () => {
         avatar: selectedAvatar,
       });
 
-      // Update AuthContext immediately so the profile page and the rest
-      // of the LMS reflect the new name/avatar without a hard refresh.
       const updatedUser =
         response?.user ||
         response?.data?.user ||
-        response?.data ||
-        null;
+        response?.data;
 
-      if (typeof updateUser === "function") {
-        if (updatedUser && typeof updatedUser === "object") {
-          updateUser(updatedUser);
-        } else {
-          updateUser({
-            name: trimmedName,
-            avatar: selectedAvatar,
-          });
+      updateUser?.(
+        updatedUser || {
+          name: trimmedName,
+          avatar: selectedAvatar,
         }
-      }
+      );
 
       toast.success(
         response?.message ||
@@ -363,7 +643,10 @@ const Profile = () => {
 
       setIsEditingProfile(false);
     } catch (error) {
-      console.error("Profile update error:", error);
+      console.error(
+        "Profile update error:",
+        error
+      );
 
       toast.error(
         error?.response?.data?.message ||
@@ -374,29 +657,43 @@ const Profile = () => {
     }
   };
 
-  // ====================================================
-  // CHANGE EMAIL
-  // ====================================================
+  const handleCancelEdit = () => {
+    setName(user?.name || "");
+    setSelectedAvatar(getAvatar(user));
+    setIsEditingProfile(false);
+  };
+
+  const handleAvatarSelect = (url) => {
+    setSelectedAvatar(url);
+
+    if (!isEditingProfile) {
+      setIsEditingProfile(true);
+    }
+  };
+
+  /* =======================================================
+     EMAIL
+  ======================================================= */
 
   const handleChangeEmail = async (event) => {
     event.preventDefault();
 
-    const email = newEmail.trim().toLowerCase();
+    if (changingEmail) return;
 
-    if (!email) {
-      toast.error("Please enter a new email.");
-      return;
-    }
+    const email = newEmail
+      .trim()
+      .toLowerCase();
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(email)) {
-      toast.error("Please enter a valid email address.");
+    if (!EMAIL_REGEX.test(email)) {
+      toast.error(
+        "Please enter a valid email address."
+      );
       return;
     }
 
     if (
-      email === user?.email?.trim().toLowerCase()
+      email ===
+      user?.email?.trim().toLowerCase()
     ) {
       toast.error(
         "This is already your current email."
@@ -418,7 +715,10 @@ const Profile = () => {
 
       setNewEmail("");
     } catch (error) {
-      console.error("Email change error:", error);
+      console.error(
+        "Email change error:",
+        error
+      );
 
       toast.error(
         error?.response?.data?.message ||
@@ -429,20 +729,19 @@ const Profile = () => {
     }
   };
 
-  // ====================================================
-  // CHANGE PASSWORD
-  // ====================================================
+  /* =======================================================
+     PASSWORD
+  ======================================================= */
 
   const handleChangePassword = async (event) => {
     event.preventDefault();
 
-    if (!currentPassword) {
-      toast.error("Enter your current password.");
-      return;
-    }
+    if (changingPassword) return;
 
-    if (!newPassword) {
-      toast.error("Enter a new password.");
+    if (!currentPassword) {
+      toast.error(
+        "Enter your current password."
+      );
       return;
     }
 
@@ -454,7 +753,9 @@ const Profile = () => {
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("New passwords do not match.");
+      toast.error(
+        "New passwords do not match."
+      );
       return;
     }
 
@@ -481,8 +782,15 @@ const Profile = () => {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
     } catch (error) {
-      console.error("Change password error:", error);
+      console.error(
+        "Change password error:",
+        error
+      );
 
       toast.error(
         error?.response?.data?.message ||
@@ -493,169 +801,76 @@ const Profile = () => {
     }
   };
 
-  // ====================================================
-  // SELECT AVATAR
-  // ====================================================
-
-  const handleAvatarSelect = (avatarUrl) => {
-    setSelectedAvatar(avatarUrl);
-    setShowAvatarPicker(false);
-
-    if (!isEditingProfile) {
-      setIsEditingProfile(true);
-    }
-  };
-
-  // ====================================================
-  // CANCEL PROFILE EDIT
-  // ====================================================
-
-  const handleCancelEdit = () => {
-    setName(user?.name || "");
-
-    setSelectedAvatar(
-      user?.avatar?.url ||
-        user?.avatar ||
-        AVATARS[0].url
-    );
-
-    setIsEditingProfile(false);
-  };
-
-  // ====================================================
-  // PASSWORD INPUT COMPONENT
-  // ====================================================
-
-  const PasswordInput = ({
-    label,
-    value,
-    onChange,
-    visible,
-    setVisible,
-    placeholder,
-  }) => {
-    return (
-      <div>
-        <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-          {label}
-        </label>
-
-        <div className="relative">
-          <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
-
-          <input
-            type={visible ? "text" : "password"}
-            value={value}
-            onChange={(event) =>
-              onChange(event.target.value)
-            }
-            placeholder={placeholder}
-            disabled={changingPassword}
-            className="w-full rounded-xl border border-slate-800 bg-[#050607] py-3.5 pl-11 pr-12 text-sm text-slate-200 outline-none transition-all duration-300 placeholder:text-slate-700 focus:border-red-500/30 focus:ring-2 focus:ring-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
-          />
-
-          <button
-            type="button"
-            onClick={() => setVisible(!visible)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-600 transition hover:bg-slate-800/50 hover:text-slate-300"
-          >
-            {visible ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // ====================================================
-  // LOADING STATE
-  // ====================================================
+  /* =======================================================
+     LOADING
+  ======================================================= */
 
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#050607]">
-        <div className="flex items-center gap-3 text-slate-400">
-          <LoaderCircle className="h-5 w-5 animate-spin" />
+        <LoaderCircle className="mr-3 h-5 w-5 animate-spin text-amber-400" />
 
+        <span className="text-slate-400">
           Loading profile...
-        </div>
+        </span>
       </div>
     );
   }
 
-  // ====================================================
-  // MAIN UI
-  // ====================================================
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050607] text-slate-200">
-
-      {/* ==================================================
+      {/* =================================================
           AMBIENT BACKGROUND
-      ================================================== */}
+      ================================================= */}
 
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-
+      <div
+        className="pointer-events-none fixed inset-0 overflow-hidden"
+        aria-hidden="true"
+      >
         <div className="absolute -left-40 top-20 h-96 w-96 rounded-full bg-red-900/[0.06] blur-3xl" />
 
         <div className="absolute -right-40 top-80 h-96 w-96 rounded-full bg-amber-700/[0.04] blur-3xl" />
 
         <div className="absolute bottom-0 left-1/2 h-72 w-96 -translate-x-1/2 rounded-full bg-red-950/[0.04] blur-3xl" />
 
-        {/* Moon */}
         <div className="absolute right-[8%] top-20 h-20 w-20 rounded-full bg-slate-200/[0.04] shadow-[0_0_80px_rgba(255,255,255,0.03)]" />
 
-        {/* Mountain silhouettes */}
         <div className="absolute bottom-0 left-0 h-48 w-full bg-gradient-to-t from-black via-black/80 to-transparent" />
-
       </div>
 
-      {/* ==================================================
-          PAGE
-      ================================================== */}
-
       <main className="relative mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-
         {/* =================================================
-            PAGE HEADER
+            HEADER
         ================================================= */}
 
         <header className="mb-8">
-
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-
             <div>
-
               <div className="mb-3 flex items-center gap-2">
-
                 <Sword className="h-4 w-4 text-red-400/70" />
 
                 <span className="text-[10px] font-bold uppercase tracking-[0.35em] text-red-400/60">
                   The Adventurer's Hall
                 </span>
-
               </div>
 
-              <h1 className="font-serif text-3xl font-bold tracking-tight text-slate-100 sm:text-4xl">
+              <h1 className="font-serif text-3xl font-bold text-slate-100 sm:text-4xl">
                 Your Profile
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
                 Shape your identity, protect your account,
-                and continue your journey through the
-                Smart LMS realm.
+                and continue your journey through the Smart
+                LMS realm.
               </p>
-
             </div>
 
-            {/* Completion */}
             <div className="w-full sm:w-64">
-
               <div className="mb-2 flex items-center justify-between">
-
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">
                   Profile Completion
                 </span>
@@ -663,87 +878,73 @@ const Profile = () => {
                 <span className="text-sm font-semibold text-amber-400">
                   {completion}%
                 </span>
-
               </div>
 
-              <div className="h-1.5 overflow-hidden rounded-full bg-slate-900">
-
+              <div
+                className="h-1.5 overflow-hidden rounded-full bg-slate-900"
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow={completion}
+              >
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-red-500 via-amber-500 to-amber-300 transition-all duration-700"
                   style={{
                     width: `${completion}%`,
                   }}
                 />
-
               </div>
-
             </div>
-
           </div>
-
         </header>
 
         {/* =================================================
-            HERO PROFILE CARD
+            PROFILE HERO
         ================================================= */}
 
-        <section className="relative mb-8 overflow-hidden rounded-[2rem] border border-slate-800/80 bg-[#0a0c0f]/95 shadow-2xl shadow-black/40">
-
-          {/* Top border glow */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
-
-          {/* Background glow */}
-          <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-red-600/[0.05] blur-3xl" />
-
+        <Card className="mb-8">
           <div className="relative p-6 sm:p-8 lg:p-10">
+            <div
+              className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-red-600/[0.05] blur-3xl"
+              aria-hidden="true"
+            />
 
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-
-              {/* Profile Identity */}
+            <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-
                 {/* Avatar */}
                 <div className="relative shrink-0">
-
                   <div className="absolute -inset-3 rounded-full border border-red-500/10" />
 
                   <div className="absolute -inset-6 rounded-full border border-red-500/[0.04]" />
 
                   <div className="relative h-28 w-28 overflow-hidden rounded-full border-2 border-amber-500/20 bg-[#11151a] shadow-[0_0_50px_rgba(239,68,68,0.08)] sm:h-32 sm:w-32">
-
                     <img
                       src={selectedAvatar}
                       alt="Profile avatar"
+                      loading="eager"
+                      decoding="async"
                       className="h-full w-full object-cover"
                     />
-
                   </div>
 
-                  {/* Online indicator */}
                   <div className="absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full border-4 border-[#0a0c0f] bg-emerald-500">
                     <Check className="h-3 w-3 text-black" />
                   </div>
-
                 </div>
 
-                {/* User info */}
+                {/* User information */}
                 <div>
-
                   <div className="mb-2 flex flex-wrap items-center gap-2">
-
                     <span className="rounded-full border border-red-500/20 bg-red-500/[0.05] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-red-400">
                       {user.role || "Student"}
                     </span>
 
                     {user.isVerified && (
                       <span className="flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/[0.04] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-400">
-
                         <CheckCircle2 className="h-3 w-3" />
-
                         Verified
                       </span>
                     )}
-
                   </div>
 
                   <h2 className="font-serif text-2xl font-bold text-slate-100 sm:text-3xl">
@@ -755,45 +956,39 @@ const Profile = () => {
                     {user.email}
                   </p>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-600">
-                    <p className="flex items-center gap-2">
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-600">
+                    <span className="flex items-center gap-2">
                       <CalendarDays className="h-3.5 w-3.5" />
+
                       Joined{" "}
                       {formatDate(
                         user.createdAt ||
                           user.created_at
                       )}
-                    </p>
+                    </span>
 
                     <span className="hidden h-1 w-1 rounded-full bg-slate-700 sm:block" />
 
-                    <p className="flex items-center gap-2 text-emerald-500/70">
+                    <span className="flex items-center gap-2 text-emerald-500/70">
                       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                      {liveNow.toLocaleDateString("en-IN", {
-                        weekday: "short",
-                        day: "2-digit",
-                        month: "short",
-                      })}
-                    </p>
+
+                      {formatShortDate(liveNow)}
+                    </span>
                   </div>
-
                 </div>
-
               </div>
 
-              {/* Profile actions */}
+              {/* Profile buttons */}
               <div className="flex flex-wrap gap-3">
-
                 {!isEditingProfile ? (
                   <button
                     type="button"
                     onClick={() =>
                       setIsEditingProfile(true)
                     }
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-5 py-3 text-sm font-medium text-slate-300 transition-all duration-300 hover:-translate-y-0.5 hover:border-red-500/30 hover:bg-red-500/[0.04] hover:text-red-300"
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-5 py-3 text-sm font-medium text-slate-300 transition hover:-translate-y-0.5 hover:border-red-500/30 hover:text-red-300"
                   >
                     <Pencil className="h-4 w-4" />
-
                     Edit Profile
                   </button>
                 ) : (
@@ -802,10 +997,9 @@ const Profile = () => {
                       type="button"
                       onClick={handleCancelEdit}
                       disabled={savingProfile}
-                      className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-5 py-3 text-sm font-medium text-slate-400 transition hover:border-slate-600 hover:text-slate-200 disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-5 py-3 text-sm text-slate-400 transition hover:border-slate-600 hover:text-slate-200 disabled:opacity-50"
                     >
                       <X className="h-4 w-4" />
-
                       Cancel
                     </button>
 
@@ -813,114 +1007,79 @@ const Profile = () => {
                       type="button"
                       onClick={handleSaveProfile}
                       disabled={savingProfile}
-                      className="inline-flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/[0.07] px-5 py-3 text-sm font-semibold text-amber-300 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-300/40 hover:bg-amber-400/[0.12] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/[0.07] px-5 py-3 text-sm font-semibold text-amber-300 transition hover:-translate-y-0.5 hover:bg-amber-400/[0.12] disabled:opacity-50"
                     >
                       {savingProfile ? (
                         <>
                           <LoaderCircle className="h-4 w-4 animate-spin" />
-
                           Saving...
                         </>
                       ) : (
                         <>
                           <Save className="h-4 w-4" />
-
                           Save Changes
                         </>
                       )}
                     </button>
                   </>
                 )}
-
               </div>
-
             </div>
-
           </div>
-
-        </section>
+        </Card>
 
         {/* =================================================
             MAIN GRID
         ================================================= */}
 
         <div className="grid gap-8 lg:grid-cols-[1.4fr_0.8fr]">
-
           {/* =================================================
-              LEFT COLUMN
+              LEFT
           ================================================= */}
 
           <div className="space-y-8">
-
-            {/* ===============================================
-                PROFILE INFORMATION
-            =============================================== */}
-
-            <section className="relative overflow-hidden rounded-[2rem] border border-slate-800/80 bg-[#0a0c0f]/95 shadow-2xl shadow-black/30">
-
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
-
+            {/* Personal information */}
+            <Card>
               <div className="p-6 sm:p-8">
-
-                <div className="mb-7 flex items-center gap-4">
-
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/[0.05]">
-                    <User className="h-5 w-5 text-red-300" />
-                  </div>
-
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-400/60">
-                      Character Details
-                    </p>
-
-                    <h3 className="mt-1 font-serif text-xl font-bold text-slate-100">
-                      Personal Information
-                    </h3>
-                  </div>
-
-                </div>
+                <SectionHeader
+                  icon={User}
+                  eyebrow="Character Details"
+                  title="Personal Information"
+                />
 
                 <form
                   onSubmit={handleSaveProfile}
                   className="space-y-6"
                 >
-
-                  {/* Name */}
                   <div>
-
                     <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
                       Display Name
                     </label>
 
                     <div className="relative">
-
-                      <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+                      <User className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
 
                       <input
                         type="text"
                         value={name}
-                        onChange={(event) =>
-                          setName(event.target.value)
+                        onChange={(e) =>
+                          setName(e.target.value)
                         }
                         disabled={!isEditingProfile}
                         placeholder="Enter your name"
-                        className="w-full rounded-xl border border-slate-800 bg-[#050607] py-3.5 pl-11 pr-4 text-sm text-slate-200 outline-none transition-all duration-300 placeholder:text-slate-700 focus:border-red-500/30 focus:ring-2 focus:ring-red-500/10 disabled:cursor-default disabled:opacity-70"
+                        autoComplete="name"
+                        className="w-full rounded-xl border border-slate-800 bg-[#050607] py-3.5 pl-11 pr-4 text-sm text-slate-200 outline-none transition focus:border-red-500/30 focus:ring-2 focus:ring-red-500/10 disabled:opacity-70"
                       />
-
                     </div>
-
                   </div>
 
-                  {/* Email read only */}
                   <div>
-
                     <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
                       Account Email
                     </label>
 
                     <div className="relative">
-
-                      <AtSign className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
+                      <AtSign className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700" />
 
                       <input
                         type="email"
@@ -928,57 +1087,28 @@ const Profile = () => {
                         disabled
                         className="w-full cursor-not-allowed rounded-xl border border-slate-800 bg-[#050607] py-3.5 pl-11 pr-4 text-sm text-slate-500 outline-none"
                       />
-
                     </div>
-
                   </div>
-
                 </form>
-
               </div>
+            </Card>
 
-            </section>
-
-            {/* ===============================================
-                AVATAR SELECTOR
-            =============================================== */}
-
+            {/* Avatar */}
             {isEditingProfile && (
-              <section className="relative overflow-hidden rounded-[2rem] border border-slate-800/80 bg-[#0a0c0f]/95 shadow-2xl shadow-black/30">
-
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
-
+              <Card accent="amber">
                 <div className="p-6 sm:p-8">
-
-                  <div className="mb-7 flex items-center justify-between">
-
-                    <div className="flex items-center gap-4">
-
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/[0.05]">
-                        <Crown className="h-5 w-5 text-amber-300" />
-                      </div>
-
-                      <div>
-
-                        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-400/60">
-                          Choose Your Identity
-                        </p>
-
-                        <h3 className="mt-1 font-serif text-xl font-bold text-slate-100">
-                          Character Avatar
-                        </h3>
-
-                      </div>
-
-                    </div>
-
-                  </div>
+                  <SectionHeader
+                    icon={Crown}
+                    eyebrow="Choose Your Identity"
+                    title="Character Avatar"
+                    color="amber"
+                  />
 
                   <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
-
                     {AVATARS.map((avatar) => {
-                      const isSelected =
-                        selectedAvatar === avatar.url;
+                      const selected =
+                        selectedAvatar ===
+                        avatar.url;
 
                       return (
                         <button
@@ -989,78 +1119,46 @@ const Profile = () => {
                               avatar.url
                             )
                           }
-                          className={`group relative aspect-square overflow-hidden rounded-2xl border transition-all duration-300 ${
-                            isSelected
+                          aria-label={`Select ${avatar.name}`}
+                          aria-pressed={selected}
+                          className={`group relative aspect-square overflow-hidden rounded-2xl border transition ${
+                            selected
                               ? "border-amber-400/60 bg-amber-400/[0.08] shadow-[0_0_25px_rgba(245,158,11,0.08)]"
                               : "border-slate-800 bg-[#050607] hover:-translate-y-1 hover:border-slate-600"
                           }`}
                         >
-
                           <img
                             src={avatar.url}
                             alt={avatar.name}
+                            loading="lazy"
+                            decoding="async"
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                           />
 
-                          {isSelected && (
-                            <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-black">
+                          {selected && (
+                            <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-black">
                               <Check className="h-3.5 w-3.5" />
-                            </div>
+                            </span>
                           )}
-
                         </button>
                       );
                     })}
-
                   </div>
-
                 </div>
-
-              </section>
+              </Card>
             )}
 
-            {/* ===============================================
-                CHANGE EMAIL
-            =============================================== */}
-
-            <section className="relative overflow-hidden rounded-[2rem] border border-slate-700/60 bg-[#0a0c0f]/95 shadow-2xl shadow-black/40">
-
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/50 to-transparent" />
-
-              <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-sky-500/[0.04] blur-3xl" />
-
-              <div className="relative p-6 sm:p-8">
-
-                {/* Header */}
+            {/* Email */}
+            <Card accent="sky">
+              <div className="p-6 sm:p-8">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-
-                  <div className="flex items-center gap-4">
-
-                    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/[0.05]">
-
-                      <Mail className="h-5 w-5 text-sky-300" />
-
-                      <div className="absolute inset-0 animate-pulse rounded-2xl border border-sky-300/10" />
-
-                    </div>
-
-                    <div>
-
-                      <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-sky-300/60">
-                        Raven Message
-                      </p>
-
-                      <h3 className="mt-1 font-serif text-xl font-bold text-slate-100">
-                        Email Address
-                      </h3>
-
-                      <p className="mt-1 text-xs text-slate-600">
-                        Manage your account email
-                      </p>
-
-                    </div>
-
-                  </div>
+                  <SectionHeader
+                    icon={Mail}
+                    eyebrow="Raven Message"
+                    title="Email Address"
+                    description="Manage your account email"
+                    color="sky"
+                  />
 
                   {!showEmailForm && (
                     <button
@@ -1068,215 +1166,152 @@ const Profile = () => {
                       onClick={() =>
                         setShowEmailForm(true)
                       }
-                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[0.05] px-5 py-3 text-sm font-medium text-sky-200 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-300/40 hover:bg-sky-400/[0.1] hover:shadow-[0_0_30px_rgba(56,189,248,0.08)]"
+                      className="mb-7 inline-flex items-center justify-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[0.05] px-5 py-3 text-sm text-sky-200 transition hover:-translate-y-0.5 hover:bg-sky-400/[0.1]"
                     >
                       <Pencil className="h-4 w-4" />
-
                       Change Email
                     </button>
                   )}
-
                 </div>
 
-                {/* Current Email */}
-                <div className="mt-7 rounded-2xl border border-slate-800 bg-[#07090c]/80 p-5">
-
+                <div className="rounded-2xl border border-slate-800 bg-[#07090c]/80 p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
                     <div className="min-w-0">
-
                       <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">
                         Current Email
                       </p>
 
-                      <div className="mt-2 flex min-w-0 items-center gap-3">
-
+                      <p className="mt-2 flex items-center gap-3 truncate text-sm font-medium text-slate-200">
                         <AtSign className="h-4 w-4 shrink-0 text-slate-600" />
 
-                        <span className="truncate text-sm font-medium text-slate-200">
-                          {user.email}
-                        </span>
-
-                      </div>
-
+                        {user.email}
+                      </p>
                     </div>
 
-                    {user.isVerified ? (
-                      <div className="flex w-fit shrink-0 items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.05] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-
+                    <span
+                      className={`flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase ${
+                        user.isVerified
+                          ? "border-emerald-400/20 bg-emerald-400/[0.05] text-emerald-400"
+                          : "border-amber-400/20 bg-amber-400/[0.05] text-amber-400"
+                      }`}
+                    >
+                      {user.isVerified ? (
                         <CheckCircle2 className="h-3.5 w-3.5" />
-
-                        Verified
-
-                      </div>
-                    ) : (
-                      <div className="flex w-fit shrink-0 items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/[0.05] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
-
+                      ) : (
                         <Mail className="h-3.5 w-3.5" />
+                      )}
 
-                        Unverified
-
-                      </div>
-                    )}
-
+                      {user.isVerified
+                        ? "Verified"
+                        : "Unverified"}
+                    </span>
                   </div>
-
                 </div>
 
-                {/* Change Email Form */}
                 {showEmailForm && (
-                  <div className="mt-6 border-t border-slate-800 pt-6">
-
-                    <div className="mb-5">
-
+                  <form
+                    onSubmit={handleChangeEmail}
+                    className="mt-6 space-y-4 border-t border-slate-800 pt-6"
+                  >
+                    <div>
                       <p className="text-sm font-semibold text-slate-200">
                         Choose a new email address
                       </p>
 
                       <p className="mt-1 text-xs leading-6 text-slate-600">
-                        We will send a verification link
-                        to the new address. Your current
-                        email will remain active until
-                        verification.
+                        A verification link will be sent
+                        to the new address.
                       </p>
-
                     </div>
 
-                    <form
-                      onSubmit={handleChangeEmail}
-                      className="space-y-4"
-                    >
+                    <div className="relative">
+                      <AtSign className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-600" />
 
-                      <div className="relative">
+                      <input
+                        type="email"
+                        value={newEmail}
+                        onChange={(e) =>
+                          setNewEmail(
+                            e.target.value
+                          )
+                        }
+                        disabled={changingEmail}
+                        placeholder="new-email@example.com"
+                        autoComplete="email"
+                        className="w-full rounded-xl border border-slate-700 bg-[#050607] py-3.5 pl-12 pr-4 text-sm text-slate-200 outline-none transition focus:border-sky-400/40 focus:ring-2 focus:ring-sky-400/10 disabled:opacity-50"
+                      />
+                    </div>
 
-                        <AtSign className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-600" />
+                    <div className="flex gap-3 rounded-xl border border-sky-400/10 bg-sky-400/[0.03] p-4">
+                      <Shield className="h-4 w-4 shrink-0 text-sky-400/60" />
 
-                        <input
-                          type="email"
-                          value={newEmail}
-                          onChange={(event) =>
-                            setNewEmail(
-                              event.target.value
-                            )
-                          }
-                          disabled={changingEmail}
-                          placeholder="new-email@example.com"
-                          autoComplete="email"
-                          className="w-full rounded-xl border border-slate-700 bg-[#050607] py-3.5 pl-12 pr-4 text-sm text-slate-200 outline-none transition-all duration-300 placeholder:text-slate-700 focus:border-sky-400/40 focus:ring-2 focus:ring-sky-400/10 disabled:cursor-not-allowed disabled:opacity-50"
-                        />
+                      <p className="text-xs leading-6 text-slate-500">
+                        Your current email remains active
+                        until the new address is verified.
+                      </p>
+                    </div>
 
-                      </div>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button
+                        type="submit"
+                        disabled={changingEmail}
+                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[0.07] px-5 py-3.5 text-sm font-semibold text-sky-200 transition hover:bg-sky-400/[0.12] disabled:opacity-50"
+                      >
+                        {changingEmail ? (
+                          <>
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="h-4 w-4" />
+                            Send Verification
+                          </>
+                        )}
+                      </button>
 
-                      <div className="flex gap-3 rounded-xl border border-sky-400/10 bg-sky-400/[0.03] p-4">
-
-                        <Shield className="mt-0.5 h-4 w-4 shrink-0 text-sky-400/60" />
-
-                        <p className="text-xs leading-6 text-slate-500">
-                          For your security, your email
-                          address will only change after
-                          you verify the new address from
-                          the email we send you.
-                        </p>
-
-                      </div>
-
-                      <div className="flex flex-col gap-3 sm:flex-row">
-
-                        <button
-                          type="submit"
-                          disabled={changingEmail}
-                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[0.07] px-5 py-3.5 text-sm font-semibold text-sky-200 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-300/40 hover:bg-sky-400/[0.12] disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-
-                          {changingEmail ? (
-                            <>
-                              <LoaderCircle className="h-4 w-4 animate-spin" />
-
-                              Sending Verification...
-                            </>
-                          ) : (
-                            <>
-                              <Mail className="h-4 w-4" />
-
-                              Send Verification
-                            </>
-                          )}
-
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={changingEmail}
-                          onClick={() => {
-                            setShowEmailForm(false);
-                            setNewEmail("");
-                          }}
-                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-5 py-3.5 text-sm font-medium text-slate-400 transition hover:border-slate-600 hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-
-                          <X className="h-4 w-4" />
-
-                          Cancel
-
-                        </button>
-
-                      </div>
-
-                    </form>
-
-                  </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowEmailForm(false);
+                          setNewEmail("");
+                        }}
+                        disabled={changingEmail}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-5 py-3.5 text-sm text-slate-400 transition hover:text-slate-200 disabled:opacity-50"
+                      >
+                        <X className="h-4 w-4" />
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
                 )}
-
               </div>
+            </Card>
 
-            </section>
-
-            {/* ===============================================
-                CHANGE PASSWORD
-            =============================================== */}
-
-            <section className="relative overflow-hidden rounded-[2rem] border border-slate-800/80 bg-[#0a0c0f]/95 shadow-2xl shadow-black/30">
-
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
-
+            {/* Password */}
+            <Card>
               <div className="p-6 sm:p-8">
-
-                <div className="mb-7 flex items-center gap-4">
-
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/[0.05]">
-                    <Shield className="h-5 w-5 text-red-300" />
-                  </div>
-
-                  <div>
-
-                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-400/60">
-                      Fortify Your Realm
-                    </p>
-
-                    <h3 className="mt-1 font-serif text-xl font-bold text-slate-100">
-                      Security
-                    </h3>
-
-                    <p className="mt-1 text-xs text-slate-600">
-                      Keep your account protected
-                    </p>
-
-                  </div>
-
-                </div>
+                <SectionHeader
+                  icon={Shield}
+                  eyebrow="Fortify Your Realm"
+                  title="Security"
+                  description="Keep your account protected"
+                />
 
                 <form
                   onSubmit={handleChangePassword}
                   className="space-y-5"
                 >
-
                   <PasswordInput
                     label="Current Password"
                     value={currentPassword}
                     onChange={setCurrentPassword}
                     visible={showCurrentPassword}
-                    setVisible={setShowCurrentPassword}
+                    setVisible={
+                      setShowCurrentPassword
+                    }
                     placeholder="Enter current password"
+                    disabled={changingPassword}
                   />
 
                   <PasswordInput
@@ -1286,6 +1321,7 @@ const Profile = () => {
                     visible={showNewPassword}
                     setVisible={setShowNewPassword}
                     placeholder="Enter new password"
+                    disabled={changingPassword}
                   />
 
                   <PasswordInput
@@ -1293,91 +1329,65 @@ const Profile = () => {
                     value={confirmPassword}
                     onChange={setConfirmPassword}
                     visible={showConfirmPassword}
-                    setVisible={setShowConfirmPassword}
+                    setVisible={
+                      setShowConfirmPassword
+                    }
                     placeholder="Confirm new password"
+                    disabled={changingPassword}
                   />
 
                   <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.03] p-4">
-
                     <p className="text-xs leading-6 text-slate-500">
-                      Use a strong password containing
-                      uppercase letters, lowercase letters,
-                      numbers, and special characters.
+                      Use uppercase, lowercase, numbers,
+                      and special characters for a stronger
+                      password.
                     </p>
-
                   </div>
 
                   <button
                     type="submit"
                     disabled={changingPassword}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.06] px-5 py-3.5 text-sm font-semibold text-red-300 transition-all duration-300 hover:-translate-y-0.5 hover:border-red-400/40 hover:bg-red-500/[0.1] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.06] px-5 py-3.5 text-sm font-semibold text-red-300 transition hover:-translate-y-0.5 hover:bg-red-500/[0.1] disabled:opacity-50"
                   >
-
                     {changingPassword ? (
                       <>
                         <LoaderCircle className="h-4 w-4 animate-spin" />
-
                         Updating Password...
                       </>
                     ) : (
                       <>
                         <Lock className="h-4 w-4" />
-
                         Change Password
                       </>
                     )}
-
                   </button>
-
                 </form>
-
               </div>
-
-            </section>
-
+            </Card>
           </div>
 
           {/* =================================================
-              RIGHT COLUMN
+              RIGHT
           ================================================= */}
 
           <aside className="space-y-8">
-
-            {/* ===============================================
-                PROFILE STATUS
-            =============================================== */}
-
-            <section className="relative overflow-hidden rounded-[2rem] border border-slate-800/80 bg-[#0a0c0f]/95 shadow-2xl shadow-black/30">
-
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
-
+            {/* Character status */}
+            <Card accent="amber">
               <div className="p-6">
-
                 <div className="mb-6 flex items-center gap-3">
-
                   <Sparkles className="h-5 w-5 text-amber-400" />
 
                   <h3 className="font-serif text-lg font-bold text-slate-100">
                     Character Status
                   </h3>
-
                 </div>
 
                 <div className="space-y-4">
-
-                  {/* Verification */}
                   <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-[#07090c] p-4">
-
                     <div className="flex items-center gap-3">
-
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/[0.06]">
-
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-
-                      </div>
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
 
                       <div>
-
                         <p className="text-xs font-semibold text-slate-300">
                           Email
                         </p>
@@ -1385,38 +1395,27 @@ const Profile = () => {
                         <p className="text-[10px] text-slate-600">
                           Account verification
                         </p>
-
                       </div>
-
                     </div>
 
                     <span
-                      className={
+                      className={`text-[10px] font-bold uppercase ${
                         user.isVerified
-                          ? "text-[10px] font-bold uppercase tracking-wider text-emerald-400"
-                          : "text-[10px] font-bold uppercase tracking-wider text-amber-400"
-                      }
+                          ? "text-emerald-400"
+                          : "text-amber-400"
+                      }`}
                     >
                       {user.isVerified
                         ? "Verified"
                         : "Pending"}
                     </span>
-
                   </div>
 
-                  {/* Profile */}
                   <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-[#07090c] p-4">
-
                     <div className="flex items-center gap-3">
-
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/[0.06]">
-
-                        <User className="h-4 w-4 text-red-400" />
-
-                      </div>
+                      <User className="h-4 w-4 text-red-400" />
 
                       <div>
-
                         <p className="text-xs font-semibold text-slate-300">
                           Profile
                         </p>
@@ -1424,304 +1423,93 @@ const Profile = () => {
                         <p className="text-[10px] text-slate-600">
                           Character details
                         </p>
-
                       </div>
-
                     </div>
 
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                    <span className="text-[10px] font-bold uppercase text-amber-400">
                       {completion}%
                     </span>
-
                   </div>
-
-                </div>
-
-              </div>
-
-            </section>
-
-            {/* ===============================================
-                LIVE LEARNING CALENDAR
-            =============================================== */}
-
-            <section className="relative overflow-hidden rounded-[2rem] border border-slate-800/80 bg-[#0a0c0f]/95 shadow-2xl shadow-black/30">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
-              <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-red-500/[0.05] blur-3xl" />
-
-              <div className="relative p-6">
-                <div className="mb-5 flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/[0.06]">
-                      <CalendarDays className="h-5 w-5 text-red-300" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-400/60">
-                        Journey Timeline
-                      </p>
-                      <h3 className="mt-1 font-serif text-lg font-bold text-slate-100">
-                        Learning Calendar
-                      </h3>
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
-                      Live
-                    </p>
-                    <p className="mt-1 text-[11px] font-medium text-emerald-400">
-                      {liveNow.toLocaleTimeString("en-IN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mb-4 flex items-center justify-between rounded-2xl border border-slate-800 bg-[#07090c]/90 p-3">
-                  <button
-                    type="button"
-                    onClick={goToPreviousMonth}
-                    className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
-                    aria-label="Previous month"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={goToCurrentMonth}
-                    className="font-serif text-sm font-semibold text-slate-200 transition hover:text-amber-300"
-                    title="Go to current month"
-                  >
-                    {calendarMonthLabel}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={goToNextMonth}
-                    className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
-                    aria-label="Next month"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-7 gap-1 text-center">
-                  {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
-                    <div
-                      key={`${day}-${index}`}
-                      className="py-1 text-[9px] font-bold uppercase tracking-wider text-slate-700"
-                    >
-                      {day}
-                    </div>
-                  ))}
-
-                  {calendarDays.map((date, index) => {
-                    if (!date) {
-                      return (
-                        <div
-                          key={`empty-${index}`}
-                          className="aspect-square rounded-lg"
-                        />
-                      );
-                    }
-
-                    const isToday = isSameDay(date, liveNow);
-                    const isJoined = isSameDay(date, joinedDate);
-                    const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-
-                    return (
-                      <div
-                        key={dateKey}
-                        className={`relative flex aspect-square items-center justify-center rounded-lg text-[11px] transition-all ${
-                          isToday
-                            ? "bg-gradient-to-br from-red-500/25 to-amber-500/15 font-bold text-amber-300 ring-1 ring-red-400/40 shadow-[0_0_18px_rgba(239,68,68,0.10)]"
-                            : isJoined
-                              ? "bg-slate-800/80 font-semibold text-slate-200 ring-1 ring-slate-600"
-                              : "text-slate-500 hover:bg-slate-800/50 hover:text-slate-200"
-                        }`}
-                        title={
-                          isToday
-                            ? "Today"
-                            : isJoined
-                              ? "Your Smart LMS journey started here"
-                              : date.toLocaleDateString("en-IN", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })
-                        }
-                      >
-                        {date.getDate()}
-                        {isToday && (
-                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-amber-300" />
-                        )}
-                        {isJoined && !isToday && (
-                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-slate-400" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-slate-800 bg-[#07090c] p-3">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-600">
-                      Today
-                    </p>
-                    <p className="mt-1 text-xs font-semibold text-slate-300">
-                      {liveNow.toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                      })}
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-800 bg-[#07090c] p-3">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-600">
-                      Streak
-                    </p>
-                    <p className="mt-1 text-xs font-semibold text-orange-300">
-                      {user.studyStreak || 0} days
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center gap-4 text-[9px] font-medium text-slate-600">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-amber-300" />
-                    Today
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-slate-400" />
-                    Joined
-                  </span>
                 </div>
               </div>
-            </section>
+            </Card>
 
-            {/* ===============================================
-                ADVENTURER STATS
-            =============================================== */}
+            {/* Calendar */}
+            <LearningCalendar
+              liveNow={liveNow}
+              joinedDate={joinedDate}
+              studyStreak={user.studyStreak}
+            />
 
-            <section className="relative overflow-hidden rounded-[2rem] border border-slate-800/80 bg-[#0a0c0f]/95 shadow-2xl shadow-black/30">
-
+            {/* Stats */}
+            <Card accent="amber">
               <div className="p-6">
-
                 <div className="mb-6 flex items-center gap-3">
-
                   <Crown className="h-5 w-5 text-amber-400" />
 
                   <h3 className="font-serif text-lg font-bold text-slate-100">
                     Adventurer Stats
                   </h3>
-
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
+                  <StatCard
+                    label="XP"
+                    value={user.xp || 0}
+                    icon={Zap}
+                    color="text-amber-400"
+                  />
 
-                  {/* XP */}
-                  <div className="rounded-2xl border border-slate-800 bg-[#07090c] p-4">
+                  <StatCard
+                    label="Streak"
+                    value={user.studyStreak || 0}
+                    icon={Flame}
+                    color="text-orange-400"
+                  />
 
-                    <Zap className="mb-3 h-5 w-5 text-amber-400" />
+                  <StatCard
+                    label="Level"
+                    value={user.level || 1}
+                    icon={Sword}
+                    color="text-red-400"
+                  />
 
-                    <p className="text-xl font-bold text-slate-100">
-                      {user.xp || 0}
-                    </p>
-
-                    <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
-                      XP
-                    </p>
-
-                  </div>
-
-                  {/* Streak */}
-                  <div className="rounded-2xl border border-slate-800 bg-[#07090c] p-4">
-
-                    <Flame className="mb-3 h-5 w-5 text-orange-400" />
-
-                    <p className="text-xl font-bold text-slate-100">
-                      {user.studyStreak || 0}
-                    </p>
-
-                    <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
-                      Streak
-                    </p>
-
-                  </div>
-
-                  {/* Level */}
-                  <div className="rounded-2xl border border-slate-800 bg-[#07090c] p-4">
-
-                    <Sword className="mb-3 h-5 w-5 text-red-400" />
-
-                    <p className="text-xl font-bold text-slate-100">
-                      {user.level || 1}
-                    </p>
-
-                    <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
-                      Level
-                    </p>
-
-                  </div>
-
-                  {/* Rank */}
-                  <div className="rounded-2xl border border-slate-800 bg-[#07090c] p-4">
-
-                    <Crown className="mb-3 h-5 w-5 text-purple-400" />
-
-                    <p className="text-xl font-bold text-slate-100">
-                      {user.rank || "Novice"}
-                    </p>
-
-                    <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
-                      Rank
-                    </p>
-
-                  </div>
-
+                  <StatCard
+                    label="Rank"
+                    value={user.rank || "Novice"}
+                    icon={Crown}
+                    color="text-purple-400"
+                  />
                 </div>
-
               </div>
+            </Card>
 
-            </section>
-
-            {/* ===============================================
-                ACCOUNT INFORMATION
-            =============================================== */}
-
-            <section className="relative overflow-hidden rounded-[2rem] border border-slate-800/80 bg-[#0a0c0f]/95 shadow-2xl shadow-black/30">
-
+            {/* Account */}
+            <Card>
               <div className="p-6">
-
                 <div className="mb-6 flex items-center gap-3">
-
                   <AtSign className="h-5 w-5 text-slate-500" />
 
                   <h3 className="font-serif text-lg font-bold text-slate-100">
                     Account Information
                   </h3>
-
                 </div>
 
                 <div className="space-y-5">
-
                   <div>
-
-                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                    <p className="text-[9px] font-bold uppercase text-slate-600">
                       Account ID
                     </p>
 
                     <p className="mt-1 break-all font-mono text-xs text-slate-500">
-                      {user._id || user.id || "Unavailable"}
+                      {user._id ||
+                        user.id ||
+                        "Unavailable"}
                     </p>
-
                   </div>
 
                   <div>
-
-                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                    <p className="text-[9px] font-bold uppercase text-slate-600">
                       Joined
                     </p>
 
@@ -1731,56 +1519,39 @@ const Profile = () => {
                           user.created_at
                       )}
                     </p>
-
                   </div>
 
                   <div>
-
-                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                    <p className="text-[9px] font-bold uppercase text-slate-600">
                       Role
                     </p>
 
                     <p className="mt-1 capitalize text-sm text-slate-400">
                       {user.role || "student"}
                     </p>
-
                   </div>
-
                 </div>
-
               </div>
+            </Card>
 
-            </section>
-
-            {/* ===============================================
-                SECURITY NOTE
-            =============================================== */}
-
+            {/* Security note */}
             <div className="rounded-2xl border border-red-500/10 bg-red-500/[0.025] p-5">
-
               <div className="flex gap-3">
-
-                <Shield className="mt-0.5 h-4 w-4 shrink-0 text-red-400/60" />
+                <Shield className="h-4 w-4 shrink-0 text-red-400/60" />
 
                 <div>
-
                   <p className="text-xs font-semibold text-slate-400">
                     Protect your account
                   </p>
 
                   <p className="mt-1 text-[11px] leading-5 text-slate-600">
-                    Never share your password or
-                    verification links with anyone.
+                    Never share your password or verification
+                    links with anyone.
                   </p>
-
                 </div>
-
               </div>
-
             </div>
-
           </aside>
-
         </div>
 
         {/* =================================================
@@ -1788,24 +1559,46 @@ const Profile = () => {
         ================================================= */}
 
         <footer className="mt-10 pb-8 text-center">
-
           <div className="mx-auto mb-3 h-px max-w-md bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
 
           <p className="font-serif text-xs italic text-slate-700">
-            "Every great developer begins as an
-            apprentice."
+            "Every great developer begins as an apprentice."
           </p>
 
           <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.3em] text-slate-800">
             Smart LMS • Forge Your Future
           </p>
-
         </footer>
-
       </main>
-
     </div>
   );
 };
+
+/* =========================================================
+   STAT CARD
+========================================================= */
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-[#07090c] p-4 transition hover:-translate-y-1 hover:border-slate-700">
+      <Icon
+        className={`mb-3 h-5 w-5 ${color}`}
+      />
+
+      <p className="text-xl font-bold text-slate-100">
+        {value}
+      </p>
+
+      <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
+        {label}
+      </p>
+    </div>
+  );
+}
 
 export default Profile;

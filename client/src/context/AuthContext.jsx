@@ -1,7 +1,9 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -21,7 +23,7 @@ export function AuthProvider({ children }) {
   // GET CURRENT USER
   // ===================================================
 
-  const getCurrentUser = async () => {
+  const getCurrentUser = useCallback(async () => {
     try {
       const response = await api.get("/auth/me");
 
@@ -30,89 +32,92 @@ export function AuthProvider({ children }) {
 
       setUser(currentUser);
 
-      console.log("✅ Authenticated user:", currentUser);
-
       return currentUser;
     } catch (error) {
-      console.log("ℹ️ No authenticated user");
-
       setUser(null);
 
       return null;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // ===================================================
   // LOGIN
   // ===================================================
 
-  const login = async (email, password, role) => {
-    try {
-      if (!role) {
-        throw new Error(
-          "Please select Student or Instructor."
+  const login = useCallback(
+    async (email, password, role) => {
+      try {
+        if (!role) {
+          throw new Error(
+            "Please select Student or Instructor."
+          );
+        }
+
+        const response = await api.post(
+          "/auth/login",
+          {
+            email,
+            password,
+            role,
+          }
         );
+
+        const loggedInUser =
+          response.data?.user ||
+          response.data;
+
+        setUser(loggedInUser);
+
+        return response.data;
+      } catch (error) {
+        console.error(
+          "❌ Login error:",
+          error
+        );
+
+        throw error;
       }
-
-      const response = await api.post("/auth/login", {
-        email,
-        password,
-        role,
-      });
-
-      const loggedInUser =
-        response.data?.user || response.data;
-
-      setUser(loggedInUser);
-
-      console.log(
-        "✅ Login successful:",
-        loggedInUser
-      );
-
-      return response.data;
-    } catch (error) {
-      console.error("❌ Login error:", error);
-
-      throw error;
-    }
-  };
+    },
+    []
+  );
 
   // ===================================================
   // UPDATE USER
   // ===================================================
 
-  const updateUser = (updatedUser) => {
-    if (!updatedUser) {
-      console.warn(
-        "⚠️ updateUser called without user data"
-      );
-      return;
-    }
+  const updateUser = useCallback(
+    (updatedUser) => {
+      if (!updatedUser) {
+        console.warn(
+          "⚠️ updateUser called without user data"
+        );
 
-    console.log(
-      "🔄 Updating AuthContext user:",
-      updatedUser
-    );
+        return;
+      }
 
-    setUser(updatedUser);
-  };
+      setUser(updatedUser);
+    },
+    []
+  );
 
   // ===================================================
   // LOGOUT
   // ===================================================
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await api.post("/auth/logout");
     } catch (error) {
-      console.error("❌ Logout error:", error);
+      console.error(
+        "❌ Logout error:",
+        error
+      );
     } finally {
       setUser(null);
     }
-  };
+  }, []);
 
   // ===================================================
   // CHECK AUTH ON APP START
@@ -120,33 +125,38 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     getCurrentUser();
-  }, []);
+  }, [getCurrentUser]);
 
   // ===================================================
-  // DEBUG
+  // MEMOIZED CONTEXT VALUE
   // ===================================================
 
-  console.log("🔐 AuthProvider rendered:", {
-    user,
-    loading,
-  });
+  const authValue = useMemo(
+    () => ({
+      user,
+      setUser,
+      updateUser,
+      loading,
+      login,
+      logout,
+      getCurrentUser,
+    }),
+    [
+      user,
+      loading,
+      updateUser,
+      login,
+      logout,
+      getCurrentUser,
+    ]
+  );
 
   // ===================================================
   // PROVIDER
   // ===================================================
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        setUser,
-        updateUser,
-        loading,
-        login,
-        logout,
-        getCurrentUser,
-      }}
-    >
+    <AuthContext.Provider value={authValue}>
       {children}
     </AuthContext.Provider>
   );
@@ -158,8 +168,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-
-  console.log("🔍 useAuth context:", context);
 
   if (context === null) {
     throw new Error(

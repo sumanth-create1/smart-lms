@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import {
   PlayCircle,
   CheckCircle2,
@@ -9,7 +10,6 @@ import {
   TrendingUp,
   Flame,
   Swords,
-  Sword,
   Trophy,
   Crown,
   Shield,
@@ -20,109 +20,133 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
-// =====================================================
-// ACTIVITY STYLE
-// =====================================================
+/* =====================================================
+   CONSTANTS
+===================================================== */
 
-const getActivityStyle = (type = "") => {
-  const normalizedType = String(type).toLowerCase();
+const EMPTY_ARRAY = [];
 
-  if (
-    normalizedType.includes("complete") ||
-    normalizedType.includes("completed") ||
-    normalizedType.includes("lecture_complete") ||
-    normalizedType.includes("lecture_completed")
-  ) {
-    return {
-      icon: CheckCircle2,
-      iconBg: "bg-emerald-500/[0.07]",
-      iconColor: "text-emerald-400",
-      accent: "border-emerald-500/20",
-    };
-  }
+const ACTIVITY_STYLES = {
+  lectureCompleted: {
+    icon: CheckCircle2,
+    iconBg: "bg-emerald-500/[0.07]",
+    iconColor: "text-emerald-400",
+    accent: "border-emerald-500/20",
+  },
 
-  if (
-    normalizedType.includes("start") ||
-    normalizedType.includes("started") ||
-    normalizedType.includes("begin") ||
-    normalizedType.includes("resume")
-  ) {
-    return {
-      icon: PlayCircle,
-      iconBg: "bg-sky-500/[0.07]",
-      iconColor: "text-sky-400",
-      accent: "border-sky-500/20",
-    };
-  }
+  courseCompleted: {
+    icon: GraduationCap,
+    iconBg: "bg-amber-500/[0.07]",
+    iconColor: "text-amber-400",
+    accent: "border-amber-500/20",
+  },
 
-  if (
-    normalizedType.includes("progress") ||
-    normalizedType.includes("watch") ||
-    normalizedType.includes("lesson")
-  ) {
-    return {
-      icon: TrendingUp,
-      iconBg: "bg-amber-500/[0.07]",
-      iconColor: "text-amber-400",
-      accent: "border-amber-500/20",
-    };
-  }
+  started: {
+    icon: PlayCircle,
+    iconBg: "bg-sky-500/[0.07]",
+    iconColor: "text-sky-400",
+    accent: "border-sky-500/20",
+  },
 
-  if (
-    normalizedType.includes("enroll") ||
-    normalizedType.includes("enrolled")
-  ) {
-    return {
-      icon: BookOpen,
-      iconBg: "bg-violet-500/[0.07]",
-      iconColor: "text-violet-400",
-      accent: "border-violet-500/20",
-    };
-  }
+  progress: {
+    icon: TrendingUp,
+    iconBg: "bg-amber-500/[0.07]",
+    iconColor: "text-amber-400",
+    accent: "border-amber-500/20",
+  },
 
-  if (
-    normalizedType.includes("course_complete") ||
-    normalizedType.includes("course_completed")
-  ) {
-    return {
-      icon: GraduationCap,
-      iconBg: "bg-amber-500/[0.07]",
-      iconColor: "text-amber-400",
-      accent: "border-amber-500/20",
-    };
-  }
+  enrolled: {
+    icon: BookOpen,
+    iconBg: "bg-violet-500/[0.07]",
+    iconColor: "text-violet-400",
+    accent: "border-violet-500/20",
+  },
 
-  if (
-    normalizedType.includes("achievement") ||
-    normalizedType.includes("award")
-  ) {
-    return {
-      icon: Award,
-      iconBg: "bg-yellow-500/[0.07]",
-      iconColor: "text-yellow-400",
-      accent: "border-yellow-500/20",
-    };
-  }
+  achievement: {
+    icon: Award,
+    iconBg: "bg-yellow-500/[0.07]",
+    iconColor: "text-yellow-400",
+    accent: "border-yellow-500/20",
+  },
 
-  return {
+  default: {
     icon: BookOpen,
     iconBg: "bg-white/[0.04]",
     iconColor: "text-slate-400",
     accent: "border-white/10",
-  };
+  },
 };
 
-// =====================================================
-// ACTIVITY TITLE
-// =====================================================
+/* =====================================================
+   TYPE HELPERS
+===================================================== */
 
-const getActivityTitle = (activity) => {
-  const type = String(
+const normalizeActivityType = (activity) =>
+  String(
     activity?.type ||
       activity?.action ||
+      activity?.title ||
       ""
   ).toLowerCase();
 
+/* =====================================================
+   ACTIVITY CATEGORY
+===================================================== */
+
+const getActivityCategory = (type) => {
+  if (
+    type.includes("course_completed") ||
+    type.includes("course_complete")
+  ) {
+    return "courseCompleted";
+  }
+
+  if (
+    type.includes("lecture_completed") ||
+    type.includes("lecture_complete")
+  ) {
+    return "lectureCompleted";
+  }
+
+  if (
+    type.includes("achievement") ||
+    type.includes("award")
+  ) {
+    return "achievement";
+  }
+
+  if (
+    type.includes("enrolled") ||
+    type.includes("enroll")
+  ) {
+    return "enrolled";
+  }
+
+  if (
+    type.includes("started") ||
+    type.includes("start") ||
+    type.includes("begin") ||
+    type.includes("resume")
+  ) {
+    return "started";
+  }
+
+  if (
+    type.includes("progress") ||
+    type.includes("watch") ||
+    type.includes("lesson")
+  ) {
+    return "progress";
+  }
+
+  return "default";
+};
+
+/* =====================================================
+   ACTIVITY TITLE
+===================================================== */
+
+const getActivityTitle = (activity, type) => {
   if (
     type.includes("lecture_completed") ||
     type.includes("lecture_complete")
@@ -172,11 +196,11 @@ const getActivityTitle = (activity) => {
   );
 };
 
-// =====================================================
-// ACTIVITY DESCRIPTION
-// =====================================================
+/* =====================================================
+   ACTIVITY DESCRIPTION
+===================================================== */
 
-const getActivityDescription = (activity) => {
+const getActivityDescription = (activity, type) => {
   if (!activity) {
     return "";
   }
@@ -195,12 +219,6 @@ const getActivityDescription = (activity) => {
     activity.lessonTitle ||
     activity.lecture?.title ||
     activity.lesson?.title;
-
-  const type = String(
-    activity.type ||
-      activity.action ||
-      ""
-  ).toLowerCase();
 
   if (
     type.includes("lecture_completed") ||
@@ -244,13 +262,11 @@ const getActivityDescription = (activity) => {
     type.includes("progress") ||
     type.includes("watch")
   ) {
-    if (lectureTitle) {
-      return `Progress updated for ${lectureTitle}`;
-    }
-
-    return courseTitle
-      ? `Progress updated for ${courseTitle}`
-      : "Your learning progress was updated";
+    return lectureTitle
+      ? `Progress updated for ${lectureTitle}`
+      : courseTitle
+        ? `Progress updated for ${courseTitle}`
+        : "Your learning progress was updated";
   }
 
   return (
@@ -261,9 +277,20 @@ const getActivityDescription = (activity) => {
   );
 };
 
-// =====================================================
-// RELATIVE TIME
-// =====================================================
+/* =====================================================
+   ACTIVITY DATE
+===================================================== */
+
+const getActivityDate = (activity) =>
+  activity?.createdAt ||
+  activity?.timestamp ||
+  activity?.date ||
+  activity?.updatedAt ||
+  null;
+
+/* =====================================================
+   RELATIVE TIME
+===================================================== */
 
 const getRelativeTime = (date) => {
   if (!date) {
@@ -271,20 +298,15 @@ const getRelativeTime = (date) => {
   }
 
   const createdAt = new Date(date);
+  const createdTime = createdAt.getTime();
 
-  if (Number.isNaN(createdAt.getTime())) {
+  if (Number.isNaN(createdTime)) {
     return "Recently";
   }
 
-  const now = new Date();
-
   const differenceInSeconds = Math.floor(
-    (now.getTime() - createdAt.getTime()) / 1000
+    (Date.now() - createdTime) / 1000
   );
-
-  if (differenceInSeconds < 0) {
-    return "Just now";
-  }
 
   if (differenceInSeconds < 60) {
     return "Just now";
@@ -296,9 +318,7 @@ const getRelativeTime = (date) => {
 
   if (differenceInMinutes < 60) {
     return `${differenceInMinutes} ${
-      differenceInMinutes === 1
-        ? "min"
-        : "mins"
+      differenceInMinutes === 1 ? "min" : "mins"
     } ago`;
   }
 
@@ -308,9 +328,7 @@ const getRelativeTime = (date) => {
 
   if (differenceInHours < 24) {
     return `${differenceInHours} ${
-      differenceInHours === 1
-        ? "hour"
-        : "hours"
+      differenceInHours === 1 ? "hour" : "hours"
     } ago`;
   }
 
@@ -332,39 +350,20 @@ const getRelativeTime = (date) => {
 
   if (differenceInWeeks < 4) {
     return `${differenceInWeeks} ${
-      differenceInWeeks === 1
-        ? "week"
-        : "weeks"
+      differenceInWeeks === 1 ? "week" : "weeks"
     } ago`;
   }
 
-  return createdAt.toLocaleDateString(
-    undefined,
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }
-  );
+  return createdAt.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 };
 
-// =====================================================
-// ACTIVITY DATE
-// =====================================================
-
-const getActivityDate = (activity) => {
-  return (
-    activity?.createdAt ||
-    activity?.timestamp ||
-    activity?.date ||
-    activity?.updatedAt ||
-    null
-  );
-};
-
-// =====================================================
-// ACTIVITY NAVIGATION
-// =====================================================
+/* =====================================================
+   ACTIVITY NAVIGATION
+===================================================== */
 
 const getActivityPath = (activity) => {
   if (!activity) {
@@ -382,55 +381,69 @@ const getActivityPath = (activity) => {
     activity.lessonId ||
     activity.lesson?._id;
 
-  if (courseId) {
-    return `/courses/${courseId}/learn${
-      lectureId
-        ? `?lecture=${lectureId}`
-        : ""
-    }`;
+  if (!courseId) {
+    return null;
   }
 
-  return null;
+  return `/courses/${courseId}/learn${
+    lectureId ? `?lecture=${lectureId}` : ""
+  }`;
 };
 
-// =====================================================
-// ACTIVITY ITEM
-// =====================================================
+/* =====================================================
+   ACTIVITY PROCESSOR
+===================================================== */
 
-const ActivityItem = ({
-  activity,
+const processActivity = (activity) => {
+  const type = normalizeActivityType(activity);
+  const category = getActivityCategory(type);
+
+  return {
+    activity,
+    type,
+    style: ACTIVITY_STYLES[category],
+    title: getActivityTitle(activity, type),
+    description: getActivityDescription(activity, type),
+    time: getRelativeTime(getActivityDate(activity)),
+    path: getActivityPath(activity),
+  };
+};
+
+/* =====================================================
+   ACTIVITY ITEM
+===================================================== */
+
+const ActivityItem = memo(function ActivityItem({
+  item,
   index,
   onClick,
-}) => {
-  const type =
-    activity?.type ||
-    activity?.action ||
-    activity?.title ||
-    "";
-
-  const style = getActivityStyle(type);
+}) {
+  const {
+    activity,
+    style,
+    title,
+    description,
+    time,
+    path,
+  } = item;
 
   const Icon = style.icon;
-
-  const title =
-    getActivityTitle(activity);
-
-  const description =
-    getActivityDescription(activity);
-
-  const time = getRelativeTime(
-    getActivityDate(activity)
-  );
-
-  const isClickable = Boolean(
-    getActivityPath(activity)
-  );
+  const isClickable = Boolean(path);
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => {
+        if (isClickable) {
+          onClick(path);
+        }
+      }}
       disabled={!isClickable}
+      aria-label={
+        isClickable
+          ? `Open ${title}`
+          : title
+      }
       className={`
         group/item
         relative
@@ -442,7 +455,7 @@ const ActivityItem = ({
         px-5
         py-4
         text-left
-        transition-all
+        transition-[background-color,padding]
         duration-300
         sm:px-6
 
@@ -457,12 +470,10 @@ const ActivityItem = ({
         }
       `}
     >
-      {/* =================================================
-          TIMELINE
-      ================================================= */}
-
+      {/* Timeline */}
       {index !== 0 && (
         <div
+          aria-hidden="true"
           className="
             absolute
             left-[39px]
@@ -476,11 +487,9 @@ const ActivityItem = ({
         />
       )}
 
-      {/* =================================================
-          ICON
-      ================================================= */}
-
+      {/* Icon */}
       <div
+        aria-hidden="true"
         className={`
           relative
           z-10
@@ -495,7 +504,7 @@ const ActivityItem = ({
           ${style.accent}
           ${style.iconBg}
           shadow-[0_0_20px_rgba(0,0,0,0.2)]
-          transition-all
+          transition-transform
           duration-300
           group-hover/item:scale-110
           group-hover/item:rotate-[-3deg]
@@ -506,8 +515,6 @@ const ActivityItem = ({
           className={style.iconColor}
         />
 
-        {/* Orbital ring */}
-
         {isClickable && (
           <span
             className="
@@ -515,9 +522,9 @@ const ActivityItem = ({
               inset-0
               rounded-xl
               border
-              border-amber-400/0
+              border-transparent
               opacity-0
-              transition-all
+              transition-[transform,opacity,border-color]
               duration-500
               group-hover/item:scale-125
               group-hover/item:border-amber-400/30
@@ -525,8 +532,6 @@ const ActivityItem = ({
             "
           />
         )}
-
-        {/* Small rune dot */}
 
         <span
           className="
@@ -542,14 +547,9 @@ const ActivityItem = ({
         />
       </div>
 
-      {/* =================================================
-          CONTENT
-      ================================================= */}
-
+      {/* Content */}
       <div className="min-w-0 flex-1">
-
         <div className="flex items-center gap-2">
-
           <p
             className="
               truncate
@@ -562,8 +562,6 @@ const ActivityItem = ({
           >
             {title}
           </p>
-
-          {/* Latest badge */}
 
           {index === 0 && (
             <span
@@ -603,10 +601,7 @@ const ActivityItem = ({
         )}
       </div>
 
-      {/* =================================================
-          TIME
-      ================================================= */}
-
+      {/* Time */}
       <div
         className="
           flex
@@ -625,18 +620,16 @@ const ActivityItem = ({
         </span>
       </div>
 
-      {/* =================================================
-          ARROW
-      ================================================= */}
-
+      {/* Arrow */}
       {isClickable && (
         <ArrowRight
+          aria-hidden="true"
           size={15}
           className="
             hidden
             shrink-0
             text-slate-700
-            transition-all
+            transition-[transform,color]
             duration-300
             group-hover/item:translate-x-1
             group-hover/item:text-amber-400
@@ -646,16 +639,15 @@ const ActivityItem = ({
       )}
     </button>
   );
-};
+});
 
-// =====================================================
-// LOADING STATE
-// =====================================================
+/* =====================================================
+   LOADING
+===================================================== */
 
-const ActivityLoading = () => {
+const ActivityLoading = memo(function ActivityLoading() {
   return (
     <div className="relative divide-y divide-white/[0.05]">
-
       {[1, 2, 3, 4].map((item) => (
         <div
           key={item}
@@ -682,7 +674,6 @@ const ActivityLoading = () => {
           />
 
           <div className="min-w-0 flex-1">
-
             <div
               className="
                 h-4
@@ -718,13 +709,13 @@ const ActivityLoading = () => {
       ))}
     </div>
   );
-};
+});
 
-// =====================================================
-// EMPTY STATE
-// =====================================================
+/* =====================================================
+   EMPTY STATE
+===================================================== */
 
-const EmptyActivity = () => {
+const EmptyActivity = memo(function EmptyActivity() {
   return (
     <div
       className="
@@ -741,14 +732,15 @@ const EmptyActivity = () => {
         sm:px-6
       "
     >
-      {/* =================================================
-          ATMOSPHERIC BACKGROUND
-      ================================================= */}
-
-      <div className="pointer-events-none absolute inset-0">
-
-        {/* Moon */}
-
+      {/* Atmospheric background */}
+      <div
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+        "
+      >
         <div
           className="
             absolute
@@ -763,8 +755,6 @@ const EmptyActivity = () => {
           "
         />
 
-        {/* Castle silhouette */}
-
         <Castle
           size={105}
           className="
@@ -775,8 +765,6 @@ const EmptyActivity = () => {
             text-slate-300/[0.025]
           "
         />
-
-        {/* Mountain */}
 
         <div
           className="
@@ -791,20 +779,36 @@ const EmptyActivity = () => {
           "
         />
 
-        {/* Snow */}
+        <span
+          className="
+            absolute
+            left-[18%]
+            top-[20%]
+            h-1
+            w-1
+            rounded-full
+            bg-white/30
+            animate-[snowFall_8s_linear_infinite]
+          "
+        />
 
-        <span className="absolute left-[18%] top-[20%] h-1 w-1 rounded-full bg-white/30 animate-[snowFall_8s_linear_infinite]" />
-
-        <span className="absolute right-[25%] top-[15%] h-1 w-1 rounded-full bg-sky-100/30 animate-[snowFall_10s_linear_infinite_1s]" />
-
-        <span className="absolute left-[38%] top-[8%] h-1.5 w-1.5 rounded-full bg-white/20 animate-[snowFall_9s_linear_infinite_2s]" />
+        <span
+          className="
+            absolute
+            right-[25%]
+            top-[15%]
+            h-1
+            w-1
+            rounded-full
+            bg-sky-100/30
+            animate-[snowFall_10s_linear_infinite_1s]
+          "
+        />
       </div>
 
-      {/* =================================================
-          DECORATIVE ICONS
-      ================================================= */}
-
+      {/* Decorative icons */}
       <Flame
+        aria-hidden="true"
         size={19}
         className="
           absolute
@@ -816,6 +820,7 @@ const EmptyActivity = () => {
       />
 
       <Sword
+        aria-hidden="true"
         size={22}
         className="
           absolute
@@ -828,6 +833,7 @@ const EmptyActivity = () => {
       />
 
       <Feather
+        aria-hidden="true"
         size={18}
         className="
           absolute
@@ -839,6 +845,7 @@ const EmptyActivity = () => {
       />
 
       <Sparkles
+        aria-hidden="true"
         size={15}
         className="
           absolute
@@ -849,11 +856,9 @@ const EmptyActivity = () => {
         "
       />
 
-      {/* =================================================
-          SHIELD
-      ================================================= */}
-
+      {/* Shield */}
       <div
+        aria-hidden="true"
         className="
           relative
           flex
@@ -917,55 +922,58 @@ const EmptyActivity = () => {
       </p>
     </div>
   );
-};
+});
 
-// =====================================================
-// MAIN COMPONENT
-// =====================================================
+/* =====================================================
+   MAIN COMPONENT
+===================================================== */
 
 function RecentActivity({
-  activities = [],
+  activities = EMPTY_ARRAY,
   loading = false,
   maxItems = 5,
 }) {
   const navigate = useNavigate();
 
-  const safeActivities =
-    Array.isArray(activities)
-      ? activities
-      : [];
-
-  const visibleActivities =
-    safeActivities.slice(
-      0,
-      maxItems
-    );
-
-  // ===================================================
-  // CLICK
-  // ===================================================
-
-  const handleActivityClick = (
-    activity
-  ) => {
-    const path =
-      getActivityPath(activity);
-
-    if (!path) {
-      return;
+  /*
+   * Process activities once.
+   *
+   * This prevents repeated calls to:
+   * - getActivityStyle
+   * - getActivityTitle
+   * - getActivityDescription
+   * - getActivityDate
+   * - getRelativeTime
+   * - getActivityPath
+   */
+  const processedActivities = useMemo(() => {
+    if (!Array.isArray(activities)) {
+      return EMPTY_ARRAY;
     }
 
-    navigate(path);
+    return activities
+      .slice(0, Math.max(0, maxItems))
+      .map(processActivity);
+  }, [activities, maxItems]);
+
+  const totalActivities = Array.isArray(activities)
+    ? activities.length
+    : 0;
+
+  const hasActivities = totalActivities > 0;
+
+  /*
+   * One navigation function instead of creating a
+   * new closure for every ActivityItem.
+   */
+  const handleActivityClick = (path) => {
+    if (path) {
+      navigate(path);
+    }
   };
 
-  // ===================================================
-  // VIEW ALL
-  // ===================================================
-
   const handleViewAll = () => {
-    navigate(
-      "/dashboard/activity"
-    );
+    navigate("/dashboard/activity");
   };
 
   return (
@@ -981,7 +989,7 @@ function RecentActivity({
         bg-[#080b0e]
         shadow-2xl
         shadow-black/60
-        transition-all
+        transition-[transform,border-color,box-shadow]
         duration-500
         hover:-translate-y-1
         hover:border-amber-700/40
@@ -992,10 +1000,16 @@ function RecentActivity({
           REALM BACKGROUND
       ================================================= */}
 
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-
+      <div
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          overflow-hidden
+        "
+      >
         {/* Base */}
-
         <div
           className="
             absolute
@@ -1008,7 +1022,6 @@ function RecentActivity({
         />
 
         {/* Moon */}
-
         <div
           className="
             absolute
@@ -1024,7 +1037,6 @@ function RecentActivity({
         />
 
         {/* Icy glow */}
-
         <div
           className="
             absolute
@@ -1035,14 +1047,13 @@ function RecentActivity({
             rounded-full
             bg-sky-800/[0.08]
             blur-[110px]
-            transition-all
+            transition-transform
             duration-1000
             group-hover:scale-125
           "
         />
 
         {/* Torch glow */}
-
         <div
           className="
             absolute
@@ -1053,14 +1064,13 @@ function RecentActivity({
             rounded-full
             bg-amber-700/[0.07]
             blur-[100px]
-            transition-all
+            transition-transform
             duration-1000
             group-hover:scale-125
           "
         />
 
         {/* Castle silhouette */}
-
         <div
           className="
             absolute
@@ -1072,6 +1082,7 @@ function RecentActivity({
           "
         >
           <Castle
+            aria-hidden="true"
             size={105}
             className="
               absolute
@@ -1082,6 +1093,7 @@ function RecentActivity({
           />
 
           <Castle
+            aria-hidden="true"
             size={80}
             className="
               absolute
@@ -1093,7 +1105,6 @@ function RecentActivity({
         </div>
 
         {/* Mountains */}
-
         <div
           className="
             absolute
@@ -1108,7 +1119,6 @@ function RecentActivity({
         />
 
         {/* Stone texture */}
-
         <div
           className="
             absolute
@@ -1120,7 +1130,6 @@ function RecentActivity({
         />
 
         {/* Vertical stone seam */}
-
         <div
           className="
             absolute
@@ -1137,7 +1146,6 @@ function RecentActivity({
         />
 
         {/* Fog */}
-
         <div
           className="
             absolute
@@ -1152,32 +1160,87 @@ function RecentActivity({
           "
         />
 
-        {/* =================================================
-            SNOW
-        ================================================= */}
+        {/* Snow - reduced to 4 */}
+        <span
+          className="
+            absolute
+            left-[10%]
+            top-[18%]
+            h-1
+            w-1
+            rounded-full
+            bg-white/30
+            animate-[snowFall_9s_linear_infinite]
+          "
+        />
 
-        <span className="absolute left-[10%] top-[18%] h-1 w-1 rounded-full bg-white/30 animate-[snowFall_9s_linear_infinite]" />
+        <span
+          className="
+            absolute
+            left-[25%]
+            top-[12%]
+            h-1.5
+            w-1.5
+            rounded-full
+            bg-sky-100/25
+            animate-[snowFall_11s_linear_infinite_1s]
+          "
+        />
 
-        <span className="absolute left-[25%] top-[12%] h-1.5 w-1.5 rounded-full bg-sky-100/25 animate-[snowFall_11s_linear_infinite_1s]" />
+        <span
+          className="
+            absolute
+            right-[28%]
+            top-[10%]
+            h-1
+            w-1
+            rounded-full
+            bg-sky-100/25
+            animate-[snowFall_10s_linear_infinite_1.5s]
+          "
+        />
 
-        <span className="absolute left-[43%] top-[22%] h-1 w-1 rounded-full bg-white/30 animate-[snowFall_8s_linear_infinite_2s]" />
+        <span
+          className="
+            absolute
+            right-[13%]
+            top-[28%]
+            h-1.5
+            w-1.5
+            rounded-full
+            bg-white/25
+            animate-[snowFall_12s_linear_infinite_3s]
+          "
+        />
 
-        <span className="absolute right-[28%] top-[10%] h-1 w-1 rounded-full bg-sky-100/25 animate-[snowFall_10s_linear_infinite_1.5s]" />
+        {/* Embers - reduced to 2 */}
+        <span
+          className="
+            absolute
+            left-[15%]
+            bottom-[18%]
+            h-1
+            w-1
+            rounded-full
+            bg-amber-400/50
+            animate-[emberFloat_5s_ease-in-out_infinite]
+          "
+        />
 
-        <span className="absolute right-[13%] top-[28%] h-1.5 w-1.5 rounded-full bg-white/25 animate-[snowFall_12s_linear_infinite_3s]" />
-
-        {/* =================================================
-            EMBERS
-        ================================================= */}
-
-        <span className="absolute left-[15%] bottom-[18%] h-1 w-1 rounded-full bg-amber-400/50 animate-[emberFloat_5s_ease-in-out_infinite]" />
-
-        <span className="absolute left-[35%] bottom-[25%] h-1.5 w-1.5 rounded-full bg-amber-300/40 animate-[emberFloat_6s_ease-in-out_infinite_1s]" />
-
-        <span className="absolute right-[20%] bottom-[20%] h-1 w-1 rounded-full bg-orange-400/50 animate-[emberFloat_7s_ease-in-out_infinite_2s]" />
+        <span
+          className="
+            absolute
+            right-[20%]
+            bottom-[20%]
+            h-1
+            w-1
+            rounded-full
+            bg-orange-400/50
+            animate-[emberFloat_7s_ease-in-out_infinite_2s]
+          "
+        />
 
         {/* Light sweep */}
-
         <div
           className="
             absolute
@@ -1190,7 +1253,7 @@ function RecentActivity({
             from-transparent
             via-amber-300/[0.025]
             to-transparent
-            transition-all
+            transition-[left]
             duration-[1800ms]
             group-hover:left-[120%]
           "
@@ -1216,10 +1279,8 @@ function RecentActivity({
         "
       >
         <div className="flex items-center gap-3">
-
-          {/* Icon */}
-
           <div
+            aria-hidden="true"
             className="
               relative
               flex
@@ -1233,7 +1294,7 @@ function RecentActivity({
               border-amber-500/20
               bg-amber-500/[0.06]
               shadow-[0_0_25px_rgba(245,158,11,0.06)]
-              transition-all
+              transition-transform
               duration-300
               group-hover:rotate-[-5deg]
               group-hover:scale-105
@@ -1262,9 +1323,7 @@ function RecentActivity({
           </div>
 
           <div>
-
             <div className="flex items-center gap-2">
-
               <h2
                 className="
                   m-0
@@ -1280,6 +1339,7 @@ function RecentActivity({
               </h2>
 
               <Crown
+                aria-hidden="true"
                 size={13}
                 className="
                   hidden
@@ -1304,182 +1364,177 @@ function RecentActivity({
           </div>
         </div>
 
-        {/* Realm badge */}
-
-        <div
-          className="
-            hidden
-            items-center
-            gap-1.5
-            rounded-full
-            border
-            border-amber-500/20
-            bg-amber-500/[0.06]
-            px-3
-            py-1.5
-            sm:flex
-          "
-        >
-          <Flame
-            size={13}
+        <div className="flex items-center gap-4">
+          {/* Realm badge */}
+          <div
             className="
-              animate-[flameFlicker_1.4s_ease-in-out_infinite]
-              text-amber-400
-              drop-shadow-[0_0_6px_rgba(245,158,11,0.7)]
-            "
-          />
-
-          <span
-            className="
-              text-[10px]
-              font-black
-              uppercase
-              tracking-[0.15em]
-              text-amber-400
-            "
-          >
-            Realm Active
-          </span>
-        </div>
-
-        {/* View all */}
-
-        {safeActivities.length > 0 && (
-          <button
-            type="button"
-            onClick={handleViewAll}
-            className="
-              inline-flex
+              hidden
               items-center
-              gap-1
-              text-xs
-              font-bold
-              uppercase
-              tracking-wide
-              text-amber-400
-              transition
-              hover:text-amber-300
-              sm:text-sm
+              gap-1.5
+              rounded-full
+              border
+              border-amber-500/20
+              bg-amber-500/[0.06]
+              px-3
+              py-1.5
+              sm:flex
             "
           >
-            View all
-            <ArrowRight size={15} />
-          </button>
-        )}
+            <Flame
+              aria-hidden="true"
+              size={13}
+              className="
+                animate-[flameFlicker_1.4s_ease-in-out_infinite]
+                text-amber-400
+                drop-shadow-[0_0_6px_rgba(245,158,11,0.7)]
+              "
+            />
+
+            <span
+              className="
+                text-[10px]
+                font-black
+                uppercase
+                tracking-[0.15em]
+                text-amber-400
+              "
+            >
+              Realm Active
+            </span>
+          </div>
+
+          {/* View all */}
+          {hasActivities && (
+            <button
+              type="button"
+              onClick={handleViewAll}
+              className="
+                inline-flex
+                items-center
+                gap-1
+                text-xs
+                font-bold
+                uppercase
+                tracking-wide
+                text-amber-400
+                transition-colors
+                hover:text-amber-300
+                sm:text-sm
+              "
+            >
+              View all
+              <ArrowRight size={15} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* =================================================
           RECORD SUMMARY
       ================================================= */}
 
-      {!loading &&
-        safeActivities.length > 0 && (
+      {!loading && hasActivities && (
+        <div
+          className="
+            relative
+            z-10
+            grid
+            grid-cols-2
+            gap-px
+            border-b
+            border-white/[0.07]
+            bg-white/[0.025]
+          "
+        >
           <div
             className="
-              relative
-              z-10
-              grid
-              grid-cols-2
-              gap-px
-              border-b
-              border-white/[0.07]
-              bg-white/[0.025]
+              bg-[#0a0d10]/90
+              px-5
+              py-4
+              sm:px-6
             "
           >
-
-            {/* Battles */}
-
-            <div
-              className="
-                bg-[#0a0d10]/90
-                px-5
-                py-4
-                sm:px-6
-              "
-            >
-              <div className="flex items-center gap-2">
-
-                <Trophy
-                  size={14}
-                  className="
-                    text-amber-400
-                    drop-shadow-[0_0_6px_rgba(245,158,11,0.4)]
-                  "
-                />
-
-                <span
-                  className="
-                    text-[9px]
-                    font-black
-                    uppercase
-                    tracking-[0.16em]
-                    text-slate-600
-                  "
-                >
-                  Recorded Battles
-                </span>
-              </div>
-
-              <p
+            <div className="flex items-center gap-2">
+              <Trophy
+                aria-hidden="true"
+                size={14}
                 className="
-                  m-0
-                  mt-1
-                  text-xl
+                  text-amber-400
+                  drop-shadow-[0_0_6px_rgba(245,158,11,0.4)]
+                "
+              />
+
+              <span
+                className="
+                  text-[9px]
                   font-black
-                  text-white
+                  uppercase
+                  tracking-[0.16em]
+                  text-slate-600
                 "
               >
-                {safeActivities.length}
-              </p>
+                Recorded Battles
+              </span>
             </div>
 
-            {/* Latest */}
-
-            <div
+            <p
               className="
-                bg-[#0a0d10]/90
-                px-5
-                py-4
-                sm:px-6
+                m-0
+                mt-1
+                text-xl
+                font-black
+                text-white
               "
             >
-              <div className="flex items-center gap-2">
-
-                <Flame
-                  size={14}
-                  className="
-                    text-sky-400
-                    drop-shadow-[0_0_6px_rgba(56,189,248,0.4)]
-                  "
-                />
-
-                <span
-                  className="
-                    text-[9px]
-                    font-black
-                    uppercase
-                    tracking-[0.16em]
-                    text-slate-600
-                  "
-                >
-                  Latest Chronicle
-                </span>
-              </div>
-
-              <p
-                className="
-                  m-0
-                  mt-1
-                  text-xl
-                  font-black
-                  text-white
-                "
-              >
-                {visibleActivities.length}
-              </p>
-            </div>
+              {totalActivities}
+            </p>
           </div>
-        )}
+
+          <div
+            className="
+              bg-[#0a0d10]/90
+              px-5
+              py-4
+              sm:px-6
+            "
+          >
+            <div className="flex items-center gap-2">
+              <Flame
+                aria-hidden="true"
+                size={14}
+                className="
+                  text-sky-400
+                  drop-shadow-[0_0_6px_rgba(56,189,248,0.4)]
+                "
+              />
+
+              <span
+                className="
+                  text-[9px]
+                  font-black
+                  uppercase
+                  tracking-[0.16em]
+                  text-slate-600
+                "
+              >
+                Latest Chronicle
+              </span>
+            </div>
+
+            <p
+              className="
+                m-0
+                mt-1
+                text-xl
+                font-black
+                text-white
+              "
+            >
+              {processedActivities.length}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* =================================================
           CONTENT
@@ -1487,7 +1542,7 @@ function RecentActivity({
 
       {loading ? (
         <ActivityLoading />
-      ) : visibleActivities.length === 0 ? (
+      ) : processedActivities.length === 0 ? (
         <EmptyActivity />
       ) : (
         <div
@@ -1498,27 +1553,18 @@ function RecentActivity({
             divide-white/[0.05]
           "
         >
-          {visibleActivities.map(
-            (activity, index) => (
-              <ActivityItem
-                key={
-                  activity?._id ||
-                  activity?.id ||
-                  `${activity?.type || "activity"}-${
-                    activity?.createdAt ||
-                    index
-                  }-${index}`
-                }
-                activity={activity}
-                index={index}
-                onClick={() =>
-                  handleActivityClick(
-                    activity
-                  )
-                }
-              />
-            )
-          )}
+          {processedActivities.map((item, index) => (
+            <ActivityItem
+              key={
+                item.activity?._id ||
+                item.activity?.id ||
+                `${item.type}-${getActivityDate(item.activity) || index}`
+              }
+              item={item}
+              index={index}
+              onClick={handleActivityClick}
+            />
+          ))}
         </div>
       )}
 
@@ -1527,8 +1573,7 @@ function RecentActivity({
       ================================================= */}
 
       {!loading &&
-        safeActivities.length >
-          maxItems && (
+        totalActivities > maxItems && (
           <div
             className="
               relative
@@ -1553,26 +1598,21 @@ function RecentActivity({
                 uppercase
                 tracking-wider
                 text-amber-400
-                transition
+                transition-colors
                 hover:text-amber-300
               "
             >
-              View{" "}
-              {safeActivities.length -
-                maxItems}{" "}
-              more battles
-
+              View {totalActivities - maxItems} more battles
               <ArrowRight size={14} />
             </button>
           </div>
         )}
 
-      {/* =================================================
-          REALM FOOTER LINE
-      ================================================= */}
-
+      {/* Realm footer */}
       <div
+        aria-hidden="true"
         className="
+          pointer-events-none
           absolute
           bottom-0
           left-0
@@ -1586,9 +1626,9 @@ function RecentActivity({
         "
       />
 
-      {/* Animated ice/gold scanner */}
-
+      {/* Scanner */}
       <div
+        aria-hidden="true"
         className="
           pointer-events-none
           absolute
@@ -1598,7 +1638,7 @@ function RecentActivity({
           w-[20%]
           bg-amber-300
           shadow-[0_0_12px_rgba(245,158,11,0.8)]
-          transition-all
+          transition-[left]
           duration-[1600ms]
           group-hover:left-[100%]
         "
@@ -1609,7 +1649,6 @@ function RecentActivity({
       ================================================= */}
 
       <style>{`
-
         @keyframes iconFloat {
           0%, 100% {
             transform: translateY(0) rotate(0deg);
@@ -1650,18 +1689,6 @@ function RecentActivity({
           }
         }
 
-        @keyframes shieldPulse {
-          0%, 100% {
-            transform: scale(1);
-            opacity: .45;
-          }
-
-          50% {
-            transform: scale(1.12);
-            opacity: .8;
-          }
-        }
-
         @keyframes flameFlicker {
           0%, 100% {
             transform: scale(1) rotate(-2deg);
@@ -1686,7 +1713,7 @@ function RecentActivity({
 
         @keyframes emberFloat {
           0% {
-            transform: translateY(0) translateX(0);
+            transform: translate3d(0, 0, 0);
             opacity: 0;
           }
 
@@ -1695,7 +1722,7 @@ function RecentActivity({
           }
 
           50% {
-            transform: translateY(-25px) translateX(8px);
+            transform: translate3d(8px, -25px, 0);
             opacity: .5;
           }
 
@@ -1704,14 +1731,14 @@ function RecentActivity({
           }
 
           100% {
-            transform: translateY(-55px) translateX(-5px);
+            transform: translate3d(-5px, -55px, 0);
             opacity: 0;
           }
         }
 
         @keyframes snowFall {
           0% {
-            transform: translateY(-20px) translateX(0);
+            transform: translate3d(0, -20px, 0);
             opacity: 0;
           }
 
@@ -1720,24 +1747,24 @@ function RecentActivity({
           }
 
           50% {
-            transform: translateY(80px) translateX(12px);
+            transform: translate3d(12px, 80px, 0);
             opacity: .5;
           }
 
           100% {
-            transform: translateY(180px) translateX(-8px);
+            transform: translate3d(-8px, 180px, 0);
             opacity: 0;
           }
         }
 
         @keyframes fogDrift {
           0%, 100% {
-            transform: translateX(-5%);
+            transform: translate3d(-5%, 0, 0);
             opacity: .25;
           }
 
           50% {
-            transform: translateX(5%);
+            transform: translate3d(5%, 0, 0);
             opacity: .55;
           }
         }
@@ -1764,6 +1791,16 @@ function RecentActivity({
           }
         }
 
+        @media (prefers-reduced-motion: reduce) {
+          *,
+          *::before,
+          *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+          }
+        }
       `}</style>
     </section>
   );

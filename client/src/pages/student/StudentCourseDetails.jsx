@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+
 import {
   ArrowLeft,
   BookOpen,
@@ -15,24 +16,14 @@ import {
   Sword,
   UserRound,
 } from "lucide-react";
+
 import toast from "react-hot-toast";
 
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
-// =====================================================
-// STUDENT COURSE DETAILS
-// =====================================================
-// Features:
-// - Public course details
-// - Guest users can view course
-// - Students can enroll
-// - Free course enrollment
-// - Paid course Razorpay payment
-// - Payment verification
-// - Premium medieval fantasy UI
-// - React Hot Toast notifications
-// =====================================================
+const RAZORPAY_SCRIPT =
+  "https://checkout.razorpay.com/v1/checkout.js";
 
 const StudentCourseDetails = () => {
   const { courseId } = useParams();
@@ -48,7 +39,30 @@ const StudentCourseDetails = () => {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   // =====================================================
-  // LOAD RAZORPAY
+  // DERIVED DATA
+  // =====================================================
+
+  const price = Number(
+    course?.coursePrice ??
+      course?.price ??
+      0
+  );
+
+  const thumbnailUrl =
+    course?.courseThumbnail?.url;
+
+  const instructorName =
+    course?.instructor?.name ||
+    "Unknown Instructor";
+
+  const instructorEmail =
+    course?.instructor?.email || "";
+
+  const isNonStudent =
+    Boolean(user && user.role !== "student");
+
+  // =====================================================
+  // RAZORPAY SCRIPT
   // =====================================================
 
   useEffect(() => {
@@ -58,52 +72,67 @@ const StudentCourseDetails = () => {
     }
 
     const existingScript = document.querySelector(
-      'script[src="https://checkout.razorpay.com/v1/checkout.js"]'
+      `script[src="${RAZORPAY_SCRIPT}"]`
     );
 
+    const handleLoad = () => {
+      setRazorpayLoaded(true);
+    };
+
+    const handleError = () => {
+      setRazorpayLoaded(false);
+
+      toast.error(
+        "Unable to load payment system. Please refresh and try again."
+      );
+    };
+
     if (existingScript) {
-      existingScript.addEventListener("load", handleRazorpayLoad);
-      existingScript.addEventListener("error", handleRazorpayError);
+      existingScript.addEventListener(
+        "load",
+        handleLoad
+      );
+
+      existingScript.addEventListener(
+        "error",
+        handleError
+      );
 
       return () => {
         existingScript.removeEventListener(
           "load",
-          handleRazorpayLoad
+          handleLoad
         );
+
         existingScript.removeEventListener(
           "error",
-          handleRazorpayError
+          handleError
         );
       };
     }
 
     const script = document.createElement("script");
 
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.src = RAZORPAY_SCRIPT;
     script.async = true;
 
-    script.onload = handleRazorpayLoad;
-    script.onerror = handleRazorpayError;
+    script.addEventListener("load", handleLoad);
+    script.addEventListener("error", handleError);
 
     document.body.appendChild(script);
 
     return () => {
-      script.onload = null;
-      script.onerror = null;
+      script.removeEventListener(
+        "load",
+        handleLoad
+      );
+
+      script.removeEventListener(
+        "error",
+        handleError
+      );
     };
   }, []);
-
-  const handleRazorpayLoad = () => {
-    setRazorpayLoaded(true);
-  };
-
-  const handleRazorpayError = () => {
-    setRazorpayLoaded(false);
-
-    toast.error(
-      "Unable to load payment system. Please refresh and try again."
-    );
-  };
 
   // =====================================================
   // FETCH COURSE
@@ -112,12 +141,76 @@ const StudentCourseDetails = () => {
   useEffect(() => {
     if (!courseId) {
       toast.error("Invalid course ID.");
-      navigate("/courses", { replace: true });
+
+      navigate("/courses", {
+        replace: true,
+      });
+
       return;
     }
 
-    fetchCourse();
-  }, [courseId]);
+    const controller = new AbortController();
+
+    setCourse(null);
+    setIsEnrolled(false);
+    setLoading(true);
+
+    const loadCourse = async () => {
+      try {
+        const response = await api.get(
+          `/course/${courseId}`,
+          {
+            signal: controller.signal,
+          }
+        );
+
+        if (controller.signal.aborted) return;
+
+        if (!response.data?.success) {
+          toast.error(
+            response.data?.message ||
+              "Course not found."
+          );
+
+          navigate("/courses", {
+            replace: true,
+          });
+
+          return;
+        }
+
+        setCourse(response.data.course);
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        console.error(
+          "Fetch course error:",
+          error
+        );
+
+        toast.error(
+          error.response?.data?.message ||
+            "Unable to load course details."
+        );
+
+        navigate("/courses", {
+          replace: true,
+        });
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadCourse();
+
+    return () => {
+      controller.abort();
+    };
+  }, [courseId, navigate]);
 
   // =====================================================
   // CHECK ENROLLMENT
@@ -133,74 +226,64 @@ const StudentCourseDetails = () => {
       return;
     }
 
-    checkEnrollment();
-  }, [authLoading, courseId, user]);
+    const controller = new AbortController();
 
-  // =====================================================
-  // FETCH COURSE
-  // =====================================================
+    setIsEnrolled(false);
 
-  const fetchCourse = async () => {
-    try {
-      setLoading(true);
-
-      const response = await api.get(`/course/${courseId}`);
-
-      if (!response.data?.success) {
-        toast.error(
-          response.data?.message || "Course not found."
+    const loadEnrollment = async () => {
+      try {
+        const response = await api.get(
+          `/enrollment/check/${courseId}`,
+          {
+            signal: controller.signal,
+          }
         );
 
-        navigate("/courses", { replace: true });
-        return;
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        if (response.data?.success) {
+          const enrolled =
+            response.data.enrolled ??
+            response.data.isEnrolled ??
+            false;
+
+          setIsEnrolled(Boolean(enrolled));
+        }
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        console.error(
+          "Check enrollment error:",
+          error
+        );
+
+        setIsEnrolled(false);
       }
+    };
 
-      setCourse(response.data.course);
-    } catch (error) {
-      console.error("Fetch course error:", error);
+    loadEnrollment();
 
-      toast.error(
-        error.response?.data?.message ||
-          "Unable to load course details."
-      );
-
-      navigate("/courses", { replace: true });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // =====================================================
-  // CHECK ENROLLMENT
-  // =====================================================
-
-  const checkEnrollment = async () => {
-    try {
-      const response = await api.get(
-        `/enrollment/check/${courseId}`
-      );
-
-      if (response.data?.success) {
-        const enrolled =
-          response.data.enrolled ??
-          response.data.isEnrolled ??
-          false;
-
-        setIsEnrolled(Boolean(enrolled));
-      }
-    } catch (error) {
-      console.error("Check enrollment error:", error);
-
-      setIsEnrolled(false);
-    }
-  };
+    return () => {
+      controller.abort();
+    };
+  }, [
+    authLoading,
+    courseId,
+    user?.role,
+  ]);
 
   // =====================================================
   // LOGIN REDIRECT
   // =====================================================
 
   const redirectToLogin = () => {
-    toast.info("Please login to enroll in this course.");
+    toast.info(
+      "Please login to enroll in this course."
+    );
 
     navigate("/login", {
       state: {
@@ -210,61 +293,12 @@ const StudentCourseDetails = () => {
   };
 
   // =====================================================
-  // HANDLE ENROLLMENT
-  // =====================================================
-
-  const handleEnrollment = async () => {
-    if (enrollmentLoading) {
-      return;
-    }
-
-    // Guest
-    if (!user) {
-      redirectToLogin();
-      return;
-    }
-
-    // Non-student
-    if (user.role !== "student") {
-      toast.error("Only students can enroll in courses.");
-      return;
-    }
-
-    // Already enrolled
-    if (isEnrolled) {
-      navigate("/dashboard");
-      return;
-    }
-
-    const price = getCoursePrice();
-
-    // Free course
-    if (price <= 0) {
-      await handleFreeEnrollment();
-      return;
-    }
-
-    // Paid course
-    await handlePayment();
-  };
-
-  // =====================================================
-  // GET COURSE PRICE
-  // =====================================================
-
-  const getCoursePrice = () => {
-    return Number(
-      course?.coursePrice ??
-        course?.price ??
-        0
-    );
-  };
-
-  // =====================================================
   // FREE ENROLLMENT
   // =====================================================
 
   const handleFreeEnrollment = async () => {
+    if (enrollmentLoading) return;
+
     try {
       setEnrollmentLoading(true);
 
@@ -277,6 +311,7 @@ const StudentCourseDetails = () => {
           response.data?.message ||
             "Unable to enroll in course."
         );
+
         return;
       }
 
@@ -289,7 +324,10 @@ const StudentCourseDetails = () => {
 
       navigate("/dashboard");
     } catch (error) {
-      console.error("Free enrollment error:", error);
+      console.error(
+        "Free enrollment error:",
+        error
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -301,184 +339,19 @@ const StudentCourseDetails = () => {
   };
 
   // =====================================================
-  // CREATE RAZORPAY ORDER
-  // =====================================================
-
-  const handlePayment = async () => {
-    if (!razorpayLoaded || !window.Razorpay) {
-      toast.error(
-        "Payment system is still loading. Please try again."
-      );
-      return;
-    }
-
-    try {
-      setEnrollmentLoading(true);
-
-      toast.loading("Creating payment order...", {
-        id: "payment-order",
-      });
-
-      const response = await api.post(
-        `/payment/create-order/${courseId}`
-      );
-
-      toast.dismiss("payment-order");
-
-      if (!response.data?.success) {
-        toast.error(
-          response.data?.message ||
-            "Unable to create payment order."
-        );
-
-        setEnrollmentLoading(false);
-        return;
-      }
-
-      const payment = response.data.payment;
-      const razorpayKey = response.data.razorpayKeyId;
-
-      // Validate backend response
-      if (!payment) {
-        toast.error(
-          "Payment order information was not received."
-        );
-
-        setEnrollmentLoading(false);
-        return;
-      }
-
-      if (!razorpayKey) {
-        toast.error(
-          "Razorpay key was not received from server."
-        );
-
-        setEnrollmentLoading(false);
-        return;
-      }
-
-      if (!payment.orderId) {
-        toast.error("Invalid Razorpay order.");
-
-        setEnrollmentLoading(false);
-        return;
-      }
-
-      // =================================================
-      // RAZORPAY OPTIONS
-      // =================================================
-
-      const options = {
-        key: razorpayKey,
-
-        amount: payment.amount,
-
-        currency: payment.currency || "INR",
-
-        name: "Smart LMS",
-
-        description:
-          course?.courseTitle ||
-          "Course Enrollment",
-
-        order_id: payment.orderId,
-
-        prefill: {
-          name: user?.name || "",
-          email: user?.email || "",
-        },
-
-        notes: {
-          courseId,
-        },
-
-        theme: {
-          color: "#7f1d1d",
-        },
-
-        // ===============================================
-        // PAYMENT SUCCESS
-        // ===============================================
-
-        handler: async (paymentResponse) => {
-          await verifyPayment(paymentResponse);
-        },
-
-        // ===============================================
-        // PAYMENT MODAL CLOSED
-        // ===============================================
-
-        modal: {
-          ondismiss: () => {
-            setEnrollmentLoading(false);
-
-            toast.info("Payment cancelled.");
-          },
-        },
-      };
-
-      // =================================================
-      // CREATE RAZORPAY INSTANCE
-      // =================================================
-
-      const razorpay = new window.Razorpay(options);
-
-      // =================================================
-      // PAYMENT FAILED
-      // =================================================
-
-      razorpay.on(
-        "payment.failed",
-        (paymentFailure) => {
-          console.error(
-            "Razorpay payment failed:",
-            paymentFailure
-          );
-
-          setEnrollmentLoading(false);
-
-          toast.error(
-            paymentFailure?.error?.description ||
-              "Payment failed. Please try again."
-          );
-        }
-      );
-
-      // =================================================
-      // OPEN RAZORPAY
-      // =================================================
-
-      razorpay.open();
-    } catch (error) {
-      console.error(
-        "Payment initialization error:",
-        error
-      );
-
-      toast.dismiss("payment-order");
-
-      toast.error(
-        error.response?.data?.message ||
-          "Unable to create payment order."
-      );
-
-      setEnrollmentLoading(false);
-    }
-  };
-
-  // =====================================================
   // VERIFY PAYMENT
   // =====================================================
 
-  const verifyPayment = async (paymentResponse) => {
+  const verifyPayment = async (
+    paymentResponse
+  ) => {
     try {
       const {
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature,
-      } = paymentResponse;
+      } = paymentResponse || {};
 
-      // Validate Razorpay response
       if (
         !razorpay_order_id ||
         !razorpay_payment_id ||
@@ -492,20 +365,30 @@ const StudentCourseDetails = () => {
         return;
       }
 
-      toast.loading("Verifying payment...", {
-        id: "payment-verification",
-      });
+      toast.loading(
+        "Verifying payment...",
+        {
+          id: "payment-verification",
+        }
+      );
 
       const response = await api.post(
         "/payment/verify",
         {
-          razorpayOrderId: razorpay_order_id,
-          razorpayPaymentId: razorpay_payment_id,
-          razorpaySignature: razorpay_signature,
+          razorpayOrderId:
+            razorpay_order_id,
+
+          razorpayPaymentId:
+            razorpay_payment_id,
+
+          razorpaySignature:
+            razorpay_signature,
         }
       );
 
-      toast.dismiss("payment-verification");
+      toast.dismiss(
+        "payment-verification"
+      );
 
       if (!response.data?.success) {
         toast.error(
@@ -531,7 +414,9 @@ const StudentCourseDetails = () => {
         error
       );
 
-      toast.dismiss("payment-verification");
+      toast.dismiss(
+        "payment-verification"
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -540,6 +425,187 @@ const StudentCourseDetails = () => {
 
       setEnrollmentLoading(false);
     }
+  };
+
+  // =====================================================
+  // PAID COURSE PAYMENT
+  // =====================================================
+
+  const handlePayment = async () => {
+    if (enrollmentLoading) return;
+
+    if (
+      !razorpayLoaded ||
+      !window.Razorpay
+    ) {
+      toast.error(
+        "Payment system is still loading. Please try again."
+      );
+
+      return;
+    }
+
+    try {
+      setEnrollmentLoading(true);
+
+      toast.loading(
+        "Creating payment order...",
+        {
+          id: "payment-order",
+        }
+      );
+
+      const response = await api.post(
+        `/payment/create-order/${courseId}`
+      );
+
+      toast.dismiss("payment-order");
+
+      if (!response.data?.success) {
+        toast.error(
+          response.data?.message ||
+            "Unable to create payment order."
+        );
+
+        return;
+      }
+
+      const payment =
+        response.data.payment;
+
+      const razorpayKey =
+        response.data.razorpayKeyId;
+
+      if (!payment?.orderId) {
+        toast.error(
+          "Invalid Razorpay order."
+        );
+
+        return;
+      }
+
+      if (!razorpayKey) {
+        toast.error(
+          "Razorpay key was not received from server."
+        );
+
+        return;
+      }
+
+      const options = {
+        key: razorpayKey,
+
+        amount: payment.amount,
+
+        currency:
+          payment.currency || "INR",
+
+        name: "Smart LMS",
+
+        description:
+          course?.courseTitle ||
+          "Course Enrollment",
+
+        order_id: payment.orderId,
+
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+        },
+
+        notes: {
+          courseId,
+        },
+
+        theme: {
+          color: "#7f1d1d",
+        },
+
+        handler: verifyPayment,
+
+        modal: {
+          ondismiss: () => {
+            setEnrollmentLoading(false);
+
+            toast.info(
+              "Payment cancelled."
+            );
+          },
+        },
+      };
+
+      const razorpay =
+        new window.Razorpay(options);
+
+      razorpay.on(
+        "payment.failed",
+        (paymentFailure) => {
+          console.error(
+            "Razorpay payment failed:",
+            paymentFailure
+          );
+
+          setEnrollmentLoading(false);
+
+          toast.error(
+            paymentFailure?.error
+              ?.description ||
+              "Payment failed. Please try again."
+          );
+        }
+      );
+
+      razorpay.open();
+    } catch (error) {
+      console.error(
+        "Payment initialization error:",
+        error
+      );
+
+      toast.dismiss("payment-order");
+
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to create payment order."
+      );
+
+      setEnrollmentLoading(false);
+    }
+  };
+
+  // =====================================================
+  // HANDLE ENROLLMENT
+  // =====================================================
+
+  const handleEnrollment = async () => {
+    if (enrollmentLoading) {
+      return;
+    }
+
+    if (!user) {
+      redirectToLogin();
+      return;
+    }
+
+    if (user.role !== "student") {
+      toast.error(
+        "Only students can enroll in courses."
+      );
+
+      return;
+    }
+
+    if (isEnrolled) {
+      navigate("/dashboard");
+      return;
+    }
+
+    if (price <= 0) {
+      await handleFreeEnrollment();
+      return;
+    }
+
+    await handlePayment();
   };
 
   // =====================================================
@@ -567,37 +633,19 @@ const StudentCourseDetails = () => {
   }
 
   // =====================================================
-  // COURSE DATA
-  // =====================================================
-
-  const thumbnailUrl = course.courseThumbnail?.url;
-
-  const instructorName =
-    course.instructor?.name ||
-    "Unknown Instructor";
-
-  const instructorEmail =
-    course.instructor?.email || "";
-
-  const price = getCoursePrice();
-
-  const isNonStudent =
-    Boolean(user && user.role !== "student");
-
-  // =====================================================
   // UI
   // =====================================================
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#090909] text-stone-200">
-
       {/* =================================================
           CINEMATIC BACKGROUND
       ================================================= */}
 
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-
-        {/* Crimson glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 overflow-hidden"
+      >
         <div
           className="
             absolute
@@ -608,11 +656,9 @@ const StudentCourseDetails = () => {
             rounded-full
             bg-red-900/10
             blur-[120px]
-            animate-pulse
           "
         />
 
-        {/* Gold glow */}
         <div
           className="
             absolute
@@ -626,7 +672,6 @@ const StudentCourseDetails = () => {
           "
         />
 
-        {/* Moon */}
         <div
           className="
             absolute
@@ -642,24 +687,34 @@ const StudentCourseDetails = () => {
           "
         />
 
-        {/* Ambient particles */}
         <div className="absolute left-[12%] top-[22%] h-1 w-1 rounded-full bg-amber-300/50 animate-pulse" />
+
         <div className="absolute left-[28%] top-[65%] h-1 w-1 rounded-full bg-red-300/40 animate-pulse" />
+
         <div className="absolute right-[22%] top-[42%] h-1 w-1 rounded-full bg-amber-200/40 animate-pulse" />
+
         <div className="absolute right-[12%] top-[75%] h-1 w-1 rounded-full bg-red-300/30 animate-pulse" />
       </div>
 
-      {/* =================================================
-          TOP BORDER
-      ================================================= */}
+      {/* TOP BORDER */}
 
-      <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
+      <div
+        aria-hidden="true"
+        className="
+          absolute
+          left-0
+          right-0
+          top-0
+          h-px
+          bg-gradient-to-r
+          from-transparent
+          via-amber-500/40
+          to-transparent
+        "
+      />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-
-        {/* =================================================
-            BACK BUTTON
-        ================================================= */}
+        {/* BACK BUTTON */}
 
         <button
           type="button"
@@ -679,7 +734,7 @@ const StudentCourseDetails = () => {
             text-sm
             font-medium
             text-stone-400
-            backdrop-blur-xl
+            backdrop-blur-md
             transition-all
             duration-300
             hover:border-amber-600/40
@@ -700,9 +755,7 @@ const StudentCourseDetails = () => {
           Return to Courses
         </button>
 
-        {/* =================================================
-            HERO CARD
-        ================================================= */}
+        {/* HERO CARD */}
 
         <div
           className="
@@ -713,15 +766,11 @@ const StudentCourseDetails = () => {
             border-stone-800
             bg-[#101010]/90
             shadow-[0_30px_100px_rgba(0,0,0,0.55)]
-            backdrop-blur-xl
+            backdrop-blur-md
           "
         >
-
           <div className="grid lg:grid-cols-[1.2fr_1fr]">
-
-            {/* =================================================
-                THUMBNAIL
-            ================================================= */}
+            {/* THUMBNAIL */}
 
             <div
               className="
@@ -732,11 +781,12 @@ const StudentCourseDetails = () => {
                 lg:min-h-[560px]
               "
             >
-
               {thumbnailUrl ? (
                 <img
                   src={thumbnailUrl}
                   alt={course.courseTitle}
+                  loading="eager"
+                  decoding="async"
                   className="
                     absolute
                     inset-0
@@ -772,9 +822,8 @@ const StudentCourseDetails = () => {
                 </div>
               )}
 
-              {/* Image dark overlay */}
-
               <div
+                aria-hidden="true"
                 className="
                   absolute
                   inset-0
@@ -786,6 +835,7 @@ const StudentCourseDetails = () => {
               />
 
               <div
+                aria-hidden="true"
                 className="
                   absolute
                   inset-0
@@ -796,9 +846,8 @@ const StudentCourseDetails = () => {
                 "
               />
 
-              {/* Top golden line */}
-
               <div
+                aria-hidden="true"
                 className="
                   absolute
                   left-0
@@ -812,7 +861,7 @@ const StudentCourseDetails = () => {
                 "
               />
 
-              {/* Level badge */}
+              {/* LEVEL BADGE */}
 
               <div className="absolute left-5 top-5">
                 <div
@@ -832,16 +881,17 @@ const StudentCourseDetails = () => {
                     tracking-[0.15em]
                     text-amber-300
                     shadow-lg
-                    backdrop-blur-xl
+                    backdrop-blur-md
                   "
                 >
                   <Crown size={14} />
 
-                  {course.courseLevel || "Beginner"}
+                  {course.courseLevel ||
+                    "Beginner"}
                 </div>
               </div>
 
-              {/* Bottom image content */}
+              {/* BOTTOM IMAGE CONTENT */}
 
               <div
                 className="
@@ -873,9 +923,7 @@ const StudentCourseDetails = () => {
               </div>
             </div>
 
-            {/* =================================================
-                COURSE INFORMATION
-            ================================================= */}
+            {/* COURSE INFORMATION */}
 
             <div
               className="
@@ -893,10 +941,8 @@ const StudentCourseDetails = () => {
                 lg:p-11
               "
             >
-
-              {/* Decorative glow */}
-
               <div
+                aria-hidden="true"
                 className="
                   pointer-events-none
                   absolute
@@ -910,9 +956,8 @@ const StudentCourseDetails = () => {
                 "
               />
 
-              {/* Decorative corner */}
-
               <div
+                aria-hidden="true"
                 className="
                   absolute
                   right-5
@@ -926,6 +971,7 @@ const StudentCourseDetails = () => {
               />
 
               <div
+                aria-hidden="true"
                 className="
                   absolute
                   bottom-5
@@ -986,13 +1032,11 @@ const StudentCourseDetails = () => {
                 {course.courseTitle}
               </h1>
 
-              {/* Golden divider */}
+              {/* DIVIDER */}
 
               <div className="relative z-10 mt-5 flex items-center gap-3">
                 <div className="h-px w-16 bg-amber-500/70" />
-
                 <div className="h-1.5 w-1.5 rotate-45 bg-amber-500/70" />
-
                 <div className="h-px w-8 bg-amber-500/30" />
               </div>
 
@@ -1050,6 +1094,7 @@ const StudentCourseDetails = () => {
                   />
 
                   <div
+                    aria-hidden="true"
                     className="
                       absolute
                       inset-0
@@ -1189,7 +1234,6 @@ const StudentCourseDetails = () => {
                     "
                   >
                     <ShieldCheck size={13} />
-
                     Secure
                   </div>
                 </div>
@@ -1255,11 +1299,10 @@ const StudentCourseDetails = () => {
                   }
                 `}
               >
-                {/* Button shine */}
-
                 {!isNonStudent &&
                   !enrollmentLoading && (
                     <span
+                      aria-hidden="true"
                       className="
                         pointer-events-none
                         absolute
@@ -1276,11 +1319,15 @@ const StudentCourseDetails = () => {
                   )}
 
                 <EnrollmentButtonContent
-                  loading={enrollmentLoading}
+                  loading={
+                    enrollmentLoading
+                  }
                   isEnrolled={isEnrolled}
                   user={user}
                   price={price}
-                  razorpayLoaded={razorpayLoaded}
+                  razorpayLoaded={
+                    razorpayLoaded
+                  }
                 />
               </button>
 
@@ -1304,7 +1351,8 @@ const StudentCourseDetails = () => {
                 >
                   <CheckCircle2 size={14} />
 
-                  You already hold access to this course
+                  You already hold access to
+                  this course
                 </div>
               )}
 
@@ -1330,16 +1378,15 @@ const StudentCourseDetails = () => {
                   >
                     <LockKeyhole size={12} />
 
-                    Secure payment powered by Razorpay
+                    Secure payment powered by
+                    Razorpay
                   </div>
                 )}
             </div>
           </div>
         </div>
 
-        {/* =================================================
-            LOWER CONTENT
-        ================================================= */}
+        {/* LOWER CONTENT */}
 
         <div
           className="
@@ -1349,10 +1396,7 @@ const StudentCourseDetails = () => {
             lg:grid-cols-[1fr_340px]
           "
         >
-
-          {/* =================================================
-              ABOUT COURSE
-          ================================================= */}
+          {/* ABOUT COURSE */}
 
           <div
             className="
@@ -1364,13 +1408,11 @@ const StudentCourseDetails = () => {
               bg-[#101010]/90
               p-6
               shadow-[0_20px_60px_rgba(0,0,0,0.25)]
-              backdrop-blur-xl
               sm:p-8
             "
           >
-            {/* Decorative top line */}
-
             <div
+              aria-hidden="true"
               className="
                 absolute
                 left-8
@@ -1456,9 +1498,7 @@ const StudentCourseDetails = () => {
             </div>
           </div>
 
-          {/* =================================================
-              WHAT YOU GET
-          ================================================= */}
+          {/* WHAT YOU GET */}
 
           <div
             className="
@@ -1472,12 +1512,10 @@ const StudentCourseDetails = () => {
               to-[#0d0d0d]
               p-6
               shadow-[0_20px_60px_rgba(0,0,0,0.25)]
-              backdrop-blur-xl
             "
           >
-            {/* Glow */}
-
             <div
+              aria-hidden="true"
               className="
                 pointer-events-none
                 absolute
@@ -1547,9 +1585,7 @@ const StudentCourseDetails = () => {
           </div>
         </div>
 
-        {/* =================================================
-            FOOTER MOTTO
-        ================================================= */}
+        {/* FOOTER MOTTO */}
 
         <div
           className="
@@ -1608,9 +1644,8 @@ const LoadingState = () => {
         bg-[#090909]
       "
     >
-      {/* Background glow */}
-
       <div
+        aria-hidden="true"
         className="
           absolute
           h-72
@@ -1618,12 +1653,10 @@ const LoadingState = () => {
           rounded-full
           bg-red-900/10
           blur-[100px]
-          animate-pulse
         "
       />
 
       <div className="relative z-10 flex flex-col items-center gap-5">
-
         <div
           className="
             relative
@@ -1645,6 +1678,7 @@ const LoadingState = () => {
           />
 
           <div
+            aria-hidden="true"
             className="
               absolute
               inset-2
@@ -1683,7 +1717,7 @@ const LoadingState = () => {
 };
 
 // =====================================================
-// ENROLLMENT BUTTON CONTENT
+// ENROLLMENT BUTTON
 // =====================================================
 
 const EnrollmentButtonContent = ({
@@ -1700,7 +1734,6 @@ const EnrollmentButtonContent = ({
           size={18}
           className="animate-spin"
         />
-
         Processing...
       </>
     );
@@ -1710,7 +1743,6 @@ const EnrollmentButtonContent = ({
     return (
       <>
         <CheckCircle2 size={18} />
-
         Continue Learning
       </>
     );

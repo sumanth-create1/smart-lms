@@ -1,4 +1,10 @@
 import {
+  memo,
+  useCallback,
+  useMemo,
+} from "react";
+
+import {
   BarChart3,
   Clock3,
   TrendingUp,
@@ -9,47 +15,225 @@ import {
   Sparkles,
   Swords,
   Castle,
-  Snowflake,
   Moon,
   Feather,
   Mountain,
 } from "lucide-react";
 
 // =====================================================
+// CONSTANTS
+// =====================================================
+
+const EMPTY_ACTIVITY = [];
+
+const BAR_HEIGHTS = [40, 65, 30, 80, 55, 70, 45];
+
+// =====================================================
+// ANIMATION STYLES
+// =====================================================
+
+const ACTIVITY_STYLES = `
+  @keyframes activityIconFloat {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+      transform: translateY(-4px) rotate(1deg);
+    }
+  }
+
+  @keyframes activityFloatIcon {
+    0%, 100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-7px);
+    }
+  }
+
+  @keyframes activitySwordFloat {
+    0%, 100% {
+      transform: translateY(0) rotate(-20deg);
+    }
+
+    50% {
+      transform: translateY(-5px) rotate(-12deg);
+    }
+  }
+
+  @keyframes activityCrownFloat {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+      transform: translateY(-5px) rotate(3deg);
+    }
+  }
+
+  @keyframes activityShieldPulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: .45;
+    }
+
+    50% {
+      transform: scale(1.12);
+      opacity: .8;
+    }
+  }
+
+  @keyframes activityFlameFlicker {
+    0%, 100% {
+      transform: scale(1) rotate(-2deg);
+      opacity: .8;
+    }
+
+    25% {
+      transform: scale(1.08) rotate(2deg);
+      opacity: 1;
+    }
+
+    50% {
+      transform: scale(.94) rotate(-3deg);
+      opacity: .7;
+    }
+
+    75% {
+      transform: scale(1.05) rotate(3deg);
+      opacity: .95;
+    }
+  }
+
+  @keyframes activityEmberFloat {
+    0% {
+      transform: translateY(0) translateX(0);
+      opacity: 0;
+    }
+
+    20% {
+      opacity: .7;
+    }
+
+    50% {
+      transform: translateY(-25px) translateX(8px);
+      opacity: .5;
+    }
+
+    80% {
+      opacity: .3;
+    }
+
+    100% {
+      transform: translateY(-55px) translateX(-5px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes activitySnowFall {
+    0% {
+      transform: translateY(-20px) translateX(0);
+      opacity: 0;
+    }
+
+    15% {
+      opacity: .7;
+    }
+
+    50% {
+      transform: translateY(90px) translateX(15px);
+      opacity: .5;
+    }
+
+    100% {
+      transform: translateY(190px) translateX(-10px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes activityFogDrift {
+    0%, 100% {
+      transform: translateX(-5%);
+      opacity: .25;
+    }
+
+    50% {
+      transform: translateX(5%);
+      opacity: .55;
+    }
+  }
+
+  @keyframes activityMoonPulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: .7;
+    }
+
+    50% {
+      transform: scale(1.04);
+      opacity: 1;
+    }
+  }
+
+  @keyframes activityFeatherFloat {
+    0%, 100% {
+      transform: translateY(0) rotate(-10deg);
+    }
+
+    50% {
+      transform: translateY(-10px) rotate(8deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .learning-activity-motion {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+`;
+
+// =====================================================
 // HELPERS
 // =====================================================
 
+const getSafeNumber = (value, fallback = 0) => {
+  const number = Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+};
+
 const getHours = (item = {}) => {
   if (item.hours != null) {
-    const hours = Number(item.hours);
-
-    return Number.isFinite(hours)
-      ? Math.max(hours, 0)
-      : 0;
+    return Math.max(
+      getSafeNumber(item.hours),
+      0
+    );
   }
 
   if (item.minutes != null) {
-    const minutes = Number(item.minutes);
-
-    return Number.isFinite(minutes)
-      ? Math.max(minutes / 60, 0)
-      : 0;
+    return Math.max(
+      getSafeNumber(item.minutes) / 60,
+      0
+    );
   }
 
   if (item.durationSeconds != null) {
-    const seconds = Number(item.durationSeconds);
-
-    return Number.isFinite(seconds)
-      ? Math.max(seconds / 3600, 0)
-      : 0;
+    return Math.max(
+      getSafeNumber(item.durationSeconds) / 3600,
+      0
+    );
   }
 
   if (item.seconds != null) {
-    const seconds = Number(item.seconds);
-
-    return Number.isFinite(seconds)
-      ? Math.max(seconds / 3600, 0)
-      : 0;
+    return Math.max(
+      getSafeNumber(item.seconds) / 3600,
+      0
+    );
   }
 
   return 0;
@@ -61,7 +245,7 @@ const getHours = (item = {}) => {
 
 const normalizeActivity = (activity) => {
   if (!Array.isArray(activity)) {
-    return [];
+    return EMPTY_ACTIVITY;
   }
 
   return activity.map((item) => ({
@@ -79,7 +263,7 @@ const normalizeActivity = (activity) => {
 // LOADING
 // =====================================================
 
-const ActivityLoading = () => {
+const ActivityLoading = memo(() => {
   return (
     <section
       className="
@@ -94,12 +278,9 @@ const ActivityLoading = () => {
         shadow-black/60
       "
     >
-      {/* ================================================
-          MEDIEVAL BACKGROUND
-      ================================================= */}
+      {/* BACKGROUND */}
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Stone base */}
         <div
           className="
             absolute
@@ -111,7 +292,6 @@ const ActivityLoading = () => {
           "
         />
 
-        {/* Moon glow */}
         <div
           className="
             absolute
@@ -119,19 +299,18 @@ const ActivityLoading = () => {
             top-[-70px]
             h-56
             w-56
+            animate-pulse
             rounded-full
             bg-slate-200/[0.035]
             blur-[45px]
-            animate-pulse
           "
         />
 
-        {/* Gold glow */}
         <div
           className="
             absolute
-            left-[-100px]
             bottom-[-100px]
+            left-[-100px]
             h-72
             w-72
             rounded-full
@@ -140,7 +319,6 @@ const ActivityLoading = () => {
           "
         />
 
-        {/* Stone texture */}
         <div
           className="
             absolute
@@ -151,24 +329,25 @@ const ActivityLoading = () => {
           "
         />
 
-        {/* Fog */}
         <div
           className="
+            learning-activity-motion
             absolute
             bottom-0
             left-[-20%]
             h-24
             w-[140%]
+            animate-[activityFogDrift_12s_ease-in-out_infinite]
             rounded-full
             bg-slate-200/[0.025]
             blur-3xl
-            animate-[fogDrift_12s_ease-in-out_infinite]
           "
         />
       </div>
 
       <div className="relative z-10">
-        {/* Header */}
+
+        {/* HEADER */}
 
         <div
           className="
@@ -191,9 +370,10 @@ const ActivityLoading = () => {
           <div className="h-10 w-10 animate-pulse rounded-xl bg-white/10" />
         </div>
 
-        {/* Content */}
+        {/* CONTENT */}
 
         <div className="p-5 sm:p-6">
+
           <div className="mb-7 flex items-end justify-between">
             <div>
               <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
@@ -205,62 +385,50 @@ const ActivityLoading = () => {
           </div>
 
           <div className="flex h-56 items-end gap-2 sm:gap-4">
-            {[40, 65, 30, 80, 55, 70, 45].map(
-              (height, index) => (
+            {BAR_HEIGHTS.map((height) => (
+              <div
+                key={height}
+                className="
+                  flex
+                  h-full
+                  flex-1
+                  flex-col
+                  items-center
+                  justify-end
+                "
+              >
                 <div
-                  key={index}
                   className="
-                    flex
-                    h-full
-                    flex-1
-                    flex-col
-                    items-center
-                    justify-end
+                    w-full
+                    max-w-9
+                    animate-pulse
+                    rounded-t-md
+                    bg-white/10
                   "
-                >
-                  <div
-                    className="
-                      w-full
-                      max-w-9
-                      animate-pulse
-                      rounded-t-md
-                      bg-white/10
-                    "
-                    style={{
-                      height: `${height}%`,
-                    }}
-                  />
+                  style={{
+                    height: `${height}%`,
+                  }}
+                />
 
-                  <div className="mt-3 h-3 w-7 animate-pulse rounded bg-white/10" />
-                </div>
-              )
-            )}
+                <div className="mt-3 h-3 w-7 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <style>{`
-        @keyframes fogDrift {
-          0%, 100% {
-            transform: translateX(-5%);
-            opacity: .3;
-          }
-
-          50% {
-            transform: translateX(5%);
-            opacity: .6;
-          }
-        }
-      `}</style>
+      <style>{ACTIVITY_STYLES}</style>
     </section>
   );
-};
+});
+
+ActivityLoading.displayName = "ActivityLoading";
 
 // =====================================================
 // EMPTY STATE
 // =====================================================
 
-const EmptyActivity = () => {
+const EmptyActivity = memo(() => {
   return (
     <div
       className="
@@ -279,7 +447,7 @@ const EmptyActivity = () => {
         text-center
       "
     >
-      {/* Moon */}
+      {/* MOON */}
 
       <div
         className="
@@ -307,51 +475,55 @@ const EmptyActivity = () => {
         />
       </div>
 
-      {/* Floating flame */}
+      {/* FLAME */}
 
       <Flame
         size={20}
         className="
+          learning-activity-motion
           absolute
           left-8
           top-8
-          animate-[flameFlicker_1.8s_ease-in-out_infinite]
+          animate-[activityFlameFlicker_1.8s_ease-in-out_infinite]
           text-amber-500/20
         "
       />
 
-      {/* Sword */}
+      {/* SWORD */}
 
       <Sword
         size={22}
         className="
+          learning-activity-motion
           absolute
           bottom-8
           right-8
           rotate-[-20deg]
-          animate-[swordFloat_4s_ease-in-out_infinite]
+          animate-[activitySwordFloat_4s_ease-in-out_infinite]
           text-slate-300/20
         "
       />
 
-      {/* Feather */}
+      {/* FEATHER */}
 
       <Feather
         size={18}
         className="
+          learning-activity-motion
           absolute
-          left-20
           bottom-12
-          animate-[featherFloat_6s_ease-in-out_infinite]
+          left-20
+          animate-[activityFeatherFloat_6s_ease-in-out_infinite]
           text-sky-300/20
         "
       />
 
-      {/* Sparkles */}
+      {/* SPARKLES */}
 
       <Sparkles
         size={16}
         className="
+          learning-activity-motion
           absolute
           right-20
           top-12
@@ -360,15 +532,16 @@ const EmptyActivity = () => {
         "
       />
 
-      {/* Shield */}
+      {/* SHIELD */}
 
       <div
         className="
+          learning-activity-motion
           relative
           flex
           h-14
           w-14
-          animate-[floatIcon_4s_ease-in-out_infinite]
+          animate-[activityFloatIcon_4s_ease-in-out_infinite]
           items-center
           justify-center
           rounded-2xl
@@ -388,6 +561,7 @@ const EmptyActivity = () => {
 
         <div
           className="
+            learning-activity-motion
             absolute
             inset-0
             animate-ping
@@ -408,625 +582,788 @@ const EmptyActivity = () => {
       </p>
     </div>
   );
-};
+});
+
+EmptyActivity.displayName = "EmptyActivity";
+
+// =====================================================
+// ACTIVITY BAR
+// =====================================================
+
+const ActivityBar = memo(
+  ({
+    item,
+    index,
+    maxHours,
+    strongestDay,
+  }) => {
+    const hours = item.hours;
+
+    const height =
+      hours > 0
+        ? Math.max(
+            (hours / maxHours) * 100,
+            5
+          )
+        : 2;
+
+    const isStrongest =
+      strongestDay?.day === item.day &&
+      strongestDay?.hours === item.hours &&
+      hours > 0;
+
+    return (
+      <div
+        className="
+          group/bar
+          flex
+          h-full
+          min-w-0
+          flex-1
+          flex-col
+          items-center
+          justify-end
+        "
+      >
+        {/* CROWN */}
+
+        <div
+          className={`
+            mb-1
+            flex
+            h-5
+            items-center
+            justify-center
+            transition-opacity
+            duration-500
+            ${
+              isStrongest
+                ? "opacity-100"
+                : "opacity-0"
+            }
+          `}
+        >
+          <Crown
+            size={14}
+            className={`
+              ${
+                isStrongest
+                  ? "learning-activity-motion animate-[activityCrownFloat_2.5s_ease-in-out_infinite]"
+                  : ""
+              }
+              text-amber-400
+              drop-shadow-[0_0_7px_rgba(245,158,11,0.8)]
+            `}
+            fill="currentColor"
+          />
+        </div>
+
+        {/* HOURS */}
+
+        <span
+          className="
+            mb-2
+            whitespace-nowrap
+            text-[10px]
+            font-semibold
+            text-slate-500
+            transition-colors
+            duration-300
+            group-hover/bar:text-slate-200
+          "
+        >
+          {hours.toFixed(1)}h
+        </span>
+
+        {/* BAR */}
+
+        <div
+          className="
+            relative
+            flex
+            h-full
+            w-full
+            max-w-10
+            items-end
+            overflow-hidden
+            rounded-t-lg
+            border
+            border-white/[0.05]
+            bg-white/[0.02]
+            transition-[border-color]
+            duration-300
+            group-hover/bar:border-amber-700/40
+          "
+        >
+          {/* PATTERN */}
+
+          <div
+            className="
+              absolute
+              inset-0
+              opacity-30
+              [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%)]
+              [background-size:9px_9px]
+            "
+          />
+
+          {/* ACTUAL BAR */}
+
+          <div
+            className={`
+              relative
+              w-full
+              rounded-t-lg
+              bg-gradient-to-t
+              from-[#15191c]
+              via-[#37434a]
+              to-amber-400
+              shadow-lg
+              transition-[height,box-shadow]
+              duration-1000
+              ease-out
+              ${
+                isStrongest
+                  ? "shadow-amber-500/40"
+                  : "shadow-black/40"
+              }
+            `}
+            style={{
+              height: `${height}%`,
+            }}
+          >
+            {/* GOLD EDGE */}
+
+            <div
+              className="
+                absolute
+                left-0
+                right-0
+                top-0
+                h-px
+                bg-amber-300/90
+                shadow-[0_0_8px_rgba(252,211,77,0.8)]
+              "
+            />
+
+            {/* SHINE */}
+
+            <div
+              className="
+                absolute
+                left-0
+                top-0
+                h-full
+                w-full
+                -translate-y-full
+                bg-gradient-to-b
+                from-white/20
+                via-transparent
+                to-transparent
+                transition-transform
+                duration-700
+                group-hover/bar:translate-y-full
+              "
+            />
+
+            {/* ICE HIGHLIGHT */}
+
+            <div
+              className="
+                absolute
+                bottom-0
+                left-1/2
+                h-1/2
+                w-px
+                -translate-x-1/2
+                bg-sky-300/20
+                blur-sm
+              "
+            />
+          </div>
+        </div>
+
+        {/* DAY */}
+
+        <span
+          className="
+            mt-3
+            truncate
+            text-[11px]
+            font-semibold
+            text-slate-500
+            transition-colors
+            duration-300
+            group-hover/bar:text-slate-200
+          "
+        >
+          {item.day || "-"}
+        </span>
+      </div>
+    );
+  }
+);
+
+ActivityBar.displayName = "ActivityBar";
 
 // =====================================================
 // MAIN COMPONENT
 // =====================================================
 
-function LearningActivity({
-  activity = [],
-  loading = false,
-}) {
-  // ===================================================
-  // NORMALIZE
-  // ===================================================
+const LearningActivity = memo(
+  ({
+    activity = EMPTY_ACTIVITY,
+    loading = false,
+  }) => {
+    // =================================================
+    // NORMALIZE ONLY WHEN ACTIVITY CHANGES
+    // =================================================
 
-  const normalizedActivity =
-    normalizeActivity(activity);
-
-  // ===================================================
-  // TOTAL HOURS
-  // ===================================================
-
-  const totalHours =
-    normalizedActivity.reduce(
-      (total, item) =>
-        total + Number(item.hours || 0),
-      0
+    const normalizedActivity = useMemo(
+      () => normalizeActivity(activity),
+      [activity]
     );
 
-  // ===================================================
-  // MAX ACTIVITY
-  // ===================================================
+    // =================================================
+    // ALL STATISTICS IN ONE PASS
+    // =================================================
 
-  const maxActivityHours = Math.max(
-    ...normalizedActivity.map(
-      (item) => Number(item.hours || 0)
-    ),
-    0
-  );
+    const statistics = useMemo(() => {
+      let totalHours = 0;
+      let activeDays = 0;
+      let strongestDay = null;
+      let maxActivityHours = 0;
 
-  const maxHours = Math.max(
-    Math.ceil(maxActivityHours),
-    4
-  );
+      for (const item of normalizedActivity) {
+        const hours = item.hours;
 
-  // ===================================================
-  // ACTIVE DAYS
-  // ===================================================
+        totalHours += hours;
 
-  const activeDays =
-    normalizedActivity.filter(
-      (item) => item.hours > 0
-    ).length;
+        if (hours > 0) {
+          activeDays++;
+        }
 
-  // ===================================================
-  // AVERAGE
-  // ===================================================
+        if (hours > maxActivityHours) {
+          maxActivityHours = hours;
+        }
 
-  const averageHours =
-    activeDays > 0
-      ? totalHours / activeDays
-      : 0;
+        if (
+          !strongestDay ||
+          hours > strongestDay.hours
+        ) {
+          strongestDay = item;
+        }
+      }
 
-  // ===================================================
-  // MOST ACTIVE DAY
-  // ===================================================
+      const maxHours = Math.max(
+        Math.ceil(maxActivityHours),
+        4
+      );
 
-  const strongestDay =
-    normalizedActivity.length > 0
-      ? normalizedActivity.reduce(
-          (max, item) =>
-            item.hours > max.hours
-              ? item
-              : max,
-          normalizedActivity[0]
-        )
-      : null;
+      const averageHours =
+        activeDays > 0
+          ? totalHours / activeDays
+          : 0;
 
-  // ===================================================
-  // LOADING
-  // ===================================================
+      return {
+        totalHours,
+        activeDays,
+        averageHours,
+        strongestDay,
+        maxHours,
+      };
+    }, [normalizedActivity]);
 
-  if (loading) {
-    return <ActivityLoading />;
-  }
+    // =================================================
+    // DESTRUCTURE
+    // =================================================
 
-  // ===================================================
-  // UI
-  // ===================================================
+    const {
+      totalHours,
+      activeDays,
+      averageHours,
+      strongestDay,
+      maxHours,
+    } = statistics;
 
-  return (
-    <section
-      className="
-        group
-        relative
-        min-w-0
-        overflow-hidden
-        rounded-[28px]
-        border
-        border-slate-700/50
-        bg-[#07090b]
-        shadow-2xl
-        shadow-black/60
-        transition-all
-        duration-500
-        hover:-translate-y-1
-        hover:border-amber-700/40
-        hover:shadow-[0_30px_90px_rgba(0,0,0,0.65)]
-      "
-    >
-      {/* =================================================
-          CINEMATIC REALM BACKGROUND
-      ================================================= */}
+    // =================================================
+    // LOADING
+    // =================================================
 
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    if (loading) {
+      return <ActivityLoading />;
+    }
 
-        {/* Base */}
+    // =================================================
+    // UI
+    // =================================================
 
-        <div
-          className="
-            absolute
-            inset-0
-            bg-gradient-to-br
-            from-[#050709]
-            via-[#11171b]
-            to-[#090b0d]
-          "
-        />
-
-        {/* =============================================
-            MOON
-        ============================================== */}
-
-        <div
-          className="
-            absolute
-            right-[7%]
-            top-[7%]
-            h-24
-            w-24
-            rounded-full
-            bg-slate-200/[0.035]
-            shadow-[0_0_70px_rgba(186,230,253,0.06)]
-            animate-[moonPulse_7s_ease-in-out_infinite]
-          "
-        >
-          <div
-            className="
-              absolute
-              inset-3
-              rounded-full
-              border
-              border-slate-300/[0.04]
-            "
-          />
-        </div>
-
-        {/* =============================================
-            CASTLE SILHOUETTE
-        ============================================== */}
-
-        <div
-          className="
-            absolute
-            bottom-0
-            left-0
-            h-24
-            w-full
-            opacity-[0.16]
-          "
-        >
-          <div className="absolute bottom-0 left-[5%] h-16 w-20 border-x border-t border-slate-500/20" />
-
-          <div className="absolute bottom-0 left-[12%] h-24 w-7 border-x border-t border-slate-500/20" />
-
-          <div className="absolute bottom-0 left-[18%] h-14 w-12 border-x border-t border-slate-500/20" />
-
-          <div className="absolute bottom-0 right-[12%] h-20 w-9 border-x border-t border-slate-500/20" />
-
-          <div className="absolute bottom-0 right-[5%] h-14 w-16 border-x border-t border-slate-500/20" />
-
-          <Castle
-            size={75}
-            className="
-              absolute
-              bottom-[-5px]
-              left-1/2
-              -translate-x-1/2
-              text-slate-400/[0.08]
-            "
-          />
-        </div>
-
-        {/* =============================================
-            MOUNTAINS
-        ============================================== */}
-
-        <div
-          className="
-            absolute
-            bottom-0
-            left-[-5%]
-            h-20
-            w-[110%]
-            opacity-[0.07]
-          "
-        >
-          <Mountain
-            size={180}
-            className="
-              absolute
-              bottom-[-45px]
-              left-[8%]
-            "
-          />
-
-          <Mountain
-            size={150}
-            className="
-              absolute
-              bottom-[-50px]
-              right-[10%]
-            "
-          />
-        </div>
-
-        {/* =============================================
-            GOLDEN TORCH GLOW
-        ============================================== */}
-
-        <div
-          className="
-            absolute
-            -left-28
-            -bottom-28
-            h-80
-            w-80
-            rounded-full
-            bg-amber-700/[0.07]
-            blur-[100px]
-            transition-all
-            duration-1000
-            group-hover:scale-125
-            group-hover:bg-amber-600/[0.11]
-          "
-        />
-
-        {/* =============================================
-            ICE GLOW
-        ============================================== */}
-
-        <div
-          className="
-            absolute
-            -right-28
-            -top-28
-            h-80
-            w-80
-            rounded-full
-            bg-sky-800/[0.08]
-            blur-[110px]
-            transition-all
-            duration-1000
-            group-hover:scale-125
-          "
-        />
-
-        {/* =============================================
-            STONE TEXTURE
-        ============================================== */}
-
-        <div
-          className="
-            absolute
-            inset-0
-            opacity-[0.045]
-            [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%),linear-gradient(45deg,transparent_45%,white_46%,transparent_47%)]
-            [background-size:25px_25px]
-          "
-        />
-
-        {/* =============================================
-            FOG
-        ============================================== */}
-
-        <div
-          className="
-            absolute
-            bottom-[-20px]
-            left-[-20%]
-            h-28
-            w-[140%]
-            rounded-[50%]
-            bg-slate-300/[0.025]
-            blur-3xl
-            animate-[fogDrift_14s_ease-in-out_infinite]
-          "
-        />
-
-        {/* =============================================
-            SNOW
-        ============================================== */}
-
-        <span className="absolute left-[8%] top-[18%] h-1 w-1 rounded-full bg-sky-100/40 animate-[snowFall_8s_linear_infinite]" />
-
-        <span className="absolute left-[22%] top-[8%] h-1 w-1 rounded-full bg-white/30 animate-[snowFall_11s_linear_infinite_1s]" />
-
-        <span className="absolute left-[40%] top-[25%] h-1.5 w-1.5 rounded-full bg-sky-100/30 animate-[snowFall_9s_linear_infinite_2s]" />
-
-        <span className="absolute right-[28%] top-[12%] h-1 w-1 rounded-full bg-white/35 animate-[snowFall_10s_linear_infinite_1.5s]" />
-
-        <span className="absolute right-[12%] top-[30%] h-1.5 w-1.5 rounded-full bg-sky-100/30 animate-[snowFall_12s_linear_infinite_3s]" />
-
-        {/* =============================================
-            EMBERS
-        ============================================== */}
-
-        <span className="absolute left-[15%] bottom-[20%] h-1 w-1 rounded-full bg-amber-400/60 animate-[emberFloat_5s_ease-in-out_infinite]" />
-
-        <span className="absolute left-[32%] bottom-[18%] h-1.5 w-1.5 rounded-full bg-amber-300/50 animate-[emberFloat_6s_ease-in-out_infinite_1s]" />
-
-        <span className="absolute right-[18%] bottom-[25%] h-1 w-1 rounded-full bg-orange-400/50 animate-[emberFloat_7s_ease-in-out_infinite_2s]" />
-
-        {/* =============================================
-            CINEMATIC LIGHT SWEEP
-        ============================================== */}
-
-        <div
-          className="
-            absolute
-            left-[-30%]
-            top-0
-            h-full
-            w-[25%]
-            -skew-x-12
-            bg-gradient-to-r
-            from-transparent
-            via-amber-300/[0.025]
-            to-transparent
-            transition-all
-            duration-[1800ms]
-            group-hover:left-[120%]
-          "
-        />
-      </div>
-
-      {/* =================================================
-          HEADER
-      ================================================= */}
-
-      <div
+    return (
+      <section
         className="
+          group
           relative
-          z-10
-          flex
-          items-center
-          justify-between
-          border-b
-          border-white/[0.07]
-          px-5
-          py-5
-          sm:px-6
+          min-w-0
+          overflow-hidden
+          rounded-[28px]
+          border
+          border-slate-700/50
+          bg-[#07090b]
+          shadow-2xl
+          shadow-black/60
+          transition-[transform,border-color,box-shadow]
+          duration-500
+          hover:-translate-y-1
+          hover:border-amber-700/40
+          hover:shadow-[0_30px_90px_rgba(0,0,0,0.65)]
         "
       >
-        <div className="flex items-center gap-3">
+        {/* =================================================
+            CINEMATIC BACKGROUND
+        ================================================= */}
 
-          {/* Chronicle icon */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+
+          {/* BASE */}
 
           <div
             className="
-              relative
-              flex
-              h-11
-              w-11
-              animate-[iconFloat_4s_ease-in-out_infinite]
-              items-center
-              justify-center
-              rounded-xl
-              border
-              border-amber-500/20
-              bg-amber-500/[0.07]
-              shadow-[0_0_30px_rgba(245,158,11,0.07)]
-              transition-all
-              duration-300
-              group-hover:scale-110
-              group-hover:border-amber-500/40
-            "
-          >
-            <BarChart3
-              size={19}
-              className="
-                text-amber-400
-                drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]
-              "
-            />
-
-            {/* Crown dot */}
-
-            <span
-              className="
-                absolute
-                -right-1
-                -top-1
-                h-2
-                w-2
-                animate-pulse
-                rounded-full
-                bg-amber-400
-                shadow-[0_0_10px_rgba(245,158,11,0.9)]
-              "
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center gap-2">
-
-              <h2
-                className="
-                  m-0
-                  text-base
-                  font-black
-                  uppercase
-                  tracking-tight
-                  text-white
-                  sm:text-lg
-                "
-              >
-                Weekly Chronicle
-              </h2>
-
-              <Swords
-                size={13}
-                className="
-                  hidden
-                  animate-[swordFloat_4s_ease-in-out_infinite]
-                  text-slate-400/60
-                  sm:block
-                "
-              />
-            </div>
-
-            <p
-              className="
-                m-0
-                mt-0.5
-                text-[10px]
-                font-bold
-                uppercase
-                tracking-[0.13em]
-                text-slate-500
-                sm:text-xs
-              "
-            >
-              Your battles across the realm
-            </p>
-          </div>
-        </div>
-
-        {/* Realm status */}
-
-        <div
-          className="
-            hidden
-            items-center
-            gap-1.5
-            rounded-full
-            border
-            border-amber-500/20
-            bg-amber-500/[0.06]
-            px-3
-            py-1.5
-            shadow-[0_0_20px_rgba(245,158,11,0.06)]
-            sm:flex
-          "
-        >
-          <Flame
-            size={13}
-            className="
-              animate-[flameFlicker_1.4s_ease-in-out_infinite]
-              text-amber-400
-              drop-shadow-[0_0_6px_rgba(245,158,11,0.7)]
+              absolute
+              inset-0
+              bg-gradient-to-br
+              from-[#050709]
+              via-[#11171b]
+              to-[#090b0d]
             "
           />
 
-          <span
+          {/* MOON */}
+
+          <div
             className="
-              text-[9px]
-              font-black
-              uppercase
-              tracking-[0.16em]
-              text-amber-400
+              learning-activity-motion
+              absolute
+              right-[7%]
+              top-[7%]
+              h-24
+              w-24
+              animate-[activityMoonPulse_7s_ease-in-out_infinite]
+              rounded-full
+              bg-slate-200/[0.035]
+              shadow-[0_0_70px_rgba(186,230,253,0.06)]
             "
           >
-            Realm Active
-          </span>
+            <div
+              className="
+                absolute
+                inset-3
+                rounded-full
+                border
+                border-slate-300/[0.04]
+              "
+            />
+          </div>
+
+          {/* CASTLE */}
+
+          <div
+            className="
+              absolute
+              bottom-0
+              left-0
+              h-24
+              w-full
+              opacity-[0.16]
+            "
+          >
+            <div className="absolute bottom-0 left-[5%] h-16 w-20 border-x border-t border-slate-500/20" />
+
+            <div className="absolute bottom-0 left-[12%] h-24 w-7 border-x border-t border-slate-500/20" />
+
+            <div className="absolute bottom-0 left-[18%] h-14 w-12 border-x border-t border-slate-500/20" />
+
+            <div className="absolute bottom-0 right-[12%] h-20 w-9 border-x border-t border-slate-500/20" />
+
+            <div className="absolute bottom-0 right-[5%] h-14 w-16 border-x border-t border-slate-500/20" />
+
+            <Castle
+              size={75}
+              className="
+                absolute
+                bottom-[-5px]
+                left-1/2
+                -translate-x-1/2
+                text-slate-400/[0.08]
+              "
+            />
+          </div>
+
+          {/* MOUNTAINS */}
+
+          <div
+            className="
+              absolute
+              bottom-0
+              left-[-5%]
+              h-20
+              w-[110%]
+              opacity-[0.07]
+            "
+          >
+            <Mountain
+              size={180}
+              className="
+                absolute
+                bottom-[-45px]
+                left-[8%]
+              "
+            />
+
+            <Mountain
+              size={150}
+              className="
+                absolute
+                bottom-[-50px]
+                right-[10%]
+              "
+            />
+          </div>
+
+          {/* GOLD GLOW */}
+
+          <div
+            className="
+              absolute
+              -bottom-28
+              -left-28
+              h-80
+              w-80
+              rounded-full
+              bg-amber-700/[0.07]
+              blur-[100px]
+              transition-[transform,background-color]
+              duration-1000
+              group-hover:scale-125
+              group-hover:bg-amber-600/[0.11]
+            "
+          />
+
+          {/* ICE GLOW */}
+
+          <div
+            className="
+              absolute
+              -right-28
+              -top-28
+              h-80
+              w-80
+              rounded-full
+              bg-sky-800/[0.08]
+              blur-[110px]
+              transition-transform
+              duration-1000
+              group-hover:scale-125
+            "
+          />
+
+          {/* STONE */}
+
+          <div
+            className="
+              absolute
+              inset-0
+              opacity-[0.045]
+              [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%),linear-gradient(45deg,transparent_45%,white_46%,transparent_47%)]
+              [background-size:25px_25px]
+            "
+          />
+
+          {/* FOG */}
+
+          <div
+            className="
+              learning-activity-motion
+              absolute
+              bottom-[-20px]
+              left-[-20%]
+              h-28
+              w-[140%]
+              animate-[activityFogDrift_14s_ease-in-out_infinite]
+              rounded-[50%]
+              bg-slate-300/[0.025]
+              blur-3xl
+            "
+          />
+
+          {/* SNOW */}
+
+          <span className="learning-activity-motion absolute left-[8%] top-[18%] h-1 w-1 animate-[activitySnowFall_8s_linear_infinite] rounded-full bg-sky-100/40" />
+
+          <span className="learning-activity-motion absolute left-[22%] top-[8%] h-1 w-1 animate-[activitySnowFall_11s_linear_infinite_1s] rounded-full bg-white/30" />
+
+          <span className="learning-activity-motion absolute left-[40%] top-[25%] h-1.5 w-1.5 animate-[activitySnowFall_9s_linear_infinite_2s] rounded-full bg-sky-100/30" />
+
+          <span className="learning-activity-motion absolute right-[28%] top-[12%] h-1 w-1 animate-[activitySnowFall_10s_linear_infinite_1.5s] rounded-full bg-white/35" />
+
+          <span className="learning-activity-motion absolute right-[12%] top-[30%] h-1.5 w-1.5 animate-[activitySnowFall_12s_linear_infinite_3s] rounded-full bg-sky-100/30" />
+
+          {/* EMBERS */}
+
+          <span className="learning-activity-motion absolute bottom-[20%] left-[15%] h-1 w-1 animate-[activityEmberFloat_5s_ease-in-out_infinite] rounded-full bg-amber-400/60" />
+
+          <span className="learning-activity-motion absolute bottom-[18%] left-[32%] h-1.5 w-1.5 animate-[activityEmberFloat_6s_ease-in-out_infinite_1s] rounded-full bg-amber-300/50" />
+
+          <span className="learning-activity-motion absolute bottom-[25%] right-[18%] h-1 w-1 animate-[activityEmberFloat_7s_ease-in-out_infinite_2s] rounded-full bg-orange-400/50" />
+
+          {/* LIGHT SWEEP */}
+
+          <div
+            className="
+              absolute
+              left-[-30%]
+              top-0
+              h-full
+              w-[25%]
+              -skew-x-12
+              bg-gradient-to-r
+              from-transparent
+              via-amber-300/[0.025]
+              to-transparent
+              transition-[left]
+              duration-[1800ms]
+              group-hover:left-[120%]
+            "
+          />
         </div>
-      </div>
-
-      {/* =================================================
-          CONTENT
-      ================================================= */}
-
-      <div className="relative z-10 p-5 sm:p-6">
 
         {/* =================================================
-            SUMMARY
+            HEADER
         ================================================= */}
 
         <div
           className="
-            mb-8
+            relative
+            z-10
             flex
-            flex-col
-            gap-4
-            sm:flex-row
-            sm:items-end
-            sm:justify-between
+            items-center
+            justify-between
+            border-b
+            border-white/[0.07]
+            px-5
+            py-5
+            sm:px-6
           "
         >
+          <div className="flex items-center gap-3">
 
-          {/* Total */}
-
-          <div>
-            <div className="flex items-center gap-2">
-
-              <Sword
-                size={14}
+            <div
+              className="
+                learning-activity-motion
+                relative
+                flex
+                h-11
+                w-11
+                animate-[activityIconFloat_4s_ease-in-out_infinite]
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-amber-500/20
+                bg-amber-500/[0.07]
+                shadow-[0_0_30px_rgba(245,158,11,0.07)]
+                transition-[transform,border-color]
+                duration-300
+                group-hover:scale-110
+                group-hover:border-amber-500/40
+              "
+            >
+              <BarChart3
+                size={19}
                 className="
-                  animate-[swordFloat_3.5s_ease-in-out_infinite]
-                  text-sky-400/70
-                  drop-shadow-[0_0_7px_rgba(56,189,248,0.5)]
+                  text-amber-400
+                  drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]
                 "
               />
+
+              <span
+                className="
+                  absolute
+                  -right-1
+                  -top-1
+                  h-2
+                  w-2
+                  animate-pulse
+                  rounded-full
+                  bg-amber-400
+                  shadow-[0_0_10px_rgba(245,158,11,0.9)]
+                "
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+
+                <h2
+                  className="
+                    m-0
+                    text-base
+                    font-black
+                    uppercase
+                    tracking-tight
+                    text-white
+                    sm:text-lg
+                  "
+                >
+                  Weekly Chronicle
+                </h2>
+
+                <Swords
+                  size={13}
+                  className="
+                    learning-activity-motion
+                    hidden
+                    animate-[activitySwordFloat_4s_ease-in-out_infinite]
+                    text-slate-400/60
+                    sm:block
+                  "
+                />
+              </div>
 
               <p
                 className="
                   m-0
+                  mt-0.5
                   text-[10px]
-                  font-black
+                  font-bold
                   uppercase
-                  tracking-[0.16em]
+                  tracking-[0.13em]
                   text-slate-500
+                  sm:text-xs
                 "
               >
-                Time in the realm
+                Your battles across the realm
               </p>
-            </div>
-
-            <div className="mt-1 flex items-baseline gap-2">
-
-              <span
-                className="
-                  text-4xl
-                  font-black
-                  tracking-tight
-                  text-white
-                  drop-shadow-[0_0_15px_rgba(255,255,255,0.08)]
-                "
-              >
-                {totalHours.toFixed(1)}
-              </span>
-
-              <span
-                className="
-                  text-sm
-                  font-medium
-                  text-slate-500
-                "
-              >
-                hours
-              </span>
             </div>
           </div>
 
-          {/* Stats */}
+          {/* REALM STATUS */}
 
-          <div className="flex flex-wrap gap-2">
-
-            {/* Active days */}
-
-            <div
+          <div
+            className="
+              hidden
+              items-center
+              gap-1.5
+              rounded-full
+              border
+              border-amber-500/20
+              bg-amber-500/[0.06]
+              px-3
+              py-1.5
+              shadow-[0_0_20px_rgba(245,158,11,0.06)]
+              sm:flex
+            "
+          >
+            <Flame
+              size={13}
               className="
-                group/stat
-                flex
-                items-center
-                gap-1.5
-                rounded-full
-                border
-                border-sky-500/20
-                bg-sky-500/[0.06]
-                px-3
-                py-1.5
-                text-xs
-                font-semibold
-                text-sky-400
-                transition-all
-                duration-300
-                hover:scale-105
+                learning-activity-motion
+                animate-[activityFlameFlicker_1.4s_ease-in-out_infinite]
+                text-amber-400
+                drop-shadow-[0_0_6px_rgba(245,158,11,0.7)]
+              "
+            />
+
+            <span
+              className="
+                text-[9px]
+                font-black
+                uppercase
+                tracking-[0.16em]
+                text-amber-400
               "
             >
-              <Clock3
-                size={13}
-                className="
-                  transition-transform
-                  duration-300
-                  group-hover/stat:rotate-12
-                "
-              />
+              Realm Active
+            </span>
+          </div>
+        </div>
 
-              <span>
-                {activeDays}{" "}
-                {activeDays === 1
-                  ? "battle"
-                  : "battles"}
-              </span>
+        {/* =================================================
+            CONTENT
+        ================================================= */}
+
+        <div className="relative z-10 p-5 sm:p-6">
+
+          {/* SUMMARY */}
+
+          <div
+            className="
+              mb-8
+              flex
+              flex-col
+              gap-4
+              sm:flex-row
+              sm:items-end
+              sm:justify-between
+            "
+          >
+            <div>
+
+              <div className="flex items-center gap-2">
+
+                <Sword
+                  size={14}
+                  className="
+                    learning-activity-motion
+                    animate-[activitySwordFloat_3.5s_ease-in-out_infinite]
+                    text-sky-400/70
+                    drop-shadow-[0_0_7px_rgba(56,189,248,0.5)]
+                  "
+                />
+
+                <p
+                  className="
+                    m-0
+                    text-[10px]
+                    font-black
+                    uppercase
+                    tracking-[0.16em]
+                    text-slate-500
+                  "
+                >
+                  Time in the realm
+                </p>
+              </div>
+
+              <div className="mt-1 flex items-baseline gap-2">
+
+                <span
+                  className="
+                    text-4xl
+                    font-black
+                    tracking-tight
+                    text-white
+                    drop-shadow-[0_0_15px_rgba(255,255,255,0.08)]
+                  "
+                >
+                  {totalHours.toFixed(1)}
+                </span>
+
+                <span
+                  className="
+                    text-sm
+                    font-medium
+                    text-slate-500
+                  "
+                >
+                  hours
+                </span>
+              </div>
             </div>
 
-            {/* Average */}
+            {/* STATS */}
 
-            {activeDays > 0 && (
+            <div className="flex flex-wrap gap-2">
+
               <div
                 className="
                   group/stat
@@ -1035,625 +1372,283 @@ function LearningActivity({
                   gap-1.5
                   rounded-full
                   border
-                  border-amber-500/20
-                  bg-amber-500/[0.06]
+                  border-sky-500/20
+                  bg-sky-500/[0.06]
                   px-3
                   py-1.5
                   text-xs
                   font-semibold
-                  text-amber-400
-                  transition-all
+                  text-sky-400
+                  transition-transform
                   duration-300
                   hover:scale-105
                 "
               >
-                <TrendingUp
+                <Clock3
                   size={13}
                   className="
                     transition-transform
                     duration-300
-                    group-hover/stat:-translate-y-0.5
+                    group-hover/stat:rotate-12
                   "
                 />
 
                 <span>
-                  {averageHours.toFixed(1)}h/day
+                  {activeDays}{" "}
+                  {activeDays === 1
+                    ? "battle"
+                    : "battles"}
                 </span>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* =================================================
-            EMPTY
-        ================================================= */}
-
-        {normalizedActivity.length === 0 ? (
-          <EmptyActivity />
-        ) : (
-          <>
-            {/* =================================================
-                CHART
-            ================================================= */}
-
-            <div className="w-full">
-
-              <div
-                className="
-                  flex
-                  h-56
-                  items-end
-                  gap-2
-                  sm:gap-4
-                "
-              >
-                {normalizedActivity.map(
-                  (item, index) => {
-
-                    const hours = Number(
-                      item.hours || 0
-                    );
-
-                    const height =
-                      hours > 0
-                        ? Math.max(
-                            (hours / maxHours) *
-                              100,
-                            5
-                          )
-                        : 2;
-
-                    const isStrongest =
-                      strongestDay?.day ===
-                        item.day &&
-                      strongestDay?.hours ===
-                        item.hours &&
-                      hours > 0;
-
-                    return (
-                      <div
-                        key={`${item.day}-${index}`}
-                        className="
-                          group/bar
-                          flex
-                          h-full
-                          min-w-0
-                          flex-1
-                          flex-col
-                          items-center
-                          justify-end
-                        "
-                      >
-
-                        {/* Crown */}
-
-                        <div
-                          className={`
-                            mb-1
-                            flex
-                            h-5
-                            items-center
-                            justify-center
-                            transition-all
-                            duration-500
-                            ${
-                              isStrongest
-                                ? "opacity-100"
-                                : "opacity-0"
-                            }
-                          `}
-                        >
-                          <Crown
-                            size={14}
-                            className={`
-                              ${
-                                isStrongest
-                                  ? "animate-[crownFloat_2.5s_ease-in-out_infinite]"
-                                  : ""
-                              }
-                              text-amber-400
-                              drop-shadow-[0_0_7px_rgba(245,158,11,0.8)]
-                            `}
-                            fill="currentColor"
-                          />
-                        </div>
-
-                        {/* Hours */}
-
-                        <span
-                          className="
-                            mb-2
-                            whitespace-nowrap
-                            text-[10px]
-                            font-semibold
-                            text-slate-500
-                            transition-all
-                            duration-300
-                            group-hover/bar:text-slate-200
-                          "
-                        >
-                          {hours.toFixed(1)}h
-                        </span>
-
-                        {/* BAR */}
-
-                        <div
-                          className="
-                            relative
-                            flex
-                            h-full
-                            w-full
-                            max-w-10
-                            items-end
-                            overflow-hidden
-                            rounded-t-lg
-                            border
-                            border-white/[0.05]
-                            bg-white/[0.02]
-                            transition-all
-                            duration-300
-                            group-hover/bar:border-amber-700/40
-                          "
-                        >
-
-                          {/* Stone pattern */}
-
-                          <div
-                            className="
-                              absolute
-                              inset-0
-                              opacity-30
-                              [background-image:linear-gradient(135deg,transparent_45%,white_46%,transparent_47%)]
-                              [background-size:9px_9px]
-                            "
-                          />
-
-                          {/* Actual bar */}
-
-                          <div
-                            className={`
-                              relative
-                              w-full
-                              rounded-t-lg
-                              bg-gradient-to-t
-                              from-[#15191c]
-                              via-[#37434a]
-                              to-amber-400
-                              shadow-lg
-                              transition-all
-                              duration-1000
-                              ease-out
-                              ${
-                                isStrongest
-                                  ? "shadow-amber-500/40"
-                                  : "shadow-black/40"
-                              }
-                            `}
-                            style={{
-                              height: `${height}%`,
-                            }}
-                          >
-
-                            {/* Gold edge */}
-
-                            <div
-                              className="
-                                absolute
-                                left-0
-                                right-0
-                                top-0
-                                h-px
-                                bg-amber-300/90
-                                shadow-[0_0_8px_rgba(252,211,77,0.8)]
-                              "
-                            />
-
-                            {/* Moving shine */}
-
-                            <div
-                              className="
-                                absolute
-                                left-0
-                                top-0
-                                h-full
-                                w-full
-                                -translate-y-full
-                                bg-gradient-to-b
-                                from-white/20
-                                via-transparent
-                                to-transparent
-                                transition-transform
-                                duration-700
-                                group-hover/bar:translate-y-full
-                              "
-                            />
-
-                            {/* Ice highlight */}
-
-                            <div
-                              className="
-                                absolute
-                                bottom-0
-                                left-1/2
-                                h-1/2
-                                w-px
-                                -translate-x-1/2
-                                bg-sky-300/20
-                                blur-sm
-                              "
-                            />
-                          </div>
-                        </div>
-
-                        {/* Day */}
-
-                        <span
-                          className="
-                            mt-3
-                            truncate
-                            text-[11px]
-                            font-semibold
-                            text-slate-500
-                            transition-colors
-                            duration-300
-                            group-hover/bar:text-slate-200
-                          "
-                        >
-                          {item.day || "-"}
-                        </span>
-                      </div>
-                    );
-                  }
-                )}
-              </div>
-            </div>
-
-            {/* =================================================
-                STRONGEST DAY
-            ================================================= */}
-
-            {strongestDay &&
-              strongestDay.hours > 0 && (
+              {activeDays > 0 && (
                 <div
                   className="
-                    group/crown
-                    relative
-                    mt-7
+                    group/stat
                     flex
                     items-center
-                    gap-3
-                    overflow-hidden
-                    rounded-2xl
+                    gap-1.5
+                    rounded-full
                     border
-                    border-amber-500/15
-                    bg-gradient-to-r
-                    from-amber-500/[0.07]
-                    via-slate-500/[0.03]
-                    to-transparent
-                    p-4
-                    transition-all
+                    border-amber-500/20
+                    bg-amber-500/[0.06]
+                    px-3
+                    py-1.5
+                    text-xs
+                    font-semibold
+                    text-amber-400
+                    transition-transform
                     duration-300
-                    hover:border-amber-500/30
+                    hover:scale-105
                   "
                 >
-
-                  {/* Animated glow */}
-
-                  <div
+                  <TrendingUp
+                    size={13}
                     className="
-                      absolute
-                      -right-10
-                      top-1/2
-                      h-24
-                      w-24
-                      -translate-y-1/2
-                      animate-pulse
-                      rounded-full
-                      bg-amber-500/[0.05]
-                      blur-2xl
+                      transition-transform
+                      duration-300
+                      group-hover/stat:-translate-y-0.5
                     "
                   />
 
-                  {/* Crown */}
+                  <span>
+                    {averageHours.toFixed(1)}h/day
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
 
+          {/* EMPTY / CHART */}
+
+          {normalizedActivity.length === 0 ? (
+            <EmptyActivity />
+          ) : (
+            <>
+              {/* CHART */}
+
+              <div className="w-full">
+
+                <div
+                  className="
+                    flex
+                    h-56
+                    items-end
+                    gap-2
+                    sm:gap-4
+                  "
+                >
+                  {normalizedActivity.map(
+                    (item, index) => (
+                      <ActivityBar
+                        key={`${item.day}-${index}`}
+                        item={item}
+                        index={index}
+                        maxHours={maxHours}
+                        strongestDay={strongestDay}
+                      />
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* STRONGEST DAY */}
+
+              {strongestDay &&
+                strongestDay.hours > 0 && (
                   <div
                     className="
+                      group/crown
                       relative
+                      mt-7
                       flex
-                      h-11
-                      w-11
-                      shrink-0
-                      animate-[crownFloat_3s_ease-in-out_infinite]
                       items-center
-                      justify-center
-                      rounded-xl
+                      gap-3
+                      overflow-hidden
+                      rounded-2xl
                       border
-                      border-amber-500/20
-                      bg-amber-500/[0.07]
-                      shadow-[0_0_25px_rgba(245,158,11,0.08)]
+                      border-amber-500/15
+                      bg-gradient-to-r
+                      from-amber-500/[0.07]
+                      via-slate-500/[0.03]
+                      to-transparent
+                      p-4
+                      transition-[border-color]
+                      duration-300
+                      hover:border-amber-500/30
                     "
                   >
-                    <Crown
-                      size={21}
-                      className="
-                        text-amber-400
-                        drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]
-                      "
-                      fill="currentColor"
-                    />
-
-                    <Sparkles
-                      size={10}
+                    <div
                       className="
                         absolute
-                        -right-1
-                        -top-1
-                        animate-ping
-                        text-amber-300
-                      "
-                    />
-                  </div>
-
-                  {/* Text */}
-
-                  <div className="min-w-0 flex-1">
-
-                    <p
-                      className="
-                        m-0
-                        text-sm
-                        font-black
-                        text-amber-300
-                      "
-                    >
-                      {strongestDay.day} claims the crown
-                    </p>
-
-                    <p
-                      className="
-                        m-0
-                        mt-0.5
-                        text-xs
-                        leading-5
-                        text-slate-500
-                      "
-                    >
-                      Your strongest learning battle —
-                      {" "}
-                      {strongestDay.hours.toFixed(1)}
-                      {" "}
-                      hours of study.
-                    </p>
-                  </div>
-
-                  {/* Shield */}
-
-                  <div className="relative hidden sm:block">
-
-                    <Shield
-                      size={21}
-                      className="
-                        animate-[shieldPulse_3s_ease-in-out_infinite]
-                        text-slate-300/40
+                        -right-10
+                        top-1/2
+                        h-24
+                        w-24
+                        -translate-y-1/2
+                        animate-pulse
+                        rounded-full
+                        bg-amber-500/[0.05]
+                        blur-2xl
                       "
                     />
 
                     <div
                       className="
-                        absolute
-                        inset-0
-                        animate-ping
-                        rounded-full
+                        learning-activity-motion
+                        relative
+                        flex
+                        h-11
+                        w-11
+                        shrink-0
+                        animate-[activityCrownFloat_3s_ease-in-out_infinite]
+                        items-center
+                        justify-center
+                        rounded-xl
+                        border
+                        border-amber-500/20
                         bg-amber-500/[0.07]
+                        shadow-[0_0_25px_rgba(245,158,11,0.08)]
                       "
-                    />
+                    >
+                      <Crown
+                        size={21}
+                        className="
+                          text-amber-400
+                          drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]
+                        "
+                        fill="currentColor"
+                      />
+
+                      <Sparkles
+                        size={10}
+                        className="
+                          absolute
+                          -right-1
+                          -top-1
+                          animate-ping
+                          text-amber-300
+                        "
+                      />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+
+                      <p
+                        className="
+                          m-0
+                          text-sm
+                          font-black
+                          text-amber-300
+                        "
+                      >
+                        {strongestDay.day} claims the crown
+                      </p>
+
+                      <p
+                        className="
+                          m-0
+                          mt-0.5
+                          text-xs
+                          leading-5
+                          text-slate-500
+                        "
+                      >
+                        Your strongest learning battle —
+                        {" "}
+                        {strongestDay.hours.toFixed(1)}
+                        {" "}
+                        hours of study.
+                      </p>
+                    </div>
+
+                    <div className="relative hidden sm:block">
+
+                      <Shield
+                        size={21}
+                        className="
+                          learning-activity-motion
+                          animate-[activityShieldPulse_3s_ease-in-out_infinite]
+                          text-slate-300/40
+                        "
+                      />
+
+                      <div
+                        className="
+                          absolute
+                          inset-0
+                          animate-ping
+                          rounded-full
+                          bg-amber-500/[0.07]
+                        "
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
-          </>
-        )}
-      </div>
+                )}
+            </>
+          )}
+        </div>
 
-      {/* =================================================
-          FOOTER
-      ================================================= */}
+        {/* FOOTER */}
 
-      <div
-        className="
-          absolute
-          bottom-0
-          left-0
-          h-px
-          w-full
-          bg-gradient-to-r
-          from-transparent
-          via-amber-700
-          to-transparent
-          opacity-70
-        "
-      />
+        <div
+          className="
+            absolute
+            bottom-0
+            left-0
+            h-px
+            w-full
+            bg-gradient-to-r
+            from-transparent
+            via-amber-700
+            to-transparent
+            opacity-70
+          "
+        />
 
-      {/* Animated footer scanner */}
+        <div
+          className="
+            pointer-events-none
+            absolute
+            bottom-0
+            left-[-20%]
+            h-px
+            w-[20%]
+            bg-amber-300
+            shadow-[0_0_12px_rgba(245,158,11,0.8)]
+            transition-[left]
+            duration-[1600ms]
+            group-hover:left-[100%]
+          "
+        />
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          bottom-0
-          left-[-20%]
-          h-px
-          w-[20%]
-          bg-amber-300
-          shadow-[0_0_12px_rgba(245,158,11,0.8)]
-          transition-all
-          duration-[1600ms]
-          group-hover:left-[100%]
-        "
-      />
+        <style>{ACTIVITY_STYLES}</style>
+      </section>
+    );
+  }
+);
 
-      {/* =================================================
-          ANIMATIONS
-      ================================================= */}
-
-      <style>{`
-
-        @keyframes iconFloat {
-          0%, 100% {
-            transform: translateY(0) rotate(0deg);
-          }
-
-          50% {
-            transform: translateY(-4px) rotate(1deg);
-          }
-        }
-
-        @keyframes floatIcon {
-          0%, 100% {
-            transform: translateY(0);
-          }
-
-          50% {
-            transform: translateY(-7px);
-          }
-        }
-
-        @keyframes swordFloat {
-          0%, 100% {
-            transform: translateY(0) rotate(-20deg);
-          }
-
-          50% {
-            transform: translateY(-5px) rotate(-12deg);
-          }
-        }
-
-        @keyframes crownFloat {
-          0%, 100% {
-            transform: translateY(0) rotate(0deg);
-          }
-
-          50% {
-            transform: translateY(-5px) rotate(3deg);
-          }
-        }
-
-        @keyframes shieldPulse {
-          0%, 100% {
-            transform: scale(1);
-            opacity: .45;
-          }
-
-          50% {
-            transform: scale(1.12);
-            opacity: .8;
-          }
-        }
-
-        @keyframes flameFlicker {
-          0%, 100% {
-            transform: scale(1) rotate(-2deg);
-            opacity: .8;
-          }
-
-          25% {
-            transform: scale(1.08) rotate(2deg);
-            opacity: 1;
-          }
-
-          50% {
-            transform: scale(.94) rotate(-3deg);
-            opacity: .7;
-          }
-
-          75% {
-            transform: scale(1.05) rotate(3deg);
-            opacity: .95;
-          }
-        }
-
-        @keyframes emberFloat {
-          0% {
-            transform: translateY(0) translateX(0);
-            opacity: 0;
-          }
-
-          20% {
-            opacity: .7;
-          }
-
-          50% {
-            transform: translateY(-25px) translateX(8px);
-            opacity: .5;
-          }
-
-          80% {
-            opacity: .3;
-          }
-
-          100% {
-            transform: translateY(-55px) translateX(-5px);
-            opacity: 0;
-          }
-        }
-
-        @keyframes snowFall {
-          0% {
-            transform: translateY(-20px) translateX(0);
-            opacity: 0;
-          }
-
-          15% {
-            opacity: .7;
-          }
-
-          50% {
-            transform: translateY(90px) translateX(15px);
-            opacity: .5;
-          }
-
-          100% {
-            transform: translateY(190px) translateX(-10px);
-            opacity: 0;
-          }
-        }
-
-        @keyframes fogDrift {
-          0%, 100% {
-            transform: translateX(-5%);
-            opacity: .25;
-          }
-
-          50% {
-            transform: translateX(5%);
-            opacity: .55;
-          }
-        }
-
-        @keyframes moonPulse {
-          0%, 100% {
-            transform: scale(1);
-            opacity: .7;
-          }
-
-          50% {
-            transform: scale(1.04);
-            opacity: 1;
-          }
-        }
-
-        @keyframes featherFloat {
-          0%, 100% {
-            transform: translateY(0) rotate(-10deg);
-          }
-
-          50% {
-            transform: translateY(-10px) rotate(8deg);
-          }
-        }
-
-      `}</style>
-    </section>
-  );
-}
+LearningActivity.displayName = "LearningActivity";
 
 export default LearningActivity;
+

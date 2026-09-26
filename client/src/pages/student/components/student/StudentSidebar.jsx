@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import {
@@ -26,11 +26,6 @@ function StudentSidebar({ stats = {} }) {
   const navigate = useNavigate();
 
   const sidebarRef = useRef(null);
-
-  const [mousePosition, setMousePosition] = useState({
-    x: 0,
-    y: 0,
-  });
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -84,7 +79,7 @@ function StudentSidebar({ stats = {} }) {
 
   const initials =
     userName
-      ?.split(" ")
+      .split(" ")
       .filter(Boolean)
       .map((word) => word.charAt(0))
       .join("")
@@ -94,22 +89,6 @@ function StudentSidebar({ stats = {} }) {
   // ============================================================
   // DYNAMIC STATS
   // ============================================================
-
-  /*
-    These values come from the parent dashboard.
-
-    Example expected object:
-
-    {
-      xp: 680,
-      nextLevelXp: 1000,
-      studyStreak: 2,
-      streakGoal: 7
-    }
-
-    The fallbacks keep the UI working even if your backend
-    doesn't provide these values yet.
-  */
 
   const xp = Number(
     stats?.xp ??
@@ -137,21 +116,10 @@ function StudentSidebar({ stats = {} }) {
   );
 
   // ============================================================
-  // LEVEL CALCULATION
+  // LEVEL
   // ============================================================
 
   const levelData = useMemo(() => {
-    /*
-      Simple XP progression.
-
-      0 - 499      → Level 1
-      500 - 999    → Level 2
-      1000 - 1499  → Level 3
-      etc.
-
-      Change this later if you build a proper XP system.
-    */
-
     const calculatedLevel =
       Math.floor(xp / 500) + 1;
 
@@ -171,7 +139,7 @@ function StudentSidebar({ stats = {} }) {
   }, [xp]);
 
   // ============================================================
-  // RANK TITLE
+  // RANK
   // ============================================================
 
   const rankTitle = useMemo(() => {
@@ -219,35 +187,26 @@ function StudentSidebar({ stats = {} }) {
   }, [studyStreak, streakGoal]);
 
   // ============================================================
-  // MOUSE FOLLOW
+  // SIDEBAR MOUSE EFFECT
   // ============================================================
 
-  useEffect(() => {
+  const handleSidebarMouseMove = (event) => {
     const sidebar = sidebarRef.current;
 
     if (!sidebar) return;
 
-    const handleMouseMove = (event) => {
-      const rect = sidebar.getBoundingClientRect();
+    const rect = sidebar.getBoundingClientRect();
 
-      setMousePosition({
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-      });
-    };
-
-    sidebar.addEventListener(
-      "mousemove",
-      handleMouseMove
+    sidebar.style.setProperty(
+      "--mouse-x",
+      `${event.clientX - rect.left}px`
     );
 
-    return () => {
-      sidebar.removeEventListener(
-        "mousemove",
-        handleMouseMove
-      );
-    };
-  }, []);
+    sidebar.style.setProperty(
+      "--mouse-y",
+      `${event.clientY - rect.top}px`
+    );
+  };
 
   // ============================================================
   // LOGOUT
@@ -276,6 +235,7 @@ function StudentSidebar({ stats = {} }) {
   return (
     <aside
       ref={sidebarRef}
+      onMouseMove={handleSidebarMouseMove}
       className="
         group/sidebar
         fixed
@@ -292,32 +252,14 @@ function StudentSidebar({ stats = {} }) {
         text-white
         shadow-[15px_0_70px_rgba(0,0,0,0.55)]
         lg:flex
+        sidebar-shell
       "
     >
       {/* ========================================================
           MOUSE FOLLOW LIGHT
       ======================================================== */}
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          z-0
-          h-72
-          w-72
-          -translate-x-1/2
-          -translate-y-1/2
-          rounded-full
-          bg-amber-500/[0.045]
-          blur-3xl
-          transition-[left,top]
-          duration-100
-        "
-        style={{
-          left: mousePosition.x,
-          top: mousePosition.y,
-        }}
-      />
+      <div className="sidebar-mouse-glow" />
 
       {/* ========================================================
           FIRE GLOW
@@ -609,8 +551,6 @@ function StudentSidebar({ stats = {} }) {
           />
 
           <div className="relative flex items-center gap-3">
-            {/* Avatar */}
-
             <div
               className="
                 relative
@@ -707,10 +647,6 @@ function StudentSidebar({ stats = {} }) {
               "
             />
           </div>
-
-          {/* ====================================================
-              LEVEL
-          ==================================================== */}
 
           <div className="relative mt-4">
             <div className="flex justify-between">
@@ -1132,8 +1068,6 @@ function StudentSidebar({ stats = {} }) {
                 🔥
               </span>
             </div>
-
-            {/* Dynamic streak progress */}
 
             <div className="relative mt-4 h-1 bg-zinc-900">
               <div
@@ -1598,6 +1532,26 @@ function StudentSidebar({ stats = {} }) {
       ======================================================== */}
 
       <style>{`
+        .sidebar-shell {
+          --mouse-x: 50%;
+          --mouse-y: 50%;
+        }
+
+        .sidebar-mouse-glow {
+          position: absolute;
+          left: var(--mouse-x);
+          top: var(--mouse-y);
+          width: 280px;
+          height: 280px;
+          transform: translate(-50%, -50%);
+          border-radius: 9999px;
+          background: rgba(245, 158, 11, 0.045);
+          filter: blur(48px);
+          pointer-events: none;
+          z-index: 0;
+          will-change: left, top;
+        }
+
         @keyframes fireGlow {
           0% {
             transform: scale(1);
@@ -1701,6 +1655,16 @@ function StudentSidebar({ stats = {} }) {
 
         .sidebar-scroll::-webkit-scrollbar-thumb:hover {
           background: #a16207;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .animate-fire-glow,
+          .animate-ice-glow,
+          .animate-fog,
+          .animate-rune,
+          .animate-rune-delay {
+            animation: none;
+          }
         }
       `}</style>
     </aside>

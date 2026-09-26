@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Check,
+  CheckCircle2,
   Clock3,
   Eye,
   EyeOff,
   Feather,
   KeyRound,
-  LockKeyhole,
   LogOut,
   Mail,
   Moon,
@@ -17,19 +17,43 @@ import {
   User,
   UserRound,
   Zap,
+  LockKeyhole,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import api from "../../services/api";
 
-// =====================================================
-// INPUT FIELD
-// IMPORTANT:
-// Keep this OUTSIDE Settings.
-// This prevents the input from being remounted on every
-// keystroke and fixes the cursor/focus problem.
-// =====================================================
+/* =====================================================
+   STATIC DATA
+===================================================== */
+
+const PARTICLES = Array.from({ length: 12 }, (_, index) => ({
+  id: index,
+  left: `${(index * 37) % 100}%`,
+  top: `${(index * 53) % 100}%`,
+  delay: `${(index % 6) * 0.8}s`,
+  duration: `${7 + (index % 4)}s`,
+  size: `${2 + (index % 2)}px`,
+}));
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+const getErrorMessage = (error, fallback) =>
+  error?.response?.data?.message || fallback;
+
+const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
+
+/* =====================================================
+   INPUT FIELD
+===================================================== */
 
 function InputField({
   label,
@@ -41,37 +65,47 @@ function InputField({
   placeholder,
   disabled = false,
   rightElement,
+  autoComplete = "off",
 }) {
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">
+      <label
+        htmlFor={name}
+        className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500"
+      >
         {label}
       </label>
 
       <div className="group relative">
-        {/* Outer atmospheric glow */}
-        <div className="pointer-events-none absolute -inset-[1px] rounded-xl bg-gradient-to-r from-cyan-400/0 via-cyan-400/0 to-amber-400/0 opacity-0 blur-sm transition-all duration-500 group-focus-within:from-cyan-400/20 group-focus-within:via-cyan-300/10 group-focus-within:to-amber-400/10 group-focus-within:opacity-100" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -inset-px rounded-xl bg-gradient-to-r from-[rgb(var(--theme-accent-rgb)/0)] via-[rgb(var(--theme-accent-rgb)/0)] to-[rgb(var(--theme-secondary-rgb)/0)] opacity-0 blur-sm transition-opacity duration-500 group-focus-within:from-[rgb(var(--theme-accent-rgb)/0.2)] group-focus-within:via-[rgb(var(--theme-accent-rgb)/0.1)] group-focus-within:to-[rgb(var(--theme-secondary-rgb)/0.1)] group-focus-within:opacity-100"
+        />
 
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4"
+          >
             <Icon
               size={17}
-              className="text-slate-600 transition-all duration-300 group-focus-within:scale-110 group-focus-within:text-cyan-300"
+              className="text-slate-600 transition-colors duration-300 group-focus-within:text-[var(--theme-accent)]"
             />
           </div>
 
           <input
+            id={name}
             type={type}
             name={name}
             value={value}
             onChange={onChange}
             placeholder={placeholder}
             disabled={disabled}
-            autoComplete="off"
-            className={`relative w-full rounded-xl border bg-[#070a0d]/90 py-3.5 pl-11 pr-12 text-sm text-slate-200 outline-none transition-all duration-300 placeholder:text-slate-700 ${
+            autoComplete={autoComplete}
+            className={`relative w-full rounded-xl border bg-[var(--theme-bg)] py-3.5 pl-11 pr-12 text-sm text-slate-200 outline-none transition-all duration-300 placeholder:text-slate-700 ${
               disabled
                 ? "cursor-not-allowed border-white/[0.05] bg-white/[0.015] text-slate-600"
-                : "border-white/[0.09] hover:border-white/[0.15] focus:border-cyan-300/30 focus:bg-cyan-400/[0.025] focus:shadow-[0_0_30px_rgba(34,211,238,0.06)]"
+                : "border-white/[0.09] hover:border-white/[0.15] focus:border-[rgb(var(--theme-accent-rgb)/0.35)] focus:bg-[rgb(var(--theme-accent-rgb)/0.025)] focus:shadow-[0_0_30px_rgb(var(--theme-accent-rgb)/0.06)]"
             }`}
           />
 
@@ -86,17 +120,60 @@ function InputField({
   );
 }
 
-// =====================================================
-// PASSWORD REQUIREMENT
-// =====================================================
+/* =====================================================
+   PASSWORD INPUT
+===================================================== */
+
+function PasswordInput({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  visible,
+  onToggle,
+  icon: Icon = KeyRound,
+  autoComplete,
+  disabled = false,
+}) {
+  return (
+    <InputField
+      label={label}
+      name={name}
+      value={value}
+      onChange={onChange}
+      icon={Icon}
+      type={visible ? "text" : "password"}
+      placeholder={placeholder}
+      disabled={disabled}
+      autoComplete={autoComplete}
+      rightElement={
+        <button
+          type="button"
+          onClick={onToggle}
+          disabled={disabled}
+          aria-label={visible ? `Hide ${label}` : `Show ${label}`}
+          className="rounded-lg p-1.5 text-slate-600 transition-colors duration-200 hover:bg-white/[0.04] hover:text-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {visible ? <EyeOff size={17} /> : <Eye size={17} />}
+        </button>
+      }
+    />
+  );
+}
+
+/* =====================================================
+   PASSWORD REQUIREMENT
+===================================================== */
 
 function PasswordRequirement({ active, text }) {
   return (
     <div className="flex items-center gap-2">
       <div
-        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
+        aria-hidden="true"
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
           active
-            ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.12)]"
+            ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-400"
             : "border-white/[0.08] bg-white/[0.015] text-transparent"
         }`}
       >
@@ -114,30 +191,20 @@ function PasswordRequirement({ active, text }) {
   );
 }
 
-// =====================================================
-// FLOATING PARTICLES
-// =====================================================
+/* =====================================================
+   FLOATING PARTICLES
+===================================================== */
 
 function FloatingParticles() {
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 30 }, (_, index) => ({
-        id: index,
-        left: `${(index * 37) % 100}%`,
-        top: `${(index * 53) % 100}%`,
-        delay: `${(index % 8) * 0.7}s`,
-        duration: `${5 + (index % 6)}s`,
-        size: `${2 + (index % 3)}px`,
-      })),
-    []
-  );
-
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {particles.map((particle) => (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+    >
+      {PARTICLES.map((particle) => (
         <span
           key={particle.id}
-          className="absolute animate-[particleFloat_linear_infinite] rounded-full bg-cyan-200/30"
+          className="absolute animate-[particleFloat_linear_infinite] rounded-full bg-[rgb(var(--theme-accent-rgb)/0.25)] will-change-transform"
           style={{
             left: particle.left,
             top: particle.top,
@@ -152,52 +219,48 @@ function FloatingParticles() {
   );
 }
 
-// =====================================================
-// TIME RING
-// =====================================================
+/* =====================================================
+   TIME RING
+===================================================== */
 
 function TimeRing() {
   return (
-    <div className="relative h-44 w-44">
-      <div className="absolute inset-0 animate-[spin_30s_linear_infinite] rounded-full border border-cyan-300/10 border-dashed" />
+    <div
+      aria-hidden="true"
+      className="relative h-40 w-40"
+    >
+      <div className="absolute inset-0 animate-[spin_40s_linear_infinite] rounded-full border border-[rgb(var(--theme-accent-rgb)/0.1)] border-dashed will-change-transform" />
 
-      <div className="absolute inset-3 animate-[spin_20s_linear_infinite_reverse] rounded-full border border-amber-300/10" />
+      <div className="absolute inset-4 rounded-full border border-[rgb(var(--theme-secondary-rgb)/0.1)]" />
 
-      <div className="absolute inset-7 rounded-full border border-cyan-300/10 bg-cyan-400/[0.015] shadow-[0_0_70px_rgba(34,211,238,0.05)]" />
+      <div className="absolute inset-8 rounded-full border border-[rgb(var(--theme-accent-rgb)/0.08)] bg-[rgb(var(--theme-accent-rgb)/0.015)]" />
 
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-slate-600/30 bg-[#080b0e] shadow-[0_0_35px_rgba(34,211,238,0.06)]">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/[0.06] bg-[var(--theme-card)]">
           <Clock3
-            size={25}
-            className="text-cyan-300/70"
+            size={24}
+            className="text-[var(--theme-accent)]"
           />
-
-          <div className="absolute inset-0 animate-ping rounded-full border border-cyan-300/10" />
         </div>
       </div>
 
-      {/* Orbit dots */}
-      <span className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.8)]" />
+      <span className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[var(--theme-accent)]" />
 
-      <span className="absolute bottom-3 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-amber-300/70" />
-
-      <span className="absolute left-2 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-cyan-300/60" />
-
-      <span className="absolute right-2 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-amber-300/60" />
+      <span className="absolute bottom-2 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[var(--theme-secondary)]" />
     </div>
   );
 }
 
-// =====================================================
-// SETTINGS
-// =====================================================
+/* =====================================================
+   SETTINGS
+===================================================== */
 
 function Settings() {
   const navigate = useNavigate();
 
-  // ===================================================
-  // PROFILE
-  // ===================================================
+  /* ===================================================
+     PROFILE
+  =================================================== */
 
   const [profile, setProfile] = useState({
     name: "",
@@ -207,9 +270,9 @@ function Settings() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // ===================================================
-  // PASSWORD
-  // ===================================================
+  /* ===================================================
+     PASSWORD
+  =================================================== */
 
   const [passwords, setPasswords] = useState({
     currentPassword: "",
@@ -225,16 +288,20 @@ function Settings() {
 
   const [changingPassword, setChangingPassword] = useState(false);
 
-  // ===================================================
-  // PROFILE FETCH
-  // ===================================================
+  /* ===================================================
+     PROFILE FETCH
+  =================================================== */
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchProfile = async () => {
       try {
         setLoadingProfile(true);
 
-        const response = await api.get("/auth/me");
+        const response = await api.get("/auth/me", {
+          signal: controller.signal,
+        });
 
         const user = response.data?.user;
 
@@ -247,44 +314,59 @@ function Settings() {
           email: user.email || "",
         });
       } catch (error) {
+        if (controller.signal.aborted) return;
+
         console.error("Load profile error:", error);
 
         toast.error(
-          error.response?.data?.message ||
+          getErrorMessage(
+            error,
             "Unable to load your profile."
+          )
         );
       } finally {
-        setLoadingProfile(false);
+        if (!controller.signal.aborted) {
+          setLoadingProfile(false);
+        }
       }
     };
 
     fetchProfile();
+
+    return () => controller.abort();
   }, []);
 
-  // ===================================================
-  // PROFILE CHANGE
-  // ===================================================
+  /* ===================================================
+     PROFILE CHANGE
+  =================================================== */
 
-  const handleProfileChange = (e) => {
-    const { name, value } = e.target;
+  const handleProfileChange = (event) => {
+    const { name, value } = event.target;
 
-    setProfile((prev) => ({
-      ...prev,
+    setProfile((previous) => ({
+      ...previous,
       [name]: value,
     }));
   };
 
-  // ===================================================
-  // SAVE PROFILE
-  // ===================================================
+  /* ===================================================
+     SAVE PROFILE
+  =================================================== */
 
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
+  const handleSaveProfile = async (event) => {
+    event.preventDefault();
+
+    if (savingProfile) return;
 
     const trimmedName = profile.name.trim();
 
     if (!trimmedName) {
       toast.error("Name cannot be empty.");
+      return;
+    }
+
+    if (trimmedName.length < 2) {
+      toast.error("Name must contain at least 2 characters.");
       return;
     }
 
@@ -298,11 +380,34 @@ function Settings() {
       const updatedUser = response.data?.user;
 
       if (updatedUser) {
-        setProfile((prev) => ({
-          ...prev,
-          name: updatedUser.name || trimmedName,
-          email: updatedUser.email || prev.email,
-        }));
+        setProfile((previous) => {
+          const nextName = updatedUser.name || trimmedName;
+          const nextEmail =
+            updatedUser.email || previous.email;
+
+          if (
+            previous.name === nextName &&
+            previous.email === nextEmail
+          ) {
+            return previous;
+          }
+
+          return {
+            name: nextName,
+            email: nextEmail,
+          };
+        });
+      } else {
+        setProfile((previous) => {
+          if (previous.name === trimmedName) {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            name: trimmedName,
+          };
+        });
       }
 
       toast.success(
@@ -313,33 +418,37 @@ function Settings() {
       console.error("Update profile error:", error);
 
       toast.error(
-        error.response?.data?.message ||
+        getErrorMessage(
+          error,
           "Unable to update your profile."
+        )
       );
     } finally {
       setSavingProfile(false);
     }
   };
 
-  // ===================================================
-  // PASSWORD CHANGE
-  // ===================================================
+  /* ===================================================
+     PASSWORD CHANGE
+  =================================================== */
 
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
+  const handlePasswordChange = (event) => {
+    const { name, value } = event.target;
 
-    setPasswords((prev) => ({
-      ...prev,
+    setPasswords((previous) => ({
+      ...previous,
       [name]: value,
     }));
   };
 
-  // ===================================================
-  // CHANGE PASSWORD
-  // ===================================================
+  /* ===================================================
+     CHANGE PASSWORD
+  =================================================== */
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+
+    if (changingPassword) return;
 
     const {
       currentPassword,
@@ -397,32 +506,43 @@ function Settings() {
         newPassword: "",
         confirmPassword: "",
       });
+
+      setShowPasswords({
+        current: false,
+        new: false,
+        confirm: false,
+      });
     } catch (error) {
-      console.error("Change password error:", error);
+      console.error(
+        "Change password error:",
+        error
+      );
 
       toast.error(
-        error.response?.data?.message ||
+        getErrorMessage(
+          error,
           "Unable to change your password."
+        )
       );
     } finally {
       setChangingPassword(false);
     }
   };
 
-  // ===================================================
-  // PASSWORD VISIBILITY
-  // ===================================================
+  /* ===================================================
+     PASSWORD VISIBILITY
+  =================================================== */
 
   const togglePassword = (field) => {
-    setShowPasswords((prev) => ({
-      ...prev,
-      [field]: !prev[field],
+    setShowPasswords((previous) => ({
+      ...previous,
+      [field]: !previous[field],
     }));
   };
 
-  // ===================================================
-  // PASSWORD STRENGTH
-  // ===================================================
+  /* ===================================================
+     PASSWORD STRENGTH
+  =================================================== */
 
   const passwordStrength = useMemo(() => {
     const password = passwords.newPassword;
@@ -462,9 +582,9 @@ function Settings() {
     };
   }, [passwords.newPassword]);
 
-  // ===================================================
-  // LOGOUT
-  // ===================================================
+  /* ===================================================
+     LOGOUT
+  =================================================== */
 
   const handleLogout = async () => {
     try {
@@ -472,35 +592,39 @@ function Settings() {
 
       toast.success("The realm has been closed.");
 
-      setTimeout(() => {
-        navigate("/login");
+      window.setTimeout(() => {
+        navigate("/login", {
+          replace: true,
+        });
       }, 500);
     } catch (error) {
       console.error("Logout error:", error);
 
       toast.error(
-        error.response?.data?.message ||
-          "Unable to logout."
+        getErrorMessage(error, "Unable to logout.")
       );
     }
   };
 
-  // ===================================================
-  // LOADING
-  // ===================================================
+  /* ===================================================
+     LOADING
+  =================================================== */
 
   if (loadingProfile) {
     return (
-      <div className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-[#050709] text-slate-200">
+      <div className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-[var(--theme-bg)] text-[var(--theme-text)]">
         <FloatingParticles />
 
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.07),transparent_42%)]" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgb(var(--theme-accent-rgb)/0.07),transparent_42%)]"
+        />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="animate-pulse space-y-6">
             <div className="h-10 w-64 rounded-lg bg-white/[0.06]" />
 
-            <div className="h-4 w-96 rounded bg-white/[0.035]" />
+            <div className="h-4 w-96 max-w-full rounded bg-white/[0.035]" />
 
             <div className="h-80 rounded-2xl border border-white/[0.07] bg-white/[0.025]" />
 
@@ -511,30 +635,24 @@ function Settings() {
     );
   }
 
-  // ===================================================
-  // MAIN UI
-  // ===================================================
-
   return (
-    <div className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-[#050709] text-slate-200">
+    <div className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-[var(--theme-bg)] text-[var(--theme-text)]">
       {/* =================================================
           GLOBAL ATMOSPHERE
       ================================================= */}
 
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Cyan moon */}
-        <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/[0.025] shadow-[0_0_140px_rgba(103,232,249,0.08)]" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
+        <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-[rgb(var(--theme-accent-rgb)/0.025)] shadow-[0_0_140px_rgb(var(--theme-accent-rgb)/0.08)]" />
 
-        {/* Amber fire */}
-        <div className="absolute left-[5%] top-[30%] h-96 w-96 rounded-full bg-amber-500/[0.02] blur-3xl" />
+        <div className="absolute left-[5%] top-[30%] h-96 w-96 rounded-full bg-[rgb(var(--theme-secondary-rgb)/0.02)] blur-3xl" />
 
-        {/* Deep blue */}
-        <div className="absolute right-[20%] top-[45%] h-80 w-80 rounded-full bg-blue-700/[0.025] blur-3xl" />
+        <div className="absolute right-[20%] top-[45%] h-80 w-80 rounded-full bg-[rgb(var(--theme-accent-rgb)/0.025)] blur-3xl" />
 
-        {/* Fog */}
         <div className="absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
-        {/* Stone texture */}
         <div
           className="absolute inset-0 opacity-[0.025]"
           style={{
@@ -548,43 +666,43 @@ function Settings() {
           }}
         />
 
-        {/* Vertical time lines */}
-        <div className="absolute left-[8%] top-0 h-full w-px bg-gradient-to-b from-transparent via-cyan-300/[0.05] to-transparent" />
+        <div className="absolute left-[8%] top-0 h-full w-px bg-gradient-to-b from-transparent via-[rgb(var(--theme-accent-rgb)/0.05)] to-transparent" />
 
-        <div className="absolute right-[12%] top-0 h-full w-px bg-gradient-to-b from-transparent via-amber-300/[0.04] to-transparent" />
+        <div className="absolute right-[12%] top-0 h-full w-px bg-gradient-to-b from-transparent via-[rgb(var(--theme-secondary-rgb)/0.04)] to-transparent" />
       </div>
 
       <FloatingParticles />
-
-      {/* =================================================
-          MAIN
-      ================================================= */}
 
       <div className="relative z-10 mx-auto max-w-5xl px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
         {/* =================================================
             HEADER
         ================================================= */}
 
-        <div className="relative mb-10 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#080b0e]/80 p-5 shadow-[0_25px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:p-7">
-          {/* Header glow */}
-          <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-cyan-300/[0.04] blur-3xl" />
+        <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-[var(--theme-surface)]/90 p-5 shadow-[0_25px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:p-7">
+          <div
+            aria-hidden="true"
+            className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-[rgb(var(--theme-accent-rgb)/0.04)] blur-3xl"
+          />
 
-          <div className="absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-amber-400/[0.025] blur-3xl" />
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-[rgb(var(--theme-secondary-rgb)/0.025)] blur-3xl"
+          />
 
           <div className="relative flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="mb-4 flex items-center gap-3">
-                <div className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/[0.05]">
+                <div className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-[rgb(var(--theme-accent-rgb)/0.2)] bg-[rgb(var(--theme-accent-rgb)/0.05)]">
                   <Shield
                     size={20}
-                    className="text-cyan-300"
+                    className="text-[var(--theme-accent)]"
                   />
 
-                  <span className="absolute -right-1 -top-1 h-2 w-2 animate-pulse rounded-full bg-amber-300 shadow-[0_0_12px_rgba(252,211,77,0.8)]" />
+                  <span className="absolute -right-1 -top-1 h-2 w-2 animate-pulse rounded-full bg-[var(--theme-secondary)]" />
                 </div>
 
                 <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-cyan-300/60">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-[rgb(var(--theme-accent-rgb)/0.6)]">
                     THE MAESTER'S RECORD
                   </p>
 
@@ -599,21 +717,23 @@ function Settings() {
               </h1>
 
               <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-                Every realm has its secrets. Guard yours carefully.
-                Keep your identity secure and your record prepared
-                for whatever lies beyond the wall.
+                Every realm has its secrets. Guard yours
+                carefully. Keep your identity secure and your
+                record prepared for whatever lies beyond the
+                wall.
               </p>
             </div>
 
-            {/* Time visual */}
             <div className="hidden shrink-0 sm:block">
               <TimeRing />
             </div>
           </div>
 
-          {/* Timeline */}
-          <div className="relative mt-7 h-px overflow-hidden bg-white/[0.05]">
-            <div className="absolute left-0 top-0 h-full w-1/3 animate-[timelineMove_5s_linear_infinite] bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent" />
+          <div
+            aria-hidden="true"
+            className="relative mt-7 h-px overflow-hidden bg-white/[0.05]"
+          >
+            <div className="absolute left-0 top-0 h-full w-1/3 animate-[timelineMove_5s_linear_infinite] bg-gradient-to-r from-transparent via-[rgb(var(--theme-accent-rgb)/0.5)] to-transparent will-change-transform" />
           </div>
         </div>
 
@@ -621,24 +741,22 @@ function Settings() {
             IDENTITY
         ================================================= */}
 
-        <section className="group relative mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#080b0e]/90 shadow-[0_25px_90px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-          {/* Top accent */}
-          <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent" />
-
-          {/* Hover sweep */}
-          <div className="pointer-events-none absolute -left-full top-0 h-full w-1/2 skew-x-[-20deg] bg-gradient-to-r from-transparent via-cyan-300/[0.025] to-transparent transition-all duration-1000 group-hover:left-[130%]" />
+        <section className="relative mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-[var(--theme-surface)]/90 shadow-[0_25px_90px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+          <div
+            aria-hidden="true"
+            className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgb(var(--theme-accent-rgb)/0.4)] to-transparent"
+          />
 
           <div className="relative p-5 sm:p-7">
-            {/* Section heading */}
             <div className="mb-7 flex items-start justify-between">
               <div className="flex items-center gap-4">
-                <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-300/15 bg-cyan-300/[0.04]">
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-[rgb(var(--theme-accent-rgb)/0.15)] bg-[rgb(var(--theme-accent-rgb)/0.04)]">
                   <UserRound
                     size={21}
-                    className="text-cyan-300/80"
+                    className="text-[rgb(var(--theme-accent-rgb)/0.8)]"
                   />
 
-                  <span className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                  <span className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 </div>
 
                 <div>
@@ -653,14 +771,15 @@ function Settings() {
                   </div>
 
                   <p className="mt-1 text-xs text-slate-600">
-                    Manage the identity attached to your learning
-                    record.
+                    Manage the identity attached to your
+                    learning record.
                   </p>
                 </div>
               </div>
 
               <Feather
                 size={20}
+                aria-hidden="true"
                 className="hidden text-slate-700 sm:block"
               />
             </div>
@@ -674,6 +793,8 @@ function Settings() {
                   onChange={handleProfileChange}
                   icon={User}
                   placeholder="Enter your name"
+                  autoComplete="name"
+                  disabled={savingProfile}
                 />
 
                 <InputField
@@ -683,18 +804,19 @@ function Settings() {
                   onChange={() => {}}
                   icon={Mail}
                   disabled
+                  autoComplete="email"
                 />
               </div>
 
-              {/* Email protection */}
-              <div className="mt-6 flex items-start gap-3 rounded-xl border border-cyan-300/10 bg-cyan-300/[0.02] p-4">
-                <LockKeyhole
+              <div className="mt-6 flex items-start gap-3 rounded-xl border border-[rgb(var(--theme-accent-rgb)/0.1)] bg-[rgb(var(--theme-accent-rgb)/0.02)] p-4">
+                <Shield
                   size={15}
-                  className="mt-0.5 shrink-0 text-cyan-300/60"
+                  aria-hidden="true"
+                  className="mt-0.5 shrink-0 text-[rgb(var(--theme-accent-rgb)/0.6)]"
                 />
 
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300/60">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[rgb(var(--theme-accent-rgb)/0.6)]">
                     Protected Record
                   </p>
 
@@ -709,21 +831,16 @@ function Settings() {
                 <button
                   type="submit"
                   disabled={savingProfile}
-                  className="group/button relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-amber-300/20 bg-amber-300/[0.05] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300 transition-all duration-300 hover:border-amber-300/40 hover:bg-amber-300/[0.09] hover:shadow-[0_0_35px_rgba(245,158,11,0.08)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--theme-secondary-rgb)/0.2)] bg-[rgb(var(--theme-secondary-rgb)/0.05)] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--theme-secondary)] transition-all duration-300 hover:border-[rgb(var(--theme-secondary-rgb)/0.4)] hover:bg-[rgb(var(--theme-secondary-rgb)/0.09)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.05] to-transparent transition-transform duration-700 group-hover/button:translate-x-full" />
-
                   {savingProfile ? (
                     <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-300/20 border-t-amber-300" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[rgb(var(--theme-secondary-rgb)/0.2)] border-t-[var(--theme-secondary)]" />
                       Saving
                     </>
                   ) : (
                     <>
-                      <Save
-                        size={14}
-                        className="relative transition-transform duration-300 group-hover/button:-translate-y-0.5"
-                      />
+                      <Save size={14} />
                       Save Changes
                     </>
                   )}
@@ -737,26 +854,28 @@ function Settings() {
             PASSWORD
         ================================================= */}
 
-        <section className="group relative mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#080b0e]/90 shadow-[0_25px_90px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-          <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/35 to-transparent" />
-
-          {/* Ambient glow */}
-          <div className="pointer-events-none absolute -right-32 top-20 h-72 w-72 rounded-full bg-amber-400/[0.025] blur-3xl" />
+        <section className="relative mb-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-[var(--theme-surface)]/90 shadow-[0_25px_90px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+          <div
+            aria-hidden="true"
+            className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgb(var(--theme-secondary-rgb)/0.35)] to-transparent"
+          />
 
           <div className="relative p-5 sm:p-7">
-            {/* Heading */}
             <div className="mb-7 flex items-start justify-between">
               <div className="flex items-center gap-4">
-                <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-amber-300/15 bg-amber-300/[0.04]">
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-[rgb(var(--theme-secondary-rgb)/0.15)] bg-[rgb(var(--theme-secondary-rgb)/0.04)]">
                   <KeyRound
                     size={21}
-                    className="text-amber-300/80"
+                    className="text-[rgb(var(--theme-secondary-rgb)/0.8)]"
                   />
 
-                  <span className="absolute -right-1 -top-1">
+                  <span
+                    aria-hidden="true"
+                    className="absolute -right-1 -top-1"
+                  >
                     <Zap
                       size={10}
-                      className="animate-pulse text-amber-300"
+                      className="animate-pulse text-[var(--theme-secondary)]"
                     />
                   </span>
                 </div>
@@ -774,71 +893,38 @@ function Settings() {
 
               <LockKeyhole
                 size={19}
+                aria-hidden="true"
                 className="hidden text-slate-700 sm:block"
               />
             </div>
 
             <form onSubmit={handleChangePassword}>
               <div className="space-y-5">
-                {/* Current password */}
-                <InputField
+                <PasswordInput
                   label="Current password"
                   name="currentPassword"
                   value={passwords.currentPassword}
                   onChange={handlePasswordChange}
-                  icon={KeyRound}
-                  type={
-                    showPasswords.current
-                      ? "text"
-                      : "password"
-                  }
                   placeholder="Enter current password"
-                  rightElement={
-                    <button
-                      type="button"
-                      onClick={() =>
-                        togglePassword("current")
-                      }
-                      className="rounded-lg p-1.5 text-slate-600 transition-all duration-200 hover:bg-white/[0.04] hover:text-slate-300"
-                    >
-                      {showPasswords.current ? (
-                        <EyeOff size={17} />
-                      ) : (
-                        <Eye size={17} />
-                      )}
-                    </button>
-                  }
+                  visible={showPasswords.current}
+                  onToggle={() => togglePassword("current")}
+                  autoComplete="current-password"
+                  disabled={changingPassword}
                 />
 
-                {/* New password */}
-                <InputField
+                <PasswordInput
                   label="New password"
                   name="newPassword"
                   value={passwords.newPassword}
                   onChange={handlePasswordChange}
-                  icon={Shield}
-                  type={
-                    showPasswords.new
-                      ? "text"
-                      : "password"
-                  }
                   placeholder="Enter new password"
-                  rightElement={
-                    <button
-                      type="button"
-                      onClick={() => togglePassword("new")}
-                      className="rounded-lg p-1.5 text-slate-600 transition-all duration-200 hover:bg-white/[0.04] hover:text-slate-300"
-                    >
-                      {showPasswords.new ? (
-                        <EyeOff size={17} />
-                      ) : (
-                        <Eye size={17} />
-                      )}
-                    </button>
-                  }
+                  visible={showPasswords.new}
+                  onToggle={() => togglePassword("new")}
+                  icon={Shield}
+                  autoComplete="new-password"
+                  disabled={changingPassword}
                 />
 
-                {/* Strength */}
                 {passwords.newPassword && (
                   <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
                     <div className="mb-3 flex items-center justify-between">
@@ -853,24 +939,23 @@ function Settings() {
 
                     <div className="relative h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
                       <div
-                        className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-400 transition-all duration-700"
+                        className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-400 transition-[width] duration-700"
                         style={{
-                          width:
-                            passwordStrength.width,
+                          width: passwordStrength.width,
                         }}
                       />
-
-                      <div className="absolute inset-0 animate-[shimmer_2s_linear_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                     </div>
                   </div>
                 )}
 
-                {/* Confirm */}
-                <InputField
+                <PasswordInput
                   label="Confirm new password"
                   name="confirmPassword"
                   value={passwords.confirmPassword}
                   onChange={handlePasswordChange}
+                  placeholder="Confirm your new password"
+                  visible={showPasswords.confirm}
+                  onToggle={() => togglePassword("confirm")}
                   icon={
                     passwords.confirmPassword &&
                     passwords.newPassword ===
@@ -878,36 +963,17 @@ function Settings() {
                       ? Check
                       : KeyRound
                   }
-                  type={
-                    showPasswords.confirm
-                      ? "text"
-                      : "password"
-                  }
-                  placeholder="Confirm your new password"
-                  rightElement={
-                    <button
-                      type="button"
-                      onClick={() =>
-                        togglePassword("confirm")
-                      }
-                      className="rounded-lg p-1.5 text-slate-600 transition-all duration-200 hover:bg-white/[0.04] hover:text-slate-300"
-                    >
-                      {showPasswords.confirm ? (
-                        <EyeOff size={17} />
-                      ) : (
-                        <Eye size={17} />
-                      )}
-                    </button>
-                  }
+                  autoComplete="new-password"
+                  disabled={changingPassword}
                 />
               </div>
 
-              {/* Requirements */}
               <div className="mt-6 rounded-xl border border-white/[0.06] bg-black/20 p-4">
                 <div className="mb-4 flex items-center gap-2">
                   <Sparkles
                     size={13}
-                    className="text-cyan-300/60"
+                    aria-hidden="true"
+                    className="text-[rgb(var(--theme-accent-rgb)/0.6)]"
                   />
 
                   <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
@@ -917,15 +983,13 @@ function Settings() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <PasswordRequirement
-                    active={
-                      passwords.newPassword.length >= 6
-                    }
+                    active={passwords.newPassword.length >= 6}
                     text="At least 6 characters"
                   />
 
                   <PasswordRequirement
                     active={
-                      passwords.newPassword &&
+                      passwords.newPassword.length > 0 &&
                       /[A-Z]/.test(passwords.newPassword)
                     }
                     text="Include an uppercase letter"
@@ -933,7 +997,7 @@ function Settings() {
 
                   <PasswordRequirement
                     active={
-                      passwords.newPassword &&
+                      passwords.newPassword.length > 0 &&
                       /[0-9]/.test(passwords.newPassword)
                     }
                     text="Include a number"
@@ -941,7 +1005,7 @@ function Settings() {
 
                   <PasswordRequirement
                     active={
-                      passwords.confirmPassword &&
+                      passwords.confirmPassword.length > 0 &&
                       passwords.newPassword ===
                         passwords.confirmPassword
                     }
@@ -950,18 +1014,15 @@ function Settings() {
                 </div>
               </div>
 
-              {/* Change button */}
               <div className="mt-7 flex justify-end">
                 <button
                   type="submit"
                   disabled={changingPassword}
-                  className="group/button relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-cyan-300/20 bg-cyan-300/[0.04] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300 transition-all duration-300 hover:border-cyan-300/40 hover:bg-cyan-300/[0.08] hover:shadow-[0_0_35px_rgba(34,211,238,0.08)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--theme-accent-rgb)/0.2)] bg-[rgb(var(--theme-accent-rgb)/0.04)] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--theme-accent)] transition-all duration-300 hover:border-[rgb(var(--theme-accent-rgb)/0.4)] hover:bg-[rgb(var(--theme-accent-rgb)/0.08)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-cyan-200/[0.05] to-transparent transition-transform duration-700 group-hover/button:translate-x-full" />
-
                   {changingPassword ? (
                     <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[rgb(var(--theme-accent-rgb)/0.2)] border-t-[var(--theme-accent)]" />
                       Updating
                     </>
                   ) : (
@@ -980,14 +1041,18 @@ function Settings() {
             SECURITY NOTICE
         ================================================= */}
 
-        <section className="relative mb-6 overflow-hidden rounded-2xl border border-amber-300/10 bg-amber-300/[0.018]">
-          <div className="absolute bottom-0 left-0 top-0 w-px bg-gradient-to-b from-transparent via-amber-300/50 to-transparent" />
+        <section className="relative mb-6 overflow-hidden rounded-2xl border border-[rgb(var(--theme-secondary-rgb)/0.1)] bg-[rgb(var(--theme-secondary-rgb)/0.018)]">
+          <div
+            aria-hidden="true"
+            className="absolute bottom-0 left-0 top-0 w-px bg-gradient-to-b from-transparent via-[rgb(var(--theme-secondary-rgb)/0.5)] to-transparent"
+          />
 
           <div className="relative flex gap-4 p-5 sm:p-6">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-300/15 bg-amber-300/[0.04]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgb(var(--theme-secondary-rgb)/0.15)] bg-[rgb(var(--theme-secondary-rgb)/0.04)]">
               <AlertTriangle
                 size={17}
-                className="text-amber-300/70"
+                aria-hidden="true"
+                className="text-[rgb(var(--theme-secondary-rgb)/0.7)]"
               />
             </div>
 
@@ -999,6 +1064,7 @@ function Settings() {
 
                 <Moon
                   size={12}
+                  aria-hidden="true"
                   className="text-slate-700"
                 />
               </div>
@@ -1016,8 +1082,11 @@ function Settings() {
             LOGOUT
         ================================================= */}
 
-        <section className="group relative overflow-hidden rounded-2xl border border-red-400/10 bg-red-400/[0.015]">
-          <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-red-400/20 to-transparent" />
+        <section className="relative overflow-hidden rounded-2xl border border-red-400/10 bg-red-400/[0.015]">
+          <div
+            aria-hidden="true"
+            className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-red-400/20 to-transparent"
+          />
 
           <div className="relative p-5 sm:p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -1028,7 +1097,10 @@ function Settings() {
                     className="text-red-400/70"
                   />
 
-                  <span className="absolute -right-1 -top-1 h-1.5 w-1.5 animate-pulse rounded-full bg-red-400 shadow-[0_0_10px_rgba(248,113,113,0.7)]" />
+                  <span
+                    aria-hidden="true"
+                    className="absolute -right-1 -top-1 h-1.5 w-1.5 animate-pulse rounded-full bg-red-400"
+                  />
                 </div>
 
                 <div>
@@ -1045,12 +1117,13 @@ function Settings() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="group/logout inline-flex items-center justify-center gap-2 rounded-xl border border-red-400/20 bg-red-400/[0.03] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-red-400/80 transition-all duration-300 hover:border-red-400/40 hover:bg-red-400/[0.07] hover:text-red-300 hover:shadow-[0_0_30px_rgba(248,113,113,0.07)]"
+                className="group/logout inline-flex items-center justify-center gap-2 rounded-xl border border-red-400/20 bg-red-400/[0.03] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-red-400/80 transition-all duration-300 hover:border-red-400/40 hover:bg-red-400/[0.07] hover:text-red-300"
               >
                 <LogOut
                   size={14}
                   className="transition-transform duration-300 group-hover/logout:translate-x-0.5"
                 />
+
                 Logout
               </button>
             </div>
@@ -1067,6 +1140,7 @@ function Settings() {
           <div className="flex items-center gap-2">
             <Feather
               size={11}
+              aria-hidden="true"
               className="text-slate-700"
             />
 
@@ -1076,6 +1150,7 @@ function Settings() {
 
             <Clock3
               size={11}
+              aria-hidden="true"
               className="text-slate-700"
             />
           </div>
@@ -1083,10 +1158,6 @@ function Settings() {
           <div className="h-px w-20 bg-gradient-to-l from-transparent to-slate-800" />
         </div>
       </div>
-
-      {/* =================================================
-          CUSTOM ANIMATIONS
-      ================================================= */}
 
       <style>{`
         @keyframes particleFloat {
@@ -1116,21 +1187,20 @@ function Settings() {
 
         @keyframes timelineMove {
           0% {
-            transform: translateX(-120%);
+            transform: translate3d(-120%, 0, 0);
           }
 
           100% {
-            transform: translateX(400%);
+            transform: translate3d(400%, 0, 0);
           }
         }
 
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-
-          100% {
-            transform: translateX(200%);
+        @media (prefers-reduced-motion: reduce) {
+          .animate-pulse,
+          .animate-spin,
+          [class*="animate-[particleFloat"],
+          [class*="animate-[timelineMove"] {
+            animation: none !important;
           }
         }
       `}</style>

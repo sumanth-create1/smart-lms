@@ -3,22 +3,49 @@ import { useEffect, useRef } from "react";
 function PremiumCursor() {
   const cursorRef = useRef(null);
 
+  const mousePosition = useRef({
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+  });
+
+  const animationFrame = useRef(null);
+
   useEffect(() => {
     const cursor = cursorRef.current;
 
     if (!cursor) return;
 
-    const move = (e) => {
-      cursor.style.transform =
-        `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+    const handleMouseMove = (e) => {
+      mousePosition.current.x = e.clientX;
+      mousePosition.current.y = e.clientY;
     };
 
-    window.addEventListener("mousemove", move, {
+    const animate = () => {
+      const { x, y } = mousePosition.current;
+
+      cursor.style.transform =
+        `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+
+      animationFrame.current =
+        requestAnimationFrame(animate);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove, {
       passive: true,
     });
 
+    animationFrame.current =
+      requestAnimationFrame(animate);
+
     return () => {
-      window.removeEventListener("mousemove", move);
+      window.removeEventListener(
+        "mousemove",
+        handleMouseMove
+      );
+
+      if (animationFrame.current) {
+        cancelAnimationFrame(animationFrame.current);
+      }
     };
   }, []);
 
@@ -27,10 +54,10 @@ function PremiumCursor() {
       <div
         ref={cursorRef}
         className="premium-cursor"
+        aria-hidden="true"
       />
 
       <style>{`
-
         @media (pointer: fine) {
           html,
           body,
@@ -45,7 +72,6 @@ function PremiumCursor() {
 
         .premium-cursor {
           position: fixed;
-
           left: 0;
           top: 0;
 
@@ -53,22 +79,19 @@ function PremiumCursor() {
           height: 20px;
 
           border: 1px solid #fbbf24;
-
           border-radius: 50%;
 
           pointer-events: none;
-
           z-index: 99999;
+
+          box-shadow:
+            0 0 8px rgba(249, 115, 22, 0.5);
+
+          will-change: transform;
 
           transform:
             translate3d(50vw, 50vh, 0)
             translate(-50%, -50%);
-
-          box-shadow:
-            0 0 8px
-            rgba(249, 115, 22, 0.5);
-
-          will-change: transform;
         }
 
         .premium-cursor::after {
@@ -96,6 +119,11 @@ function PremiumCursor() {
           }
         }
 
+        @media (prefers-reduced-motion: reduce) {
+          .premium-cursor {
+            display: none;
+          }
+        }
       `}</style>
     </>
   );

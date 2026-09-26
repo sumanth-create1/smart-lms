@@ -7,7 +7,9 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Clock3,
+  ClipboardCheck,
+  Download,
+  ExternalLink,
   FileText,
   Flame,
   Keyboard,
@@ -16,17 +18,12 @@ import {
   Lock,
   Maximize2,
   Minimize2,
-  PlayCircle,
-  Search,
-  Shield,
-  Sparkles,
-  Sword,
-  Trophy,
-  ClipboardCheck,
-  Download,
-  ExternalLink,
   NotebookPen,
   Paperclip,
+  PlayCircle,
+  Search,
+  Sparkles,
+  Trophy,
   X,
 } from "lucide-react";
 
@@ -45,7 +42,6 @@ import AIMentor from "../ai/AIMentor";
 // =====================================================
 
 const PROGRESS_SYNC_INTERVAL = 5;
-const SEEK_TOLERANCE = 1;
 const MAX_FORWARD_SEEK = 15;
 const COMPLETION_PERCENTAGE = 95;
 
@@ -67,11 +63,8 @@ const StudentCourseLearning = () => {
   // ---------------------------------------------------
 
   const [course, setCourse] = useState(null);
-
   const [lectures, setLectures] = useState([]);
-
   const [progress, setProgress] = useState(null);
-
   const [selectedLecture, setSelectedLecture] = useState(null);
 
   // ---------------------------------------------------
@@ -79,9 +72,7 @@ const StudentCourseLearning = () => {
   // ---------------------------------------------------
 
   const [modules, setModules] = useState([]);
-
   const [moduleQuizzes, setModuleQuizzes] = useState({});
-
   const [modulesLoading, setModulesLoading] = useState(false);
 
   // ---------------------------------------------------
@@ -89,14 +80,9 @@ const StudentCourseLearning = () => {
   // ---------------------------------------------------
 
   const [loading, setLoading] = useState(true);
-
   const [lectureLoading, setLectureLoading] = useState(true);
-
   const [enrollmentLoading, setEnrollmentLoading] = useState(true);
-
   const [progressLoading, setProgressLoading] = useState(false);
-
-  const [isEnrolled, setIsEnrolled] = useState(false);
 
   // ---------------------------------------------------
   // ACHIEVEMENT
@@ -109,9 +95,7 @@ const StudentCourseLearning = () => {
   // ---------------------------------------------------
 
   const [searchTerm, setSearchTerm] = useState("");
-
   const [theaterMode, setTheaterMode] = useState(false);
-
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   // ---------------------------------------------------
@@ -125,7 +109,6 @@ const StudentCourseLearning = () => {
   // ---------------------------------------------------
 
   const [lectureNotes, setLectureNotes] = useState([]);
-
   const [notesLoading, setNotesLoading] = useState(false);
 
   // ---------------------------------------------------
@@ -133,6 +116,24 @@ const StudentCourseLearning = () => {
   // ---------------------------------------------------
 
   const [expandedModules, setExpandedModules] = useState({});
+
+  // ---------------------------------------------------
+  // VIDEO REFS
+  // ---------------------------------------------------
+
+  const videoRef = useRef(null);
+
+  const lastAllowedTimeRef = useRef(0);
+  const lastSyncRef = useRef(0);
+  const lastLocalStorageSaveRef = useRef(0);
+  const lastSeekWarningRef = useRef(0);
+
+  // ---------------------------------------------------
+  // KEYBOARD REFS
+  // ---------------------------------------------------
+
+  const currentLectureIndexRef = useRef(-1);
+  const lecturesRef = useRef([]);
 
   // ===================================================
   // INITIALIZE
@@ -142,7 +143,16 @@ const StudentCourseLearning = () => {
     if (authLoading) return;
 
     initializeLearning();
-  }, [authLoading, user, courseId]);
+  }, [authLoading, user?.role, courseId]);
+
+  // ===================================================
+  // KEEP KEYBOARD REFS UPDATED
+  // ===================================================
+
+  useEffect(() => {
+    currentLectureIndexRef.current = currentLectureIndex;
+    lecturesRef.current = lectures;
+  }, [currentLectureIndex, lectures]);
 
   // ===================================================
   // INITIALIZE LEARNING
@@ -194,22 +204,26 @@ const StudentCourseLearning = () => {
     try {
       setEnrollmentLoading(true);
 
-      const response = await api.get(`/enrollment/check/${courseId}`);
+      const response = await api.get(
+        `/enrollment/check/${courseId}`,
+      );
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.message || "Unable to verify enrollment.",
+          response.data?.message ||
+            "Unable to verify enrollment.",
         );
       }
 
       const enrolled = Boolean(
-        response.data.enrolled ?? response.data.isEnrolled,
+        response.data.enrolled ??
+          response.data.isEnrolled,
       );
 
-      setIsEnrolled(enrolled);
-
       if (!enrolled) {
-        toast.error("You are not enrolled in this course.");
+        toast.error(
+          "You are not enrolled in this course.",
+        );
 
         navigate(`/courses/${courseId}`, {
           replace: true,
@@ -220,7 +234,10 @@ const StudentCourseLearning = () => {
 
       return true;
     } catch (error) {
-      console.error("Enrollment check error:", error);
+      console.error(
+        "Enrollment check error:",
+        error,
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -246,18 +263,25 @@ const StudentCourseLearning = () => {
     try {
       setLoading(true);
 
-      const [, , , moduleList] = await Promise.all([
-        fetchCourse(),
-        fetchLectures(),
-        fetchProgress(),
-        fetchModules(),
-      ]);
+      const [, , , moduleList] =
+        await Promise.all([
+          fetchCourse(),
+          fetchLectures(),
+          fetchProgress(),
+          fetchModules(),
+        ]);
 
-      if (Array.isArray(moduleList) && moduleList.length > 0) {
+      if (
+        Array.isArray(moduleList) &&
+        moduleList.length > 0
+      ) {
         await fetchModuleQuizzes(moduleList);
       }
     } catch (error) {
-      console.error("Learning data loading error:", error);
+      console.error(
+        "Learning data loading error:",
+        error,
+      );
     } finally {
       setLoading(false);
     }
@@ -269,15 +293,23 @@ const StudentCourseLearning = () => {
 
   const fetchCourse = async () => {
     try {
-      const response = await api.get(`/course/${courseId}`);
+      const response = await api.get(
+        `/course/${courseId}`,
+      );
 
       if (!response.data?.success) {
-        throw new Error(response.data?.message || "Unable to load course.");
+        throw new Error(
+          response.data?.message ||
+            "Unable to load course.",
+        );
       }
 
       setCourse(response.data.course);
     } catch (error) {
-      console.error("Fetch course error:", error);
+      console.error(
+        "Fetch course error:",
+        error,
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -299,17 +331,26 @@ const StudentCourseLearning = () => {
     try {
       setLectureLoading(true);
 
-      const response = await api.get(`/lecture/course/${courseId}`);
+      const response = await api.get(
+        `/lecture/course/${courseId}`,
+      );
 
       if (!response.data?.success) {
-        throw new Error(response.data?.message || "Unable to load lectures.");
+        throw new Error(
+          response.data?.message ||
+            "Unable to load lectures.",
+        );
       }
 
       const lectureData =
-        response.data.lectures || response.data.courseLectures || [];
+        response.data.lectures ||
+        response.data.courseLectures ||
+        [];
 
       const sortedLectures = [...lectureData].sort(
-        (a, b) => Number(a.order || 0) - Number(b.order || 0),
+        (a, b) =>
+          Number(a.order || 0) -
+          Number(b.order || 0),
       );
 
       setLectures(sortedLectures);
@@ -318,7 +359,10 @@ const StudentCourseLearning = () => {
         setSelectedLecture(sortedLectures[0]);
       }
     } catch (error) {
-      console.error("Fetch lectures error:", error);
+      console.error(
+        "Fetch lectures error:",
+        error,
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -340,18 +384,24 @@ const StudentCourseLearning = () => {
     try {
       setModulesLoading(true);
 
-      const response = await api.get(`/course/${courseId}/modules`);
+      const response = await api.get(
+        `/course/${courseId}/modules`,
+      );
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.message || "Unable to load course modules.",
+          response.data?.message ||
+            "Unable to load course modules.",
         );
       }
 
-      const moduleData = response.data.modules || [];
+      const moduleData =
+        response.data.modules || [];
 
       const sortedModules = [...moduleData].sort(
-        (a, b) => Number(a.order || 0) - Number(b.order || 0),
+        (a, b) =>
+          Number(a.order || 0) -
+          Number(b.order || 0),
       );
 
       setModules(sortedModules);
@@ -366,7 +416,10 @@ const StudentCourseLearning = () => {
       return sortedModules;
     } catch (error) {
       if (error.response?.status !== 404) {
-        console.error("Fetch modules error:", error);
+        console.error(
+          "Fetch modules error:",
+          error,
+        );
       }
 
       setModules([]);
@@ -382,7 +435,10 @@ const StudentCourseLearning = () => {
   // ===================================================
 
   const fetchModuleQuizzes = async (moduleList) => {
-    if (!Array.isArray(moduleList) || moduleList.length === 0) {
+    if (
+      !Array.isArray(moduleList) ||
+      moduleList.length === 0
+    ) {
       setModuleQuizzes({});
       return;
     }
@@ -391,9 +447,14 @@ const StudentCourseLearning = () => {
       const quizResults = await Promise.all(
         moduleList.map(async (module) => {
           try {
-            const response = await api.get(`/module/${module._id}/quiz`);
+            const response = await api.get(
+              `/module/${module._id}/quiz`,
+            );
 
-            if (response.data?.success && response.data.quiz) {
+            if (
+              response.data?.success &&
+              response.data.quiz
+            ) {
               return {
                 moduleId: String(module._id),
                 quiz: response.data.quiz,
@@ -422,13 +483,18 @@ const StudentCourseLearning = () => {
 
       const quizMap = {};
 
-      quizResults.forEach(({ moduleId, quiz }) => {
-        quizMap[moduleId] = quiz;
-      });
+      quizResults.forEach(
+        ({ moduleId, quiz }) => {
+          quizMap[moduleId] = quiz;
+        },
+      );
 
       setModuleQuizzes(quizMap);
     } catch (error) {
-      console.error("Fetch module quizzes error:", error);
+      console.error(
+        "Fetch module quizzes error:",
+        error,
+      );
 
       setModuleQuizzes({});
     }
@@ -440,7 +506,9 @@ const StudentCourseLearning = () => {
 
   const fetchProgress = async () => {
     try {
-      const response = await api.get(`/progress/course/${courseId}`);
+      const response = await api.get(
+        `/progress/course/${courseId}`,
+      );
 
       if (!response.data?.success) {
         setProgress(null);
@@ -448,11 +516,16 @@ const StudentCourseLearning = () => {
       }
 
       setProgress(
-        response.data.progress || response.data.courseProgress || null,
+        response.data.progress ||
+          response.data.courseProgress ||
+          null,
       );
     } catch (error) {
       if (error.response?.status !== 404) {
-        console.error("Fetch progress error:", error);
+        console.error(
+          "Fetch progress error:",
+          error,
+        );
       }
 
       setProgress(null);
@@ -471,9 +544,13 @@ const StudentCourseLearning = () => {
     return (
       progress.lectures.find((item) => {
         const id =
-          typeof item.lecture === "object" ? item.lecture?._id : item.lecture;
+          typeof item.lecture === "object"
+            ? item.lecture?._id
+            : item.lecture;
 
-        return String(id) === String(lectureId);
+        return (
+          String(id) === String(lectureId)
+        );
       }) || null
     );
   };
@@ -489,7 +566,9 @@ const StudentCourseLearning = () => {
       if (!item?.completed) return;
 
       const lectureId =
-        typeof item.lecture === "object" ? item.lecture?._id : item.lecture;
+        typeof item.lecture === "object"
+          ? item.lecture?._id
+          : item.lecture;
 
       if (lectureId) {
         ids.add(String(lectureId));
@@ -500,16 +579,24 @@ const StudentCourseLearning = () => {
   }, [progress]);
 
   // ===================================================
-  // COURSE LECTURE PROGRESS
+  // COURSE PROGRESS
   // ===================================================
 
   const progressPercentage = useMemo(() => {
     if (!lectures.length) return 0;
 
     return Math.round(
-      Math.min((completedLectureIds.size / lectures.length) * 100, 100),
+      Math.min(
+        (completedLectureIds.size /
+          lectures.length) *
+          100,
+        100,
+      ),
     );
-  }, [lectures.length, completedLectureIds]);
+  }, [
+    lectures.length,
+    completedLectureIds,
+  ]);
 
   // ===================================================
   // MODULE GROUPING
@@ -520,32 +607,59 @@ const StudentCourseLearning = () => {
       return [];
     }
 
+    const lectureMap = new Map();
+
+    lectures.forEach((lecture) => {
+      const moduleId =
+        typeof lecture.module === "object"
+          ? lecture.module?._id
+          : lecture.module;
+
+      if (!moduleId) return;
+
+      const key = String(moduleId);
+
+      if (!lectureMap.has(key)) {
+        lectureMap.set(key, []);
+      }
+
+      lectureMap.get(key).push(lecture);
+    });
+
     return modules.map((module) => {
-      const moduleLectures = lectures
-        .filter((lecture) => {
-          const lectureModule = lecture.module;
+      const moduleLectures = (
+        lectureMap.get(
+          String(module._id),
+        ) || []
+      ).sort(
+        (a, b) =>
+          Number(a.order || 0) -
+          Number(b.order || 0),
+      );
 
-          const moduleId =
-            typeof lectureModule === "object"
-              ? lectureModule?._id
-              : lectureModule;
+      const completedCount =
+        moduleLectures.filter((lecture) =>
+          completedLectureIds.has(
+            String(lecture._id),
+          ),
+        ).length;
 
-          return String(moduleId) === String(module._id);
-        })
-        .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
-
-      const completedCount = moduleLectures.filter((lecture) =>
-        completedLectureIds.has(String(lecture._id)),
-      ).length;
-
-      const totalLectures = moduleLectures.length;
+      const totalLectures =
+        moduleLectures.length;
 
       const modulePercentage =
         totalLectures > 0
-          ? Math.round((completedCount / totalLectures) * 100)
+          ? Math.round(
+              (completedCount /
+                totalLectures) *
+                100,
+            )
           : 0;
 
-      const quiz = moduleQuizzes[String(module._id)] || null;
+      const quiz =
+        moduleQuizzes[
+          String(module._id)
+        ] || null;
 
       return {
         ...module,
@@ -555,35 +669,39 @@ const StudentCourseLearning = () => {
         modulePercentage,
         quiz,
         allLecturesCompleted:
-          totalLectures > 0 && completedCount === totalLectures,
+          totalLectures > 0 &&
+          completedCount === totalLectures,
       };
     });
-  }, [modules, lectures, completedLectureIds, moduleQuizzes]);
+  }, [
+    modules,
+    lectures,
+    completedLectureIds,
+    moduleQuizzes,
+  ]);
 
   // ===================================================
   // UNASSIGNED LECTURES
   // ===================================================
 
   const unassignedLectures = useMemo(() => {
-    if (!modules.length) {
-      return [];
-    }
-
     return lectures.filter((lecture) => {
-      const lectureModule = lecture.module;
-
       const moduleId =
-        typeof lectureModule === "object" ? lectureModule?._id : lectureModule;
+        typeof lecture.module === "object"
+          ? lecture.module?._id
+          : lecture.module;
 
       return !moduleId;
     });
-  }, [lectures, modules]);
+  }, [lectures]);
 
   // ===================================================
-  // SEARCH FILTER
+  // SEARCH
   // ===================================================
 
-  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const normalizedSearch = searchTerm
+    .trim()
+    .toLowerCase();
 
   const filteredModules = useMemo(() => {
     if (!normalizedSearch) {
@@ -592,76 +710,134 @@ const StudentCourseLearning = () => {
 
     return modulesWithLectures
       .map((module) => {
-        const moduleMatches = String(module.moduleTitle || "")
-          .toLowerCase()
-          .includes(normalizedSearch);
+        const moduleMatches =
+          String(
+            module.moduleTitle || "",
+          )
+            .toLowerCase()
+            .includes(normalizedSearch);
 
-        const matchingLectures = module.lectures.filter((lecture) => {
-          const title = lecture.title || lecture.lectureTitle || "";
+        const matchingLectures =
+          module.lectures.filter(
+            (lecture) => {
+              const title =
+                lecture.title ||
+                lecture.lectureTitle ||
+                "";
 
-          return title.toLowerCase().includes(normalizedSearch);
-        });
+              return title
+                .toLowerCase()
+                .includes(normalizedSearch);
+            },
+          );
 
-        if (moduleMatches || matchingLectures.length > 0) {
+        if (
+          moduleMatches ||
+          matchingLectures.length > 0
+        ) {
           return {
             ...module,
-            lectures: moduleMatches ? module.lectures : matchingLectures,
+            lectures: moduleMatches
+              ? module.lectures
+              : matchingLectures,
           };
         }
 
         return null;
       })
       .filter(Boolean);
-  }, [modulesWithLectures, normalizedSearch]);
+  }, [
+    modulesWithLectures,
+    normalizedSearch,
+  ]);
 
-  const filteredUnassignedLectures = useMemo(() => {
-    if (!normalizedSearch) {
-      return unassignedLectures;
-    }
+  const filteredUnassignedLectures =
+    useMemo(() => {
+      if (!normalizedSearch) {
+        return unassignedLectures;
+      }
 
-    return unassignedLectures.filter((lecture) => {
-      const title = lecture.title || lecture.lectureTitle || "";
+      return unassignedLectures.filter(
+        (lecture) => {
+          const title =
+            lecture.title ||
+            lecture.lectureTitle ||
+            "";
 
-      return title.toLowerCase().includes(normalizedSearch);
-    });
-  }, [unassignedLectures, normalizedSearch]);
+          return title
+            .toLowerCase()
+            .includes(normalizedSearch);
+        },
+      );
+    }, [
+      unassignedLectures,
+      normalizedSearch,
+    ]);
 
   // ===================================================
   // FETCH LECTURE NOTES
   // ===================================================
 
-  const fetchLectureNotes = async (lectureId) => {
+  useEffect(() => {
+    const lectureId =
+      selectedLecture?._id;
+
     if (!lectureId) {
       setLectureNotes([]);
       return;
     }
 
-    try {
-      setNotesLoading(true);
+    let cancelled = false;
 
-      const response = await api.get(`/note/lecture/${lectureId}`);
+    const loadNotes = async () => {
+      try {
+        setNotesLoading(true);
 
-      if (response.data?.success) {
-        setLectureNotes(response.data.notes || []);
-      } else {
+        const response = await api.get(
+          `/note/lecture/${lectureId}`,
+        );
+
+        if (cancelled) return;
+
+        if (response.data?.success) {
+          setLectureNotes(
+            response.data.notes || [],
+          );
+        } else {
+          setLectureNotes([]);
+        }
+      } catch (error) {
+        if (cancelled) return;
+
+        console.error(
+          "Fetch lecture notes error:",
+          error,
+        );
+
         setLectureNotes([]);
+      } finally {
+        if (!cancelled) {
+          setNotesLoading(false);
+        }
       }
-    } catch (error) {
-      console.error("Fetch lecture notes error:", error);
+    };
 
-      setLectureNotes([]);
-    } finally {
-      setNotesLoading(false);
-    }
-  };
+    loadNotes();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedLecture?._id]);
+
+  // ===================================================
+  // RESET VIDEO REFS ON LECTURE CHANGE
+  // ===================================================
 
   useEffect(() => {
-    if (!selectedLecture?._id) {
-      setLectureNotes([]);
-      return;
-    }
-
-    fetchLectureNotes(selectedLecture._id);
+    lastAllowedTimeRef.current = 0;
+    lastSyncRef.current = 0;
+    lastLocalStorageSaveRef.current = 0;
+    lastSeekWarningRef.current = 0;
   }, [selectedLecture?._id]);
 
   // ===================================================
@@ -672,12 +848,17 @@ const StudentCourseLearning = () => {
     if (!selectedLecture) return -1;
 
     return lectures.findIndex(
-      (lecture) => String(lecture._id) === String(selectedLecture._id),
+      (lecture) =>
+        String(lecture._id) ===
+        String(selectedLecture._id),
     );
   }, [lectures, selectedLecture]);
 
   const isLectureCompleted = (lectureId) =>
-    Boolean(lectureId) && completedLectureIds.has(String(lectureId));
+    Boolean(lectureId) &&
+    completedLectureIds.has(
+      String(lectureId),
+    );
 
   // ===================================================
   // SELECT LECTURE
@@ -687,7 +868,6 @@ const StudentCourseLearning = () => {
     if (!lecture?._id) return;
 
     setSelectedLecture(lecture);
-
     setShowAIMentor(false);
 
     window.scrollTo({
@@ -711,7 +891,9 @@ const StudentCourseLearning = () => {
   // OPEN MODULE QUIZ
   // ===================================================
 
-  const handleOpenModuleQuiz = (module) => {
+  const handleOpenModuleQuiz = (
+    module,
+  ) => {
     if (!module?._id) {
       toast.error("Invalid module.");
       return;
@@ -725,12 +907,16 @@ const StudentCourseLearning = () => {
     }
 
     if (module.totalLectures === 0) {
-      toast.info("This module does not have any lectures yet.");
+      toast.info(
+        "This module does not have any lectures yet.",
+      );
       return;
     }
 
     if (!module.allLecturesCompleted) {
-      const remaining = module.totalLectures - module.completedCount;
+      const remaining =
+        module.totalLectures -
+        module.completedCount;
 
       toast.error(
         `Complete ${remaining} more lecture${
@@ -741,11 +927,14 @@ const StudentCourseLearning = () => {
       return;
     }
 
-    navigate(`/dashboard/modules/${module._id}/quiz`, {
-      state: {
-        courseId,
+    navigate(
+      `/dashboard/modules/${module._id}/quiz`,
+      {
+        state: {
+          courseId,
+        },
       },
-    });
+    );
   };
 
   // ===================================================
@@ -754,7 +943,9 @@ const StudentCourseLearning = () => {
 
   const handleOpenAIMentor = () => {
     if (!selectedLecture) {
-      toast.error("Select a lecture before asking the AI Mentor.");
+      toast.error(
+        "Select a lecture before asking the AI Mentor.",
+      );
 
       return;
     }
@@ -766,355 +957,627 @@ const StudentCourseLearning = () => {
   // ACHIEVEMENT
   // ===================================================
 
-  const showAchievementCelebration = (newlyUnlocked = []) => {
-    if (!Array.isArray(newlyUnlocked) || newlyUnlocked.length === 0) {
+  const showAchievementCelebration = (
+    newlyUnlocked = [],
+  ) => {
+    if (
+      !Array.isArray(newlyUnlocked) ||
+      newlyUnlocked.length === 0
+    ) {
       return;
     }
 
-    setUnlockedAchievements(newlyUnlocked);
-  };
-
-  // ===================================================
-  // MARK COMPLETE
-  // ===================================================
-
-  const handleMarkComplete = async () => {
-    const lectureId = selectedLecture?._id;
-
-    if (!lectureId) {
-      toast.error("No lecture selected.");
-
-      return;
-    }
-
-    if (isLectureCompleted(lectureId)) {
-      toast.info("This lecture is already completed.");
-
-      return;
-    }
-
-    try {
-      setProgressLoading(true);
-
-      const lectureProgress = getLectureProgress(lectureId);
-
-      const watchedSeconds = Number(lectureProgress?.watchedSeconds || 0);
-
-      const duration = getLectureDuration(selectedLecture);
-
-      if (duration > 0) {
-        const watchedPercentage = (watchedSeconds / duration) * 100;
-
-        if (watchedPercentage < COMPLETION_PERCENTAGE) {
-          toast.error(
-            `Watch at least ${COMPLETION_PERCENTAGE}% before completing this lecture.`,
-          );
-
-          return;
-        }
-      }
-
-      const response = await api.patch(`/progress/complete/${lectureId}`);
-
-      if (!response.data?.success) {
-        toast.error(response.data?.message || "Unable to complete lecture.");
-
-        return;
-      }
-
-      if (response.data.progress) {
-        setProgress(response.data.progress);
-      }
-
-      clearSavedVideoPosition(courseId, lectureId);
-
-      toast.success(response.data.message || "Lecture completed!");
-
-      showAchievementCelebration(response.data.newlyUnlocked || []);
-    } catch (error) {
-      console.error(
-        "Mark lecture complete error:",
-        error.response?.data || error,
-      );
-
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Unable to complete lecture.",
-      );
-    } finally {
-      setProgressLoading(false);
-    }
-  };
-
-  // ===================================================
-  // UNMARK COMPLETE
-  // ===================================================
-
-  const handleUnmarkComplete = async () => {
-    const lectureId = selectedLecture?._id;
-
-    if (!lectureId) {
-      toast.error("No lecture selected.");
-
-      return;
-    }
-
-    if (!isLectureCompleted(lectureId)) {
-      toast.info("This lecture is already incomplete.");
-
-      return;
-    }
-
-    try {
-      setProgressLoading(true);
-
-      const response = await api.patch(`/progress/uncomplete/${lectureId}`);
-
-      if (!response.data?.success) {
-        toast.error(response.data?.message || "Unable to update lecture.");
-
-        return;
-      }
-
-      if (response.data.progress) {
-        setProgress(response.data.progress);
-      }
-
-      toast.success(response.data.message || "Lecture marked incomplete.");
-    } catch (error) {
-      console.error(
-        "Unmark lecture complete error:",
-        error.response?.data || error,
-      );
-
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Unable to update lecture.",
-      );
-    } finally {
-      setProgressLoading(false);
-    }
+    setUnlockedAchievements(
+      newlyUnlocked,
+    );
   };
 
   // ===================================================
   // HELPERS
   // ===================================================
 
-  const getLectureDuration = (lecture) => {
-    return Number(lecture?.videoDuration || 0);
+  const getLectureDuration = (
+    lecture,
+  ) => {
+    return Number(
+      lecture?.videoDuration || 0,
+    );
   };
 
-  const clearSavedVideoPosition = (currentCourseId, lectureId) => {
-    if (!currentCourseId || !lectureId) {
+  const clearSavedVideoPosition = (
+    currentCourseId,
+    lectureId,
+  ) => {
+    if (
+      !currentCourseId ||
+      !lectureId
+    ) {
       return;
     }
 
-    localStorage.removeItem(getVideoStorageKey(currentCourseId, lectureId));
+    localStorage.removeItem(
+      getVideoStorageKey(
+        currentCourseId,
+        lectureId,
+      ),
+    );
   };
+
+  // ===================================================
+  // MARK COMPLETE
+  // ===================================================
+
+  const handleMarkComplete =
+    async () => {
+      const lectureId =
+        selectedLecture?._id;
+
+      if (!lectureId) {
+        toast.error(
+          "No lecture selected.",
+        );
+
+        return;
+      }
+
+      if (
+        isLectureCompleted(lectureId)
+      ) {
+        toast.info(
+          "This lecture is already completed.",
+        );
+
+        return;
+      }
+
+      try {
+        setProgressLoading(true);
+
+        const lectureProgress =
+          getLectureProgress(
+            lectureId,
+          );
+
+        const watchedSeconds =
+          Number(
+            lectureProgress?.watchedSeconds ||
+              0,
+          );
+
+        const duration =
+          getLectureDuration(
+            selectedLecture,
+          );
+
+        if (duration > 0) {
+          const watchedPercentage =
+            (watchedSeconds / duration) *
+            100;
+
+          if (
+            watchedPercentage <
+            COMPLETION_PERCENTAGE
+          ) {
+            toast.error(
+              `Watch at least ${COMPLETION_PERCENTAGE}% before completing this lecture.`,
+            );
+
+            return;
+          }
+        }
+
+        const response =
+          await api.patch(
+            `/progress/complete/${lectureId}`,
+          );
+
+        if (!response.data?.success) {
+          toast.error(
+            response.data?.message ||
+              "Unable to complete lecture.",
+          );
+
+          return;
+        }
+
+        if (response.data.progress) {
+          setProgress(
+            response.data.progress,
+          );
+        }
+
+        clearSavedVideoPosition(
+          courseId,
+          lectureId,
+        );
+
+        toast.success(
+          response.data.message ||
+            "Lecture completed!",
+        );
+
+        showAchievementCelebration(
+          response.data
+            .newlyUnlocked || [],
+        );
+      } catch (error) {
+        console.error(
+          "Mark lecture complete error:",
+          error.response?.data ||
+            error,
+        );
+
+        toast.error(
+          error.response?.data?.message ||
+            error.message ||
+            "Unable to complete lecture.",
+        );
+      } finally {
+        setProgressLoading(false);
+      }
+    };
+
+  // ===================================================
+  // UNMARK COMPLETE
+  // ===================================================
+
+  const handleUnmarkComplete =
+    async () => {
+      const lectureId =
+        selectedLecture?._id;
+
+      if (!lectureId) {
+        toast.error(
+          "No lecture selected.",
+        );
+
+        return;
+      }
+
+      if (
+        !isLectureCompleted(lectureId)
+      ) {
+        toast.info(
+          "This lecture is already incomplete.",
+        );
+
+        return;
+      }
+
+      try {
+        setProgressLoading(true);
+
+        const response =
+          await api.patch(
+            `/progress/uncomplete/${lectureId}`,
+          );
+
+        if (!response.data?.success) {
+          toast.error(
+            response.data?.message ||
+              "Unable to update lecture.",
+          );
+
+          return;
+        }
+
+        if (response.data.progress) {
+          setProgress(
+            response.data.progress,
+          );
+        }
+
+        toast.success(
+          response.data.message ||
+            "Lecture marked incomplete.",
+        );
+      } catch (error) {
+        console.error(
+          "Unmark lecture complete error:",
+          error.response?.data ||
+            error,
+        );
+
+        toast.error(
+          error.response?.data?.message ||
+            error.message ||
+            "Unable to update lecture.",
+        );
+      } finally {
+        setProgressLoading(false);
+      }
+    };
 
   // ===================================================
   // NAVIGATION
   // ===================================================
 
-  const handlePreviousLecture = () => {
-    if (currentLectureIndex <= 0) {
-      return;
-    }
+  const handlePreviousLecture =
+    () => {
+      if (currentLectureIndex <= 0) {
+        return;
+      }
 
-    const previousLecture = lectures[currentLectureIndex - 1];
-
-    handleSelectLecture(previousLecture);
-  };
+      handleSelectLecture(
+        lectures[
+          currentLectureIndex - 1
+        ],
+      );
+    };
 
   const handleNextLecture = () => {
     if (
       currentLectureIndex === -1 ||
-      currentLectureIndex >= lectures.length - 1
+      currentLectureIndex >=
+        lectures.length - 1
     ) {
       return;
     }
 
-    const nextLecture = lectures[currentLectureIndex + 1];
-
-    handleSelectLecture(nextLecture);
+    handleSelectLecture(
+      lectures[
+        currentLectureIndex + 1
+      ],
+    );
   };
+
+  // ===================================================
+  // VIDEO LOADED
+  // ===================================================
+
+  const handleVideoLoadedMetadata =
+    () => {
+      const video = videoRef.current;
+
+      if (
+        !video ||
+        !selectedLecture
+      ) {
+        return;
+      }
+
+      const savedTime = Number(
+        localStorage.getItem(
+          getVideoStorageKey(
+            courseId,
+            selectedLecture._id,
+          ),
+        ) || 0,
+      );
+
+      const lectureProgress =
+        getLectureProgress(
+          selectedLecture._id,
+        );
+
+      const serverTime = Number(
+        lectureProgress?.watchedSeconds ||
+          0,
+      );
+
+      const resumeTime = Math.max(
+        savedTime,
+        serverTime,
+      );
+
+      if (
+        resumeTime > 0 &&
+        resumeTime < video.duration
+      ) {
+        video.currentTime =
+          resumeTime;
+      }
+
+      lastAllowedTimeRef.current =
+        resumeTime;
+    };
 
   // ===================================================
   // VIDEO PROGRESS
   // ===================================================
 
-  const videoRef = useRef(null);
+  const handleVideoTimeUpdate =
+    () => {
+      const video = videoRef.current;
 
-  const lastAllowedTimeRef = useRef(0);
+      if (
+        !video ||
+        !selectedLecture
+      ) {
+        return;
+      }
 
-  const lastSyncRef = useRef(0);
+      const currentTime =
+        video.currentTime;
 
-  const handleVideoLoadedMetadata = () => {
-    const video = videoRef.current;
+      const lastAllowed =
+        lastAllowedTimeRef.current;
 
-    if (!video || !selectedLecture) {
-      return;
-    }
+      // Prevent large forward seeking
+      if (
+        currentTime >
+        lastAllowed +
+          MAX_FORWARD_SEEK
+      ) {
+        video.currentTime =
+          lastAllowed;
 
-    const savedTime = Number(
-      localStorage.getItem(getVideoStorageKey(courseId, selectedLecture._id)) ||
-        0,
-    );
+        const now = Date.now();
 
-    const lectureProgress = getLectureProgress(selectedLecture._id);
+        // Prevent toast spam
+        if (
+          now -
+            lastSeekWarningRef.current >
+          2500
+        ) {
+          lastSeekWarningRef.current =
+            now;
 
-    const serverTime = Number(lectureProgress?.watchedSeconds || 0);
+          toast.error(
+            `You can only seek ${MAX_FORWARD_SEEK} seconds forward.`,
+          );
+        }
 
-    const resumeTime = Math.max(savedTime, serverTime);
+        return;
+      }
 
-    if (resumeTime > 0 && resumeTime < video.duration) {
-      video.currentTime = resumeTime;
-    }
+      if (
+        currentTime >
+        lastAllowed
+      ) {
+        lastAllowedTimeRef.current =
+          currentTime;
+      }
 
-    lastAllowedTimeRef.current = resumeTime;
-  };
+      const now = Date.now();
 
-  const handleVideoTimeUpdate = () => {
-    const video = videoRef.current;
+      // Save local position once per second
+      if (
+        now -
+          lastLocalStorageSaveRef.current >=
+        1000
+      ) {
+        lastLocalStorageSaveRef.current =
+          now;
 
-    if (!video || !selectedLecture) {
-      return;
-    }
+        localStorage.setItem(
+          getVideoStorageKey(
+            courseId,
+            selectedLecture._id,
+          ),
+          String(
+            Math.floor(currentTime),
+          ),
+        );
+      }
 
-    const currentTime = video.currentTime;
+      // Sync server every 5 seconds
+      if (
+        now - lastSyncRef.current <
+        PROGRESS_SYNC_INTERVAL * 1000
+      ) {
+        return;
+      }
 
-    const lastAllowed = lastAllowedTimeRef.current;
+      lastSyncRef.current = now;
 
-    if (currentTime > lastAllowed + MAX_FORWARD_SEEK) {
-      video.currentTime = lastAllowed;
+      syncVideoProgress(
+        Math.floor(currentTime),
+      );
+    };
 
-      toast.error(`You can only seek ${MAX_FORWARD_SEEK} seconds forward.`);
+  // ===================================================
+  // SYNC VIDEO PROGRESS
+  // ===================================================
 
-      return;
-    }
+  const syncVideoProgress =
+    async (watchedSeconds) => {
+      if (
+        !selectedLecture?._id
+      ) {
+        return;
+      }
 
-    if (currentTime > lastAllowed) {
-      lastAllowedTimeRef.current = currentTime;
-    }
+      try {
+        await api.patch(
+          `/progress/${selectedLecture._id}`,
+          {
+            watchedSeconds,
+          },
+        );
+      } catch (error) {
+        console.error(
+          "Video progress sync error:",
+          error,
+        );
+      }
+    };
 
-    localStorage.setItem(
-      getVideoStorageKey(courseId, selectedLecture._id),
-      String(Math.floor(currentTime)),
-    );
+  // ===================================================
+  // VIDEO ENDED
+  // ===================================================
 
-    const now = Date.now();
+  const handleVideoEnded =
+    async () => {
+      if (
+        !selectedLecture?._id
+      ) {
+        return;
+      }
 
-    if (now - lastSyncRef.current < PROGRESS_SYNC_INTERVAL * 1000) {
-      return;
-    }
+      const duration =
+        getLectureDuration(
+          selectedLecture,
+        );
 
-    lastSyncRef.current = now;
+      if (duration > 0) {
+        await syncVideoProgress(
+          Math.floor(duration),
+        );
 
-    syncVideoProgress(Math.floor(currentTime));
-  };
+        localStorage.setItem(
+          getVideoStorageKey(
+            courseId,
+            selectedLecture._id,
+          ),
+          String(
+            Math.floor(duration),
+          ),
+        );
+      }
 
-  const syncVideoProgress = async (watchedSeconds) => {
-    if (!selectedLecture?._id) {
-      return;
-    }
-
-    try {
-      await api.patch(`/progress/${selectedLecture._id}`, {
-        watchedSeconds,
-      });
-    } catch (error) {
-      console.error("Video progress sync error:", error);
-    }
-  };
-
-  const handleVideoEnded = async () => {
-    if (!selectedLecture?._id) {
-      return;
-    }
-
-    const duration = getLectureDuration(selectedLecture);
-
-    if (duration > 0) {
-      await syncVideoProgress(Math.floor(duration));
-    }
-
-    lastAllowedTimeRef.current = duration;
-  };
+      lastAllowedTimeRef.current =
+        duration;
+    };
 
   // ===================================================
   // KEYBOARD SHORTCUTS
   // ===================================================
 
   useEffect(() => {
-    const handleKeyDown = (event) => {
+    const handleKeyDown = (
+      event,
+    ) => {
       if (
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement
+        event.target instanceof
+          HTMLInputElement ||
+        event.target instanceof
+          HTMLTextAreaElement ||
+        event.target instanceof
+          HTMLSelectElement
       ) {
         return;
       }
 
+      const video =
+        videoRef.current;
+
+      // Play / pause
       if (event.code === "Space") {
         event.preventDefault();
-
-        const video = videoRef.current;
 
         if (!video) return;
 
         if (video.paused) {
-          video.play();
+          video
+            .play()
+            .catch(() => {});
         } else {
           video.pause();
         }
+
+        return;
       }
 
-      if (event.key === "ArrowRight") {
-        const video = videoRef.current;
-
+      // Forward
+      if (
+        event.key === "ArrowRight"
+      ) {
         if (!video) return;
 
-        video.currentTime = Math.min(video.currentTime + 5, video.duration);
+        video.currentTime =
+          Math.min(
+            video.currentTime + 5,
+            video.duration ||
+              video.currentTime,
+          );
+
+        return;
       }
 
-      if (event.key === "ArrowLeft") {
-        const video = videoRef.current;
-
+      // Backward
+      if (
+        event.key === "ArrowLeft"
+      ) {
         if (!video) return;
 
-        video.currentTime = Math.max(video.currentTime - 5, 0);
+        video.currentTime =
+          Math.max(
+            video.currentTime - 5,
+            0,
+          );
+
+        return;
       }
 
-      if (event.key === "n" || event.key === "N") {
-        handleNextLecture();
+      const index =
+        currentLectureIndexRef.current;
+
+      const lectureList =
+        lecturesRef.current;
+
+      // Next
+      if (
+        event.key === "n" ||
+        event.key === "N"
+      ) {
+        if (
+          index >= 0 &&
+          index <
+            lectureList.length - 1
+        ) {
+          handleSelectLecture(
+            lectureList[index + 1],
+          );
+        }
+
+        return;
       }
 
-      if (event.key === "p" || event.key === "P") {
-        handlePreviousLecture();
+      // Previous
+      if (
+        event.key === "p" ||
+        event.key === "P"
+      ) {
+        if (index > 0) {
+          handleSelectLecture(
+            lectureList[index - 1],
+          );
+        }
+
+        return;
       }
 
-      if (event.key === "t" || event.key === "T") {
-        setTheaterMode((previous) => !previous);
+      // Theater mode
+      if (
+        event.key === "t" ||
+        event.key === "T"
+      ) {
+        setTheaterMode(
+          (previous) => !previous,
+        );
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
     };
-  }, [currentLectureIndex, lectures]);
+  }, []);
 
   // ===================================================
   // RENDER
   // ===================================================
 
-  if (authLoading || loading || enrollmentLoading) {
+  if (
+    authLoading ||
+    loading ||
+    enrollmentLoading
+  ) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#050607] text-amber-400">
         <div className="flex flex-col items-center gap-4">
-          <LoaderCircle size={42} className="animate-spin" />
+          <LoaderCircle
+            size={42}
+            className="animate-spin"
+          />
 
           <p className="text-xs font-black uppercase tracking-[0.3em]">
             Entering the Realm...
@@ -1138,7 +1601,11 @@ const StudentCourseLearning = () => {
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-3 lg:px-6">
           <button
             type="button"
-            onClick={() => navigate(`/courses/${courseId}`)}
+            onClick={() =>
+              navigate(
+                `/courses/${courseId}`,
+              )
+            }
             className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 transition hover:text-amber-400"
           >
             <ArrowLeft size={16} />
@@ -1156,7 +1623,12 @@ const StudentCourseLearning = () => {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setShowShortcuts((previous) => !previous)}
+              onClick={() =>
+                setShowShortcuts(
+                  (previous) =>
+                    !previous,
+                )
+              }
               className="rounded-xl border border-slate-800 bg-slate-950/70 p-2 text-slate-400 transition hover:border-amber-700/40 hover:text-amber-400"
               title="Keyboard shortcuts"
             >
@@ -1165,11 +1637,20 @@ const StudentCourseLearning = () => {
 
             <button
               type="button"
-              onClick={() => setTheaterMode((previous) => !previous)}
+              onClick={() =>
+                setTheaterMode(
+                  (previous) =>
+                    !previous,
+                )
+              }
               className="rounded-xl border border-slate-800 bg-slate-950/70 p-2 text-slate-400 transition hover:border-amber-700/40 hover:text-amber-400"
               title="Theater mode"
             >
-              {theaterMode ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+              {theaterMode ? (
+                <Minimize2 size={17} />
+              ) : (
+                <Maximize2 size={17} />
+              )}
             </button>
           </div>
         </div>
@@ -1183,30 +1664,56 @@ const StudentCourseLearning = () => {
         <div className="fixed right-4 top-20 z-[60] w-72 rounded-2xl border border-amber-900/40 bg-[#0c0f11]/95 p-5 shadow-2xl backdrop-blur-xl">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Keyboard size={17} className="text-amber-400" />
+              <Keyboard
+                size={17}
+                className="text-amber-400"
+              />
 
               <h3 className="text-xs font-black uppercase tracking-widest">
                 Shortcuts
               </h3>
             </div>
 
-            <button type="button" onClick={() => setShowShortcuts(false)}>
+            <button
+              type="button"
+              onClick={() =>
+                setShowShortcuts(false)
+              }
+            >
               <X size={16} />
             </button>
           </div>
 
           <div className="space-y-2 text-xs text-slate-400">
-            <ShortcutRow label="Play / Pause" shortcut="Space" />
+            <ShortcutRow
+              label="Play / Pause"
+              shortcut="Space"
+            />
 
-            <ShortcutRow label="Forward" shortcut="→" />
+            <ShortcutRow
+              label="Forward"
+              shortcut="→"
+            />
 
-            <ShortcutRow label="Backward" shortcut="←" />
+            <ShortcutRow
+              label="Backward"
+              shortcut="←"
+            />
 
-            <ShortcutRow label="Next lecture" shortcut="N" />
+            <ShortcutRow
+              label="Next lecture"
+              shortcut="N"
+            />
 
-            <ShortcutRow label="Previous lecture" shortcut="P" />
+            <ShortcutRow
+              label="Previous lecture"
+              shortcut="P"
+            />
 
-            <ShortcutRow label="Theater mode" shortcut="T" />
+            <ShortcutRow
+              label="Theater mode"
+              shortcut="T"
+            />
           </div>
         </div>
       )}
@@ -1216,8 +1723,10 @@ const StudentCourseLearning = () => {
       ================================================= */}
 
       <main
-        className={`mx-auto max-w-[1600px] px-4 py-5 lg:px-6 ${
-          theaterMode ? "max-w-[1900px]" : ""
+        className={`mx-auto px-4 py-5 lg:px-6 ${
+          theaterMode
+            ? "max-w-[1900px]"
+            : "max-w-[1600px]"
         }`}
       >
         {/* COURSE HERO */}
@@ -1253,20 +1762,28 @@ const StudentCourseLearning = () => {
 
               <div className="mt-5 flex flex-wrap gap-4">
                 <StatBadge
-                  icon={<BookOpen size={14} />}
+                  icon={
+                    <BookOpen size={14} />
+                  }
                   value={lectures.length}
                   label="Lectures"
                 />
 
                 <StatBadge
-                  icon={<Trophy size={14} />}
+                  icon={
+                    <Trophy size={14} />
+                  }
                   value={`${progressPercentage}%`}
                   label="Progress"
                 />
 
                 <StatBadge
-                  icon={<Flame size={14} />}
-                  value={completedLectureIds.size}
+                  icon={
+                    <Flame size={14} />
+                  }
+                  value={
+                    completedLectureIds.size
+                  }
                   label="Completed"
                 />
               </div>
@@ -1274,9 +1791,13 @@ const StudentCourseLearning = () => {
 
             <div className="min-w-[220px] rounded-2xl border border-amber-900/30 bg-black/20 p-4">
               <div className="mb-2 flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                <span className="text-slate-500">Course Progress</span>
+                <span className="text-slate-500">
+                  Course Progress
+                </span>
 
-                <span className="text-amber-400">{progressPercentage}%</span>
+                <span className="text-amber-400">
+                  {progressPercentage}%
+                </span>
               </div>
 
               <div className="h-2 overflow-hidden rounded-full bg-slate-900">
@@ -1295,11 +1816,18 @@ const StudentCourseLearning = () => {
 
         {!theaterMode && (
           <div className="mb-5 flex items-center gap-3 rounded-2xl border border-slate-800 bg-[#0b0e10] px-4 py-3">
-            <Search size={17} className="text-slate-600" />
+            <Search
+              size={17}
+              className="text-slate-600"
+            />
 
             <input
               value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+              onChange={(event) =>
+                setSearchTerm(
+                  event.target.value,
+                )
+              }
               placeholder="Search modules or lectures..."
               className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-700"
             />
@@ -1307,7 +1835,9 @@ const StudentCourseLearning = () => {
             {searchTerm && (
               <button
                 type="button"
-                onClick={() => setSearchTerm("")}
+                onClick={() =>
+                  setSearchTerm("")
+                }
                 className="text-slate-600 transition hover:text-amber-400"
               >
                 <X size={16} />
@@ -1318,7 +1848,9 @@ const StudentCourseLearning = () => {
 
         <div
           className={`grid gap-6 ${
-            theaterMode ? "grid-cols-1" : "lg:grid-cols-[minmax(0,1fr)_380px]"
+            theaterMode
+              ? "grid-cols-1"
+              : "lg:grid-cols-[minmax(0,1fr)_380px]"
           }`}
         >
           {/* =================================================
@@ -1331,13 +1863,22 @@ const StudentCourseLearning = () => {
                 {selectedLecture?.videoUrl ? (
                   <video
                     ref={videoRef}
-                    src={selectedLecture.videoUrl}
+                    src={
+                      selectedLecture.videoUrl
+                    }
                     controls
                     playsInline
+                    preload="metadata"
                     className="h-full w-full object-contain"
-                    onLoadedMetadata={handleVideoLoadedMetadata}
-                    onTimeUpdate={handleVideoTimeUpdate}
-                    onEnded={handleVideoEnded}
+                    onLoadedMetadata={
+                      handleVideoLoadedMetadata
+                    }
+                    onTimeUpdate={
+                      handleVideoTimeUpdate
+                    }
+                    onEnded={
+                      handleVideoEnded
+                    }
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center">
@@ -1364,39 +1905,58 @@ const StudentCourseLearning = () => {
                   <div>
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-500">
-                        Lecture {currentLectureIndex + 1}
+                        Lecture{" "}
+                        {currentLectureIndex +
+                          1}
                       </span>
 
-                      {isLectureCompleted(selectedLecture._id) && (
+                      {isLectureCompleted(
+                        selectedLecture._id,
+                      ) && (
                         <span className="flex items-center gap-1 rounded-full border border-emerald-800/40 bg-emerald-950/30 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-400">
-                          <CheckCircle2 size={12} />
+                          <CheckCircle2
+                            size={12}
+                          />
                           Completed
                         </span>
                       )}
                     </div>
 
                     <h2 className="text-xl font-black text-white">
-                      {selectedLecture.lectureTitle}
+                      {
+                        selectedLecture.lectureTitle
+                      }
                     </h2>
                   </div>
 
                   <button
                     type="button"
                     onClick={
-                      isLectureCompleted(selectedLecture._id)
+                      isLectureCompleted(
+                        selectedLecture._id,
+                      )
                         ? handleUnmarkComplete
                         : handleMarkComplete
                     }
-                    disabled={progressLoading}
+                    disabled={
+                      progressLoading
+                    }
                     className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-950/20 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-amber-400 transition hover:bg-amber-900/30 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {progressLoading ? (
-                      <LoaderCircle size={15} className="animate-spin" />
+                      <LoaderCircle
+                        size={15}
+                        className="animate-spin"
+                      />
                     ) : (
-                      <CheckCircle2 size={15} />
+                      <CheckCircle2
+                        size={15}
+                      />
                     )}
 
-                    {isLectureCompleted(selectedLecture._id)
+                    {isLectureCompleted(
+                      selectedLecture._id,
+                    )
                       ? "Mark Incomplete"
                       : "Mark Complete"}
                   </button>
@@ -1413,7 +1973,9 @@ const StudentCourseLearning = () => {
                     </div>
 
                     <div className="whitespace-pre-wrap text-sm leading-7 text-slate-400">
-                      {selectedLecture.lectureContent}
+                      {
+                        selectedLecture.lectureContent
+                      }
                     </div>
                   </div>
                 )}
@@ -1421,7 +1983,9 @@ const StudentCourseLearning = () => {
                 <div className="mt-6 flex flex-wrap gap-3">
                   <button
                     type="button"
-                    onClick={handleOpenAIMentor}
+                    onClick={
+                      handleOpenAIMentor
+                    }
                     className="flex items-center gap-2 rounded-xl border border-amber-700/40 bg-gradient-to-r from-orange-900/30 to-amber-900/20 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-amber-400 transition hover:scale-[1.02] hover:border-amber-500/50"
                   >
                     <Sparkles size={15} />
@@ -1431,41 +1995,50 @@ const StudentCourseLearning = () => {
               </div>
             )}
 
-            {/* =================================================
-                LECTURE NOTES
-            ================================================= */}
+            {/* LECTURE NOTES */}
 
-            <LectureNotes notes={lectureNotes} loading={notesLoading} />
+            <LectureNotes
+              notes={lectureNotes}
+              loading={notesLoading}
+            />
 
-            {/* =================================================
-                NAVIGATION
-            ================================================= */}
+            {/* NAVIGATION */}
 
             <LectureNavigation
-              currentLectureIndex={currentLectureIndex}
-              totalLectures={lectures.length}
-              onPrevious={handlePreviousLecture}
+              currentLectureIndex={
+                currentLectureIndex
+              }
+              totalLectures={
+                lectures.length
+              }
+              onPrevious={
+                handlePreviousLecture
+              }
               onNext={handleNextLecture}
             />
 
-            {/* =================================================
-                MODULE COMPLETION NOTICE
-            ================================================= */}
+            {/* MODULE COMPLETION */}
 
-            {progressPercentage === 100 && modules.length > 0 && (
-              <ModuleQuizRequirement
-                modules={modulesWithLectures}
-                onOpenQuiz={handleOpenModuleQuiz}
-              />
-            )}
+            {progressPercentage ===
+              100 &&
+              modules.length > 0 && (
+                <ModuleQuizRequirement
+                  modules={
+                    modulesWithLectures
+                  }
+                  onOpenQuiz={
+                    handleOpenModuleQuiz
+                  }
+                />
+              )}
 
-            {/* =================================================
-                LEGACY COURSE NOTICE
-            ================================================= */}
+            {/* LEGACY COURSE */}
 
-            {progressPercentage === 100 && modules.length === 0 && (
-              <LegacyCourseCompleted />
-            )}
+            {progressPercentage ===
+              100 &&
+              modules.length === 0 && (
+                <LegacyCourseCompleted />
+              )}
           </section>
 
           {/* =================================================
@@ -1479,7 +2052,10 @@ const StudentCourseLearning = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <Layers3 size={17} className="text-amber-400" />
+                        <Layers3
+                          size={17}
+                          className="text-amber-400"
+                        />
 
                         <h2 className="text-xs font-black uppercase tracking-[0.18em] text-white">
                           Course Curriculum
@@ -1487,7 +2063,8 @@ const StudentCourseLearning = () => {
                       </div>
 
                       <p className="mt-1 text-[10px] text-slate-600">
-                        {lectures.length} lectures
+                        {lectures.length}{" "}
+                        lectures
                       </p>
                     </div>
 
@@ -1498,55 +2075,97 @@ const StudentCourseLearning = () => {
                 </div>
 
                 <div className="max-h-[calc(100vh-180px)] overflow-y-auto p-3">
-                  {modulesLoading && modules.length === 0 && (
-                    <div className="flex justify-center py-10">
-                      <LoaderCircle
-                        size={25}
-                        className="animate-spin text-amber-400"
+                  {modulesLoading &&
+                    modules.length ===
+                      0 && (
+                      <div className="flex justify-center py-10">
+                        <LoaderCircle
+                          size={25}
+                          className="animate-spin text-amber-400"
+                        />
+                      </div>
+                    )}
+
+                  {filteredModules.map(
+                    (module) => (
+                      <CurriculumModule
+                        key={module._id}
+                        module={module}
+                        expanded={Boolean(
+                          expandedModules[
+                            module._id
+                          ],
+                        )}
+                        selectedLecture={
+                          selectedLecture
+                        }
+                        onToggle={
+                          toggleModule
+                        }
+                        onSelectLecture={
+                          handleSelectLecture
+                        }
+                        isLectureCompleted={
+                          isLectureCompleted
+                        }
+                        onOpenQuiz={
+                          handleOpenModuleQuiz
+                        }
                       />
-                    </div>
+                    ),
                   )}
 
-                  {filteredModules.map((module) => (
-                    <CurriculumModule
-                      key={module._id}
-                      module={module}
-                      expanded={Boolean(expandedModules[module._id])}
-                      selectedLecture={selectedLecture}
-                      onToggle={toggleModule}
-                      onSelectLecture={handleSelectLecture}
-                      isLectureCompleted={isLectureCompleted}
-                      onOpenQuiz={handleOpenModuleQuiz}
-                    />
-                  ))}
-
-                  {filteredUnassignedLectures.length > 0 && (
+                  {filteredUnassignedLectures.length >
+                    0 && (
                     <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-950/40 p-3">
                       <div className="mb-2 flex items-center gap-2 px-2">
-                        <BookOpen size={14} className="text-slate-500" />
+                        <BookOpen
+                          size={14}
+                          className="text-slate-500"
+                        />
 
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
-                          Additional Lectures
+                          Additional
+                          Lectures
                         </span>
                       </div>
 
-                      {filteredUnassignedLectures.map((lecture) => (
-                        <LectureItem
-                          key={lecture._id}
-                          lecture={lecture}
-                          selected={
-                            String(selectedLecture?._id) === String(lecture._id)
-                          }
-                          completed={isLectureCompleted(lecture._id)}
-                          onClick={() => handleSelectLecture(lecture)}
-                        />
-                      ))}
+                      {filteredUnassignedLectures.map(
+                        (lecture) => (
+                          <LectureItem
+                            key={
+                              lecture._id
+                            }
+                            lecture={
+                              lecture
+                            }
+                            selected={
+                              String(
+                                selectedLecture?._id,
+                              ) ===
+                              String(
+                                lecture._id,
+                              )
+                            }
+                            completed={isLectureCompleted(
+                              lecture._id,
+                            )}
+                            onClick={() =>
+                              handleSelectLecture(
+                                lecture,
+                              )
+                            }
+                          />
+                        ),
+                      )}
                     </div>
                   )}
 
                   {!modulesLoading &&
-                    filteredModules.length === 0 &&
-                    filteredUnassignedLectures.length === 0 && (
+                    filteredModules.length ===
+                      0 &&
+                    filteredUnassignedLectures.length ===
+                      0 && (
                       <div className="px-4 py-10 text-center">
                         <Search
                           size={28}
@@ -1554,7 +2173,8 @@ const StudentCourseLearning = () => {
                         />
 
                         <p className="text-xs font-bold text-slate-600">
-                          No lectures found
+                          No lectures
+                          found
                         </p>
                       </div>
                     )}
@@ -1569,10 +2189,17 @@ const StudentCourseLearning = () => {
           ACHIEVEMENT CELEBRATION
       ================================================= */}
 
-      {unlockedAchievements.length > 0 && (
+      {unlockedAchievements.length >
+        0 && (
         <AchievementUnlockCelebration
-          achievements={unlockedAchievements}
-          onClose={() => setUnlockedAchievements([])}
+          achievements={
+            unlockedAchievements
+          }
+          onClose={() =>
+            setUnlockedAchievements(
+              [],
+            )
+          }
         />
       )}
 
@@ -1580,14 +2207,17 @@ const StudentCourseLearning = () => {
           AI MENTOR
       ================================================= */}
 
-      {showAIMentor && selectedLecture && (
-        <AIMentor
-          course={course}
-          lecture={selectedLecture}
-          user={user}
-          onClose={() => setShowAIMentor(false)}
-        />
-      )}
+      {showAIMentor &&
+        selectedLecture && (
+          <AIMentor
+            course={course}
+            lecture={selectedLecture}
+            user={user}
+            onClose={() =>
+              setShowAIMentor(false)
+            }
+          />
+        )}
     </div>
   );
 };
@@ -1596,7 +2226,10 @@ const StudentCourseLearning = () => {
 // LECTURE NOTES
 // =====================================================
 
-const LectureNotes = ({ notes = [], loading }) => {
+const LectureNotes = ({
+  notes = [],
+  loading,
+}) => {
   return (
     <section className="relative mt-6 overflow-hidden rounded-2xl border border-amber-900/40 bg-[#0d1012] shadow-[0_20px_70px_rgba(0,0,0,0.35)]">
       <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-amber-600/10 blur-[80px]" />
@@ -1622,7 +2255,8 @@ const LectureNotes = ({ notes = [], loading }) => {
               </div>
 
               <p className="mt-1 text-[10px] text-slate-600">
-                Knowledge scrolls and resources for this lecture
+                Knowledge scrolls and resources
+                for this lecture
               </p>
             </div>
           </div>
@@ -1631,14 +2265,21 @@ const LectureNotes = ({ notes = [], loading }) => {
         <div className="p-4">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <LoaderCircle size={24} className="animate-spin text-amber-400" />
+              <LoaderCircle
+                size={24}
+                className="animate-spin text-amber-400"
+              />
             </div>
           ) : notes.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-800 bg-black/20 px-5 py-8 text-center">
-              <NotebookPen size={28} className="mx-auto mb-3 text-slate-800" />
+              <NotebookPen
+                size={28}
+                className="mx-auto mb-3 text-slate-800"
+              />
 
               <p className="text-xs font-bold text-slate-600">
-                No notes available for this lecture.
+                No notes available for
+                this lecture.
               </p>
             </div>
           ) : (
@@ -1653,9 +2294,13 @@ const LectureNotes = ({ notes = [], loading }) => {
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-900/30 bg-amber-950/20 text-amber-400">
                           {note.fileUrl ? (
-                            <Paperclip size={16} />
+                            <Paperclip
+                              size={16}
+                            />
                           ) : (
-                            <FileText size={16} />
+                            <FileText
+                              size={16}
+                            />
                           )}
                         </div>
 
@@ -1666,19 +2311,32 @@ const LectureNotes = ({ notes = [], loading }) => {
 
                           {note.noteContent && (
                             <p className="mt-1 whitespace-pre-wrap text-xs leading-6 text-slate-500">
-                              {note.noteContent}
+                              {
+                                note.noteContent
+                              }
                             </p>
                           )}
 
                           {note.fileName && (
                             <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-slate-600">
-                              <span className="truncate">{note.fileName}</span>
+                              <span className="truncate">
+                                {
+                                  note.fileName
+                                }
+                              </span>
 
-                              {note.fileSize > 0 && (
+                              {note.fileSize >
+                                0 && (
                                 <>
-                                  <span>•</span>
+                                  <span>
+                                    •
+                                  </span>
 
-                                  <span>{formatFileSize(note.fileSize)}</span>
+                                  <span>
+                                    {formatFileSize(
+                                      note.fileSize,
+                                    )}
+                                  </span>
                                 </>
                               )}
                             </div>
@@ -1690,22 +2348,31 @@ const LectureNotes = ({ notes = [], loading }) => {
                     {note.fileUrl && (
                       <div className="flex shrink-0 items-center gap-2">
                         <a
-                          href={note.fileUrl}
+                          href={
+                            note.fileUrl
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-slate-400 transition hover:border-amber-700/50 hover:text-amber-400"
                         >
-                          <ExternalLink size={13} />
+                          <ExternalLink
+                            size={13}
+                          />
                           View
                         </a>
 
                         <a
-                          href={`http://localhost:8000${note.downloadUrl}`}
+                          href={
+                            note.downloadUrl ||
+                            note.fileUrl
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 rounded-lg border border-amber-800/40 bg-amber-950/20 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-amber-400 transition hover:bg-amber-900/30"
                         >
-                          <Download size={13} />
+                          <Download
+                            size={13}
+                          />
                           Download
                         </a>
                       </div>
@@ -1738,7 +2405,9 @@ const CurriculumModule = ({
     <div className="mb-2 overflow-hidden rounded-2xl border border-slate-800 bg-black/20">
       <button
         type="button"
-        onClick={() => onToggle(module._id)}
+        onClick={() =>
+          onToggle(module._id)
+        }
         className="flex w-full items-center gap-3 p-4 text-left transition hover:bg-amber-950/10"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-900/30 bg-amber-950/20 text-amber-400">
@@ -1767,32 +2436,55 @@ const CurriculumModule = ({
         </div>
 
         {expanded ? (
-          <ChevronDown size={16} className="shrink-0 text-slate-600" />
+          <ChevronDown
+            size={16}
+            className="shrink-0 text-slate-600"
+          />
         ) : (
-          <ChevronRight size={16} className="shrink-0 text-slate-600" />
+          <ChevronRight
+            size={16}
+            className="shrink-0 text-slate-600"
+          />
         )}
       </button>
 
       {expanded && (
         <div className="border-t border-slate-800/80 p-2">
-          {module.lectures.map((lecture) => (
-            <LectureItem
-              key={lecture._id}
-              lecture={lecture}
-              selected={String(selectedLecture?._id) === String(lecture._id)}
-              completed={isLectureCompleted(lecture._id)}
-              onClick={() => onSelectLecture(lecture)}
-            />
-          ))}
+          {module.lectures.map(
+            (lecture) => (
+              <LectureItem
+                key={lecture._id}
+                lecture={lecture}
+                selected={
+                  String(
+                    selectedLecture?._id,
+                  ) ===
+                  String(lecture._id)
+                }
+                completed={isLectureCompleted(
+                  lecture._id,
+                )}
+                onClick={() =>
+                  onSelectLecture(
+                    lecture,
+                  )
+                }
+              />
+            ),
+          )}
 
           {module.quiz && (
             <button
               type="button"
-              onClick={() => onOpenQuiz(module)}
+              onClick={() =>
+                onOpenQuiz(module)
+              }
               className="mt-2 flex w-full items-center gap-3 rounded-xl border border-amber-900/30 bg-amber-950/10 p-3 text-left transition hover:border-amber-700/50 hover:bg-amber-950/20"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
-                <ClipboardCheck size={15} />
+                <ClipboardCheck
+                  size={15}
+                />
               </div>
 
               <div className="min-w-0 flex-1">
@@ -1801,11 +2493,15 @@ const CurriculumModule = ({
                 </p>
 
                 <p className="mt-1 text-[9px] text-slate-600">
-                  Complete all lectures to unlock
+                  Complete all
+                  lectures to unlock
                 </p>
               </div>
 
-              <ChevronRight size={15} className="text-slate-700" />
+              <ChevronRight
+                size={15}
+                className="text-slate-700"
+              />
             </button>
           )}
         </div>
@@ -1818,7 +2514,12 @@ const CurriculumModule = ({
 // LECTURE ITEM
 // =====================================================
 
-const LectureItem = ({ lecture, selected, completed, onClick }) => {
+const LectureItem = ({
+  lecture,
+  selected,
+  completed,
+  onClick,
+}) => {
   return (
     <button
       type="button"
@@ -1838,7 +2539,11 @@ const LectureItem = ({ lecture, selected, completed, onClick }) => {
               : "bg-slate-900 text-slate-600"
         }`}
       >
-        {completed ? <CheckCircle2 size={15} /> : <PlayCircle size={15} />}
+        {completed ? (
+          <CheckCircle2 size={15} />
+        ) : (
+          <PlayCircle size={15} />
+        )}
       </div>
 
       <div className="min-w-0 flex-1">
@@ -1849,11 +2554,13 @@ const LectureItem = ({ lecture, selected, completed, onClick }) => {
               : "text-slate-400 group-hover:text-slate-200"
           }`}
         >
-          {lecture.lectureTitle || lecture.title}
+          {lecture.lectureTitle ||
+            lecture.title}
         </p>
 
         <p className="mt-1 text-[9px] text-slate-700">
-          Lecture {lecture.order || ""}
+          Lecture{" "}
+          {lecture.order || ""}
         </p>
       </div>
 
@@ -1880,7 +2587,9 @@ const LectureNavigation = ({
     <div className="mt-5 grid grid-cols-2 gap-3">
       <button
         type="button"
-        disabled={currentLectureIndex <= 0}
+        disabled={
+          currentLectureIndex <= 0
+        }
         onClick={onPrevious}
         className="flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-[#0b0e10] px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 transition hover:border-amber-800/40 hover:text-amber-400 disabled:cursor-not-allowed disabled:opacity-30"
       >
@@ -1891,7 +2600,9 @@ const LectureNavigation = ({
       <button
         type="button"
         disabled={
-          currentLectureIndex === -1 || currentLectureIndex >= totalLectures - 1
+          currentLectureIndex === -1 ||
+          currentLectureIndex >=
+            totalLectures - 1
         }
         onClick={onNext}
         className="flex items-center justify-center gap-2 rounded-2xl border border-amber-900/30 bg-amber-950/10 px-4 py-4 text-[10px] font-black uppercase tracking-widest text-amber-400 transition hover:bg-amber-950/20 disabled:cursor-not-allowed disabled:opacity-30"
@@ -1907,14 +2618,23 @@ const LectureNavigation = ({
 // MODULE QUIZ REQUIREMENT
 // =====================================================
 
-const ModuleQuizRequirement = ({ modules, onOpenQuiz }) => {
-  const incompleteModules = modules.filter(
-    (module) => module.totalLectures > 0 && !module.allLecturesCompleted,
-  );
+const ModuleQuizRequirement = ({
+  modules,
+  onOpenQuiz,
+}) => {
+  const incompleteModules =
+    modules.filter(
+      (module) =>
+        module.totalLectures > 0 &&
+        !module.allLecturesCompleted,
+    );
 
-  const completedModules = modules.filter(
-    (module) => module.totalLectures > 0 && module.allLecturesCompleted,
-  );
+  const completedModules =
+    modules.filter(
+      (module) =>
+        module.totalLectures > 0 &&
+        module.allLecturesCompleted,
+    );
 
   return (
     <section className="mt-6 overflow-hidden rounded-3xl border border-amber-900/40 bg-gradient-to-br from-amber-950/20 via-[#0d1012] to-[#08090a] p-5">
@@ -1929,54 +2649,77 @@ const ModuleQuizRequirement = ({ modules, onOpenQuiz }) => {
           </h3>
 
           <p className="mt-1 text-xs leading-6 text-slate-500">
-            Complete each module's lectures and pass its quiz to continue your
-            journey.
+            Complete each module's
+            lectures and pass its quiz
+            to continue your journey.
           </p>
         </div>
       </div>
 
       <div className="mt-5 space-y-2">
-        {completedModules.map((module) => (
-          <button
-            key={module._id}
-            type="button"
-            onClick={() => onOpenQuiz(module)}
-            className="flex w-full items-center gap-3 rounded-xl border border-emerald-900/30 bg-emerald-950/10 p-3 text-left transition hover:bg-emerald-950/20"
-          >
-            <CheckCircle2 size={17} className="text-emerald-400" />
+        {completedModules.map(
+          (module) => (
+            <button
+              key={module._id}
+              type="button"
+              onClick={() =>
+                onOpenQuiz(module)
+              }
+              className="flex w-full items-center gap-3 rounded-xl border border-emerald-900/30 bg-emerald-950/10 p-3 text-left transition hover:bg-emerald-950/20"
+            >
+              <CheckCircle2
+                size={17}
+                className="text-emerald-400"
+              />
 
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-black text-slate-200">
-                {module.moduleTitle}
-              </p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-black text-slate-200">
+                  {module.moduleTitle}
+                </p>
 
-              <p className="mt-1 text-[9px] uppercase tracking-widest text-emerald-500">
-                Ready for quiz
-              </p>
+                <p className="mt-1 text-[9px] uppercase tracking-widest text-emerald-500">
+                  Ready for quiz
+                </p>
+              </div>
+
+              <ChevronRight
+                size={16}
+                className="text-emerald-500"
+              />
+            </button>
+          ),
+        )}
+
+        {incompleteModules.map(
+          (module) => (
+            <div
+              key={module._id}
+              className="flex items-center gap-3 rounded-xl border border-slate-800 bg-black/20 p-3"
+            >
+              <Lock
+                size={17}
+                className="text-slate-700"
+              />
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-black text-slate-500">
+                  {module.moduleTitle}
+                </p>
+
+                <p className="mt-1 text-[9px] uppercase tracking-widest text-slate-700">
+                  {
+                    module.completedCount
+                  }
+                  /
+                  {
+                    module.totalLectures
+                  }{" "}
+                  completed
+                </p>
+              </div>
             </div>
-
-            <ChevronRight size={16} className="text-emerald-500" />
-          </button>
-        ))}
-
-        {incompleteModules.map((module) => (
-          <div
-            key={module._id}
-            className="flex items-center gap-3 rounded-xl border border-slate-800 bg-black/20 p-3"
-          >
-            <Lock size={17} className="text-slate-700" />
-
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-black text-slate-500">
-                {module.moduleTitle}
-              </p>
-
-              <p className="mt-1 text-[9px] uppercase tracking-widest text-slate-700">
-                {module.completedCount}/{module.totalLectures} completed
-              </p>
-            </div>
-          </div>
-        ))}
+          ),
+        )}
       </div>
     </section>
   );
@@ -1986,27 +2729,30 @@ const ModuleQuizRequirement = ({ modules, onOpenQuiz }) => {
 // LEGACY COURSE COMPLETION
 // =====================================================
 
-const LegacyCourseCompleted = () => {
-  return (
-    <section className="mt-6 rounded-3xl border border-emerald-900/30 bg-emerald-950/10 p-6">
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-950/30 text-emerald-400">
-          <Trophy size={22} />
-        </div>
+const LegacyCourseCompleted =
+  () => {
+    return (
+      <section className="mt-6 rounded-3xl border border-emerald-900/30 bg-emerald-950/10 p-6">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-950/30 text-emerald-400">
+            <Trophy size={22} />
+          </div>
 
-        <div>
-          <h3 className="text-sm font-black uppercase tracking-widest text-emerald-300">
-            Course Completed
-          </h3>
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-widest text-emerald-300">
+              Course Completed
+            </h3>
 
-          <p className="mt-1 text-xs text-slate-500">
-            You have completed every lecture in this course.
-          </p>
+            <p className="mt-1 text-xs text-slate-500">
+              You have completed
+              every lecture in this
+              course.
+            </p>
+          </div>
         </div>
-      </div>
-    </section>
-  );
-};
+      </section>
+    );
+  };
 
 // =====================================================
 // SMALL COMPONENTS
@@ -2024,7 +2770,10 @@ const ScrollIcon = () => (
   </div>
 );
 
-const ShortcutRow = ({ label, shortcut }) => (
+const ShortcutRow = ({
+  label,
+  shortcut,
+}) => (
   <div className="flex items-center justify-between">
     <span>{label}</span>
 
@@ -2034,12 +2783,20 @@ const ShortcutRow = ({ label, shortcut }) => (
   </div>
 );
 
-const StatBadge = ({ icon, value, label }) => (
+const StatBadge = ({
+  icon,
+  value,
+  label,
+}) => (
   <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-black/20 px-3 py-2">
-    <span className="text-amber-500">{icon}</span>
+    <span className="text-amber-500">
+      {icon}
+    </span>
 
     <div>
-      <p className="text-xs font-black text-slate-200">{value}</p>
+      <p className="text-xs font-black text-slate-200">
+        {value}
+      </p>
 
       <p className="text-[8px] font-bold uppercase tracking-widest text-slate-700">
         {label}
@@ -2052,16 +2809,29 @@ const StatBadge = ({ icon, value, label }) => (
 // FILE SIZE
 // =====================================================
 
-const formatFileSize = (bytes) => {
+const formatFileSize = (
+  bytes,
+) => {
   if (!bytes) return "0 B";
 
-  const units = ["B", "KB", "MB", "GB"];
+  const units = [
+    "B",
+    "KB",
+    "MB",
+    "GB",
+  ];
 
-  const index = Math.floor(Math.log(bytes) / Math.log(1024));
+  const index = Math.floor(
+    Math.log(bytes) /
+      Math.log(1024),
+  );
 
-  return `${(bytes / Math.pow(1024, index)).toFixed(index === 0 ? 0 : 1)} ${
-    units[index] || "B"
-  }`;
+  return `${(
+    bytes /
+    Math.pow(1024, index)
+  ).toFixed(
+    index === 0 ? 0 : 1,
+  )} ${units[index] || "B"}`;
 };
 
 export default StudentCourseLearning;

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 
@@ -6,206 +5,8 @@ import StudentSidebar from "../components/student/StudentSidebar";
 import StudentHeader from "../components/student/StudentHeader";
 
 function StudentDashboardLayout() {
-  const [mousePosition, setMousePosition] = useState({
-    x: 0,
-    y: 0,
-  });
-
-  const [cursorVisible, setCursorVisible] = useState(false);
-
-  // ============================================================
-  // PREMIUM CURSOR TRACKING
-  // ============================================================
-
-  useEffect(() => {
-    const handleMouseMove = (event) => {
-      setMousePosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      setCursorVisible(true);
-    };
-
-    const handleMouseLeave = () => {
-      setCursorVisible(false);
-    };
-
-    window.addEventListener(
-      "mousemove",
-      handleMouseMove
-    );
-
-    document.addEventListener(
-      "mouseleave",
-      handleMouseLeave
-    );
-
-    return () => {
-      window.removeEventListener(
-        "mousemove",
-        handleMouseMove
-      );
-
-      document.removeEventListener(
-        "mouseleave",
-        handleMouseLeave
-      );
-    };
-  }, []);
-
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#06080a] text-slate-200">
-      {/* ========================================================
-          PREMIUM CURSOR SYSTEM
-      ======================================================== */}
-
-      {/* Main golden spotlight */}
-
-      <div
-        className={`
-          pointer-events-none
-          fixed
-          z-[999]
-          h-[420px]
-          w-[420px]
-          -translate-x-1/2
-          -translate-y-1/2
-          rounded-full
-          bg-amber-500/[0.045]
-          blur-[90px]
-          transition-opacity
-          duration-300
-          ${cursorVisible ? "opacity-100" : "opacity-0"}
-        `}
-        style={{
-          left: mousePosition.x,
-          top: mousePosition.y,
-        }}
-      />
-
-      {/* Secondary icy aura */}
-
-      <div
-        className={`
-          pointer-events-none
-          fixed
-          z-[998]
-          h-[180px]
-          w-[180px]
-          -translate-x-1/2
-          -translate-y-1/2
-          rounded-full
-          bg-cyan-400/[0.035]
-          blur-[60px]
-          transition-opacity
-          duration-300
-          ${cursorVisible ? "opacity-100" : "opacity-0"}
-        `}
-        style={{
-          left: mousePosition.x,
-          top: mousePosition.y,
-        }}
-      />
-
-      {/* ========================================================
-          CURSOR RING
-      ======================================================== */}
-
-      <div
-        className={`
-          pointer-events-none
-          fixed
-          z-[1001]
-          h-8
-          w-8
-          -translate-x-1/2
-          -translate-y-1/2
-          rounded-full
-          border
-          border-amber-500/40
-          transition-opacity
-          duration-300
-          ${cursorVisible ? "opacity-100" : "opacity-0"}
-        `}
-        style={{
-          left: mousePosition.x,
-          top: mousePosition.y,
-        }}
-      >
-        {/* Inner dot */}
-
-        <div
-          className="
-            absolute
-            left-1/2
-            top-1/2
-            h-1
-            w-1
-            -translate-x-1/2
-            -translate-y-1/2
-            rounded-full
-            bg-amber-400
-            shadow-[0_0_12px_rgba(251,191,36,.9)]
-          "
-        />
-
-        {/* Top crosshair */}
-
-        <span
-          className="
-            absolute
-            left-1/2
-            top-[-7px]
-            h-2
-            w-px
-            -translate-x-1/2
-            bg-amber-500/50
-          "
-        />
-
-        {/* Bottom crosshair */}
-
-        <span
-          className="
-            absolute
-            bottom-[-7px]
-            left-1/2
-            h-2
-            w-px
-            -translate-x-1/2
-            bg-amber-500/50
-          "
-        />
-
-        {/* Left crosshair */}
-
-        <span
-          className="
-            absolute
-            left-[-7px]
-            top-1/2
-            h-px
-            w-2
-            -translate-y-1/2
-            bg-amber-500/50
-          "
-        />
-
-        {/* Right crosshair */}
-
-        <span
-          className="
-            absolute
-            right-[-7px]
-            top-1/2
-            h-px
-            w-2
-            -translate-y-1/2
-            bg-amber-500/50
-          "
-        />
-      </div>
 
       {/* ========================================================
           AMBIENT BACKGROUND
@@ -219,8 +20,9 @@ function StudentDashboardLayout() {
           z-0
           overflow-hidden
         "
+        aria-hidden="true"
       >
-        {/* Golden atmospheric glow */}
+        {/* Kingdom glow */}
 
         <div
           className="
@@ -233,10 +35,11 @@ function StudentDashboardLayout() {
             bg-amber-950/[0.08]
             blur-[140px]
             animate-kingdom-glow
+            will-change-transform
           "
         />
 
-        {/* Ice atmospheric glow */}
+        {/* Winter glow */}
 
         <div
           className="
@@ -249,10 +52,11 @@ function StudentDashboardLayout() {
             bg-cyan-950/[0.07]
             blur-[140px]
             animate-winter-glow
+            will-change-transform
           "
         />
 
-        {/* Center darkness */}
+        {/* Vignette */}
 
         <div
           className="
@@ -262,14 +66,10 @@ function StudentDashboardLayout() {
           "
         />
 
-        {/* Stone grid */}
+        {/* Grid */}
 
         <div
-          className="
-            absolute
-            inset-0
-            opacity-[0.025]
-          "
+          className="absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage: `
               linear-gradient(
@@ -286,7 +86,7 @@ function StudentDashboardLayout() {
           }}
         />
 
-        {/* Moving fog */}
+        {/* Fog */}
 
         <div
           className="
@@ -299,6 +99,7 @@ function StudentDashboardLayout() {
             bg-white/[0.012]
             blur-[80px]
             animate-dashboard-fog
+            will-change-transform
           "
         />
       </div>
@@ -307,16 +108,85 @@ function StudentDashboardLayout() {
           PARTICLES
       ======================================================== */}
 
-      <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden">
-        <span className="absolute left-[18%] top-[20%] h-1 w-1 rounded-full bg-amber-400/40 animate-particle-1" />
+      <div
+        className="
+          pointer-events-none
+          fixed
+          inset-0
+          z-[1]
+          overflow-hidden
+        "
+        aria-hidden="true"
+      >
+        <span
+          className="
+            absolute
+            left-[18%]
+            top-[20%]
+            h-1
+            w-1
+            rounded-full
+            bg-amber-400/40
+            animate-particle-1
+            will-change-transform
+          "
+        />
 
-        <span className="absolute left-[43%] top-[65%] h-1 w-1 rounded-full bg-cyan-300/30 animate-particle-2" />
+        <span
+          className="
+            absolute
+            left-[43%]
+            top-[65%]
+            h-1
+            w-1
+            rounded-full
+            bg-cyan-300/30
+            animate-particle-2
+            will-change-transform
+          "
+        />
 
-        <span className="absolute left-[72%] top-[28%] h-1 w-1 rounded-full bg-amber-300/30 animate-particle-3" />
+        <span
+          className="
+            absolute
+            left-[72%]
+            top-[28%]
+            h-1
+            w-1
+            rounded-full
+            bg-amber-300/30
+            animate-particle-3
+            will-change-transform
+          "
+        />
 
-        <span className="absolute left-[86%] top-[72%] h-1 w-1 rounded-full bg-cyan-400/30 animate-particle-1" />
+        <span
+          className="
+            absolute
+            left-[86%]
+            top-[72%]
+            h-1
+            w-1
+            rounded-full
+            bg-cyan-400/30
+            animate-particle-1
+            will-change-transform
+          "
+        />
 
-        <span className="absolute left-[55%] top-[15%] h-1 w-1 rounded-full bg-white/20 animate-particle-2" />
+        <span
+          className="
+            absolute
+            left-[55%]
+            top-[15%]
+            h-1
+            w-1
+            rounded-full
+            bg-white/20
+            animate-particle-2
+            will-change-transform
+          "
+        />
       </div>
 
       {/* ========================================================
@@ -329,17 +199,13 @@ function StudentDashboardLayout() {
           MAIN AREA
       ======================================================== */}
 
-      <div className="relative z-10 lg:ml-72">
-        {/* Header */}
+      <div className="relative z-10 lg:ml-[275px]">
 
         <StudentHeader />
 
-        {/* ======================================================
-            PAGE CONTENT
-        ====================================================== */}
-
         <main className="relative pt-[72px]">
-          {/* Content atmosphere */}
+
+          {/* Top content glow */}
 
           <div
             className="
@@ -353,7 +219,10 @@ function StudentDashboardLayout() {
               from-amber-950/[0.035]
               to-transparent
             "
+            aria-hidden="true"
           />
+
+          {/* Page content */}
 
           <div
             className="
@@ -369,11 +238,12 @@ function StudentDashboardLayout() {
           >
             <Outlet />
           </div>
+
         </main>
       </div>
 
       {/* ========================================================
-          PREMIUM TOP BORDER
+          TOP BORDER
       ======================================================== */}
 
       <div
@@ -384,17 +254,18 @@ function StudentDashboardLayout() {
           right-0
           top-0
           z-[100]
-          h-[1px]
+          h-px
           bg-gradient-to-r
           from-transparent
           via-amber-500/60
           to-transparent
           shadow-[0_0_15px_rgba(245,158,11,.25)]
         "
+        aria-hidden="true"
       />
 
       {/* ========================================================
-          PREMIUM BOTTOM BORDER
+          BOTTOM BORDER
       ======================================================== */}
 
       <div
@@ -405,16 +276,17 @@ function StudentDashboardLayout() {
           left-0
           right-0
           z-[100]
-          h-[1px]
+          h-px
           bg-gradient-to-r
           from-transparent
           via-cyan-700/30
           to-transparent
         "
+        aria-hidden="true"
       />
 
       {/* ========================================================
-          AMBIENT CORNER SIGIL
+          AMBIENT SIGIL
       ======================================================== */}
 
       <div
@@ -428,6 +300,7 @@ function StudentDashboardLayout() {
           opacity-[0.06]
           lg:block
         "
+        aria-hidden="true"
       >
         <Sparkles
           size={100}
@@ -435,6 +308,7 @@ function StudentDashboardLayout() {
           className="
             text-amber-400
             animate-sigil
+            will-change-transform
           "
         />
       </div>
@@ -444,6 +318,10 @@ function StudentDashboardLayout() {
       ======================================================== */}
 
       <style>{`
+        /* ======================================================
+           KINGDOM GLOW
+        ====================================================== */
+
         @keyframes kingdomGlow {
           0% {
             transform: scale(1);
@@ -465,19 +343,23 @@ function StudentDashboardLayout() {
           animation: kingdomGlow 9s ease-in-out infinite;
         }
 
+        /* ======================================================
+           WINTER GLOW
+        ====================================================== */
+
         @keyframes winterGlow {
           0% {
-            transform: translate(0, 0) scale(1);
+            transform: translate3d(0, 0, 0) scale(1);
             opacity: .25;
           }
 
           50% {
-            transform: translate(-30px, -20px) scale(1.1);
+            transform: translate3d(-30px, -20px, 0) scale(1.1);
             opacity: .5;
           }
 
           100% {
-            transform: translate(0, 0) scale(1);
+            transform: translate3d(0, 0, 0) scale(1);
             opacity: .25;
           }
         }
@@ -486,19 +368,23 @@ function StudentDashboardLayout() {
           animation: winterGlow 11s ease-in-out infinite;
         }
 
+        /* ======================================================
+           DASHBOARD FOG
+        ====================================================== */
+
         @keyframes dashboardFog {
           0% {
-            transform: translateX(-10%);
+            transform: translate3d(-10%, 0, 0);
             opacity: .15;
           }
 
           50% {
-            transform: translateX(30%);
+            transform: translate3d(30%, 0, 0);
             opacity: .3;
           }
 
           100% {
-            transform: translateX(-10%);
+            transform: translate3d(-10%, 0, 0);
             opacity: .15;
           }
         }
@@ -507,9 +393,13 @@ function StudentDashboardLayout() {
           animation: dashboardFog 18s ease-in-out infinite;
         }
 
+        /* ======================================================
+           PARTICLE 1
+        ====================================================== */
+
         @keyframes particleOne {
           0% {
-            transform: translateY(20px);
+            transform: translate3d(0, 20px, 0);
             opacity: 0;
           }
 
@@ -522,7 +412,7 @@ function StudentDashboardLayout() {
           }
 
           100% {
-            transform: translateY(-80px);
+            transform: translate3d(0, -80px, 0);
             opacity: 0;
           }
         }
@@ -531,9 +421,13 @@ function StudentDashboardLayout() {
           animation: particleOne 7s ease-in-out infinite;
         }
 
+        /* ======================================================
+           PARTICLE 2
+        ====================================================== */
+
         @keyframes particleTwo {
           0% {
-            transform: translate(0, 20px);
+            transform: translate3d(0, 20px, 0);
             opacity: 0;
           }
 
@@ -542,7 +436,7 @@ function StudentDashboardLayout() {
           }
 
           100% {
-            transform: translate(30px, -90px);
+            transform: translate3d(30px, -90px, 0);
             opacity: 0;
           }
         }
@@ -551,19 +445,23 @@ function StudentDashboardLayout() {
           animation: particleTwo 10s ease-in-out infinite;
         }
 
+        /* ======================================================
+           PARTICLE 3
+        ====================================================== */
+
         @keyframes particleThree {
           0% {
-            transform: translateY(0);
+            transform: translate3d(0, 0, 0);
             opacity: .1;
           }
 
           50% {
-            transform: translateY(-50px);
+            transform: translate3d(0, -50px, 0);
             opacity: .5;
           }
 
           100% {
-            transform: translateY(0);
+            transform: translate3d(0, 0, 0);
             opacity: .1;
           }
         }
@@ -571,6 +469,10 @@ function StudentDashboardLayout() {
         .animate-particle-3 {
           animation: particleThree 8s ease-in-out infinite;
         }
+
+        /* ======================================================
+           SIGIL
+        ====================================================== */
 
         @keyframes sigil {
           0% {
@@ -589,6 +491,10 @@ function StudentDashboardLayout() {
         .animate-sigil {
           animation: sigil 30s linear infinite;
         }
+
+        /* ======================================================
+           REDUCED MOTION
+        ====================================================== */
 
         @media (prefers-reduced-motion: reduce) {
           .animate-kingdom-glow,
