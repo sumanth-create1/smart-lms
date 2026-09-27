@@ -9,6 +9,7 @@ export const getStudentDashboard = async (req, res) => {
   try {
     console.log("🔥 Dashboard controller started");
     console.log("👤 Student ID:", req.user?._id);
+
     const studentId = req.user._id;
 
     // ==========================================
@@ -22,11 +23,14 @@ export const getStudentDashboard = async (req, res) => {
     console.log("✅ Study sessions loaded:", studySessions.length);
 
     const totalStudySeconds = studySessions.reduce(
-      (total, session) => total + session.durationSeconds,
+      (total, session) =>
+        total + Number(session.durationSeconds || 0),
       0,
     );
 
-    const learningHours = Number((totalStudySeconds / 3600).toFixed(2));
+    const learningHours = Number(
+      (totalStudySeconds / 3600).toFixed(2),
+    );
 
     // ==========================================
     // 2. GET ENROLLED COURSES
@@ -55,14 +59,25 @@ export const getStudentDashboard = async (req, res) => {
 
       if (!course) continue;
 
-      // Get all lectures
+      // ------------------------------------------
+      // GET ALL LECTURES
+      // ------------------------------------------
+
       const lectures = await Lecture.find({
         course: course._id,
-      }).sort({ createdAt: 1 });
+      }).sort({
+        createdAt: 1,
+      });
 
-      console.log("📚 Processing enrollment:", enrollment._id);
+      console.log(
+        "📚 Processing enrollment:",
+        enrollment._id,
+      );
 
-      // Get student's progress
+      // ------------------------------------------
+      // GET STUDENT PROGRESS
+      // ------------------------------------------
+
       const progress = await CourseProgress.findOne({
         student: studentId,
         course: course._id,
@@ -70,9 +85,9 @@ export const getStudentDashboard = async (req, res) => {
 
       console.log("✅ Course progress loaded");
 
-      // ==========================================
+      // ------------------------------------------
       // COUNT LESSONS
-      // ==========================================
+      // ------------------------------------------
 
       const totalLessons = lectures.length;
 
@@ -84,28 +99,32 @@ export const getStudentDashboard = async (req, res) => {
         ).length;
       }
 
-      // ==========================================
-      // CALCULATE COURSE PROGRESS
-      // ==========================================
+      // ------------------------------------------
+      // COURSE PROGRESS
+      // ------------------------------------------
 
       const progressPercentage =
         totalLessons > 0
-          ? Math.round((completedLessons / totalLessons) * 100)
+          ? Math.round(
+              (completedLessons / totalLessons) * 100,
+            )
           : 0;
 
-      // ==========================================
+      // ------------------------------------------
       // CURRENT LESSON
-      // ==========================================
+      // ------------------------------------------
 
       let currentLesson = null;
 
-      // Only find current lesson if course
-      // is NOT completed
-      if (progressPercentage < 100 && lectures.length > 0) {
+      if (
+        progressPercentage < 100 &&
+        lectures.length > 0
+      ) {
         // Find first incomplete lecture
-        const incompleteLectureProgress = progress?.lectures.find(
-          (item) => item.completed === false,
-        );
+        const incompleteLectureProgress =
+          progress?.lectures.find(
+            (item) => item.completed === false,
+          );
 
         if (incompleteLectureProgress) {
           const lecture = lectures.find(
@@ -118,13 +137,15 @@ export const getStudentDashboard = async (req, res) => {
             currentLesson = {
               lectureId: lecture._id,
               lectureTitle: lecture.lectureTitle,
-              watchedSeconds: incompleteLectureProgress.watchedSeconds,
-              completed: incompleteLectureProgress.completed,
+              watchedSeconds:
+                incompleteLectureProgress.watchedSeconds,
+              completed:
+                incompleteLectureProgress.completed,
             };
           }
         }
 
-        // If student has not started any lecture
+        // If no lecture has been started
         if (!currentLesson) {
           const firstLecture = lectures[0];
 
@@ -137,9 +158,9 @@ export const getStudentDashboard = async (req, res) => {
         }
       }
 
-      // ==========================================
+      // ------------------------------------------
       // ADD COURSE
-      // ==========================================
+      // ------------------------------------------
 
       courses.push({
         _id: course._id,
@@ -173,10 +194,14 @@ export const getStudentDashboard = async (req, res) => {
 
     const studyDays = await StudySession.find({
       student: studentId,
-      durationSeconds: { $gt: 0 },
+      durationSeconds: {
+        $gt: 0,
+      },
     })
       .select("startedAt")
-      .sort({ startedAt: -1 });
+      .sort({
+        startedAt: -1,
+      });
 
     const uniqueStudyDates = new Set();
 
@@ -191,8 +216,12 @@ export const getStudentDashboard = async (req, res) => {
       uniqueStudyDates.add(dateString);
     });
 
-    const sortedStudyDates = Array.from(uniqueStudyDates).sort(
-      (a, b) => new Date(b) - new Date(a),
+    const sortedStudyDates = Array.from(
+      uniqueStudyDates,
+    ).sort(
+      (a, b) =>
+        new Date(b).getTime() -
+        new Date(a).getTime(),
     );
 
     let studyStreak = 0;
@@ -207,7 +236,9 @@ export const getStudentDashboard = async (req, res) => {
 
       const yesterday = new Date(today);
 
-      yesterday.setDate(today.getDate() - 1);
+      yesterday.setDate(
+        today.getDate() - 1,
+      );
 
       const yesterdayString =
         `${yesterday.getFullYear()}-` +
@@ -221,13 +252,23 @@ export const getStudentDashboard = async (req, res) => {
       ) {
         studyStreak = 1;
 
-        for (let i = 1; i < sortedStudyDates.length; i++) {
-          const previousDate = new Date(sortedStudyDates[i - 1]);
+        for (
+          let i = 1;
+          i < sortedStudyDates.length;
+          i++
+        ) {
+          const previousDate = new Date(
+            sortedStudyDates[i - 1],
+          );
 
-          const currentDate = new Date(sortedStudyDates[i]);
+          const currentDate = new Date(
+            sortedStudyDates[i],
+          );
 
           const difference = Math.round(
-            (previousDate - currentDate) / (1000 * 60 * 60 * 24),
+            (previousDate.getTime() -
+              currentDate.getTime()) /
+              (1000 * 60 * 60 * 24),
           );
 
           if (difference === 1) {
@@ -240,7 +281,7 @@ export const getStudentDashboard = async (req, res) => {
     }
 
     // ==========================================
-    // 6. WEEKLY GOAL
+    // 6. WEEKLY GOAL + WEEKLY ACTIVITY
     // ==========================================
 
     const WEEKLY_GOAL_HOURS = 10;
@@ -249,68 +290,201 @@ export const getStudentDashboard = async (req, res) => {
 
     const dayOfWeek = today.getDay();
 
-    const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    // Monday = 0 ... Sunday = 6
+    const daysFromMonday =
+      dayOfWeek === 0
+        ? 6
+        : dayOfWeek - 1;
 
     const startOfWeek = new Date(today);
 
-    startOfWeek.setDate(today.getDate() - daysFromMonday);
+    startOfWeek.setDate(
+      today.getDate() - daysFromMonday,
+    );
 
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfToday = new Date(today);
-
-    endOfToday.setHours(23, 59, 59, 999);
-
-    const weeklySessions = await StudySession.find({
-      student: studentId,
-      startedAt: {
-        $gte: startOfWeek,
-        $lte: endOfToday,
-      },
-    });
-
-    const weeklyStudySeconds = weeklySessions.reduce(
-      (total, session) => total + session.durationSeconds,
+    startOfWeek.setHours(
+      0,
+      0,
+      0,
       0,
     );
 
-    const weeklyStudyHours = Number((weeklyStudySeconds / 3600).toFixed(2));
+    const endOfToday = new Date(today);
 
-    const weeklyGoalPercentage = Math.min(
-      Math.round((weeklyStudyHours / WEEKLY_GOAL_HOURS) * 100),
-      100,
+    endOfToday.setHours(
+      23,
+      59,
+      59,
+      999,
+    );
+
+    // ------------------------------------------
+    // GET THIS WEEK'S STUDY SESSIONS
+    // ------------------------------------------
+
+    const weeklySessions =
+      await StudySession.find({
+        student: studentId,
+
+        startedAt: {
+          $gte: startOfWeek,
+          $lte: endOfToday,
+        },
+      });
+
+    console.log(
+      "📊 Weekly study sessions:",
+      weeklySessions.length,
+    );
+
+    // ------------------------------------------
+    // WEEKLY TOTAL
+    // ------------------------------------------
+
+    const weeklyStudySeconds =
+      weeklySessions.reduce(
+        (total, session) =>
+          total +
+          Number(
+            session.durationSeconds || 0,
+          ),
+        0,
+      );
+
+    const weeklyStudyHours = Number(
+      (
+        weeklyStudySeconds / 3600
+      ).toFixed(2),
+    );
+
+    const weeklyGoalPercentage =
+      Math.min(
+        Math.round(
+          (weeklyStudyHours /
+            WEEKLY_GOAL_HOURS) *
+            100,
+        ),
+        100,
+      );
+
+    // ------------------------------------------
+    // WEEKLY ACTIVITY
+    // ------------------------------------------
+
+    // Monday -> Sunday
+    const WEEK_DAYS = [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun",
+    ];
+
+    const weeklyActivity = WEEK_DAYS.map(
+      (day) => ({
+        day,
+        hours: 0,
+      }),
+    );
+
+    // Add StudySession duration to correct day
+    weeklySessions.forEach((session) => {
+      if (!session.startedAt) return;
+
+      const sessionDate = new Date(
+        session.startedAt,
+      );
+
+      // JS:
+      // Sunday = 0
+      // Monday = 1
+      // ...
+      // Saturday = 6
+
+      const jsDay = sessionDate.getDay();
+
+      // Convert Sunday-first index
+      // into Monday-first index
+      const mondayIndex =
+        jsDay === 0
+          ? 6
+          : jsDay - 1;
+
+      if (
+        mondayIndex >= 0 &&
+        mondayIndex < 7
+      ) {
+        weeklyActivity[
+          mondayIndex
+        ].hours +=
+          Number(
+            session.durationSeconds || 0,
+          ) / 3600;
+      }
+    });
+
+    // Round hours for frontend
+    weeklyActivity.forEach((item) => {
+      item.hours = Number(
+        item.hours.toFixed(2),
+      );
+    });
+
+    console.log(
+      "📈 Weekly activity:",
+      weeklyActivity,
     );
 
     // ==========================================
     // 7. RECENT ACTIVITY
     // ==========================================
 
-    console.log("🔄 Fetching recent activity...");
-    const recentActivity = await Activity.find({
-      student: studentId,
-    })
-      .populate("course", "courseTitle")
-      .populate("lecture", "lectureTitle")
-      .sort({
-        createdAt: -1,
-      })
-      .limit(5);
+    console.log(
+      "🔄 Fetching recent activity...",
+    );
 
-    console.log("✅ Activity loaded:", recentActivity.length);
+    const recentActivity =
+      await Activity.find({
+        student: studentId,
+      })
+        .populate(
+          "course",
+          "courseTitle",
+        )
+        .populate(
+          "lecture",
+          "lectureTitle",
+        )
+        .sort({
+          createdAt: -1,
+        })
+        .limit(5);
+
+    console.log(
+      "✅ Activity loaded:",
+      recentActivity.length,
+    );
 
     // ==========================================
     // 8. XP INFORMATION
     // ==========================================
 
-    const studentXP = await StudentXP.findOne({
-      student: studentId,
-    }).lean();
+    const studentXP =
+      await StudentXP.findOne({
+        student: studentId,
+      }).lean();
 
-    const totalXP = studentXP?.totalXP ?? 0;
-    const level = studentXP?.level ?? 1;
+    const totalXP =
+      studentXP?.totalXP ?? 0;
+
+    const level =
+      studentXP?.level ?? 1;
 
     // Every level requires another 1000 XP
-    const nextLevelXp = level * 1000;
+    const nextLevelXp =
+      level * 1000;
 
     // ==========================================
     // 9. FINAL RESPONSE
@@ -320,17 +494,26 @@ export const getStudentDashboard = async (req, res) => {
       success: true,
 
       stats: {
-        enrolledCourses: courses.length,
+        // --------------------------------------
+        // COURSE STATS
+        // --------------------------------------
+
+        enrolledCourses:
+          courses.length,
 
         completedCourses,
+
+        // --------------------------------------
+        // LEARNING STATS
+        // --------------------------------------
 
         learningHours,
 
         studyStreak,
 
-        // ==========================================
+        // --------------------------------------
         // XP
-        // ==========================================
+        // --------------------------------------
 
         xp: {
           totalXP,
@@ -338,21 +521,45 @@ export const getStudentDashboard = async (req, res) => {
           nextLevelXp,
         },
 
+        // --------------------------------------
+        // WEEKLY GOAL
+        // --------------------------------------
+
         weeklyGoal: {
-          targetHours: WEEKLY_GOAL_HOURS,
+          targetHours:
+            WEEKLY_GOAL_HOURS,
 
-          completedHours: weeklyStudyHours,
+          completedHours:
+            weeklyStudyHours,
 
-          percentage: weeklyGoalPercentage,
+          percentage:
+            weeklyGoalPercentage,
         },
+
+        // --------------------------------------
+        // WEEKLY CHRONICLE
+        // --------------------------------------
+
+        weeklyActivity,
       },
 
+      // ----------------------------------------
+      // COURSES
+      // ----------------------------------------
+
       courses,
+
+      // ----------------------------------------
+      // RECENT ACTIVITY
+      // ----------------------------------------
 
       recentActivity,
     });
   } catch (error) {
-    console.error("Dashboard Error:", error);
+    console.error(
+      "Dashboard Error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,

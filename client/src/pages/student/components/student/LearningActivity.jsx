@@ -33,6 +33,7 @@ const ACTIVITY_STYLES = `
     0%, 100% {
       transform: translate3d(0, 0, 0);
     }
+
     50% {
       transform: translate3d(0, -4px, 0);
     }
@@ -190,6 +191,7 @@ const ActivityLoading = memo(() => {
       "
     >
       {/* STATIC BACKGROUND */}
+
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="
@@ -437,7 +439,6 @@ const EmptyActivity = memo(() => {
           className="text-amber-400"
         />
 
-        {/* STATIC RING */}
         <div
           className="
             absolute
@@ -575,7 +576,7 @@ const ActivityBar = memo(
           {/* BAR */}
 
           <div
-            className={`
+            className="
               relative
               w-full
               rounded-t-lg
@@ -586,7 +587,7 @@ const ActivityBar = memo(
               transition-[height]
               duration-700
               ease-out
-            `}
+            "
             style={{
               height: `${height}%`,
             }}
@@ -707,12 +708,25 @@ const LearningActivity = memo(
           ? totalHours / activeDays
           : 0;
 
+      // =================================================
+      // IMPORTANT:
+      // Check whether there is REAL activity.
+      //
+      // Backend can return 7 days even when every
+      // day has 0 hours.
+      // =================================================
+
+      const hasActivity = normalizedActivity.some(
+        (item) => item.hours > 0
+      );
+
       return {
         totalHours,
         activeDays,
         averageHours,
         strongestDay,
         maxHours,
+        hasActivity,
       };
     }, [normalizedActivity]);
 
@@ -722,6 +736,7 @@ const LearningActivity = memo(
       averageHours,
       strongestDay,
       maxHours,
+      hasActivity,
     } = statistics;
 
     // =================================================
@@ -997,7 +1012,6 @@ const LearningActivity = memo(
                 className="text-amber-400"
               />
 
-              {/* STATIC DOT */}
               <span
                 className="
                   absolute
@@ -1220,7 +1234,22 @@ const LearningActivity = memo(
               EMPTY / CHART
           ================================================= */}
 
-          {normalizedActivity.length === 0 ? (
+          {/*
+            IMPORTANT FIX:
+
+            The backend can return 7 days even when
+            every day has 0 hours.
+
+            So checking:
+
+              normalizedActivity.length === 0
+
+            is not enough.
+
+            We now check hasActivity instead.
+          */}
+
+          {!hasActivity ? (
             <EmptyActivity />
           ) : (
             <>
