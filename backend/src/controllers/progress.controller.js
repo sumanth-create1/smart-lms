@@ -1378,7 +1378,8 @@ const checkModuleCompletion = async ({
   // Find module
   // -------------------------------------------------
 
-  const module = await Module.findById(moduleId).lean();
+  const module = await Module.findById(moduleId)
+    .lean();
 
   if (!module) {
     return {
@@ -1386,6 +1387,8 @@ const checkModuleCompletion = async ({
       completed: false,
       lecturesCompleted: false,
       quizPassed: false,
+      totalLectures: 0,
+      completedLectures: 0,
     };
   }
 
@@ -1415,7 +1418,7 @@ const checkModuleCompletion = async ({
   }
 
   // -------------------------------------------------
-  // Find course progress
+  // Find student's course progress
   // -------------------------------------------------
 
   const courseProgress =
@@ -1437,15 +1440,20 @@ const checkModuleCompletion = async ({
         (progress) =>
           String(progress.lecture) ===
             String(lecture._id) &&
-          progress.completed === true,
-      ),
+          progress.completed === true
+      )
     ).length;
 
+  // -------------------------------------------------
+  // Check whether ALL lectures are completed
+  // -------------------------------------------------
+
   const lecturesCompleted =
+    lectures.length > 0 &&
     completedLectures === lectures.length;
 
   // -------------------------------------------------
-  // Find latest passed quiz attempt
+  // Find passed quiz attempt
   // -------------------------------------------------
 
   const passedQuiz =
@@ -1459,22 +1467,36 @@ const checkModuleCompletion = async ({
       })
       .lean();
 
-  const quizPassed = Boolean(passedQuiz);
+  const quizPassed =
+    Boolean(passedQuiz);
 
   // -------------------------------------------------
-  // Module completion
+  // Module is completed only when:
+  //
+  // 1. All lectures are completed
+  // 2. Quiz is passed
   // -------------------------------------------------
 
   const completed =
     lecturesCompleted &&
     quizPassed;
 
+  // -------------------------------------------------
+  // Return module status
+  // -------------------------------------------------
+
   return {
     exists: true,
+
     completed,
+
     lecturesCompleted,
+
     quizPassed,
-    totalLectures: lectures.length,
+
+    totalLectures:
+      lectures.length,
+
     completedLectures,
   };
 };
@@ -1484,7 +1506,10 @@ const checkModuleCompletion = async ({
 // GET /api/v1/module/:moduleId/access
 // =====================================================
 
-export const getModuleAccess = async (req, res) => {
+export const getModuleAccess = async (
+  req,
+  res,
+) => {
   try {
     const { moduleId } = req.params;
     const studentId = req.user._id;
@@ -1494,7 +1519,8 @@ export const getModuleAccess = async (req, res) => {
     // -------------------------------------------------
 
     const currentModule =
-      await Module.findById(moduleId).lean();
+      await Module.findById(moduleId)
+        .lean();
 
     if (!currentModule) {
       return res.status(404).json({
@@ -1504,7 +1530,7 @@ export const getModuleAccess = async (req, res) => {
     }
 
     // -------------------------------------------------
-    // Get all course modules
+    // Get all modules of this course
     // -------------------------------------------------
 
     const modules =
@@ -1530,12 +1556,26 @@ export const getModuleAccess = async (req, res) => {
     if (currentIndex === -1) {
       return res.status(404).json({
         success: false,
-        message: "Module not found in course.",
+        message:
+          "Module not found in course.",
       });
     }
 
     // -------------------------------------------------
+    // Check CURRENT module completion
+    // -------------------------------------------------
+
+    const currentStatus =
+      await checkModuleCompletion({
+        moduleId:
+          currentModule._id,
+        studentId,
+      });
+
+    // -------------------------------------------------
     // FIRST MODULE
+    //
+    // First module is always unlocked.
     // -------------------------------------------------
 
     if (currentIndex === 0) {
@@ -1544,8 +1584,26 @@ export const getModuleAccess = async (req, res) => {
 
         access: {
           isLocked: false,
-          isCompleted: false,
+
+          isUnlocked: true,
+
+          isCompleted:
+            currentStatus.completed,
+
+          lecturesCompleted:
+            currentStatus.lecturesCompleted,
+
+          quizPassed:
+            currentStatus.quizPassed,
+
+          totalLectures:
+            currentStatus.totalLectures,
+
+          completedLectures:
+            currentStatus.completedLectures,
+
           reason: null,
+
           previousModule: null,
         },
       });
@@ -1558,6 +1616,10 @@ export const getModuleAccess = async (req, res) => {
     const previousModule =
       modules[currentIndex - 1];
 
+    // -------------------------------------------------
+    // Check previous module completion
+    // -------------------------------------------------
+
     const previousStatus =
       await checkModuleCompletion({
         moduleId:
@@ -1566,11 +1628,46 @@ export const getModuleAccess = async (req, res) => {
       });
 
     // -------------------------------------------------
-    // ACCESS RESULT
+    // Current module access
+    //
+    // Previous module MUST be completely finished:
+    //
+    // 1. All previous lectures completed
+    // 2. Previous quiz passed
     // -------------------------------------------------
 
     const isLocked =
       !previousStatus.completed;
+
+    const isUnlocked =
+      !isLocked;
+
+    // -------------------------------------------------
+    // Lock reason
+    // -------------------------------------------------
+
+    let reason = null;
+
+    if (isLocked) {
+      if (
+        !previousStatus.lecturesCompleted
+      ) {
+        reason =
+          `Complete all lectures in ${previousModule.moduleTitle} first.`;
+      } else if (
+        !previousStatus.quizPassed
+      ) {
+        reason =
+          `Pass the quiz for ${previousModule.moduleTitle} first.`;
+      } else {
+        reason =
+          `Complete ${previousModule.moduleTitle} first.`;
+      }
+    }
+
+    // -------------------------------------------------
+    // Response
+    // -------------------------------------------------
 
     return res.status(200).json({
       success: true,
@@ -1578,23 +1675,49 @@ export const getModuleAccess = async (req, res) => {
       access: {
         isLocked,
 
-        isCompleted: false,
+        isUnlocked,
 
-        reason: isLocked
-          ? `Complete ${previousModule.moduleTitle} before entering this module.`
-          : null,
+        isCompleted:
+          currentStatus.completed,
+
+        lecturesCompleted:
+          currentStatus.lecturesCompleted,
+
+        quizPassed:
+          currentStatus.quizPassed,
+
+        totalLectures:
+          currentStatus.totalLectures,
+
+        completedLectures:
+          currentStatus.completedLectures,
+
+        reason,
 
         previousModule: {
-          _id: previousModule._id,
+          _id:
+            previousModule._id,
+
           moduleTitle:
             previousModule.moduleTitle,
-          order: previousModule.order,
+
+          order:
+            previousModule.order,
+
           completed:
             previousStatus.completed,
+
           lecturesCompleted:
             previousStatus.lecturesCompleted,
+
           quizPassed:
             previousStatus.quizPassed,
+
+          totalLectures:
+            previousStatus.totalLectures,
+
+          completedLectures:
+            previousStatus.completedLectures,
         },
       },
     });
@@ -1626,7 +1749,7 @@ export const getCourseModuleAccess = async (
     const studentId = req.user._id;
 
     // -------------------------------------------------
-    // Get modules
+    // Get all course modules
     // -------------------------------------------------
 
     const modules =
@@ -1655,36 +1778,97 @@ export const getCourseModuleAccess = async (
 
     const moduleStatuses = [];
 
-    for (let index = 0; index < modules.length; index++) {
-      const module = modules[index];
+    for (
+      let index = 0;
+      index < modules.length;
+      index++
+    ) {
+      const module =
+        modules[index];
+
+      // -------------------------------------------------
+      // Current module completion
+      // -------------------------------------------------
 
       const status =
         await checkModuleCompletion({
-          moduleId: module._id,
+          moduleId:
+            module._id,
           studentId,
         });
 
-      const isFirstModule = index === 0;
+      // -------------------------------------------------
+      // First module
+      // -------------------------------------------------
+
+      const isFirstModule =
+        index === 0;
+
+      // -------------------------------------------------
+      // Previous module status
+      // -------------------------------------------------
 
       const previousModule =
         !isFirstModule
-          ? moduleStatuses[index - 1]
+          ? moduleStatuses[
+              index - 1
+            ]
           : null;
 
+      // -------------------------------------------------
+      // Determine unlock state
+      // -------------------------------------------------
+
+      const isUnlocked =
+        isFirstModule ||
+        previousModule.isCompleted;
+
       const isLocked =
-        !isFirstModule &&
-        !previousModule.completed;
+        !isUnlocked;
+
+      // -------------------------------------------------
+      // Determine lock reason
+      // -------------------------------------------------
+
+      let lockReason = null;
+
+      if (isLocked) {
+        if (
+          !previousModule.lecturesCompleted
+        ) {
+          lockReason =
+            `Complete all lectures in ${previousModule.moduleTitle} first.`;
+        } else if (
+          !previousModule.quizPassed
+        ) {
+          lockReason =
+            `Pass the quiz for ${previousModule.moduleTitle} first.`;
+        } else {
+          lockReason =
+            `Complete ${previousModule.moduleTitle} first.`;
+        }
+      }
+
+      // -------------------------------------------------
+      // Add module status
+      // -------------------------------------------------
 
       moduleStatuses.push({
-        moduleId: module._id,
+        moduleId:
+          module._id,
 
-        order: module.order,
+        order:
+          module.order,
 
         moduleTitle:
           module.moduleTitle,
 
+        // Access
+        isUnlocked,
+
         isLocked,
 
+        // Completion
         isCompleted:
           status.completed,
 
@@ -1694,17 +1878,15 @@ export const getCourseModuleAccess = async (
         quizPassed:
           status.quizPassed,
 
+        // Lecture statistics
         totalLectures:
           status.totalLectures || 0,
 
         completedLectures:
           status.completedLectures || 0,
 
-        lockReason: isLocked
-          ? `Complete ${
-              previousModule.moduleTitle
-            } first.`
-          : null,
+        // Lock information
+        lockReason,
       });
     }
 
@@ -1714,7 +1896,9 @@ export const getCourseModuleAccess = async (
 
     return res.status(200).json({
       success: true,
-      modules: moduleStatuses,
+
+      modules:
+        moduleStatuses,
     });
   } catch (error) {
     console.error(
