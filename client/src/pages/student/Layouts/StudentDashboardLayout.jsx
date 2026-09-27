@@ -3,8 +3,11 @@ import { Sparkles } from "lucide-react";
 
 import StudentSidebar from "../components/student/StudentSidebar";
 import StudentHeader from "../components/student/StudentHeader";
+import { useAuth } from "../../../context/AuthContext";
 
 function StudentDashboardLayout() {
+  const { dashboardStats } = useAuth();
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#06080a] text-slate-200">
 
@@ -22,8 +25,6 @@ function StudentDashboardLayout() {
         "
         aria-hidden="true"
       >
-        {/* Kingdom glow */}
-
         <div
           className="
             absolute
@@ -38,8 +39,6 @@ function StudentDashboardLayout() {
             will-change-transform
           "
         />
-
-        {/* Winter glow */}
 
         <div
           className="
@@ -56,8 +55,6 @@ function StudentDashboardLayout() {
           "
         />
 
-        {/* Vignette */}
-
         <div
           className="
             absolute
@@ -65,8 +62,6 @@ function StudentDashboardLayout() {
             bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,.18)_70%,rgba(0,0,0,.4)_100%)]
           "
         />
-
-        {/* Grid */}
 
         <div
           className="absolute inset-0 opacity-[0.025]"
@@ -85,8 +80,6 @@ function StudentDashboardLayout() {
             backgroundSize: "48px 48px",
           }}
         />
-
-        {/* Fog */}
 
         <div
           className="
@@ -193,7 +186,7 @@ function StudentDashboardLayout() {
           SIDEBAR
       ======================================================== */}
 
-      <StudentSidebar />
+      <StudentSidebar stats={dashboardStats || {}} />
 
       {/* ========================================================
           MAIN AREA
@@ -204,8 +197,6 @@ function StudentDashboardLayout() {
         <StudentHeader />
 
         <main className="relative pt-[72px]">
-
-          {/* Top content glow */}
 
           <div
             className="
@@ -221,8 +212,6 @@ function StudentDashboardLayout() {
             "
             aria-hidden="true"
           />
-
-          {/* Page content */}
 
           <div
             className="
@@ -318,10 +307,6 @@ function StudentDashboardLayout() {
       ======================================================== */}
 
       <style>{`
-        /* ======================================================
-           KINGDOM GLOW
-        ====================================================== */
-
         @keyframes kingdomGlow {
           0% {
             transform: scale(1);
@@ -342,10 +327,6 @@ function StudentDashboardLayout() {
         .animate-kingdom-glow {
           animation: kingdomGlow 9s ease-in-out infinite;
         }
-
-        /* ======================================================
-           WINTER GLOW
-        ====================================================== */
 
         @keyframes winterGlow {
           0% {
@@ -368,10 +349,6 @@ function StudentDashboardLayout() {
           animation: winterGlow 11s ease-in-out infinite;
         }
 
-        /* ======================================================
-           DASHBOARD FOG
-        ====================================================== */
-
         @keyframes dashboardFog {
           0% {
             transform: translate3d(-10%, 0, 0);
@@ -392,10 +369,6 @@ function StudentDashboardLayout() {
         .animate-dashboard-fog {
           animation: dashboardFog 18s ease-in-out infinite;
         }
-
-        /* ======================================================
-           PARTICLE 1
-        ====================================================== */
 
         @keyframes particleOne {
           0% {
@@ -421,10 +394,6 @@ function StudentDashboardLayout() {
           animation: particleOne 7s ease-in-out infinite;
         }
 
-        /* ======================================================
-           PARTICLE 2
-        ====================================================== */
-
         @keyframes particleTwo {
           0% {
             transform: translate3d(0, 20px, 0);
@@ -444,10 +413,6 @@ function StudentDashboardLayout() {
         .animate-particle-2 {
           animation: particleTwo 10s ease-in-out infinite;
         }
-
-        /* ======================================================
-           PARTICLE 3
-        ====================================================== */
 
         @keyframes particleThree {
           0% {
@@ -470,10 +435,6 @@ function StudentDashboardLayout() {
           animation: particleThree 8s ease-in-out infinite;
         }
 
-        /* ======================================================
-           SIGIL
-        ====================================================== */
-
         @keyframes sigil {
           0% {
             transform: rotate(0deg) scale(1);
@@ -491,10 +452,6 @@ function StudentDashboardLayout() {
         .animate-sigil {
           animation: sigil 30s linear infinite;
         }
-
-        /* ======================================================
-           REDUCED MOTION
-        ====================================================== */
 
         @media (prefers-reduced-motion: reduce) {
           .animate-kingdom-glow,

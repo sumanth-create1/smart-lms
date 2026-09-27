@@ -20,6 +20,13 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   // ===================================================
+  // DASHBOARD STATS
+  // ===================================================
+
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+
+  // ===================================================
   // GET CURRENT USER
   // ===================================================
 
@@ -35,12 +42,56 @@ export function AuthProvider({ children }) {
       return currentUser;
     } catch (error) {
       setUser(null);
+      setDashboardStats(null);
 
       return null;
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // ===================================================
+  // GET / REFRESH STUDENT DASHBOARD STATS
+  // ===================================================
+
+  const refreshDashboardStats = useCallback(async () => {
+    try {
+      // No logged-in user
+      if (!user) {
+        setDashboardStats(null);
+        return null;
+      }
+
+      // Dashboard stats are only required for students
+      if (user.role !== "student") {
+        setDashboardStats(null);
+        return null;
+      }
+
+      setDashboardLoading(true);
+
+      const response = await api.get("/dashboard/student");
+
+      if (response.data?.success) {
+        const stats = response.data.stats || {};
+
+        setDashboardStats(stats);
+
+        return stats;
+      }
+
+      return null;
+    } catch (error) {
+      console.error(
+        "❌ Dashboard stats error:",
+        error.response?.data || error.message
+      );
+
+      return null;
+    } finally {
+      setDashboardLoading(false);
+    }
+  }, [user]);
 
   // ===================================================
   // LOGIN
@@ -116,8 +167,27 @@ export function AuthProvider({ children }) {
       );
     } finally {
       setUser(null);
+      setDashboardStats(null);
     }
   }, []);
+
+  // ===================================================
+  // LOAD DASHBOARD AFTER AUTH
+  // ===================================================
+
+  useEffect(() => {
+    if (!loading && user?.role === "student") {
+      refreshDashboardStats();
+    }
+
+    if (!loading && user?.role !== "student") {
+      setDashboardStats(null);
+    }
+  }, [
+    loading,
+    user,
+    refreshDashboardStats,
+  ]);
 
   // ===================================================
   // CHECK AUTH ON APP START
@@ -133,21 +203,32 @@ export function AuthProvider({ children }) {
 
   const authValue = useMemo(
     () => ({
+      // User
       user,
       setUser,
       updateUser,
+
+      // Auth
       loading,
       login,
       logout,
       getCurrentUser,
+
+      // Dashboard
+      dashboardStats,
+      dashboardLoading,
+      refreshDashboardStats,
     }),
     [
       user,
       loading,
-      updateUser,
       login,
       logout,
       getCurrentUser,
+      updateUser,
+      dashboardStats,
+      dashboardLoading,
+      refreshDashboardStats,
     ]
   );
 

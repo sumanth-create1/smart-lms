@@ -89,54 +89,121 @@ function StudentSidebar({ stats = {} }) {
   // ============================================================
   // DYNAMIC STATS
   // ============================================================
+  //
+  // Backend:
+  //
+  // stats: {
+  //   enrolledCourses,
+  //   completedCourses,
+  //   learningHours,
+  //   studyStreak,
+  //
+  //   xp: {
+  //     totalXP,
+  //     level,
+  //     nextLevelXp
+  //   }
+  // }
+  //
+  // ============================================================
+
+  const xpData =
+    stats?.xp &&
+    typeof stats.xp === "object"
+      ? stats.xp
+      : {};
 
   const xp = Number(
-    stats?.xp ??
-      stats?.kingdomXP ??
-      stats?.totalXP ??
-      0
+    xpData?.totalXP ?? 0
+  );
+
+  const backendLevel = Number(
+    xpData?.level ?? 1
   );
 
   const nextLevelXp = Number(
-    stats?.nextLevelXp ??
-      stats?.requiredXp ??
-      stats?.levelTarget ??
-      1000
+    xpData?.nextLevelXp ??
+      backendLevel * 1000
   );
 
   const studyStreak = Number(
-    stats?.studyStreak ??
-      stats?.streak ??
-      0
+    stats?.studyStreak ?? 0
   );
 
-  const streakGoal = Number(
-    stats?.streakGoal ??
-      7
-  );
+  const streakGoal = 7;
 
   // ============================================================
   // LEVEL
   // ============================================================
+  //
+  // Backend:
+  //
+  // calculateLevel(xp)
+  // = Math.floor(xp / 1000) + 1
+  //
+  // 0 - 999     -> Level 1
+  // 1000 - 1999 -> Level 2
+  // 2000 - 2999 -> Level 3
+  //
+  // ============================================================
 
   const levelData = useMemo(() => {
-    const calculatedLevel =
-      Math.floor(xp / 500) + 1;
+    /*
+     * Prefer the level calculated by the backend.
+     * The fallback keeps the sidebar working even if
+     * the backend has not returned a level yet.
+     */
+    const level =
+      backendLevel > 0
+        ? backendLevel
+        : Math.floor(xp / 1000) + 1;
 
+    /*
+     * XP required at the beginning of this level.
+     */
     const currentLevelStart =
-      (calculatedLevel - 1) * 500;
+      (level - 1) * 1000;
 
-    const levelProgress =
-      ((xp - currentLevelStart) / 500) * 100;
+    /*
+     * XP required to reach the next level.
+     */
+    const levelTarget =
+      nextLevelXp > currentLevelStart
+        ? nextLevelXp
+        : level * 1000;
+
+    /*
+     * XP earned inside the current level.
+     */
+    const currentLevelXP =
+      xp - currentLevelStart;
+
+    /*
+     * XP required inside this level.
+     */
+    const levelRange =
+      levelTarget - currentLevelStart;
+
+    const progress =
+      levelRange > 0
+        ? (currentLevelXP / levelRange) * 100
+        : 0;
 
     return {
-      level: calculatedLevel,
+      level,
       progress: Math.min(
-        Math.max(levelProgress, 0),
+        Math.max(progress, 0),
         100
       ),
+      currentLevelStart,
+      levelTarget,
+      currentLevelXP,
     };
-  }, [xp]);
+  }, [
+    xp,
+    backendLevel,
+    nextLevelXp,
+  ]);
 
   // ============================================================
   // RANK
@@ -154,21 +221,6 @@ function StudentSidebar({ stats = {} }) {
   }, [xp]);
 
   // ============================================================
-  // XP PROGRESS
-  // ============================================================
-
-  const xpProgress = useMemo(() => {
-    if (!nextLevelXp || nextLevelXp <= 0) {
-      return 0;
-    }
-
-    return Math.min(
-      Math.max((xp / nextLevelXp) * 100, 0),
-      100
-    );
-  }, [xp, nextLevelXp]);
-
-  // ============================================================
   // STREAK PROGRESS
   // ============================================================
 
@@ -184,7 +236,10 @@ function StudentSidebar({ stats = {} }) {
       ),
       100
     );
-  }, [studyStreak, streakGoal]);
+  }, [
+    studyStreak,
+    streakGoal,
+  ]);
 
   // ============================================================
   // SIDEBAR MOUSE EFFECT
@@ -195,7 +250,8 @@ function StudentSidebar({ stats = {} }) {
 
     if (!sidebar) return;
 
-    const rect = sidebar.getBoundingClientRect();
+    const rect =
+      sidebar.getBoundingClientRect();
 
     sidebar.style.setProperty(
       "--mouse-x",
@@ -222,7 +278,10 @@ function StudentSidebar({ stats = {} }) {
 
       navigate("/login");
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error(
+        "Logout failed:",
+        error
+      );
 
       setIsLoggingOut(false);
     }
@@ -406,10 +465,7 @@ function StudentSidebar({ stats = {} }) {
             group-hover/sidebar:rotate-[-3deg]
           "
         >
-          <Castle
-            size={22}
-            strokeWidth={1.5}
-          />
+          <Castle size={22} strokeWidth={1.5} />
 
           <span
             className="

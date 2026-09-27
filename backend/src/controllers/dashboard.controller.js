@@ -3,15 +3,13 @@ import CourseProgress from "../models/courseProgress.model.js";
 import Lecture from "../models/lecture.model.js";
 import StudySession from "../models/studysession.model.js";
 import Activity from "../models/activity.model.js";
+import StudentXP from "../models/studentXP.model.js";
 
 export const getStudentDashboard = async (req, res) => {
   try {
-
     console.log("🔥 Dashboard controller started");
     console.log("👤 Student ID:", req.user?._id);
     const studentId = req.user._id;
-
-
 
     // ==========================================
     // 1. LEARNING HOURS
@@ -298,13 +296,26 @@ export const getStudentDashboard = async (req, res) => {
       })
       .limit(5);
 
-      console.log("✅ Activity loaded:", recentActivity.length);
+    console.log("✅ Activity loaded:", recentActivity.length);
 
     // ==========================================
-    // 8. FINAL RESPONSE
+    // 8. XP INFORMATION
     // ==========================================
-    
-    console.log("🎉 Dashboard response ready");
+
+    const studentXP = await StudentXP.findOne({
+      student: studentId,
+    }).lean();
+
+    const totalXP = studentXP?.totalXP ?? 0;
+    const level = studentXP?.level ?? 1;
+
+    // Every level requires another 1000 XP
+    const nextLevelXp = level * 1000;
+
+    // ==========================================
+    // 9. FINAL RESPONSE
+    // ==========================================
+
     return res.status(200).json({
       success: true,
 
@@ -316,6 +327,16 @@ export const getStudentDashboard = async (req, res) => {
         learningHours,
 
         studyStreak,
+
+        // ==========================================
+        // XP
+        // ==========================================
+
+        xp: {
+          totalXP,
+          level,
+          nextLevelXp,
+        },
 
         weeklyGoal: {
           targetHours: WEEKLY_GOAL_HOURS,
