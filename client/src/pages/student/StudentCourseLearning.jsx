@@ -75,6 +75,11 @@ const StudentCourseLearning = () => {
 
   const [modules, setModules] = useState([]);
   const [moduleQuizzes, setModuleQuizzes] = useState({});
+
+  // FIX:
+  // Store each module's quiz attempt/pass status separately.
+  const [moduleQuizAttempts, setModuleQuizAttempts] = useState({});
+
   const [modulesLoading, setModulesLoading] = useState(false);
 
   // ---------------------------------------------------
@@ -268,6 +273,9 @@ const StudentCourseLearning = () => {
 
       if (Array.isArray(moduleList) && moduleList.length > 0) {
         await fetchModuleQuizzes(moduleList);
+      } else {
+        setModuleQuizzes({});
+        setModuleQuizAttempts({});
       }
     } catch (error) {
       console.error("Learning data loading error:", error);
@@ -285,9 +293,7 @@ const StudentCourseLearning = () => {
       const response = await api.get(`/course/${courseId}`);
 
       if (!response.data?.success) {
-        throw new Error(
-          response.data?.message || "Unable to load course.",
-        );
+        throw new Error(response.data?.message || "Unable to load course.");
       }
 
       setCourse(response.data?.course || null);
@@ -315,9 +321,7 @@ const StudentCourseLearning = () => {
       const response = await api.get(`/lecture/course/${courseId}`);
 
       if (!response.data?.success) {
-        throw new Error(
-          response.data?.message || "Unable to load lectures.",
-        );
+        throw new Error(response.data?.message || "Unable to load lectures.");
       }
 
       let lectureData = [];
@@ -398,22 +402,66 @@ const StudentCourseLearning = () => {
   };
 
   // =====================================================
-  // FETCH MODULE QUIZZES
+  // FETCH MODULE QUIZZES + STUDENT QUIZ PASS STATUS
   // =====================================================
 
   const fetchModuleQuizzes = async (moduleList) => {
     try {
       if (!Array.isArray(moduleList) || moduleList.length === 0) {
         setModuleQuizzes({});
+        setModuleQuizAttempts({});
         return;
       }
 
-      const quizEntries = await Promise.all(
+      const results = await Promise.all(
         moduleList.map(async (module) => {
           try {
-            const response = await api.get(`/module/${module._id}/quiz`);
+            // ---------------------------------------------
+            // 1. Fetch quiz
+            // ---------------------------------------------
 
-            return [module._id, response.data?.quiz || null];
+            const quizResponse = await api.get(`/module/${module._id}/quiz`);
+
+            const quiz = quizResponse.data?.quiz || null;
+
+            // ---------------------------------------------
+            // 2. No quiz for this module
+            // ---------------------------------------------
+
+            if (!quiz?._id) {
+              return {
+                moduleId: module._id,
+                quiz: null,
+                attempt: null,
+              };
+            }
+
+            // ---------------------------------------------
+            // 3. Fetch student's quiz pass status
+            // ---------------------------------------------
+
+            let attempt = null;
+
+            try {
+              const attemptResponse = await api.get(
+                `/quiz/${quiz._id}/my-attempt`,
+              );
+
+              if (attemptResponse.data?.success) {
+                attempt = attemptResponse.data;
+              }
+            } catch (attemptError) {
+              console.error(
+                `Failed to fetch quiz attempt for quiz ${quiz._id}:`,
+                attemptError,
+              );
+            }
+
+            return {
+              moduleId: module._id,
+              quiz,
+              attempt,
+            };
           } catch (error) {
             if (error.response?.status !== 404) {
               console.error(
@@ -422,16 +470,47 @@ const StudentCourseLearning = () => {
               );
             }
 
-            return [module._id, null];
+            return {
+              moduleId: module._id,
+              quiz: null,
+              attempt: null,
+            };
           }
         }),
       );
 
-      setModuleQuizzes(Object.fromEntries(quizEntries));
+      // ===================================================
+      // CREATE QUIZ MAP
+      // ===================================================
+
+      const quizMap = {};
+
+      // ===================================================
+      // CREATE ATTEMPT/PASS STATUS MAP
+      // ===================================================
+
+      const attemptMap = {};
+
+      results.forEach(({ moduleId, quiz, attempt }) => {
+        quizMap[moduleId] = quiz;
+
+        attemptMap[moduleId] = {
+          passed: Boolean(attempt?.passed),
+          attempt: attempt?.attempt || null,
+        };
+      });
+
+      // ===================================================
+      // UPDATE STATE
+      // ===================================================
+
+      setModuleQuizzes(quizMap);
+      setModuleQuizAttempts(attemptMap);
     } catch (error) {
       console.error("FETCH MODULE QUIZZES ERROR:", error);
 
       setModuleQuizzes({});
+      setModuleQuizAttempts({});
     }
   };
 
@@ -449,9 +528,7 @@ const StudentCourseLearning = () => {
       }
 
       setProgress(
-        response.data?.progress ||
-          response.data?.courseProgress ||
-          null,
+        response.data?.progress || response.data?.courseProgress || null,
       );
     } catch (error) {
       if (error.response?.status !== 404) {
@@ -501,9 +578,7 @@ const StudentCourseLearning = () => {
       if (!item?.completed) return;
 
       const lectureId =
-        typeof item?.lecture === "object"
-          ? item?.lecture?._id
-          : item?.lecture;
+        typeof item?.lecture === "object" ? item?.lecture?._id : item?.lecture;
 
       if (lectureId) {
         ids.add(String(lectureId));
@@ -521,15 +596,12 @@ const StudentCourseLearning = () => {
     if (!lectures.length) return 0;
 
     return Math.round(
-      Math.min(
-        (completedLectureIds.size / lectures.length) * 100,
-        100,
-      ),
+      Math.min((completedLectureIds.size / lectures.length) * 100, 100),
     );
   }, [lectures.length, completedLectureIds]);
 
   // =====================================================
-  // MODULE GROUPING
+  // MODULE GROUPING + UNLOCK LOGIC
   // =====================================================
 
   const modulesWithLectures = useMemo(() => {
@@ -559,9 +631,7 @@ const StudentCourseLearning = () => {
     return modules.map((module, moduleIndex) => {
       const moduleLectures = [
         ...(lectureMap.get(String(module?._id)) || []),
-      ].sort(
-        (a, b) => Number(a?.order ?? 0) - Number(b?.order ?? 0),
-      );
+      ].sort((a, b) => Number(a?.order ?? 0) - Number(b?.order ?? 0));
 
       const completedCount = moduleLectures.filter((lecture) =>
         completedLectureIds.has(String(lecture?._id)),
@@ -574,29 +644,43 @@ const StudentCourseLearning = () => {
           ? Math.round((completedCount / totalLectures) * 100)
           : 0;
 
-      const quiz =
-        moduleQuizzes[String(module?._id)] || null;
+      const quiz = moduleQuizzes[String(module?._id)] || null;
 
       const allLecturesCompleted =
-        totalLectures > 0 &&
-        completedCount === totalLectures;
+        totalLectures > 0 && completedCount === totalLectures;
 
-      /*
-       * TEMPORARY MODULE ACCESS
-       *
-       * Module 1 is unlocked.
-       * Later modules remain locked until we connect
-       * QuizAttempt pass status from the backend.
-       */
-      const isUnlocked = moduleIndex === 0;
+      // ===================================================
+      // QUIZ PASS STATUS
+      // ===================================================
+
+      const quizAttempt =
+        moduleQuizAttempts[String(module?._id)] || null;
+
+      const quizPassed = quizAttempt?.passed === true;
+
+      // ===================================================
+      // MODULE UNLOCK LOGIC
+      // ===================================================
+
+      let isUnlocked = false;
+
+      // First module is always unlocked.
+      if (moduleIndex === 0) {
+        isUnlocked = true;
+      } else {
+        // Current module depends on previous module quiz.
+        const previousModule = modules[moduleIndex - 1];
+
+        const previousModuleAttempt =
+          moduleQuizAttempts[String(previousModule?._id)] || null;
+
+        const previousQuizPassed =
+          previousModuleAttempt?.passed === true;
+
+        isUnlocked = previousQuizPassed;
+      }
 
       const isLocked = !isUnlocked;
-
-      /*
-       * We do not have the student's QuizAttempt data
-       * in this component yet.
-       */
-      const quizPassed = false;
 
       const lecturesCompleted = allLecturesCompleted;
 
@@ -632,6 +716,7 @@ const StudentCourseLearning = () => {
     lectures,
     completedLectureIds,
     moduleQuizzes,
+    moduleQuizAttempts,
   ]);
 
   // =====================================================
@@ -671,23 +756,17 @@ const StudentCourseLearning = () => {
         const matchingLectures = Array.isArray(module?.lectures)
           ? module.lectures.filter((lecture) => {
               const title = String(
-                lecture?.lectureTitle ??
-                  lecture?.title ??
-                  "",
+                lecture?.lectureTitle ?? lecture?.title ?? "",
               );
 
-              return title
-                .toLowerCase()
-                .includes(normalizedSearch);
+              return title.toLowerCase().includes(normalizedSearch);
             })
           : [];
 
         if (moduleMatches || matchingLectures.length > 0) {
           return {
             ...module,
-            lectures: moduleMatches
-              ? module.lectures
-              : matchingLectures,
+            lectures: moduleMatches ? module.lectures : matchingLectures,
           };
         }
 
@@ -702,15 +781,9 @@ const StudentCourseLearning = () => {
     }
 
     return unassignedLectures.filter((lecture) => {
-      const title = String(
-        lecture?.lectureTitle ??
-          lecture?.title ??
-          "",
-      );
+      const title = String(lecture?.lectureTitle ?? lecture?.title ?? "");
 
-      return title
-        .toLowerCase()
-        .includes(normalizedSearch);
+      return title.toLowerCase().includes(normalizedSearch);
     });
   }, [unassignedLectures, normalizedSearch]);
 
@@ -732,17 +805,13 @@ const StudentCourseLearning = () => {
       try {
         setNotesLoading(true);
 
-        const response = await api.get(
-          `/note/lecture/${lectureId}`,
-        );
+        const response = await api.get(`/note/lecture/${lectureId}`);
 
         if (cancelled) return;
 
         if (response.data?.success) {
           setLectureNotes(
-            Array.isArray(response.data?.notes)
-              ? response.data.notes
-              : [],
+            Array.isArray(response.data?.notes) ? response.data.notes : [],
           );
         } else {
           setLectureNotes([]);
@@ -750,10 +819,7 @@ const StudentCourseLearning = () => {
       } catch (error) {
         if (cancelled) return;
 
-        console.error(
-          "Fetch lecture notes error:",
-          error,
-        );
+        console.error("Fetch lecture notes error:", error);
 
         setLectureNotes([]);
       } finally {
@@ -794,10 +860,7 @@ const StudentCourseLearning = () => {
 
   const isLectureCompleted = useCallback(
     (lectureId) => {
-      return (
-        Boolean(lectureId) &&
-        completedLectureIds.has(String(lectureId))
-      );
+      return Boolean(lectureId) && completedLectureIds.has(String(lectureId));
     },
     [completedLectureIds],
   );
@@ -821,8 +884,7 @@ const StudentCourseLearning = () => {
 
       return (
         modulesWithLectures.find(
-          (module) =>
-            String(module?._id) === String(moduleId),
+          (module) => String(module?._id) === String(moduleId),
         ) || null
       );
     },
@@ -844,8 +906,7 @@ const StudentCourseLearning = () => {
 
       if (moduleId) {
         const module = modulesWithLectures.find(
-          (item) =>
-            String(item?._id) === String(moduleId),
+          (item) => String(item?._id) === String(moduleId),
         );
 
         if (module?.isLocked) {
@@ -875,8 +936,7 @@ const StudentCourseLearning = () => {
   const toggleModule = useCallback(
     (moduleId) => {
       const module = modulesWithLectures.find(
-        (item) =>
-          String(item?._id) === String(moduleId),
+        (item) => String(item?._id) === String(moduleId),
       );
 
       if (module?.isLocked) {
@@ -924,17 +984,14 @@ const StudentCourseLearning = () => {
       }
 
       if (module.totalLectures === 0) {
-        toast.info(
-          "This module does not have any lectures yet.",
-        );
+        toast.info("This module does not have any lectures yet.");
 
         return;
       }
 
       if (!module.allLecturesCompleted) {
         const remaining =
-          module.totalLectures -
-          module.completedCount;
+          module.totalLectures - module.completedCount;
 
         toast.error(
           `Complete ${remaining} more lecture${
@@ -946,21 +1003,16 @@ const StudentCourseLearning = () => {
       }
 
       if (module.quizPassed) {
-        toast.info(
-          "You have already passed this module quiz.",
-        );
+        toast.info("You have already passed this module quiz.");
 
         return;
       }
 
-      navigate(
-        `/dashboard/modules/${module._id}/quiz`,
-        {
-          state: {
-            courseId,
-          },
+      navigate(`/dashboard/modules/${module._id}/quiz`, {
+        state: {
+          courseId,
         },
-      );
+      });
     },
     [courseId, navigate],
   );
@@ -971,9 +1023,7 @@ const StudentCourseLearning = () => {
 
   const handleOpenAIMentor = useCallback(() => {
     if (!selectedLecture) {
-      toast.error(
-        "Select a lecture before asking the AI Mentor.",
-      );
+      toast.error("Select a lecture before asking the AI Mentor.");
 
       return;
     }
@@ -985,19 +1035,16 @@ const StudentCourseLearning = () => {
   // ACHIEVEMENT
   // =====================================================
 
-  const showAchievementCelebration = useCallback(
-    (newAchievements = []) => {
-      if (
-        !Array.isArray(newAchievements) ||
-        newAchievements.length === 0
-      ) {
-        return;
-      }
+  const showAchievementCelebration = useCallback((newAchievements = []) => {
+    if (
+      !Array.isArray(newAchievements) ||
+      newAchievements.length === 0
+    ) {
+      return;
+    }
 
-      setUnlockedAchievements(newAchievements);
-    },
-    [],
-  );
+    setUnlockedAchievements(newAchievements);
+  }, []);
 
   // =====================================================
   // VIDEO HELPERS
@@ -1017,10 +1064,7 @@ const StudentCourseLearning = () => {
 
     try {
       localStorage.removeItem(
-        getVideoStorageKey(
-          currentCourseId,
-          lectureId,
-        ),
+        getVideoStorageKey(currentCourseId, lectureId),
       );
     } catch (error) {
       console.error(
@@ -1039,15 +1083,11 @@ const StudentCourseLearning = () => {
 
     if (!lectureId) {
       toast.error("No lecture selected.");
-
       return;
     }
 
     if (isLectureCompleted(lectureId)) {
-      toast.info(
-        "This lecture is already completed.",
-      );
-
+      toast.info("This lecture is already completed.");
       return;
     }
 
@@ -1058,9 +1098,7 @@ const StudentCourseLearning = () => {
         getLectureProgress(lectureId);
 
       const watchedSeconds = Math.max(
-        Number(
-          lectureProgress?.watchedSeconds || 0,
-        ),
+        Number(lectureProgress?.watchedSeconds || 0),
         Number(currentWatchSeconds || 0),
       );
 
@@ -1083,9 +1121,33 @@ const StudentCourseLearning = () => {
         }
       }
 
+      // ==========================================
+      // MARK LECTURE COMPLETE
+      // ==========================================
+
       const response = await api.patch(
         `/progress/complete/${lectureId}`,
       );
+
+      // ==========================================
+      // ACHIEVEMENT UNLOCK
+      // ==========================================
+
+      const newlyUnlocked =
+        response.data?.newlyUnlocked || [];
+
+      console.log(
+        "🏆 Newly unlocked achievements:",
+        newlyUnlocked,
+      );
+
+      if (newlyUnlocked.length > 0) {
+        setUnlockedAchievements(newlyUnlocked);
+      }
+
+      // ==========================================
+      // HANDLE API RESPONSE
+      // ==========================================
 
       if (!response.data?.success) {
         toast.error(
@@ -1108,10 +1170,6 @@ const StudentCourseLearning = () => {
       toast.success(
         response.data?.message ||
           "Lecture completed!",
-      );
-
-      showAchievementCelebration(
-        response.data?.newlyUnlocked || [],
       );
     } catch (error) {
       console.error(
@@ -1143,9 +1201,7 @@ const StudentCourseLearning = () => {
     }
 
     if (!isLectureCompleted(lectureId)) {
-      toast.info(
-        "This lecture is already incomplete.",
-      );
+      toast.info("This lecture is already incomplete.");
 
       return;
     }
@@ -1194,36 +1250,39 @@ const StudentCourseLearning = () => {
   // LECTURE NAVIGATION
   // =====================================================
 
-  const handlePreviousLecture = useCallback(() => {
-    if (currentLectureIndex <= 0) {
-      return;
-    }
+  const handlePreviousLecture =
+    useCallback(() => {
+      if (currentLectureIndex <= 0) {
+        return;
+      }
 
-    handleSelectLecture(
-      lectures[currentLectureIndex - 1],
-    );
-  }, [
-    currentLectureIndex,
-    lectures,
-    handleSelectLecture,
-  ]);
+      handleSelectLecture(
+        lectures[currentLectureIndex - 1],
+      );
+    }, [
+      currentLectureIndex,
+      lectures,
+      handleSelectLecture,
+    ]);
 
-  const handleNextLecture = useCallback(() => {
-    if (
-      currentLectureIndex === -1 ||
-      currentLectureIndex >= lectures.length - 1
-    ) {
-      return;
-    }
+  const handleNextLecture =
+    useCallback(() => {
+      if (
+        currentLectureIndex === -1 ||
+        currentLectureIndex >=
+          lectures.length - 1
+      ) {
+        return;
+      }
 
-    handleSelectLecture(
-      lectures[currentLectureIndex + 1],
-    );
-  }, [
-    currentLectureIndex,
-    lectures,
-    handleSelectLecture,
-  ]);
+      handleSelectLecture(
+        lectures[currentLectureIndex + 1],
+      );
+    }, [
+      currentLectureIndex,
+      lectures,
+      handleSelectLecture,
+    ]);
 
   // =====================================================
   // CURRENT LECTURE PERCENTAGE
@@ -1290,17 +1349,13 @@ const StudentCourseLearning = () => {
         serverTime,
       );
 
-      const safeResumeTime = Number.isFinite(
-        video.duration,
-      )
-        ? Math.min(
-            resumeTime,
-            Math.max(
-              video.duration - 0.5,
-              0,
-            ),
-          )
-        : resumeTime;
+      const safeResumeTime =
+        Number.isFinite(video.duration)
+          ? Math.min(
+              resumeTime,
+              Math.max(video.duration - 0.5, 0),
+            )
+          : resumeTime;
 
       if (
         safeResumeTime > 0 &&
@@ -1432,8 +1487,7 @@ const StudentCourseLearning = () => {
         await api.patch(
           `/progress/${lectureId}`,
           {
-            watchedSeconds:
-              currentTime,
+            watchedSeconds: currentTime,
           },
         );
       } catch (error) {
@@ -1451,15 +1505,12 @@ const StudentCourseLearning = () => {
       );
 
     return () => {
-      if (
-        progressSyncTimerRef.current
-      ) {
+      if (progressSyncTimerRef.current) {
         window.clearInterval(
           progressSyncTimerRef.current,
         );
 
-        progressSyncTimerRef.current =
-          null;
+        progressSyncTimerRef.current = null;
       }
     };
   }, [
@@ -1496,9 +1547,7 @@ const StudentCourseLearning = () => {
       lastProgressUiUpdateRef.current =
         duration;
 
-      setCurrentWatchSeconds(
-        duration,
-      );
+      setCurrentWatchSeconds(duration);
 
       try {
         localStorage.setItem(
@@ -1516,8 +1565,7 @@ const StudentCourseLearning = () => {
         await api.patch(
           `/progress/${selectedLecture._id}`,
           {
-            watchedSeconds:
-              finalTime,
+            watchedSeconds: finalTime,
           },
         );
       } catch (error) {
@@ -1581,9 +1629,7 @@ const StudentCourseLearning = () => {
           note?.noteTitle ||
           "lecture-note";
 
-        document.body.appendChild(
-          link,
-        );
+        document.body.appendChild(link);
 
         link.click();
 
@@ -1599,8 +1645,7 @@ const StudentCourseLearning = () => {
         );
 
         toast.error(
-          error.response?.data
-            ?.message ||
+          error.response?.data?.message ||
             error.message ||
             "Unable to download the note.",
         );
@@ -1626,8 +1671,7 @@ const StudentCourseLearning = () => {
         return;
       }
 
-      const video =
-        videoRef.current;
+      const video = videoRef.current;
 
       if (event.code === "Space") {
         event.preventDefault();
@@ -1678,8 +1722,7 @@ const StudentCourseLearning = () => {
       ) {
         if (
           index >= 0 &&
-          index <
-            lectureList.length - 1
+          index < lectureList.length - 1
         ) {
           handleSelectLecture(
             lectureList[index + 1],
@@ -1769,9 +1812,7 @@ const StudentCourseLearning = () => {
           <button
             type="button"
             onClick={() =>
-              navigate(
-                `/courses/${courseId}`,
-              )
+              navigate(`/courses/${courseId}`)
             }
             className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-amber-400"
           >
@@ -1792,8 +1833,7 @@ const StudentCourseLearning = () => {
               type="button"
               onClick={() =>
                 setShowShortcuts(
-                  (previous) =>
-                    !previous,
+                  (previous) => !previous,
                 )
               }
               className="rounded-xl border border-slate-800 bg-slate-950 p-2 text-slate-400 transition-colors hover:border-amber-700/40 hover:text-amber-400"
@@ -1806,8 +1846,7 @@ const StudentCourseLearning = () => {
               type="button"
               onClick={() =>
                 setTheaterMode(
-                  (previous) =>
-                    !previous,
+                  (previous) => !previous,
                 )
               }
               className="rounded-xl border border-slate-800 bg-slate-950 p-2 text-slate-400 transition-colors hover:border-amber-700/40 hover:text-amber-400"
@@ -1932,20 +1971,28 @@ const StudentCourseLearning = () => {
 
               <div className="mt-5 flex flex-wrap gap-4">
                 <StatBadge
-                  icon={<BookOpen size={14} />}
+                  icon={
+                    <BookOpen size={14} />
+                  }
                   value={lectures.length}
                   label="Lectures"
                 />
 
                 <StatBadge
-                  icon={<Trophy size={14} />}
+                  icon={
+                    <Trophy size={14} />
+                  }
                   value={`${progressPercentage}%`}
                   label="Progress"
                 />
 
                 <StatBadge
-                  icon={<Flame size={14} />}
-                  value={completedLectureIds.size}
+                  icon={
+                    <Flame size={14} />
+                  }
+                  value={
+                    completedLectureIds.size
+                  }
                   label="Completed"
                 />
               </div>
@@ -2026,7 +2073,9 @@ const StudentCourseLearning = () => {
               <div className="relative aspect-video bg-black">
                 {selectedLecture?.videoUrl ? (
                   <video
-                    key={selectedLecture?._id}
+                    key={
+                      selectedLecture?._id
+                    }
                     ref={videoRef}
                     src={
                       selectedLecture.videoUrl
@@ -2096,7 +2145,8 @@ const StudentCourseLearning = () => {
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-500">
                         Lecture{" "}
-                        {currentLectureIndex + 1}
+                        {currentLectureIndex +
+                          1}
                       </span>
 
                       {isLectureCompleted(
@@ -2127,7 +2177,9 @@ const StudentCourseLearning = () => {
                         ? handleUnmarkComplete
                         : handleMarkComplete
                     }
-                    disabled={progressLoading}
+                    disabled={
+                      progressLoading
+                    }
                     className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-950/20 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-amber-400 transition-colors hover:bg-amber-900/30 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {progressLoading ? (
@@ -2175,9 +2227,7 @@ const StudentCourseLearning = () => {
                     }
                     className="flex items-center gap-2 rounded-xl border border-amber-700/40 bg-gradient-to-r from-orange-900/30 to-amber-900/20 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-amber-400 transition-colors hover:border-amber-500/50"
                   >
-                    <Sparkles
-                      size={15}
-                    />
+                    <Sparkles size={15} />
                     Ask AI Mentor
                   </button>
                 </div>
@@ -2221,9 +2271,7 @@ const StudentCourseLearning = () => {
 
             {modules.length > 0 && (
               <ModuleQuizRequirement
-                modules={
-                  modulesWithLectures
-                }
+                modules={modulesWithLectures}
                 onOpenQuiz={
                   handleOpenModuleQuiz
                 }
@@ -2234,7 +2282,8 @@ const StudentCourseLearning = () => {
                 LEGACY COURSE COMPLETION
             ================================================= */}
 
-            {progressPercentage === 100 &&
+            {progressPercentage ===
+              100 &&
               modules.length === 0 && (
                 <LegacyCourseCompleted />
               )}
@@ -2275,7 +2324,8 @@ const StudentCourseLearning = () => {
 
                 <div className="max-h-[calc(100vh-180px)] overflow-y-auto p-3">
                   {modulesLoading &&
-                    modules.length === 0 && (
+                    modules.length ===
+                      0 && (
                       <div className="flex justify-center py-10">
                         <LoaderCircle
                           size={25}
@@ -2323,8 +2373,7 @@ const StudentCourseLearning = () => {
                         />
 
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
-                          Additional
-                          Lectures
+                          Additional Lectures
                         </span>
                       </div>
 
@@ -2371,8 +2420,7 @@ const StudentCourseLearning = () => {
                         />
 
                         <p className="text-xs font-bold text-slate-600">
-                          No lectures
-                          found
+                          No lectures found
                         </p>
                       </div>
                     )}
@@ -2394,9 +2442,7 @@ const StudentCourseLearning = () => {
             unlockedAchievements
           }
           onClose={() =>
-            setUnlockedAchievements(
-              [],
-            )
+            setUnlockedAchievements([])
           }
         />
       )}
@@ -2447,20 +2493,15 @@ const LectureNotes = memo(
                     Maester's Notes
                   </h2>
 
-                  {notes.length >
-                    0 && (
+                  {notes.length > 0 && (
                     <span className="rounded-full border border-amber-800/40 bg-amber-950/30 px-2 py-0.5 text-[9px] font-bold text-amber-400">
-                      {
-                        notes.length
-                      }
+                      {notes.length}
                     </span>
                   )}
                 </div>
 
                 <p className="mt-1 text-[10px] text-slate-600">
-                  Knowledge scrolls
-                  and resources for
-                  this lecture
+                  Knowledge scrolls and resources for this lecture
                 </p>
               </div>
             </div>
@@ -2483,18 +2524,13 @@ const LectureNotes = memo(
                 />
 
                 <p className="text-xs font-bold text-slate-600">
-                  No notes
-                  available for
-                  this lecture.
+                  No notes available for this lecture.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {notes.map(
-                  (
-                    note,
-                    index,
-                  ) => (
+                  (note, index) => (
                     <div
                       key={
                         note?._id ||
@@ -2509,15 +2545,11 @@ const LectureNotes = memo(
                             <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-900/30 bg-amber-950/20 text-amber-400">
                               {note?.fileUrl ? (
                                 <Paperclip
-                                  size={
-                                    16
-                                  }
+                                  size={16}
                                 />
                               ) : (
                                 <FileText
-                                  size={
-                                    16
-                                  }
+                                  size={16}
                                 />
                               )}
                             </div>
@@ -2579,9 +2611,7 @@ const LectureNotes = memo(
                               className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:border-amber-700/50 hover:text-amber-400"
                             >
                               <ExternalLink
-                                size={
-                                  13
-                                }
+                                size={13}
                               />
                               View
                             </a>
@@ -2596,9 +2626,7 @@ const LectureNotes = memo(
                               className="flex items-center gap-2 rounded-lg border border-amber-800/40 bg-amber-950/20 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-amber-400 transition-colors hover:bg-amber-900/30"
                             >
                               <Download
-                                size={
-                                  13
-                                }
+                                size={13}
                               />
                               Download
                             </button>
@@ -2720,7 +2748,10 @@ const CurriculumModule = memo(
                     : "bg-amber-500"
                 }`}
                 style={{
-                  width: `${module?.modulePercentage || 0}%`,
+                  width: `${
+                    module?.modulePercentage ||
+                    0
+                  }%`,
                 }}
               />
             </div>
@@ -2760,10 +2791,7 @@ const CurriculumModule = memo(
                 </p>
 
                 <p className="mt-1 text-[9px] leading-5 text-slate-700">
-                  Complete the
-                  previous module
-                  and pass its quiz
-                  to unlock this
+                  Complete the previous module and pass its quiz to unlock this
                   module.
                 </p>
               </div>
@@ -2839,9 +2867,7 @@ const CurriculumModule = memo(
                       size={15}
                     />
                   ) : (
-                    <Lock
-                      size={15}
-                    />
+                    <Lock size={15} />
                   )}
                 </div>
 
@@ -2891,8 +2917,7 @@ const CurriculumModule = memo(
                     </p>
 
                     <p className="mt-1 text-[9px] text-slate-700">
-                      Quiz not
-                      generated yet
+                      Quiz not generated yet
                     </p>
                   </div>
                 </div>
@@ -3034,8 +3059,7 @@ const ModuleQuizRequirement = memo(
     const quizReadyModules =
       modules.filter(
         (module) =>
-          module?.totalLectures >
-            0 &&
+          module?.totalLectures > 0 &&
           module?.allLecturesCompleted &&
           !module?.quizPassed &&
           !module?.isLocked,
@@ -3044,16 +3068,14 @@ const ModuleQuizRequirement = memo(
     const passedModules =
       modules.filter(
         (module) =>
-          module?.totalLectures >
-            0 &&
+          module?.totalLectures > 0 &&
           module?.quizPassed,
       );
 
     const incompleteModules =
       modules.filter(
         (module) =>
-          module?.totalLectures >
-            0 &&
+          module?.totalLectures > 0 &&
           !module?.allLecturesCompleted &&
           !module?.isLocked,
       );
@@ -3061,8 +3083,7 @@ const ModuleQuizRequirement = memo(
     const lockedModules =
       modules.filter(
         (module) =>
-          module?.totalLectures >
-            0 &&
+          module?.totalLectures > 0 &&
           module?.isLocked,
       );
 
@@ -3079,11 +3100,8 @@ const ModuleQuizRequirement = memo(
             </h3>
 
             <p className="mt-1 text-xs leading-6 text-slate-500">
-              Complete each
-              module's lectures
-              and pass its quiz
-              to unlock the
-              next module.
+              Complete each module's lectures and pass its quiz to unlock the next
+              module.
             </p>
           </div>
         </div>
@@ -3115,8 +3133,7 @@ const ModuleQuizRequirement = memo(
                   </p>
 
                   <p className="mt-1 text-[9px] uppercase tracking-widest text-amber-500">
-                    Lectures complete
-                    — take quiz
+                    Lectures complete — take quiz
                   </p>
                 </div>
 
@@ -3219,9 +3236,7 @@ const ModuleQuizRequirement = memo(
                   </p>
 
                   <p className="mt-1 text-[9px] uppercase tracking-widest text-slate-800">
-                    Complete previous
-                    module + pass
-                    quiz
+                    Complete previous module + pass quiz
                   </p>
                 </div>
 
@@ -3259,9 +3274,7 @@ const LegacyCourseCompleted = memo(
             </h3>
 
             <p className="mt-1 text-xs text-slate-500">
-              You have completed
-              every lecture in
-              this course.
+              You have completed every lecture in this course.
             </p>
           </div>
         </div>
@@ -3283,8 +3296,7 @@ const CrownIcon = memo(() => (
   </div>
 ));
 
-CrownIcon.displayName =
-  "CrownIcon";
+CrownIcon.displayName = "CrownIcon";
 
 const ScrollIcon = memo(() => (
   <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-900/30 bg-amber-950/20 text-amber-500">
@@ -3292,8 +3304,7 @@ const ScrollIcon = memo(() => (
   </div>
 ));
 
-ScrollIcon.displayName =
-  "ScrollIcon";
+ScrollIcon.displayName = "ScrollIcon";
 
 const ShortcutRow = memo(
   ({ label, shortcut }) => (

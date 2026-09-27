@@ -1,42 +1,32 @@
 import {
   memo,
-  useEffect,
   useMemo,
   useState,
 } from "react";
 
 import {
   Award,
-  BookOpen,
   CalendarDays,
-  Castle,
   Check,
-  ChevronRight,
-  Clock3,
+  ChevronDown,
   Crown,
-  Feather,
   Flame,
+  Gem,
   GraduationCap,
-  Grid2X2,
   Lock,
   Medal,
   Search,
-  Shield,
   Sparkles,
   Star,
-  Sword,
-  Target,
   Trophy,
   Zap,
 } from "lucide-react";
 
-import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
 
-import { getAllAchievements } from "../../services/achievementService";
-
-/* =========================================================
-   CONSTANTS
-========================================================= */
+// =====================================================
+// CATEGORY MAP
+// =====================================================
 
 const CATEGORY_MAP = {
   LEARNING: "Learning",
@@ -46,663 +36,492 @@ const CATEGORY_MAP = {
   SPECIAL: "Special",
 };
 
-const FILTERS = [
-  { label: "All", icon: Grid2X2 },
-  { label: "Learning", icon: BookOpen },
-  { label: "Courses", icon: GraduationCap },
-  { label: "Streak", icon: Flame },
-  { label: "Hours", icon: Clock3 },
-  { label: "Special", icon: Star },
-];
-
-/*
- * Reduced from 93 animated elements.
- * Enough atmosphere without unnecessary DOM/animation work.
- */
-const REALM_PARTICLES = Array.from({ length: 20 }, (_, i) => i);
-const SNOW_PARTICLES = Array.from({ length: 14 }, (_, i) => i);
-const EMBER_PARTICLES = Array.from({ length: 11 }, (_, i) => i);
-
-const MOTIVATION_ICONS = [
-  Trophy,
-  GraduationCap,
-  Flame,
-  Crown,
-  Sword,
-];
-
-/* =========================================================
-   BADGE CONFIG
-========================================================= */
-
-const DEFAULT_BADGE = {
-  icon: Award,
-  gradient: "from-slate-200 via-slate-500 to-slate-950",
-  glow: "shadow-[0_0_30px_rgba(148,163,184,0.16)]",
-  text: "text-slate-300",
-  border: "border-slate-300/20",
-  aura: "bg-slate-300",
-};
+// =====================================================
+// BADGE CONFIG
+// =====================================================
 
 const BADGE_CONFIG = {
   FIRST_LECTURE: {
     icon: GraduationCap,
-    gradient: "from-slate-200 via-sky-300 to-slate-700",
-    glow: "shadow-[0_0_35px_rgba(125,211,252,0.18)]",
-    text: "text-sky-200",
-    border: "border-sky-300/20",
-    aura: "bg-sky-300",
+    gradient: "from-cyan-400 to-blue-500",
+    text: "text-cyan-300",
+    glow: "shadow-cyan-500/20",
   },
 
   FIVE_LECTURES: {
-    icon: BookOpen,
-    gradient: "from-emerald-200 via-teal-500 to-slate-800",
-    glow: "shadow-[0_0_35px_rgba(45,212,191,0.18)]",
-    text: "text-emerald-300",
-    border: "border-emerald-300/20",
-    aura: "bg-emerald-300",
+    icon: BookOpenIcon,
+    gradient: "from-blue-400 to-indigo-500",
+    text: "text-blue-300",
+    glow: "shadow-blue-500/20",
   },
 
   TEN_LECTURES: {
-    icon: BookOpen,
-    gradient: "from-sky-200 via-blue-500 to-slate-900",
-    glow: "shadow-[0_0_35px_rgba(56,189,248,0.2)]",
-    text: "text-sky-300",
-    border: "border-sky-300/20",
-    aura: "bg-sky-300",
+    icon: Medal,
+    gradient: "from-indigo-400 to-purple-500",
+    text: "text-indigo-300",
+    glow: "shadow-indigo-500/20",
   },
 
   TWENTY_FIVE_LECTURES: {
-    icon: Medal,
-    gradient: "from-violet-200 via-purple-600 to-slate-950",
-    glow: "shadow-[0_0_38px_rgba(167,139,250,0.2)]",
-    text: "text-violet-300",
-    border: "border-violet-300/20",
-    aura: "bg-violet-300",
+    icon: Trophy,
+    gradient: "from-purple-400 to-fuchsia-500",
+    text: "text-purple-300",
+    glow: "shadow-purple-500/20",
   },
 
   FIFTY_LECTURES: {
-    icon: Zap,
-    gradient: "from-indigo-200 via-violet-600 to-slate-950",
-    glow: "shadow-[0_0_40px_rgba(129,140,248,0.22)]",
-    text: "text-indigo-300",
-    border: "border-indigo-300/20",
-    aura: "bg-indigo-300",
+    icon: Crown,
+    gradient: "from-fuchsia-400 to-pink-500",
+    text: "text-fuchsia-300",
+    glow: "shadow-fuchsia-500/20",
   },
 
   HUNDRED_LECTURES: {
-    icon: Trophy,
-    gradient: "from-yellow-100 via-amber-500 to-orange-900",
-    glow: "shadow-[0_0_45px_rgba(251,191,36,0.25)]",
+    icon: Crown,
+    gradient: "from-amber-300 to-orange-500",
     text: "text-amber-300",
-    border: "border-amber-300/30",
-    aura: "bg-amber-300",
+    glow: "shadow-amber-500/20",
   },
 
   FIRST_COURSE: {
-    icon: Trophy,
-    gradient: "from-yellow-100 via-amber-500 to-orange-900",
-    glow: "shadow-[0_0_40px_rgba(251,191,36,0.23)]",
-    text: "text-amber-300",
-    border: "border-amber-300/25",
-    aura: "bg-amber-300",
+    icon: GraduationCap,
+    gradient: "from-emerald-400 to-teal-500",
+    text: "text-emerald-300",
+    glow: "shadow-emerald-500/20",
   },
 
   THREE_COURSES: {
-    icon: BookOpen,
-    gradient: "from-sky-200 via-blue-500 to-slate-900",
-    glow: "shadow-[0_0_35px_rgba(56,189,248,0.18)]",
-    text: "text-sky-300",
-    border: "border-sky-300/20",
-    aura: "bg-sky-300",
+    icon: Gem,
+    gradient: "from-teal-400 to-cyan-500",
+    text: "text-teal-300",
+    glow: "shadow-teal-500/20",
   },
 
   FIVE_COURSES: {
-    icon: GraduationCap,
-    gradient: "from-emerald-200 via-green-600 to-slate-950",
-    glow: "shadow-[0_0_40px_rgba(52,211,153,0.2)]",
-    text: "text-emerald-300",
-    border: "border-emerald-300/20",
-    aura: "bg-emerald-300",
+    icon: Crown,
+    gradient: "from-cyan-400 to-blue-500",
+    text: "text-cyan-300",
+    glow: "shadow-cyan-500/20",
   },
 
   FIRST_COURSE_COMPLETED: {
-    icon: GraduationCap,
-    gradient: "from-emerald-200 via-green-600 to-slate-950",
-    glow: "shadow-[0_0_40px_rgba(74,222,128,0.2)]",
+    icon: Check,
+    gradient: "from-green-400 to-emerald-500",
     text: "text-green-300",
-    border: "border-green-300/25",
-    aura: "bg-green-300",
+    glow: "shadow-green-500/20",
   },
 
   THREE_COURSES_COMPLETED: {
     icon: Medal,
-    gradient: "from-orange-200 via-amber-500 to-red-950",
-    glow: "shadow-[0_0_40px_rgba(251,146,60,0.22)]",
-    text: "text-orange-300",
-    border: "border-orange-300/25",
-    aura: "bg-orange-300",
+    gradient: "from-emerald-400 to-green-500",
+    text: "text-emerald-300",
+    glow: "shadow-emerald-500/20",
   },
 
   FIVE_COURSES_COMPLETED: {
     icon: Trophy,
-    gradient: "from-yellow-100 via-amber-500 to-orange-950",
-    glow: "shadow-[0_0_45px_rgba(251,191,36,0.25)]",
-    text: "text-yellow-300",
-    border: "border-yellow-300/30",
-    aura: "bg-yellow-300",
-  },
-
-  COURSE_COMPLETED: {
-    icon: Target,
-    gradient: "from-emerald-200 via-green-600 to-slate-950",
-    glow: "shadow-[0_0_40px_rgba(52,211,153,0.2)]",
-    text: "text-emerald-300",
-    border: "border-emerald-300/25",
-    aura: "bg-emerald-300",
+    gradient: "from-green-400 to-lime-500",
+    text: "text-green-300",
+    glow: "shadow-green-500/20",
   },
 
   THREE_DAY_STREAK: {
     icon: Flame,
-    gradient: "from-orange-100 via-orange-500 to-red-950",
-    glow: "shadow-[0_0_40px_rgba(249,115,22,0.22)]",
+    gradient: "from-orange-400 to-red-500",
     text: "text-orange-300",
-    border: "border-orange-300/25",
-    aura: "bg-orange-300",
+    glow: "shadow-orange-500/20",
   },
 
   SEVEN_DAY_STREAK: {
     icon: Flame,
-    gradient: "from-red-100 via-red-600 to-slate-950",
-    glow: "shadow-[0_0_40px_rgba(239,68,68,0.22)]",
+    gradient: "from-red-400 to-rose-500",
     text: "text-red-300",
-    border: "border-red-300/25",
-    aura: "bg-red-300",
+    glow: "shadow-red-500/20",
   },
 
   FOURTEEN_DAY_STREAK: {
     icon: Flame,
-    gradient: "from-orange-100 via-red-600 to-slate-950",
-    glow: "shadow-[0_0_45px_rgba(249,115,22,0.25)]",
-    text: "text-orange-300",
-    border: "border-orange-300/25",
-    aura: "bg-orange-300",
+    gradient: "from-rose-400 to-pink-500",
+    text: "text-rose-300",
+    glow: "shadow-rose-500/20",
   },
 
   THIRTY_DAY_STREAK: {
-    icon: Flame,
-    gradient: "from-red-100 via-rose-600 to-slate-950",
-    glow: "shadow-[0_0_48px_rgba(244,63,94,0.26)]",
-    text: "text-rose-300",
-    border: "border-rose-300/25",
-    aura: "bg-rose-300",
+    icon: Crown,
+    gradient: "from-pink-400 to-fuchsia-500",
+    text: "text-pink-300",
+    glow: "shadow-pink-500/20",
   },
 
   TEN_HOURS: {
-    icon: Clock3,
-    gradient: "from-cyan-100 via-blue-500 to-slate-950",
-    glow: "shadow-[0_0_40px_rgba(34,211,238,0.22)]",
-    text: "text-cyan-300",
-    border: "border-cyan-300/20",
-    aura: "bg-cyan-300",
+    icon: Star,
+    gradient: "from-yellow-300 to-amber-500",
+    text: "text-yellow-300",
+    glow: "shadow-yellow-500/20",
   },
 
   TWENTY_FIVE_HOURS: {
-    icon: Clock3,
-    gradient: "from-sky-100 via-cyan-600 to-slate-950",
-    glow: "shadow-[0_0_40px_rgba(56,189,248,0.22)]",
-    text: "text-sky-300",
-    border: "border-sky-300/20",
-    aura: "bg-sky-300",
+    icon: Gem,
+    gradient: "from-amber-300 to-orange-500",
+    text: "text-amber-300",
+    glow: "shadow-amber-500/20",
   },
 
   FIFTY_HOURS: {
-    icon: Zap,
-    gradient: "from-violet-100 via-purple-600 to-slate-950",
-    glow: "shadow-[0_0_45px_rgba(139,92,246,0.25)]",
-    text: "text-violet-300",
-    border: "border-violet-300/25",
-    aura: "bg-violet-300",
+    icon: Trophy,
+    gradient: "from-orange-400 to-red-500",
+    text: "text-orange-300",
+    glow: "shadow-orange-500/20",
   },
 
   HUNDRED_HOURS: {
-    icon: Trophy,
-    gradient: "from-purple-100 via-fuchsia-600 to-slate-950",
-    glow: "shadow-[0_0_48px_rgba(192,132,252,0.25)]",
-    text: "text-fuchsia-300",
-    border: "border-fuchsia-300/25",
-    aura: "bg-fuchsia-300",
-  },
-
-  PERFECT_COURSE: {
-    icon: Star,
-    gradient: "from-yellow-100 via-pink-500 to-rose-950",
-    glow: "shadow-[0_0_48px_rgba(244,114,182,0.27)]",
-    text: "text-pink-300",
-    border: "border-pink-300/25",
-    aura: "bg-pink-300",
-  },
-
-  EARLY_BIRD: {
-    icon: Sparkles,
-    gradient: "from-amber-100 via-yellow-500 to-orange-950",
-    glow: "shadow-[0_0_40px_rgba(251,191,36,0.23)]",
-    text: "text-amber-300",
-    border: "border-amber-300/25",
-    aura: "bg-amber-300",
-  },
-
-  NIGHT_OWL: {
-    icon: Star,
-    gradient: "from-indigo-100 via-purple-700 to-slate-950",
-    glow: "shadow-[0_0_45px_rgba(129,140,248,0.25)]",
-    text: "text-indigo-300",
-    border: "border-indigo-300/25",
-    aura: "bg-indigo-300",
-  },
-
-  WEEKEND_WARRIOR: {
-    icon: Zap,
-    gradient: "from-red-100 via-orange-600 to-slate-950",
-    glow: "shadow-[0_0_45px_rgba(249,115,22,0.25)]",
-    text: "text-orange-300",
-    border: "border-orange-300/25",
-    aura: "bg-orange-300",
-  },
-
-  COMEBACK_KID: {
-    icon: Target,
-    gradient: "from-teal-100 via-emerald-600 to-slate-950",
-    glow: "shadow-[0_0_45px_rgba(45,212,191,0.25)]",
-    text: "text-teal-300",
-    border: "border-teal-300/25",
-    aura: "bg-teal-300",
+    icon: Crown,
+    gradient: "from-purple-400 to-pink-500",
+    text: "text-purple-300",
+    glow: "shadow-purple-500/20",
   },
 };
 
-/* =========================================================
-   HELPERS
-========================================================= */
+// =====================================================
+// FALLBACK BADGE
+// =====================================================
 
-const getBadgeConfig = (achievement) =>
-  BADGE_CONFIG[achievement?.key] || DEFAULT_BADGE;
+const DEFAULT_BADGE = {
+  icon: Award,
+  gradient: "from-slate-400 to-slate-600",
+  text: "text-slate-300",
+  glow: "shadow-slate-500/20",
+};
 
-const getCategory = (achievement) =>
-  CATEGORY_MAP[achievement?.category] || "Special";
+// =====================================================
+// BOOK OPEN ICON
+// =====================================================
+
+function BookOpenIcon(props) {
+  return (
+    <svg
+      {...props}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2 4.5A2.5 2.5 0 0 1 4.5 2H11v19H4.5A2.5 2.5 0 0 0 2 23V4.5Z" />
+      <path d="M22 4.5A2.5 2.5 0 0 0 19.5 2H13v19h6.5A2.5 2.5 0 0 1 22 23V4.5Z" />
+    </svg>
+  );
+}
+
+// =====================================================
+// HELPERS
+// =====================================================
+
+const getBadgeConfig = (achievement) => {
+  return (
+    BADGE_CONFIG[achievement?.key] ||
+    DEFAULT_BADGE
+  );
+};
+
+const getCategory = (achievement) => {
+  return (
+    CATEGORY_MAP[achievement?.category] ||
+    "Special"
+  );
+};
+
+// =====================================================
+// PROGRESS HELPER
+// =====================================================
 
 const getProgress = (achievement) => {
-  const current = Number(achievement?.progress || 0);
-  const required = Number(achievement?.requirementValue || 0);
+  // Prefer the percentage calculated by backend
+  const backendProgress = Number(
+    achievement?.progressPercentage
+  );
 
-  if (!required) {
-    return achievement?.unlocked ? 100 : 0;
+  if (Number.isFinite(backendProgress)) {
+    return Math.min(
+      Math.max(backendProgress, 0),
+      100
+    );
   }
 
-  return Math.min((current / required) * 100, 100);
-};
-
-const formatUnlockDate = (date) => {
-  if (!date) return "recently";
-
-  return new Date(date).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
-/* =========================================================
-   BACKGROUND
-========================================================= */
-
-const RealmParticles = memo(function RealmParticles() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-    >
-      {REALM_PARTICLES.map((index) => {
-        const ember = index % 5 === 0;
-
-        return (
-          <span
-            key={index}
-            className={`realm-particle absolute rounded-full ${
-              ember
-                ? "h-1.5 w-1.5 bg-amber-300/70 shadow-[0_0_10px_rgba(251,191,36,.65)]"
-                : "h-1 w-1 bg-slate-100/25"
-            }`}
-            style={{
-              left: `${(index * 29) % 100}%`,
-              top: `${(index * 43) % 100}%`,
-              animationDelay: `${(index % 11) * 0.6}s`,
-              animationDuration: `${7 + (index % 5)}s`,
-            }}
-          />
-        );
-      })}
-    </div>
-  );
-});
-
-const Snowfall = memo(function Snowfall() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-    >
-      {SNOW_PARTICLES.map((index) => (
-        <span
-          key={index}
-          className="snow-particle absolute top-[-10px] h-1 w-1 rounded-full bg-white/30"
-          style={{
-            left: `${(index * 37) % 100}%`,
-            animationDelay: `${(index % 10) * 0.8}s`,
-            animationDuration: `${9 + (index % 5)}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
-});
-
-const Embers = memo(function Embers() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-    >
-      {EMBER_PARTICLES.map((index) => (
-        <span
-          key={index}
-          className="ember-particle absolute bottom-0 h-1.5 w-1.5 rounded-full bg-amber-300/80 shadow-[0_0_10px_rgba(251,191,36,.65)]"
-          style={{
-            left: `${(index * 47) % 100}%`,
-            animationDelay: `${(index % 8) * 0.7}s`,
-            animationDuration: `${6 + (index % 4)}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
-});
-
-const CastleScene = memo(function CastleScene() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute bottom-0 left-0 right-0 h-64 overflow-hidden"
-    >
-      <div
-        className="absolute bottom-0 left-[-10%] h-48 w-[75%] opacity-60"
-        style={{
-          clipPath:
-            "polygon(0 100%,15% 62%,30% 80%,46% 24%,61% 70%,77% 42%,100% 100%)",
-          background:
-            "linear-gradient(to top,#030507,#0b1118,transparent)",
-        }}
-      />
-
-      <div
-        className="absolute bottom-0 right-[-10%] h-52 w-[72%] opacity-70"
-        style={{
-          clipPath:
-            "polygon(0 100%,18% 65%,35% 25%,50% 70%,67% 36%,82% 62%,100% 25%,100% 100%)",
-          background:
-            "linear-gradient(to top,#020305,#090f16,transparent)",
-        }}
-      />
-
-      <div className="absolute bottom-0 left-1/2 h-44 w-80 -translate-x-1/2">
-        <div className="absolute bottom-0 left-1/2 h-36 w-36 -translate-x-1/2 bg-[#030507]">
-          <div className="absolute left-1/2 top-4 h-4 w-3 -translate-x-1/2 bg-amber-300/30 shadow-[0_0_12px_rgba(251,191,36,.3)]" />
-
-          <div className="absolute bottom-0 left-1/2 h-16 w-9 -translate-x-1/2 rounded-t-full bg-[#0b1015]" />
-        </div>
-
-        {["left-5", "right-5"].map((position) => (
-          <div
-            key={position}
-            className={`absolute bottom-0 ${position} h-44 w-14 bg-[#020305]`}
-          >
-            <div className="absolute -top-4 left-0 right-0 flex justify-around">
-              {[1, 2, 3].map((item) => (
-                <span
-                  key={item}
-                  className="h-5 w-3 bg-[#020305]"
-                />
-              ))}
-            </div>
-
-            <div className="absolute left-1/2 top-10 h-3 w-2 -translate-x-1/2 bg-amber-300/20" />
-          </div>
-        ))}
-
-        <div className="absolute left-1/2 top-1 flex w-48 -translate-x-1/2 justify-between">
-          {[1, 2, 3, 4, 5, 6, 7].map((item) => (
-            <span
-              key={item}
-              className="h-5 w-5 bg-[#020305]"
-            />
-          ))}
-        </div>
-
-        <div className="castle-glow absolute bottom-8 left-1/2 h-16 w-32 -translate-x-1/2 rounded-full bg-amber-400/[0.04] blur-2xl" />
-      </div>
-
-      <div className="absolute bottom-0 left-[-10%] h-28 w-[120%] bg-gradient-to-t from-[#030507] via-[#030507]/80 to-transparent" />
-
-      <div className="fog-drift absolute bottom-12 left-[-15%] h-16 w-[130%] rounded-[50%] bg-slate-300/[0.035] blur-3xl" />
-    </div>
-  );
-});
-
-const RealmBackground = memo(function RealmBackground() {
-  return (
-    <>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(94,117,138,.16),transparent_34%),radial-gradient(circle_at_15%_45%,rgba(212,170,75,.04),transparent_30%),linear-gradient(180deg,#080c11_0%,#040608_55%,#020304_100%)]"
-      />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-50"
-      >
-        {Array.from({ length: 20 }, (_, index) => (
-          <span
-            key={index}
-            className="absolute h-[2px] w-[2px] rounded-full bg-slate-200/25"
-            style={{
-              left: `${(index * 41) % 100}%`,
-              top: `${(index * 23) % 55}%`,
-            }}
-          />
-        ))}
-      </div>
-
-      <div
-        aria-hidden="true"
-        className="moon-pulse pointer-events-none absolute right-[8%] top-12 h-28 w-28 rounded-full bg-gradient-to-br from-slate-100 via-slate-300 to-slate-500 opacity-55 shadow-[0_0_70px_rgba(186,230,253,.12)]"
-      />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-[5%] top-7 h-24 w-24 rounded-full bg-[#080c11] opacity-80"
-      />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-[-10%] top-[28%] h-56 w-[55%] rounded-full bg-sky-300/[0.02] blur-3xl"
-      />
-
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-[-10%] top-[48%] h-72 w-[55%] rounded-full bg-amber-300/[0.02] blur-3xl"
-      />
-
-      <CastleScene />
-      <RealmParticles />
-      <Snowfall />
-      <Embers />
-    </>
-  );
-});
-
-/* =========================================================
-   ACHIEVEMENT CARD
-========================================================= */
-
-const AchievementCard = memo(function AchievementCard({
-  achievement,
-  index,
-}) {
-  const config = getBadgeConfig(achievement);
-  const Icon = config.icon;
-
-  const unlocked = Boolean(achievement?.unlocked);
-
-  const progress = getProgress(achievement);
-
+  // Fallback calculation
   const current = Number(
     achievement?.progress || 0
   );
 
   const required = Number(
-    achievement?.requirementValue || 0
+    achievement?.requiredProgress ??
+      achievement?.requirementValue ??
+      0
   );
 
-  return (
-    <article
-      className={`achievement-card group relative overflow-hidden rounded-2xl border ${config.border} bg-gradient-to-br from-[#12171d] via-[#0b1015] to-[#05070a] p-5 transition-transform duration-300 hover:-translate-y-1.5 hover:border-amber-300/25`}
-      style={{
-        animationDelay: `${Math.min(index * 45, 400)}ms`,
-      }}
-    >
-      {/* Texture */}
+  if (!required) {
+    return achievement?.unlocked
+      ? 100
+      : 0;
+  }
+
+  return Math.min(
+    Math.max(
+      (current / required) * 100,
+      0
+    ),
+    100
+  );
+};
+
+// =====================================================
+// DATE FORMATTER
+// =====================================================
+
+const formatUnlockDate = (date) => {
+  if (!date) {
+    return "Recently";
+  }
+
+  try {
+    return new Date(date).toLocaleDateString(
+      "en-IN",
+      {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }
+    );
+  } catch {
+    return "Recently";
+  }
+};
+
+// =====================================================
+// ACHIEVEMENT CARD
+// =====================================================
+
+const AchievementCard = memo(
+  function AchievementCard({
+    achievement,
+    index,
+  }) {
+    const config =
+      getBadgeConfig(achievement);
+
+    const Icon = config.icon;
+
+    const unlocked = Boolean(
+      achievement?.unlocked
+    );
+
+    const progress =
+      getProgress(achievement);
+
+    const current = Number(
+      achievement?.progress ?? 0
+    );
+
+    const required = Number(
+      achievement?.requiredProgress ??
+        achievement?.requirementValue ??
+        0
+    );
+
+    const progressPercentage =
+      Math.round(progress);
+
+    return (
       <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.025]"
+        className={`
+          group relative overflow-hidden rounded-2xl
+          border border-white/10
+          bg-white/[0.025]
+          p-5
+          transition-all duration-300
+          hover:-translate-y-1
+          hover:border-white/20
+          hover:bg-white/[0.04]
+          ${unlocked ? config.glow : ""}
+        `}
         style={{
-          backgroundImage:
-            "linear-gradient(90deg,transparent 48%,rgba(255,255,255,.5) 50%,transparent 52%),linear-gradient(0deg,transparent 48%,rgba(255,255,255,.3) 50%,transparent 52%)",
-          backgroundSize: "11px 11px",
+          animationDelay: `${index * 50}ms`,
         }}
-      />
+      >
+        {/* =================================================
+            BACKGROUND GLOW
+        ================================================= */}
 
-      {/* Top accent */}
-      <div
-        className={`absolute left-0 right-0 top-0 h-[2px] bg-gradient-to-r ${config.gradient}`}
-      />
-
-      {/* Aura */}
-      <div
-        aria-hidden="true"
-        className={`pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full ${config.aura} opacity-[0.045] blur-3xl transition-opacity duration-500 group-hover:opacity-[0.1]`}
-      />
-
-      {/* Corners */}
-      <div className="absolute right-3 top-3 h-6 w-6 border-r border-t border-amber-200/10" />
-
-      <div className="absolute bottom-3 left-3 h-6 w-6 border-b border-l border-amber-200/10" />
-
-      <div className="relative flex items-start justify-between">
         <div
-          className={`relative flex h-[78px] w-[78px] items-center justify-center rounded-[22px] border border-white/10 bg-gradient-to-br ${config.gradient} ${config.glow} transition-transform duration-300 group-hover:scale-105 ${
-            unlocked
-              ? ""
-              : "grayscale opacity-40"
-          }`}
-        >
-          <div className="absolute inset-1.5 rounded-[18px] border border-white/20" />
+          className={`
+            pointer-events-none absolute
+            -right-16 -top-16
+            h-32 w-32
+            rounded-full
+            bg-gradient-to-br
+            ${config.gradient}
+            opacity-[0.06]
+            blur-3xl
+          `}
+        />
 
-          <div className="absolute inset-3 rounded-[15px] border border-black/20" />
+        {/* =================================================
+            TOP ROW
+        ================================================= */}
 
-          <div className="absolute inset-5 rounded-[12px] border border-white/10" />
+        <div className="relative flex items-start justify-between">
+          {/* BADGE */}
 
-          <Icon
-            size={34}
-            strokeWidth={1.6}
-            className="relative z-10 text-white drop-shadow-xl"
-          />
+          <div
+            className={`
+              relative flex h-14 w-14
+              items-center justify-center
+              rounded-2xl
+              border border-white/10
+              bg-gradient-to-br
+              ${config.gradient}
+              ${unlocked ? "opacity-100" : "opacity-40 grayscale"}
+              shadow-lg
+            `}
+          >
+            <Icon
+              size={25}
+              strokeWidth={1.7}
+              className="text-white"
+            />
 
-          {unlocked && (
-            <>
-              <Sparkles
-                size={13}
-                className="absolute -right-1 -top-1 text-amber-300"
-              />
+            {/* Unlocked check */}
 
-              <span className="achievement-ring absolute inset-[-9px] rounded-[27px] border border-dashed border-amber-300/20" />
-            </>
-          )}
-        </div>
+            {unlocked && (
+              <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-black bg-emerald-500">
+                <Check
+                  size={11}
+                  strokeWidth={3}
+                  className="text-white"
+                />
+              </div>
+            )}
 
-        <span
-          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.15em] ${
-            unlocked
-              ? "border-amber-300/20 bg-amber-300/[0.06] text-amber-200"
-              : "border-slate-500/20 bg-slate-500/[0.05] text-slate-500"
-          }`}
-        >
-          {unlocked ? (
-            <>
-              <Check size={11} strokeWidth={3} />
-              Claimed
-            </>
-          ) : (
-            <>
-              <Lock size={11} />
-              Locked
-            </>
-          )}
-        </span>
-      </div>
+            {/* Locked icon */}
 
-      <div className="relative mt-6">
-        <div className="mb-2 flex items-center gap-2">
+            {!unlocked && (
+              <div className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-black bg-slate-800">
+                <Lock
+                  size={10}
+                  className="text-slate-400"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* CATEGORY */}
+
           <span
-            className={`inline-flex rounded-full border ${config.border} bg-white/[0.025] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] ${config.text}`}
+            className={`
+              rounded-full
+              border border-white/10
+              bg-black/30
+              px-2.5 py-1
+              text-[9px]
+              font-bold
+              uppercase
+              tracking-[0.16em]
+              ${config.text}
+            `}
           >
             {getCategory(achievement)}
           </span>
-
-          <span className="h-px flex-1 bg-gradient-to-r from-amber-300/10 to-transparent" />
         </div>
 
-        <h3 className="text-lg font-bold tracking-tight text-slate-100 transition-colors group-hover:text-amber-100">
-          {achievement?.title || "Achievement"}
-        </h3>
+        {/* =================================================
+            TITLE
+        ================================================= */}
 
-        <p className="mt-1.5 min-h-[40px] text-sm leading-5 text-slate-500">
-          {achievement?.description ||
-            "Complete this milestone to unlock it."}
-        </p>
+        <div className="relative mt-5">
+          <h3
+            className={`
+              text-base
+              font-bold
+              tracking-tight
+              ${
+                unlocked
+                  ? "text-white"
+                  : "text-slate-300"
+              }
+            `}
+          >
+            {achievement?.title ||
+              "Achievement"}
+          </h3>
 
-        {!unlocked && required > 0 && (
-          <div className="mt-5">
+          <p className="mt-1.5 text-sm leading-6 text-slate-500">
+            {achievement?.description ||
+              "Complete the requirement to unlock this achievement."}
+          </p>
+        </div>
+
+        {/* =================================================
+            PROGRESS
+        ================================================= */}
+
+        {required > 0 && (
+          <div className="relative mt-5">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-600">
                 Quest progress
               </span>
 
-              <span
-                className={`text-xs font-bold ${config.text}`}
-              >
-                {current} / {required}
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`text-xs font-bold ${config.text}`}
+                >
+                  {current} / {required}
+                </span>
+
+                <span className="text-[10px] font-bold text-slate-600">
+                  {progressPercentage}%
+                </span>
+              </div>
             </div>
 
             <div className="relative h-2 overflow-hidden rounded-full border border-white/5 bg-black/50">
               <div
-                className={`relative h-full rounded-full bg-gradient-to-r ${config.gradient} transition-[width] duration-700`}
+                className={`
+                  relative h-full rounded-full
+                  bg-gradient-to-r
+                  ${config.gradient}
+                  transition-[width]
+                  duration-700
+                `}
                 style={{
-                  width: `${progress}%`,
+                  width: `${progressPercentage}%`,
                 }}
               />
+
+              {/* Small shine */}
+
+              {progressPercentage > 0 && (
+                <div
+                  className="
+                    pointer-events-none
+                    absolute inset-y-0 right-0
+                    w-8
+                    bg-white/20
+                    blur-md
+                  "
+                  style={{
+                    right: `${100 - progressPercentage}%`,
+                  }}
+                />
+              )}
             </div>
           </div>
         )}
+
+        {/* =================================================
+            UNLOCKED DATE
+        ================================================= */}
 
         {unlocked && (
           <div className="mt-5 flex items-center gap-2 border-t border-white/5 pt-4 text-xs text-slate-600">
@@ -720,187 +539,58 @@ const AchievementCard = memo(function AchievementCard({
           </div>
         )}
       </div>
+    );
+  }
+);
 
-      <div className="absolute bottom-0 left-1/2 h-px w-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-amber-300/50 to-transparent transition-[width] duration-300 group-hover:w-3/4" />
-    </article>
-  );
-});
-
-/* =========================================================
-   STAT CARD
-========================================================= */
-
-const AchievementStat = memo(function AchievementStat({
-  icon: Icon,
-  value,
-  label,
-  color,
-}) {
-  return (
-    <div
-      className={`rounded-2xl border ${color.border} ${color.background} p-4 text-center transition-transform duration-300 hover:-translate-y-1`}
-    >
-      <div
-        className={`mx-auto flex h-10 w-10 items-center justify-center rounded-xl border ${color.iconBorder} ${color.iconBackground}`}
-      >
-        <Icon
-          size={18}
-          className={color.icon}
-        />
-      </div>
-
-      <p className="mt-3 text-2xl font-black text-slate-100">
-        {value}
-      </p>
-
-      <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-600">
-        {label}
-      </p>
-    </div>
-  );
-});
-
-const STAT_COLORS = {
-  green: {
-    border: "border-emerald-300/10",
-    background: "bg-emerald-300/[0.035]",
-    iconBorder: "border-emerald-300/15",
-    iconBackground: "bg-emerald-300/[0.05]",
-    icon: "text-emerald-300",
-  },
-
-  blue: {
-    border: "border-sky-300/10",
-    background: "bg-sky-300/[0.035]",
-    iconBorder: "border-sky-300/15",
-    iconBackground: "bg-sky-300/[0.05]",
-    icon: "text-sky-300",
-  },
-
-  gold: {
-    border: "border-amber-300/10",
-    background: "bg-amber-300/[0.035]",
-    iconBorder: "border-amber-300/15",
-    iconBackground: "bg-amber-300/[0.05]",
-    icon: "text-amber-300",
-  },
-};
-
-/* =========================================================
-   LOADING
-========================================================= */
-
-const LoadingScreen = memo(function LoadingScreen() {
-  return (
-    <div className="relative min-h-screen overflow-hidden bg-[#030507] p-5 text-slate-200 sm:p-7 lg:p-8">
-      <RealmBackground />
-
-      <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="h-9 w-80 animate-pulse rounded bg-slate-800/70" />
-
-        <div className="mt-7 h-[350px] animate-pulse rounded-3xl border border-white/5 bg-[#0b1015]/80" />
-
-        <div className="mt-7 flex gap-3 overflow-hidden">
-          {FILTERS.map(({ label }) => (
-            <div
-              key={label}
-              className="h-11 w-28 shrink-0 animate-pulse rounded-xl bg-slate-800/60"
-            />
-          ))}
-        </div>
-
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 8 }, (_, index) => (
-            <div
-              key={index}
-              className="h-72 animate-pulse rounded-2xl border border-white/5 bg-[#0b1015]/80"
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-});
-
-/* =========================================================
-   PAGE
-========================================================= */
+// =====================================================
+// MAIN PAGE
+// =====================================================
 
 export default function Achievements() {
-  const [achievements, setAchievements] =
-    useState([]);
+  const auth = useAuth();
 
-  const [loading, setLoading] =
-    useState(true);
+  const achievements = Array.isArray(
+    auth?.achievements
+  )
+    ? auth.achievements
+    : [];
+
+  const achievementsLoading = Boolean(
+    auth?.achievementsLoading
+  );
 
   const [search, setSearch] =
     useState("");
 
-  const [activeFilter, setActiveFilter] =
+  const [selectedCategory, setSelectedCategory] =
     useState("All");
 
-  /* =======================================================
-     FETCH
-  ======================================================= */
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchAchievements = async () => {
-      try {
-        const response =
-          await getAllAchievements();
-
-        if (cancelled) return;
-
-        setAchievements(
-          Array.isArray(response?.achievements)
-            ? response.achievements
-            : []
-        );
-      } catch (error) {
-        if (cancelled) return;
-
-        console.error(
-          "Fetch achievements error:",
-          error
-        );
-
-        toast.error(
-          "Failed to load achievements"
-        );
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchAchievements();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  /* =======================================================
-     STATS
-  ======================================================= */
+  // ===================================================
+  // STATS
+  // ===================================================
 
   const stats = useMemo(() => {
-    const total = achievements.length;
+    const total =
+      achievements.length;
 
-    const unlocked = achievements.reduce(
-      (count, achievement) =>
-        count +
-        (achievement?.unlocked ? 1 : 0),
-      0
-    );
+    const unlocked =
+      achievements.reduce(
+        (count, achievement) =>
+          count +
+          (achievement?.unlocked
+            ? 1
+            : 0),
+        0
+      );
 
     return {
       total,
       unlocked,
-      remaining: total - unlocked,
+      remaining: Math.max(
+        total - unlocked,
+        0
+      ),
       percentage:
         total > 0
           ? Math.round(
@@ -910,638 +600,408 @@ export default function Achievements() {
     };
   }, [achievements]);
 
-  /* =======================================================
-     FILTER
-  ======================================================= */
+  // ===================================================
+  // CATEGORIES
+  // ===================================================
 
-  const filteredAchievements = useMemo(() => {
-    const query = search
-      .trim()
-      .toLowerCase();
+  const categories = useMemo(() => {
+    const values = achievements
+      .map((achievement) =>
+        getCategory(achievement)
+      )
+      .filter(Boolean);
 
-    return achievements.filter(
-      (achievement) => {
-        const title =
-          achievement?.title?.toLowerCase() ||
-          "";
+    return [
+      "All",
+      ...Array.from(
+        new Set(values)
+      ),
+    ];
+  }, [achievements]);
 
-        const description =
-          achievement?.description?.toLowerCase() ||
-          "";
+  // ===================================================
+  // FILTERED ACHIEVEMENTS
+  // ===================================================
 
-        const key =
-          achievement?.key?.toLowerCase() ||
-          "";
+  const filteredAchievements =
+    useMemo(() => {
+      const query =
+        search.trim().toLowerCase();
 
-        const matchesSearch =
-          !query ||
-          title.includes(query) ||
-          description.includes(query) ||
-          key.includes(query);
+      return achievements.filter(
+        (achievement) => {
+          const matchesSearch =
+            !query ||
+            achievement?.title
+              ?.toLowerCase()
+              .includes(query) ||
+            achievement?.description
+              ?.toLowerCase()
+              .includes(query) ||
+            achievement?.key
+              ?.toLowerCase()
+              .includes(query);
 
-        const matchesCategory =
-          activeFilter === "All" ||
-          getCategory(achievement) ===
-            activeFilter;
+          const matchesCategory =
+            selectedCategory === "All" ||
+            getCategory(achievement) ===
+              selectedCategory;
 
-        return (
-          matchesSearch &&
-          matchesCategory
-        );
-      }
+          return (
+            matchesSearch &&
+            matchesCategory
+          );
+        }
+      );
+    }, [
+      achievements,
+      search,
+      selectedCategory,
+    ]);
+
+  // ===================================================
+  // LOADING
+  // ===================================================
+
+  if (achievementsLoading) {
+    return (
+      <div className="min-h-screen bg-[#050505] px-6 py-10 text-white">
+        <div className="mx-auto max-w-7xl">
+          <div className="animate-pulse">
+            <div className="h-10 w-64 rounded-lg bg-white/5" />
+
+            <div className="mt-4 h-5 w-96 max-w-full rounded bg-white/5" />
+
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({
+                length: 6,
+              }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-64 rounded-2xl border border-white/5 bg-white/[0.025]"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     );
-  }, [
-    achievements,
-    search,
-    activeFilter,
-  ]);
-
-  /* =======================================================
-     LOADING
-  ======================================================= */
-
-  if (loading) {
-    return <LoadingScreen />;
   }
 
-  /* =======================================================
-     RENDER
-  ======================================================= */
+  // ===================================================
+  // PAGE
+  // ===================================================
 
   return (
-    <>
-      <style>{`
-        @keyframes achievementEntrance {
-          from {
-            opacity: 0;
-            transform: translate3d(0, 18px, 0) scale(.985);
-          }
+    <div className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
 
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0) scale(1);
-          }
-        }
+        {/* =================================================
+            HERO
+        ================================================= */}
 
-        @keyframes trophyFloat {
-          0%,100% {
-            transform: translate3d(0,0,0) rotate(-2deg);
-          }
+        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.025] p-6 sm:p-8 lg:p-10">
 
-          50% {
-            transform: translate3d(0,-7px,0) rotate(2deg);
-          }
-        }
+          {/* Background glow */}
 
-        @keyframes crownFloat {
-          0%,100% {
-            transform: translate3d(0,0,0) rotate(-3deg);
-          }
+          <div className="pointer-events-none absolute -right-32 -top-32 h-72 w-72 rounded-full bg-amber-500/10 blur-3xl" />
 
-          50% {
-            transform: translate3d(0,-5px,0) rotate(3deg);
-          }
-        }
+          <div className="pointer-events-none absolute -bottom-40 -left-20 h-80 w-80 rounded-full bg-purple-500/10 blur-3xl" />
 
-        @keyframes swordFloat {
-          0%,100% {
-            transform: rotate(-15deg) translate3d(0,0,0);
-          }
+          <div className="relative">
 
-          50% {
-            transform: rotate(-8deg) translate3d(0,-5px,0);
-          }
-        }
+            <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
 
-        @keyframes moonPulse {
-          0%,100% {
-            transform: scale(1);
-            opacity: .55;
-          }
+              <div>
+                <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-amber-300">
+                  <Sparkles size={14} />
+                  Hall of Progress
+                </div>
 
-          50% {
-            transform: scale(1.04);
-            opacity: .7;
-          }
-        }
+                <h1 className="text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+                  Your Achievements
+                </h1>
 
-        @keyframes snowFall {
-          0% {
-            transform: translate3d(0,-20px,0);
-            opacity: 0;
-          }
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                  Every lecture completed,
+                  every course conquered,
+                  and every learning streak
+                  builds your legacy.
+                </p>
+              </div>
 
-          15% {
-            opacity: .6;
-          }
+              {/* Completion */}
 
-          100% {
-            transform: translate3d(25px,520px,0);
-            opacity: 0;
-          }
-        }
+              <div className="min-w-[220px] rounded-2xl border border-white/10 bg-black/20 p-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                    Collection
+                  </span>
 
-        @keyframes emberRise {
-          0% {
-            transform: translate3d(0,20px,0) scale(.6);
-            opacity: 0;
-          }
-
-          25% {
-            opacity: .7;
-          }
-
-          100% {
-            transform: translate3d(20px,-230px,0) scale(1.15);
-            opacity: 0;
-          }
-        }
-
-        @keyframes fogDrift {
-          0%,100% {
-            transform: translate3d(-3%,0,0);
-          }
-
-          50% {
-            transform: translate3d(3%,0,0);
-          }
-        }
-
-        @keyframes realmParticle {
-          0% {
-            transform: translate3d(0,30px,0);
-            opacity: 0;
-          }
-
-          20% {
-            opacity: .6;
-          }
-
-          80% {
-            opacity: .35;
-          }
-
-          100% {
-            transform: translate3d(0,-120px,0);
-            opacity: 0;
-          }
-        }
-
-        @keyframes castleGlow {
-          0%,100% {
-            opacity: .25;
-          }
-
-          50% {
-            opacity: .6;
-          }
-        }
-
-        @keyframes ringSpin {
-          from {
-            transform: rotate(0deg);
-          }
-
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        .achievement-card {
-          animation: achievementEntrance .55s cubic-bezier(.2,.8,.2,1) both;
-        }
-
-        .achievement-ring {
-          animation: ringSpin 12s linear infinite;
-        }
-
-        .trophy-float {
-          animation: trophyFloat 5s ease-in-out infinite;
-          will-change: transform;
-        }
-
-        .crown-float {
-          animation: crownFloat 5s ease-in-out infinite;
-          will-change: transform;
-        }
-
-        .sword-float {
-          animation: swordFloat 5s ease-in-out infinite;
-          will-change: transform;
-        }
-
-        .moon-pulse {
-          animation: moonPulse 8s ease-in-out infinite;
-          will-change: transform, opacity;
-        }
-
-        .snow-particle {
-          animation: snowFall linear infinite;
-        }
-
-        .ember-particle {
-          animation: emberRise linear infinite;
-        }
-
-        .realm-particle {
-          animation: realmParticle linear infinite;
-        }
-
-        .fog-drift {
-          animation: fogDrift 18s ease-in-out infinite;
-          will-change: transform;
-        }
-
-        .castle-glow {
-          animation: castleGlow 6s ease-in-out infinite;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .achievement-card,
-          .achievement-ring,
-          .trophy-float,
-          .crown-float,
-          .sword-float,
-          .moon-pulse,
-          .snow-particle,
-          .ember-particle,
-          .realm-particle,
-          .fog-drift,
-          .castle-glow {
-            animation: none !important;
-          }
-
-          .achievement-card {
-            opacity: 1;
-            transform: none;
-          }
-        }
-      `}</style>
-
-      <div className="relative min-h-screen overflow-hidden bg-[#030507] text-slate-200">
-        <RealmBackground />
-
-        <main className="relative z-10 mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
-
-          {/* =================================================
-              HEADER
-          ================================================= */}
-
-          <header className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="crown-float flex h-12 w-12 items-center justify-center rounded-xl border border-amber-300/20 bg-amber-300/[0.05] shadow-[0_0_25px_rgba(251,191,36,.06)]">
-                  <Crown
-                    size={23}
+                  <Trophy
+                    size={17}
                     className="text-amber-300"
                   />
                 </div>
 
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-amber-300/50">
-                    The Realm · Hall of Deeds
-                  </p>
+                <div className="mt-3 flex items-end justify-between">
+                  <span className="text-3xl font-black">
+                    {stats.percentage}%
+                  </span>
 
-                  <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-100 sm:text-3xl">
-                    Hall of Achievements
-                  </h1>
+                  <span className="pb-1 text-xs text-slate-600">
+                    {stats.unlocked}/
+                    {stats.total}
+                  </span>
+                </div>
+
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/5">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-300 to-orange-500 transition-[width] duration-700"
+                    style={{
+                      width: `${stats.percentage}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* =================================================
+                STAT ROW
+            ================================================= */}
+
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+
+              <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
+                    <Check
+                      size={16}
+                      className="text-emerald-400"
+                    />
+                  </div>
+
+                  <div>
+                    <p className="text-xl font-black">
+                      {stats.unlocked}
+                    </p>
+
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600">
+                      Unlocked
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-                Every lesson mastered, every course
-                conquered, and every streak maintained
-                becomes part of your eternal chronicle.
-              </p>
-            </div>
+              <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10">
+                    <Trophy
+                      size={16}
+                      className="text-amber-400"
+                    />
+                  </div>
 
-            <div className="relative w-full md:w-80">
+                  <div>
+                    <p className="text-xl font-black">
+                      {stats.total}
+                    </p>
+
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600">
+                      Total Quests
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10">
+                    <Zap
+                      size={16}
+                      className="text-purple-400"
+                    />
+                  </div>
+
+                  <div>
+                    <p className="text-xl font-black">
+                      {stats.remaining}
+                    </p>
+
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600">
+                      Remaining
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* =================================================
+            FILTER BAR
+        ================================================= */}
+
+        <section className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+          {/* Search */}
+
+          <div className="relative w-full lg:max-w-sm">
+            <Search
+              size={16}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600"
+            />
+
+            <input
+              type="text"
+              value={search}
+              onChange={(event) =>
+                setSearch(
+                  event.target.value
+                )
+              }
+              placeholder="Search achievements..."
+              className="
+                h-11 w-full
+                rounded-xl
+                border border-white/10
+                bg-white/[0.025]
+                pl-11 pr-4
+                text-sm
+                text-white
+                outline-none
+                placeholder:text-slate-700
+                focus:border-white/20
+              "
+            />
+          </div>
+
+          {/* Categories */}
+
+          <div className="flex flex-wrap gap-2">
+            {categories.map(
+              (category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() =>
+                    setSelectedCategory(
+                      category
+                    )
+                  }
+                  className={`
+                    rounded-xl
+                    border
+                    px-4 py-2
+                    text-xs
+                    font-bold
+                    transition
+                    ${
+                      selectedCategory ===
+                      category
+                        ? "border-amber-300/30 bg-amber-300/10 text-amber-300"
+                        : "border-white/10 bg-white/[0.025] text-slate-500 hover:border-white/20 hover:text-slate-300"
+                    }
+                  `}
+                >
+                  {category}
+                </button>
+              )
+            )}
+          </div>
+        </section>
+
+        {/* =================================================
+            ACHIEVEMENTS GRID
+        ================================================= */}
+
+        <section className="mt-8">
+
+          {filteredAchievements.length ===
+          0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-12 text-center">
               <Search
-                size={17}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600"
+                size={28}
+                className="mx-auto text-slate-700"
               />
 
-              <input
-                value={search}
-                onChange={(event) =>
-                  setSearch(event.target.value)
-                }
-                placeholder="Search the chronicle..."
-                className="h-12 w-full rounded-xl border border-white/10 bg-[#090d12]/90 pl-11 pr-4 text-sm text-slate-200 outline-none transition-[border,box-shadow] placeholder:text-slate-700 focus:border-amber-300/30 focus:ring-4 focus:ring-amber-300/[0.04]"
-              />
-            </div>
-          </header>
-
-          {/* =================================================
-              HERO
-          ================================================= */}
-
-          <section className="relative overflow-hidden rounded-[30px] border border-amber-300/10 bg-gradient-to-br from-[#121820] via-[#0a0e13] to-[#030507] p-6 shadow-[0_25px_70px_rgba(0,0,0,.4)] sm:p-8 lg:p-10">
-
-            <div className="pointer-events-none absolute inset-0 opacity-[0.025] bg-[repeating-linear-gradient(0deg,rgba(255,255,255,.3)_0px,rgba(255,255,255,.3)_1px,transparent_1px,transparent_5px)]" />
-
-            <div className="pointer-events-none absolute -left-32 -top-32 h-80 w-80 rounded-full bg-amber-400/[0.06] blur-3xl" />
-
-            <div className="pointer-events-none absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-sky-400/[0.045] blur-3xl" />
-
-            <div className="relative grid gap-10 lg:grid-cols-[230px_1fr_360px] lg:items-center">
-
-              {/* EMBLEM */}
-
-              <div className="flex justify-center lg:justify-start">
-                <div className="trophy-float relative">
-                  <div className="absolute inset-[-25px] rounded-full bg-amber-400/[0.05] blur-3xl" />
-
-                  <div className="relative flex h-48 w-48 items-center justify-center rounded-full border border-amber-300/20 bg-gradient-to-br from-amber-200/[0.07] via-[#11171e] to-[#030507]">
-                    <div className="absolute inset-3 rounded-full border border-dashed border-amber-300/15" />
-
-                    <Crown
-                      size={25}
-                      className="crown-float absolute right-8 top-6 text-amber-300"
-                    />
-
-                    <Sword
-                      size={29}
-                      className="sword-float absolute bottom-8 left-8 text-sky-200/60"
-                    />
-
-                    <div className="relative flex h-28 w-28 items-center justify-center rounded-[32px] border border-amber-200/20 bg-gradient-to-br from-amber-200 via-amber-600 to-orange-950 shadow-[0_0_40px_rgba(251,191,36,.16)]">
-                      <Shield
-                        size={57}
-                        strokeWidth={1.4}
-                        className="text-white"
-                      />
-
-                      <Trophy
-                        size={25}
-                        className="absolute text-amber-100"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* COPY */}
-
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-amber-300/60">
-                  Your deeds are remembered
-                </p>
-
-                <h2 className="mt-3 text-3xl font-black leading-[1.05] tracking-tight text-slate-100 sm:text-4xl lg:text-5xl">
-                  Earn Your Place
-                  <br />
-                  in the Chronicle.
-                </h2>
-
-                <p className="mt-5 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
-                  Every course completed.
-                  <br />
-                  Every lecture mastered.
-                  <br />
-                  Every streak defended.
-                  <br />
-                  Your progress becomes your legend.
-                </p>
-
-                <div className="mt-7 max-w-xl">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
-                      Realm progress
-                    </span>
-
-                    <span className="text-sm font-black text-amber-300">
-                      {stats.percentage}%
-                    </span>
-                  </div>
-
-                  <div className="relative h-3 overflow-hidden rounded-full border border-white/10 bg-black/50">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-sky-300 via-amber-400 to-orange-600 transition-[width] duration-700"
-                      style={{
-                        width: `${stats.percentage}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* STATS */}
-
-              <div className="grid grid-cols-3 gap-3">
-                <AchievementStat
-                  icon={Trophy}
-                  value={stats.unlocked}
-                  label="Claimed"
-                  color={STAT_COLORS.green}
-                />
-
-                <AchievementStat
-                  icon={Lock}
-                  value={stats.remaining}
-                  label="Unclaimed"
-                  color={STAT_COLORS.blue}
-                />
-
-                <AchievementStat
-                  icon={Star}
-                  value={`${stats.percentage}%`}
-                  label="Complete"
-                  color={STAT_COLORS.gold}
-                />
-              </div>
-            </div>
-
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent" />
-          </section>
-
-          {/* =================================================
-              FILTERS
-          ================================================= */}
-
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {FILTERS.map(
-                ({ label, icon: Icon }) => {
-                  const active =
-                    activeFilter === label;
-
-                  return (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() =>
-                        setActiveFilter(label)
-                      }
-                      className={`flex shrink-0 items-center gap-2 rounded-xl border px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] transition-[border,background,color,box-shadow] ${
-                        active
-                          ? "border-amber-300/30 bg-amber-300/[0.08] text-amber-200 shadow-[0_0_20px_rgba(251,191,36,.06)]"
-                          : "border-white/10 bg-[#090d12] text-slate-600 hover:border-slate-400/20 hover:text-slate-300"
-                      }`}
-                    >
-                      <Icon size={14} />
-                      {label}
-                    </button>
-                  );
-                }
-              )}
-            </div>
-
-            <p className="text-xs text-slate-600">
-              <span className="font-bold text-slate-300">
-                {filteredAchievements.length}
-              </span>{" "}
-              deeds recorded
-            </p>
-          </div>
-
-          {/* =================================================
-              SECTION TITLE
-          ================================================= */}
-
-          <div className="flex items-end justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <Sword
-                  size={21}
-                  className="text-amber-300/60"
-                />
-
-                <h2 className="text-2xl font-black tracking-tight text-slate-100">
-                  The Achievement Hall
-                </h2>
-              </div>
-
-              <p className="mt-2 text-sm text-slate-600">
-                Complete milestones, earn honor, and
-                expand your legend.
-              </p>
-            </div>
-
-            <div className="hidden items-center gap-2 text-[9px] font-bold uppercase tracking-[0.25em] text-amber-300/35 sm:flex">
-              <Feather size={14} />
-              The Chronicle
-            </div>
-          </div>
-
-          {/* =================================================
-              ACHIEVEMENTS
-          ================================================= */}
-
-          {filteredAchievements.length === 0 ? (
-            <div className="relative flex min-h-[380px] flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-white/10 bg-[#090d12] p-8 text-center">
-
-              <Castle
-                size={150}
-                strokeWidth={0.7}
-                className="absolute bottom-[-25px] text-slate-700/[0.08]"
-              />
-
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-300/15 bg-amber-300/[0.04]">
-                <Search
-                  size={27}
-                  className="text-amber-300/60"
-                />
-              </div>
-
-              <h3 className="relative mt-6 text-lg font-bold text-slate-200">
-                No deeds found
+              <h3 className="mt-4 text-base font-bold text-slate-300">
+                No achievements found
               </h3>
 
-              <p className="relative mt-2 max-w-sm text-sm leading-6 text-slate-600">
-                The ravens found no record matching
-                your search or chosen category.
+              <p className="mt-2 text-sm text-slate-600">
+                Try changing your search or
+                category filter.
               </p>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("");
-                  setActiveFilter("All");
-                }}
-                className="relative mt-6 flex items-center gap-2 rounded-xl border border-amber-300/20 bg-amber-300/[0.07] px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-amber-200 transition-[border,background] hover:border-amber-300/35 hover:bg-amber-300/[0.12]"
-              >
-                Clear the search
-                <ChevronRight size={14} />
-              </button>
             </div>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filteredAchievements.map(
-                (achievement, index) => (
+                (
+                  achievement,
+                  index
+                ) => (
                   <AchievementCard
                     key={
                       achievement?._id ||
                       achievement?.key ||
                       index
                     }
-                    achievement={achievement}
+                    achievement={
+                      achievement
+                    }
                     index={index}
                   />
                 )
               )}
             </div>
           )}
+        </section>
 
-          {/* =================================================
-              MOTIVATION
-          ================================================= */}
+        {/* =================================================
+            MOTIVATION
+        ================================================= */}
 
-          {stats.remaining > 0 && (
-            <section className="relative overflow-hidden rounded-3xl border border-amber-300/10 bg-gradient-to-r from-[#11171d] via-[#0b1015] to-[#05070a] p-6 shadow-[0_20px_60px_rgba(0,0,0,.3)] sm:p-7">
-              <div className="pointer-events-none absolute -right-24 -top-24 h-60 w-60 rounded-full bg-amber-400/[0.05] blur-3xl" />
+        {achievements.length > 0 && (
+          <section className="mt-10 overflow-hidden rounded-2xl border border-amber-300/10 bg-gradient-to-r from-amber-300/[0.04] via-white/[0.02] to-purple-500/[0.04] p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-              <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="crown-float flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-amber-300/20 bg-gradient-to-br from-amber-400 to-orange-950 shadow-[0_0_30px_rgba(251,191,36,.1)]">
-                    <Shield
-                      size={28}
-                      className="text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-amber-300/50">
-                      The road continues
-                    </p>
-
-                    <h3 className="mt-1 text-lg font-bold text-slate-100">
-                      More deeds await your blade.
-                    </h3>
-
-                    <p className="mt-1 text-sm text-slate-600">
-                      Keep learning. Keep conquering.
-                      Let the realm remember your work.
-                    </p>
-                  </div>
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-300/10 bg-amber-300/5">
+                  <Flame
+                    size={19}
+                    className="text-amber-300"
+                  />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {MOTIVATION_ICONS.map(
-                    (Icon, index) => (
-                      <div
-                        key={index}
-                        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.025] transition-transform duration-300 hover:-translate-y-1"
-                      >
-                        <Icon
-                          size={18}
-                          className={
-                            index === 4
-                              ? "text-sky-300"
-                              : "text-amber-300"
-                          }
-                        />
-                      </div>
-                    )
-                  )}
+                <div>
+                  <h3 className="text-sm font-bold text-white">
+                    Keep building your legacy.
+                  </h3>
+
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                    Every completed lecture
+                    moves you closer to your next
+                    achievement.
+                  </p>
                 </div>
               </div>
 
-              <div className="absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-amber-300/20 to-transparent" />
-            </section>
-          )}
-        </main>
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                <Star
+                  size={14}
+                  className="text-amber-300"
+                />
+                {stats.remaining} quests
+                remaining
+              </div>
+
+            </div>
+          </section>
+        )}
+
       </div>
-    </>
+    </div>
   );
 }

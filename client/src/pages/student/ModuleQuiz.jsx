@@ -15,6 +15,8 @@ import toast from "react-hot-toast";
 
 import api from "../../services/api";
 
+import { useAuth } from "../../context/AuthContext";
+
 /* =========================================================
    HELPERS
 ========================================================= */
@@ -39,9 +41,7 @@ function QuizLoading() {
           className="mx-auto mb-4 animate-spin text-red-500"
         />
 
-        <p className="text-gray-400">
-          Loading module quiz...
-        </p>
+        <p className="text-gray-400">Loading module quiz...</p>
       </div>
     </div>
   );
@@ -55,14 +55,9 @@ function QuizNotFound({ onBack }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#070707] px-6 text-white">
       <div className="max-w-md text-center">
-        <CircleAlert
-          size={52}
-          className="mx-auto mb-5 text-red-500"
-        />
+        <CircleAlert size={52} className="mx-auto mb-5 text-red-500" />
 
-        <h1 className="mb-3 text-2xl font-bold">
-          Quiz Not Available
-        </h1>
+        <h1 className="mb-3 text-2xl font-bold">Quiz Not Available</h1>
 
         <p className="mb-6 text-gray-400">
           This module does not have a quiz yet.
@@ -84,22 +79,14 @@ function QuizNotFound({ onBack }) {
    RESULT STAT
 ========================================================= */
 
-function ResultStat({
-  label,
-  value,
-  highlight = false,
-}) {
+function ResultStat({ label, value, highlight = false }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <p className="text-xs uppercase tracking-wider text-gray-600">
-        {label}
-      </p>
+      <p className="text-xs uppercase tracking-wider text-gray-600">{label}</p>
 
       <p
         className={`mt-1 text-lg font-bold ${
-          highlight
-            ? "text-green-400"
-            : "text-white"
+          highlight ? "text-green-400" : "text-white"
         }`}
       >
         {value}
@@ -112,10 +99,7 @@ function ResultStat({
    RESULT DETAIL
 ========================================================= */
 
-function ResultDetail({
-  detail,
-  index,
-}) {
+function ResultDetail({ detail, index }) {
   const correct = Boolean(detail?.isCorrect);
 
   return (
@@ -123,22 +107,14 @@ function ResultDetail({
       <div className="flex items-start gap-4">
         <div className="mt-1 shrink-0">
           {correct ? (
-            <CheckCircle2
-              size={22}
-              className="text-green-500"
-            />
+            <CheckCircle2 size={22} className="text-green-500" />
           ) : (
-            <XCircle
-              size={22}
-              className="text-red-500"
-            />
+            <XCircle size={22} className="text-red-500" />
           )}
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="mb-2 text-sm text-gray-500">
-            Question {index + 1}
-          </p>
+          <p className="mb-2 text-sm text-gray-500">Question {index + 1}</p>
 
           <h3 className="font-semibold leading-relaxed text-white">
             {detail?.question}
@@ -146,29 +122,16 @@ function ResultDetail({
 
           <div className="mt-4 space-y-2 text-sm">
             <p>
-              <span className="text-gray-500">
-                Your answer:
-              </span>{" "}
-              <span
-                className={
-                  correct
-                    ? "text-green-400"
-                    : "text-red-400"
-                }
-              >
-                {detail?.selectedAnswer ||
-                  "Not answered"}
+              <span className="text-gray-500">Your answer:</span>{" "}
+              <span className={correct ? "text-green-400" : "text-red-400"}>
+                {detail?.selectedAnswer || "Not answered"}
               </span>
             </p>
 
             {!correct && (
               <p>
-                <span className="text-gray-500">
-                  Correct answer:
-                </span>{" "}
-                <span className="text-green-400">
-                  {detail?.correctAnswer}
-                </span>
+                <span className="text-gray-500">Correct answer:</span>{" "}
+                <span className="text-green-400">{detail?.correctAnswer}</span>
               </p>
             )}
           </div>
@@ -194,11 +157,7 @@ function ResultDetail({
    RESULT SCREEN
 ========================================================= */
 
-function QuizResult({
-  result,
-  onBack,
-  onRetry,
-}) {
+function QuizResult({ result, onBack, onRetry }) {
   const passed = Boolean(result?.passed);
 
   return (
@@ -236,15 +195,9 @@ function QuizResult({
               }`}
             >
               {passed ? (
-                <Trophy
-                  size={40}
-                  className="text-yellow-400"
-                />
+                <Trophy size={40} className="text-yellow-400" />
               ) : (
-                <XCircle
-                  size={40}
-                  className="text-red-500"
-                />
+                <XCircle size={40} className="text-red-500" />
               )}
             </div>
 
@@ -253,9 +206,7 @@ function QuizResult({
             </p>
 
             <h1 className="mb-3 text-3xl font-black sm:text-4xl">
-              {passed
-                ? "Congratulations! 🎉"
-                : "Keep Learning 💪"}
+              {passed ? "Congratulations! 🎉" : "Keep Learning 💪"}
             </h1>
 
             <p className="mx-auto max-w-xl text-gray-400">
@@ -268,9 +219,7 @@ function QuizResult({
             <div className="mt-10 flex justify-center">
               <div
                 className={`flex h-40 w-40 items-center justify-center rounded-full border-8 ${
-                  passed
-                    ? "border-green-500/60"
-                    : "border-red-500/60"
+                  passed ? "border-green-500/60" : "border-red-500/60"
                 }`}
               >
                 <div>
@@ -278,29 +227,18 @@ function QuizResult({
                     {result?.percentage}%
                   </div>
 
-                  <div className="mt-1 text-xs text-gray-500">
-                    Score
-                  </div>
+                  <div className="mt-1 text-xs text-gray-500">Score</div>
                 </div>
               </div>
             </div>
 
             {/* Stats */}
             <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <ResultStat
-                label="Correct"
-                value={result?.correctAnswers}
-              />
+              <ResultStat label="Correct" value={result?.correctAnswers} />
 
-              <ResultStat
-                label="Questions"
-                value={result?.totalQuestions}
-              />
+              <ResultStat label="Questions" value={result?.totalQuestions} />
 
-              <ResultStat
-                label="Passing"
-                value={`${result?.passingScore}%`}
-              />
+              <ResultStat label="Passing" value={`${result?.passingScore}%`} />
 
               <ResultStat
                 label="Status"
@@ -333,29 +271,21 @@ function QuizResult({
         </section>
 
         {/* Detailed Results */}
-        {Array.isArray(result?.details) &&
-          result.details.length > 0 && (
-            <section className="mt-8">
-              <h2 className="mb-5 text-xl font-bold">
-                Review Your Answers
-              </h2>
+        {Array.isArray(result?.details) && result.details.length > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-5 text-xl font-bold">Review Your Answers</h2>
 
-              <div className="space-y-4">
-                {result.details.map(
-                  (detail, index) => (
-                    <ResultDetail
-                      key={
-                        detail?.questionId ||
-                        `result-${index}`
-                      }
-                      detail={detail}
-                      index={index}
-                    />
-                  )
-                )}
-              </div>
-            </section>
-          )}
+            <div className="space-y-4">
+              {result.details.map((detail, index) => (
+                <ResultDetail
+                  key={detail?.questionId || `result-${index}`}
+                  detail={detail}
+                  index={index}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );
@@ -365,12 +295,7 @@ function QuizResult({
    QUESTION NAVIGATOR
 ========================================================= */
 
-function QuestionNavigator({
-  questions,
-  answers,
-  currentQuestion,
-  onSelect,
-}) {
+function QuestionNavigator({ questions, answers, currentQuestion, onSelect }) {
   return (
     <div className="mt-8 rounded-2xl border border-white/10 bg-[#101010] p-5">
       <p className="mb-4 text-xs uppercase tracking-wider text-gray-600">
@@ -379,12 +304,9 @@ function QuestionNavigator({
 
       <div className="flex flex-wrap gap-2">
         {questions.map((question, index) => {
-          const answered = Boolean(
-            answers[question._id]
-          );
+          const answered = Boolean(answers[question._id]);
 
-          const active =
-            currentQuestion === index;
+          const active = currentQuestion === index;
 
           return (
             <button
@@ -395,8 +317,8 @@ function QuestionNavigator({
                 active
                   ? "bg-red-600 text-white"
                   : answered
-                  ? "border border-green-500/30 bg-green-500/10 text-green-400"
-                  : "border border-white/10 bg-white/5 text-gray-500 hover:text-white"
+                    ? "border border-green-500/30 bg-green-500/10 text-green-400"
+                    : "border border-white/10 bg-white/5 text-gray-500 hover:text-white"
               }`}
             >
               {index + 1}
@@ -412,11 +334,7 @@ function QuestionNavigator({
    QUESTION CARD
 ========================================================= */
 
-function QuestionCard({
-  question,
-  selectedAnswer,
-  onSelect,
-}) {
+function QuestionCard({ question, selectedAnswer, onSelect }) {
   if (!question) return null;
 
   return (
@@ -425,9 +343,7 @@ function QuestionCard({
         {/* Question Number */}
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/20 bg-red-600/10">
-            <span className="font-bold text-red-500">
-              {question.index + 1}
-            </span>
+            <span className="font-bold text-red-500">{question.index + 1}</span>
           </div>
 
           <div>
@@ -435,9 +351,7 @@ function QuestionCard({
               Question
             </p>
 
-            <p className="text-sm text-gray-400">
-              Select one answer
-            </p>
+            <p className="text-sm text-gray-400">Select one answer</p>
           </div>
         </div>
 
@@ -448,68 +362,54 @@ function QuestionCard({
 
         {/* Options */}
         <div className="space-y-3">
-          {question.options.map(
-            (option, index) => {
-              const isSelected =
-                selectedAnswer === option;
+          {question.options.map((option, index) => {
+            const isSelected = selectedAnswer === option;
 
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() =>
-                    onSelect(
-                      question._id,
-                      option
-                    )
-                  }
-                  className={`w-full rounded-2xl border p-4 text-left transition-all duration-200 sm:p-5 ${
-                    isSelected
-                      ? "border-red-500 bg-red-500/10"
-                      : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05]"
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => onSelect(question._id, option)}
+                className={`w-full rounded-2xl border p-4 text-left transition-all duration-200 sm:p-5 ${
+                  isSelected
+                    ? "border-red-500 bg-red-500/10"
+                    : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05]"
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
+                      isSelected
+                        ? "bg-red-600 text-white"
+                        : "bg-white/5 text-gray-400"
+                    }`}
+                  >
+                    {String.fromCharCode(65 + index)}
+                  </div>
+
+                  <span
+                    className={`leading-relaxed ${
+                      isSelected ? "text-white" : "text-gray-300"
+                    }`}
+                  >
+                    {option}
+                  </span>
+
+                  <div className="ml-auto shrink-0">
                     <div
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
-                        isSelected
-                          ? "bg-red-600 text-white"
-                          : "bg-white/5 text-gray-400"
+                      className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                        isSelected ? "border-red-500" : "border-white/20"
                       }`}
                     >
-                      {String.fromCharCode(
-                        65 + index
+                      {isSelected && (
+                        <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
                       )}
                     </div>
-
-                    <span
-                      className={`leading-relaxed ${
-                        isSelected
-                          ? "text-white"
-                          : "text-gray-300"
-                      }`}
-                    >
-                      {option}
-                    </span>
-
-                    <div className="ml-auto shrink-0">
-                      <div
-                        className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                          isSelected
-                            ? "border-red-500"
-                            : "border-white/20"
-                        }`}
-                      >
-                        {isSelected && (
-                          <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                        )}
-                      </div>
-                    </div>
                   </div>
-                </button>
-              );
-            }
-          )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -524,10 +424,11 @@ const ModuleQuiz = () => {
   const { moduleId } = useParams();
   const navigate = useNavigate();
 
+  const { refreshDashboardStats } = useAuth();
+
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [currentQuestion, setCurrentQuestion] =
-    useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
@@ -548,32 +449,21 @@ const ModuleQuiz = () => {
       try {
         setLoading(true);
 
-        const response = await api.get(
-          `/module/${moduleId}/quiz`
-        );
+        const response = await api.get(`/module/${moduleId}/quiz`);
 
         if (cancelled) return;
 
         if (response.data?.success) {
           setQuiz(response.data.quiz);
         } else {
-          toast.error(
-            response.data?.message ||
-              "Failed to load quiz"
-          );
+          toast.error(response.data?.message || "Failed to load quiz");
         }
       } catch (error) {
         if (cancelled) return;
 
-        console.error(
-          "FETCH QUIZ ERROR:",
-          error
-        );
+        console.error("FETCH QUIZ ERROR:", error);
 
-        toast.error(
-          error.response?.data?.message ||
-            "Failed to load quiz"
-        );
+        toast.error(error.response?.data?.message || "Failed to load quiz");
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -596,8 +486,7 @@ const ModuleQuiz = () => {
 
   const totalQuestions = questions.length;
 
-  const currentQuestionData =
-    questions[currentQuestion];
+  const currentQuestionData = questions[currentQuestion];
 
   const selectedAnswer = currentQuestionData
     ? answers[currentQuestionData._id]
@@ -605,21 +494,14 @@ const ModuleQuiz = () => {
 
   const progressPercentage =
     totalQuestions > 0
-      ? Math.round(
-          ((currentQuestion + 1) /
-            totalQuestions) *
-            100
-        )
+      ? Math.round(((currentQuestion + 1) / totalQuestions) * 100)
       : 0;
 
   /* =======================================================
      ANSWER
   ======================================================= */
 
-  const handleAnswerSelect = (
-    questionId,
-    answer
-  ) => {
+  const handleAnswerSelect = (questionId, answer) => {
     setAnswers((previous) => {
       if (previous[questionId] === answer) {
         return previous;
@@ -640,19 +522,12 @@ const ModuleQuiz = () => {
     if (!currentQuestionData) return;
 
     if (!answers[currentQuestionData._id]) {
-      toast.error(
-        "Please select an answer first."
-      );
+      toast.error("Please select an answer first.");
       return;
     }
 
-    if (
-      currentQuestion <
-      totalQuestions - 1
-    ) {
-      setCurrentQuestion(
-        (previous) => previous + 1
-      );
+    if (currentQuestion < totalQuestions - 1) {
+      setCurrentQuestion((previous) => previous + 1);
 
       scrollToTop();
     }
@@ -665,9 +540,7 @@ const ModuleQuiz = () => {
   const handlePrevious = () => {
     if (currentQuestion === 0) return;
 
-    setCurrentQuestion(
-      (previous) => previous - 1
-    );
+    setCurrentQuestion((previous) => previous - 1);
 
     scrollToTop();
   };
@@ -677,40 +550,27 @@ const ModuleQuiz = () => {
   ======================================================= */
 
   const handleSubmit = async () => {
-    if (
-      !quiz?._id ||
-      totalQuestions === 0 ||
-      submitting
-    ) {
+    if (!quiz?._id || totalQuestions === 0 || submitting) {
       return;
     }
 
-    const firstUnansweredIndex =
-      questions.findIndex(
-        (question) =>
-          !answers[question._id]
-      );
+    const firstUnansweredIndex = questions.findIndex(
+      (question) => !answers[question._id],
+    );
 
     if (firstUnansweredIndex !== -1) {
-      const unansweredCount =
-        questions.reduce(
-          (count, question) =>
-            count +
-            (!answers[question._id] ? 1 : 0),
-          0
-        );
+      const unansweredCount = questions.reduce(
+        (count, question) => count + (!answers[question._id] ? 1 : 0),
+        0,
+      );
 
       toast.error(
         `Please answer all questions. ${unansweredCount} question${
-          unansweredCount > 1
-            ? "s are"
-            : " is"
-        } unanswered.`
+          unansweredCount > 1 ? "s are" : " is"
+        } unanswered.`,
       );
 
-      setCurrentQuestion(
-        firstUnansweredIndex
-      );
+      setCurrentQuestion(firstUnansweredIndex);
 
       return;
     }
@@ -718,45 +578,31 @@ const ModuleQuiz = () => {
     try {
       setSubmitting(true);
 
-      const formattedAnswers =
-        questions.map((question) => ({
-          questionId: question._id,
-          selectedAnswer:
-            answers[question._id],
-        }));
+      const formattedAnswers = questions.map((question) => ({
+        questionId: question._id,
+        selectedAnswer: answers[question._id],
+      }));
 
-      const response = await api.post(
-        `/quiz/${quiz._id}/submit`,
-        {
-          answers: formattedAnswers,
-        }
-      );
+      const response = await api.post(`/quiz/${quiz._id}/submit`, {
+        answers: formattedAnswers,
+      });
 
       if (response.data?.success) {
         setResult(response.data.result);
 
-        toast.success(
-          response.data.message ||
-            "Quiz submitted successfully!"
-        );
+        // Refresh XP, level, streak and dashboard stats
+        await refreshDashboardStats();
+
+        toast.success(response.data.message || "Quiz submitted successfully!");
 
         scrollToTop();
       } else {
-        toast.error(
-          response.data?.message ||
-            "Failed to submit quiz"
-        );
+        toast.error(response.data?.message || "Failed to submit quiz");
       }
     } catch (error) {
-      console.error(
-        "SUBMIT QUIZ ERROR:",
-        error
-      );
+      console.error("SUBMIT QUIZ ERROR:", error);
 
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to submit quiz"
-      );
+      toast.error(error.response?.data?.message || "Failed to submit quiz");
     } finally {
       setSubmitting(false);
     }
@@ -783,11 +629,7 @@ const ModuleQuiz = () => {
   }
 
   if (!quiz) {
-    return (
-      <QuizNotFound
-        onBack={() => navigate(-1)}
-      />
-    );
+    return <QuizNotFound onBack={() => navigate(-1)} />;
   }
 
   if (result) {
@@ -832,14 +674,10 @@ const ModuleQuiz = () => {
                 AI Generated Assessment
               </p>
 
-              <h1 className="text-2xl font-black sm:text-3xl">
-                {quiz.title}
-              </h1>
+              <h1 className="text-2xl font-black sm:text-3xl">{quiz.title}</h1>
 
               {quiz.module?.moduleTitle && (
-                <p className="mt-2 text-gray-500">
-                  {quiz.module.moduleTitle}
-                </p>
+                <p className="mt-2 text-gray-500">{quiz.module.moduleTitle}</p>
               )}
             </div>
 
@@ -863,13 +701,9 @@ const ModuleQuiz = () => {
           </div>
 
           <div className="mt-2 flex justify-between text-xs text-gray-600">
-            <span>
-              {progressPercentage}% completed
-            </span>
+            <span>{progressPercentage}% completed</span>
 
-            <span>
-              Pass mark: {quiz.passingScore}%
-            </span>
+            <span>Pass mark: {quiz.passingScore}%</span>
           </div>
         </div>
 
@@ -889,21 +723,15 @@ const ModuleQuiz = () => {
             <button
               type="button"
               onClick={handlePrevious}
-              disabled={
-                currentQuestion === 0 ||
-                submitting
-              }
+              disabled={currentQuestion === 0 || submitting}
               className="flex items-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-gray-300 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ArrowLeft size={18} />
 
-              <span className="hidden sm:inline">
-                Previous
-              </span>
+              <span className="hidden sm:inline">Previous</span>
             </button>
 
-            {currentQuestion ===
-            totalQuestions - 1 ? (
+            {currentQuestion === totalQuestions - 1 ? (
               <button
                 type="button"
                 onClick={handleSubmit}
@@ -912,10 +740,7 @@ const ModuleQuiz = () => {
               >
                 {submitting ? (
                   <>
-                    <LoaderCircle
-                      size={18}
-                      className="animate-spin"
-                    />
+                    <LoaderCircle size={18} className="animate-spin" />
                     Submitting...
                   </>
                 ) : (

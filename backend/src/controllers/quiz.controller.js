@@ -4,6 +4,7 @@ import Module from "../models/module.model.js";
 import Course from "../models/course.model.js";
 import Lecture from "../models/lecture.model.js";
 import { generateModuleQuiz } from "../services/ai.service.js";
+import { awardXP } from "../services/achievement.service.js";
 
 // =====================================================
 // CREATE QUIZ MANUALLY
@@ -401,6 +402,7 @@ export const getModuleQuiz = async (req, res) => {
     });
   }
 };
+
 // =====================================================
 // SUBMIT QUIZ
 // POST /api/v1/quiz/:quizId/submit
@@ -446,12 +448,17 @@ export const submitQuiz = async (req, res) => {
 
     for (const question of quiz.questions) {
       const submittedAnswer = answers.find(
-        (answer) => answer.questionId?.toString() === question._id.toString(),
+        (answer) =>
+          answer.questionId?.toString() ===
+          question._id.toString()
       );
 
-      const selectedAnswer = submittedAnswer?.selectedAnswer || "";
+      const selectedAnswer =
+        submittedAnswer?.selectedAnswer || "";
 
-      const isCorrect = selectedAnswer.trim() === question.correctAnswer.trim();
+      const isCorrect =
+        selectedAnswer.trim() ===
+        question.correctAnswer.trim();
 
       if (isCorrect) {
         correctAnswers++;
@@ -467,14 +474,32 @@ export const submitQuiz = async (req, res) => {
       });
     }
 
+    // -------------------------------------------------
+    // Calculate percentage
+    // -------------------------------------------------
+
     const totalQuestions = quiz.questions.length;
 
     const percentage =
       totalQuestions > 0
-        ? Math.round((correctAnswers / totalQuestions) * 100)
+        ? Math.round(
+            (correctAnswers / totalQuestions) * 100
+          )
         : 0;
 
-    const passed = percentage >= quiz.passingScore;
+    const passed =
+      percentage >= quiz.passingScore;
+
+    // -------------------------------------------------
+    // Check if student already passed this quiz
+    // -------------------------------------------------
+
+    const previousPassedAttempt =
+      await QuizAttempt.findOne({
+        student: req.user._id,
+        quiz: quiz._id,
+        passed: true,
+      });
 
     // -------------------------------------------------
     // Save attempt
@@ -485,17 +510,39 @@ export const submitQuiz = async (req, res) => {
       quiz: quiz._id,
       course: quiz.course,
       module: quiz.module,
+
       answers: answers.map((answer) => ({
         questionId: answer.questionId,
-        selectedAnswer: answer.selectedAnswer || "",
+        selectedAnswer:
+          answer.selectedAnswer || "",
       })),
+
       score: correctAnswers,
       totalQuestions,
       correctAnswers,
       percentage,
       passed,
+
       completedAt: new Date(),
     });
+
+    // -------------------------------------------------
+    // Award XP
+    // -------------------------------------------------
+
+    let xpAwarded = 0;
+    let xpData = null;
+
+    const QUIZ_XP = 100;
+
+    if (passed && !previousPassedAttempt) {
+      xpData = await awardXP(
+        req.user._id,
+        QUIZ_XP
+      );
+
+      xpAwarded = QUIZ_XP;
+    }
 
     // -------------------------------------------------
     // Response
@@ -510,17 +557,35 @@ export const submitQuiz = async (req, res) => {
 
       result: {
         attemptId: attempt._id,
+
         score: correctAnswers,
+
         totalQuestions,
+
         correctAnswers,
+
         percentage,
+
         passingScore: quiz.passingScore,
+
         passed,
+
+        xpAwarded,
+
+        totalXP:
+          xpData?.totalXP ?? null,
+
+        level:
+          xpData?.level ?? null,
+
         details: resultDetails,
       },
     });
   } catch (error) {
-    console.error("SUBMIT QUIZ ERROR:", error);
+    console.error(
+      "SUBMIT QUIZ ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -531,7 +596,7 @@ export const submitQuiz = async (req, res) => {
 };
 
 // =====================================================
-// GET MY LATEST QUIZ ATTEMPT
+// GET MY QUIZ PASS STATUS
 // GET /api/v1/quiz/:quizId/my-attempt
 // =====================================================
 
@@ -539,28 +604,55 @@ export const getMyQuizAttempt = async (req, res) => {
   try {
     const { quizId } = req.params;
 
-    const attempt = await QuizAttempt.findOne({
+    // Find the latest PASSED attempt.
+    //
+    // Important:
+    // We intentionally search for passed: true.
+    // Otherwise, a later failed attempt could incorrectly
+    // make a previously unlocked module appear locked.
+    const passedAttempt = await QuizAttempt.findOne({
       quiz: quizId,
       student: req.user._id,
+      passed: true,
     }).sort({ createdAt: -1 });
 
-    if (!attempt) {
-      return res.status(404).json({
-        success: false,
-        message: "No quiz attempt found",
+    // Student has never passed this quiz.
+    if (!passedAttempt) {
+      return res.status(200).json({
+        success: true,
+        passed: false,
+        attempt: null,
       });
     }
 
     return res.status(200).json({
       success: true,
-      attempt,
+      passed: true,
+
+      attempt: {
+        _id: passedAttempt._id,
+        quiz: passedAttempt.quiz,
+        module: passedAttempt.module,
+
+        score: passedAttempt.score,
+        totalQuestions: passedAttempt.totalQuestions,
+        correctAnswers: passedAttempt.correctAnswers,
+
+        percentage: passedAttempt.percentage,
+        passed: passedAttempt.passed,
+
+        completedAt: passedAttempt.completedAt,
+      },
     });
   } catch (error) {
-    console.error("GET QUIZ ATTEMPT ERROR:", error);
+    console.error(
+      "GET QUIZ PASS STATUS ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Failed to get quiz attempt",
+      message: "Failed to get quiz pass status",
       error: error.message,
     });
   }

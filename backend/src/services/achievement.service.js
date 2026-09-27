@@ -27,7 +27,10 @@ const calculateLevel = (xp) => {
  * Award XP to student
  * =========================================================
  */
-const awardXP = async (studentId, xpAmount) => {
+export const awardXP = async (
+  studentId,
+  xpAmount,
+) => {
   if (!xpAmount || xpAmount <= 0) {
     return null;
   }
@@ -45,7 +48,9 @@ const awardXP = async (studentId, xpAmount) => {
   }
 
   studentXP.totalXP += xpAmount;
-  studentXP.level = calculateLevel(studentXP.totalXP);
+
+  studentXP.level =
+    calculateLevel(studentXP.totalXP);
 
   await studentXP.save();
 
@@ -57,30 +62,36 @@ const awardXP = async (studentId, xpAmount) => {
  * Get student's learning statistics
  * =========================================================
  */
-const getStudentStats = async (studentId) => {
+export const getStudentStats = async (
+  studentId,
+) => {
   /**
    * -------------------------------------------------------
    * 1. Completed lectures
    * -------------------------------------------------------
    */
-  const lectureStats = await CourseProgress.aggregate([
-    {
-      $match: {
-        student: studentId,
+  const lectureStats =
+    await CourseProgress.aggregate([
+      {
+        $match: {
+          student: studentId,
+        },
       },
-    },
-    {
-      $unwind: "$lectures",
-    },
-    {
-      $match: {
-        "lectures.completed": true,
+
+      {
+        $unwind: "$lectures",
       },
-    },
-    {
-      $count: "completedLectures",
-    },
-  ]);
+
+      {
+        $match: {
+          "lectures.completed": true,
+        },
+      },
+
+      {
+        $count: "completedLectures",
+      },
+    ]);
 
   const completedLectures =
     lectureStats[0]?.completedLectures ?? 0;
@@ -90,9 +101,10 @@ const getStudentStats = async (studentId) => {
    * 2. Enrolled courses
    * -------------------------------------------------------
    */
-  const enrolledCourses = await Enrollment.countDocuments({
-    student: studentId,
-  });
+  const enrolledCourses =
+    await Enrollment.countDocuments({
+      student: studentId,
+    });
 
   /**
    * -------------------------------------------------------
@@ -103,112 +115,122 @@ const getStudentStats = async (studentId) => {
    *
    * completed lectures === total lectures
    */
-  const completedCourseStats = await CourseProgress.aggregate([
-    {
-      $match: {
-        student: studentId,
+  const completedCourseStats =
+    await CourseProgress.aggregate([
+      {
+        $match: {
+          student: studentId,
+        },
       },
-    },
 
-    {
-      $unwind: {
-        path: "$lectures",
-        preserveNullAndEmptyArrays: true,
+      {
+        $unwind: {
+          path: "$lectures",
+          preserveNullAndEmptyArrays: true,
+        },
       },
-    },
 
-    {
-      $group: {
-        _id: "$course",
+      {
+        $group: {
+          _id: "$course",
 
-        completedLectures: {
-          $sum: {
-            $cond: [
-              "$lectures.completed",
-              1,
-              0,
+          completedLectures: {
+            $sum: {
+              $cond: [
+                "$lectures.completed",
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+
+      /**
+       * Get lectures belonging to each course.
+       */
+      {
+        $lookup: {
+          from: "lectures",
+
+          localField: "_id",
+
+          foreignField: "course",
+
+          as: "courseLectures",
+        },
+      },
+
+      /**
+       * Calculate total lectures.
+       */
+      {
+        $project: {
+          completedLectures: 1,
+
+          totalLectures: {
+            $size: "$courseLectures",
+          },
+        },
+      },
+
+      /**
+       * Only keep fully completed courses.
+       */
+      {
+        $match: {
+          $expr: {
+            $and: [
+              {
+                $gt: [
+                  "$totalLectures",
+                  0,
+                ],
+              },
+
+              {
+                $eq: [
+                  "$completedLectures",
+                  "$totalLectures",
+                ],
+              },
             ],
           },
         },
       },
-    },
 
-    /**
-     * Get lectures belonging to each course.
-     */
-    {
-      $lookup: {
-        from: "lectures",
-        localField: "_id",
-        foreignField: "course",
-        as: "courseLectures",
+      {
+        $count: "completedCourses",
       },
-    },
-
-    /**
-     * Calculate total lectures.
-     */
-    {
-      $project: {
-        completedLectures: 1,
-
-        totalLectures: {
-          $size: "$courseLectures",
-        },
-      },
-    },
-
-    /**
-     * Only keep fully completed courses.
-     */
-    {
-      $match: {
-        $expr: {
-          $and: [
-            {
-              $gt: ["$totalLectures", 0],
-            },
-            {
-              $eq: [
-                "$completedLectures",
-                "$totalLectures",
-              ],
-            },
-          ],
-        },
-      },
-    },
-
-    {
-      $count: "completedCourses",
-    },
-  ]);
+    ]);
 
   const completedCourses =
-    completedCourseStats[0]?.completedCourses ?? 0;
+    completedCourseStats[0]
+      ?.completedCourses ?? 0;
 
   /**
    * -------------------------------------------------------
    * 4. Learning hours
    * -------------------------------------------------------
    */
-  const studyStats = await StudySession.aggregate([
-    {
-      $match: {
-        student: studentId,
-      },
-    },
-
-    {
-      $group: {
-        _id: null,
-
-        totalStudySeconds: {
-          $sum: "$durationSeconds",
+  const studyStats =
+    await StudySession.aggregate([
+      {
+        $match: {
+          student: studentId,
         },
       },
-    },
-  ]);
+
+      {
+        $group: {
+          _id: null,
+
+          totalStudySeconds: {
+            $sum: "$durationSeconds",
+          },
+        },
+      },
+    ]);
 
   const totalStudySeconds =
     studyStats[0]?.totalStudySeconds ?? 0;
@@ -222,13 +244,27 @@ const getStudentStats = async (studentId) => {
    * -------------------------------------------------------
    */
   const streak =
-    await calculateCurrentStreak(studentId);
+    await calculateCurrentStreak(
+      studentId,
+    );
 
+  /**
+   * -------------------------------------------------------
+   * Final statistics
+   * -------------------------------------------------------
+   */
   return {
-    lecturesCompleted: completedLectures,
-    coursesEnrolled: enrolledCourses,
-    coursesCompleted: completedCourses,
+    lecturesCompleted:
+      completedLectures,
+
+    coursesEnrolled:
+      enrolledCourses,
+
+    coursesCompleted:
+      completedCourses,
+
     learningHours,
+
     streak,
   };
 };
@@ -244,7 +280,8 @@ const getStudentStats = async (studentId) => {
 const getDateKey = (date) => {
   const value = new Date(date);
 
-  const year = value.getFullYear();
+  const year =
+    value.getFullYear();
 
   const month = String(
     value.getMonth() + 1,
@@ -262,13 +299,18 @@ const getDateKey = (date) => {
  * Calculate current study streak
  * =========================================================
  */
-const calculateCurrentStreak = async (studentId) => {
-  const sessions = await StudySession.find({
-    student: studentId,
-  })
-    .select("startedAt")
-    .sort({ startedAt: -1 })
-    .lean();
+const calculateCurrentStreak = async (
+  studentId,
+) => {
+  const sessions =
+    await StudySession.find({
+      student: studentId,
+    })
+      .select("startedAt")
+      .sort({
+        startedAt: -1,
+      })
+      .lean();
 
   if (!sessions.length) {
     return 0;
@@ -280,7 +322,9 @@ const calculateCurrentStreak = async (studentId) => {
   const uniqueDates = [
     ...new Set(
       sessions.map((session) =>
-        getDateKey(session.startedAt),
+        getDateKey(
+          session.startedAt,
+        ),
       ),
     ),
   ];
@@ -295,9 +339,11 @@ const calculateCurrentStreak = async (studentId) => {
    */
   const today = new Date();
 
-  const todayKey = getDateKey(today);
+  const todayKey =
+    getDateKey(today);
 
-  const yesterday = new Date(today);
+  const yesterday =
+    new Date(today);
 
   yesterday.setDate(
     yesterday.getDate() - 1,
@@ -306,7 +352,8 @@ const calculateCurrentStreak = async (studentId) => {
   const yesterdayKey =
     getDateKey(yesterday);
 
-  const latestDate = uniqueDates[0];
+  const latestDate =
+    uniqueDates[0];
 
   /**
    * If the student hasn't studied today
@@ -325,7 +372,9 @@ const calculateCurrentStreak = async (studentId) => {
   let streak = 1;
 
   let previousDate =
-    new Date(`${latestDate}T00:00:00`);
+    new Date(
+      `${latestDate}T00:00:00`,
+    );
 
   for (
     let i = 1;
@@ -338,7 +387,8 @@ const calculateCurrentStreak = async (studentId) => {
       );
 
     const difference =
-      (previousDate - currentDate) /
+      (previousDate -
+        currentDate) /
       (1000 * 60 * 60 * 24);
 
     if (difference !== 1) {
@@ -347,7 +397,8 @@ const calculateCurrentStreak = async (studentId) => {
 
     streak++;
 
-    previousDate = currentDate;
+    previousDate =
+      currentDate;
   }
 
   return streak;
@@ -408,182 +459,201 @@ const isAchievementUnlocked = (
  * Check and unlock achievements
  * =========================================================
  */
-export const checkAndUnlockAchievements = async (
-  studentId,
-) => {
-  try {
-    /**
-     * -----------------------------------------------------
-     * Get current student statistics
-     * -----------------------------------------------------
-     */
-    const stats =
-      await getStudentStats(studentId);
+export const checkAndUnlockAchievements =
+  async (studentId) => {
+    try {
+      /**
+       * -----------------------------------------------------
+       * Get current student statistics
+       * -----------------------------------------------------
+       */
+      const stats =
+        await getStudentStats(
+          studentId,
+        );
 
-    /**
-     * -----------------------------------------------------
-     * Get active achievements
-     * -----------------------------------------------------
-     */
-    const achievements =
-      await Achievement.find({
-        isActive: true,
-      })
-        .sort({ category: 1, requirementValue: 1 })
-        .lean();
+      /**
+       * -----------------------------------------------------
+       * Get active achievements
+       * -----------------------------------------------------
+       */
+      const achievements =
+        await Achievement.find({
+          isActive: true,
+        })
+          .sort({
+            category: 1,
+            requirementValue: 1,
+          })
+          .lean();
 
-    if (!achievements.length) {
+      if (!achievements.length) {
+        return {
+          stats,
+
+          newlyUnlocked: [],
+
+          xp: null,
+        };
+      }
+
+      /**
+       * -----------------------------------------------------
+       * Get already unlocked achievements
+       * -----------------------------------------------------
+       */
+      const unlockedAchievements =
+        await StudentAchievement.find({
+          student: studentId,
+        })
+          .select("achievement")
+          .lean();
+
+      const unlockedIds =
+        new Set(
+          unlockedAchievements.map(
+            (item) =>
+              item.achievement.toString(),
+          ),
+        );
+
+      /**
+       * -----------------------------------------------------
+       * Find and unlock new achievements
+       * -----------------------------------------------------
+       */
+      const newlyUnlocked = [];
+
+      let totalXPAwarded = 0;
+
+      let latestXP = null;
+
+      for (
+        const achievement of achievements
+      ) {
+        /**
+         * Already unlocked.
+         */
+        if (
+          unlockedIds.has(
+            achievement._id.toString(),
+          )
+        ) {
+          continue;
+        }
+
+        /**
+         * Requirement not satisfied.
+         */
+        const unlocked =
+          isAchievementUnlocked(
+            achievement,
+            stats,
+          );
+
+        if (!unlocked) {
+          continue;
+        }
+
+        /**
+         * ---------------------------------------------------
+         * Create student achievement
+         * ---------------------------------------------------
+         */
+        const studentAchievement =
+          await StudentAchievement.create({
+            student: studentId,
+
+            achievement:
+              achievement._id,
+
+            unlockedAt:
+              new Date(),
+
+            progress:
+              achievement.requirementValue,
+          });
+
+        /**
+         * ---------------------------------------------------
+         * Award XP
+         * ---------------------------------------------------
+         */
+        const xpReward =
+          achievement.xpReward || 0;
+
+        if (xpReward > 0) {
+          latestXP =
+            await awardXP(
+              studentId,
+              xpReward,
+            );
+
+          totalXPAwarded +=
+            xpReward;
+        }
+
+        /**
+         * ---------------------------------------------------
+         * Return achievement information
+         * ---------------------------------------------------
+         */
+        newlyUnlocked.push({
+          ...achievement,
+
+          unlockedAt:
+            studentAchievement.unlockedAt,
+
+          xpReward,
+
+          totalXP:
+            latestXP?.totalXP ??
+            null,
+
+          level:
+            latestXP?.level ??
+            null,
+        });
+      }
+
+      /**
+       * -----------------------------------------------------
+       * Get final XP information
+       * -----------------------------------------------------
+       */
+      if (!latestXP) {
+        latestXP =
+          await StudentXP.findOne({
+            student: studentId,
+          }).lean();
+      }
+
+      /**
+       * -----------------------------------------------------
+       * Final response
+       * -----------------------------------------------------
+       */
       return {
         stats,
-        newlyUnlocked: [],
-        xp: null,
+
+        newlyUnlocked,
+
+        xp: {
+          totalXP:
+            latestXP?.totalXP ?? 0,
+
+          level:
+            latestXP?.level ?? 1,
+
+          totalXPAwarded,
+        },
       };
+    } catch (error) {
+      console.error(
+        "Achievement service error:",
+        error,
+      );
+
+      throw error;
     }
-
-    /**
-     * -----------------------------------------------------
-     * Get already unlocked achievements
-     * -----------------------------------------------------
-     */
-    const unlockedAchievements =
-      await StudentAchievement.find({
-        student: studentId,
-      })
-        .select("achievement")
-        .lean();
-
-    const unlockedIds = new Set(
-      unlockedAchievements.map(
-        (item) =>
-          item.achievement.toString(),
-      ),
-    );
-
-    /**
-     * -----------------------------------------------------
-     * Find and unlock new achievements
-     * -----------------------------------------------------
-     */
-    const newlyUnlocked = [];
-
-    let totalXPAwarded = 0;
-    let latestXP = null;
-
-    for (const achievement of achievements) {
-      /**
-       * Already unlocked.
-       */
-      if (
-        unlockedIds.has(
-          achievement._id.toString(),
-        )
-      ) {
-        continue;
-      }
-
-      /**
-       * Requirement not satisfied.
-       */
-      const unlocked =
-        isAchievementUnlocked(
-          achievement,
-          stats,
-        );
-
-      if (!unlocked) {
-        continue;
-      }
-
-      /**
-       * ---------------------------------------------------
-       * Create student achievement
-       * ---------------------------------------------------
-       */
-      const studentAchievement =
-        await StudentAchievement.create({
-          student: studentId,
-          achievement: achievement._id,
-          unlockedAt: new Date(),
-          progress:
-            achievement.requirementValue,
-        });
-
-      /**
-       * ---------------------------------------------------
-       * Award XP
-       * ---------------------------------------------------
-       */
-      const xpReward =
-        achievement.xpReward || 0;
-
-      if (xpReward > 0) {
-        latestXP = await awardXP(
-          studentId,
-          xpReward,
-        );
-
-        totalXPAwarded += xpReward;
-      }
-
-      /**
-       * ---------------------------------------------------
-       * Return achievement information
-       * ---------------------------------------------------
-       */
-      newlyUnlocked.push({
-        ...achievement,
-
-        unlockedAt:
-          studentAchievement.unlockedAt,
-
-        xpReward,
-
-        totalXP:
-          latestXP?.totalXP ?? null,
-
-        level:
-          latestXP?.level ?? null,
-      });
-    }
-
-    /**
-     * -----------------------------------------------------
-     * Get final XP information
-     * -----------------------------------------------------
-     */
-    if (!latestXP) {
-      latestXP =
-        await StudentXP.findOne({
-          student: studentId,
-        }).lean();
-    }
-
-    /**
-     * -----------------------------------------------------
-     * Final response
-     * -----------------------------------------------------
-     */
-    return {
-      stats,
-
-      newlyUnlocked,
-
-      xp: {
-        totalXP:
-          latestXP?.totalXP ?? 0,
-
-        level:
-          latestXP?.level ?? 1,
-
-        totalXPAwarded,
-      },
-    };
-  } catch (error) {
-    console.error(
-      "Achievement service error:",
-      error,
-    );
-
-    throw error;
-  }
-};
+  };

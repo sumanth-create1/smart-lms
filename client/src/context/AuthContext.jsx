@@ -27,23 +27,44 @@ export function AuthProvider({ children }) {
   const [dashboardLoading, setDashboardLoading] = useState(false);
 
   // ===================================================
+  // ACHIEVEMENTS
+  // ===================================================
+
+  const [achievements, setAchievements] = useState([]);
+  const [achievementsLoading, setAchievementsLoading] =
+    useState(false);
+
+  // ===================================================
   // GET CURRENT USER
   // ===================================================
 
   const getCurrentUser = useCallback(async () => {
     try {
+      console.log("🔐 Checking current user...");
+
       const response = await api.get("/auth/me");
 
       const currentUser =
         response.data?.user || response.data;
 
+      console.log(
+        "✅ Current user:",
+        currentUser
+      );
+
       setUser(currentUser);
 
       return currentUser;
     } catch (error) {
+      console.error(
+        "❌ Get current user error:",
+        error.response?.data || error.message
+      );
+
       setUser(null);
       setDashboardStats(null);
-
+      setAchievements([]);
+      
       return null;
     } finally {
       setLoading(false);
@@ -70,12 +91,21 @@ export function AuthProvider({ children }) {
 
       setDashboardLoading(true);
 
-      const response = await api.get("/dashboard/student");
+      console.log("📊 Loading dashboard stats...");
+
+      const response = await api.get(
+        "/dashboard/student"
+      );
 
       if (response.data?.success) {
         const stats = response.data.stats || {};
 
         setDashboardStats(stats);
+
+        console.log(
+          "✅ Dashboard stats loaded:",
+          stats
+        );
 
         return stats;
       }
@@ -87,9 +117,78 @@ export function AuthProvider({ children }) {
         error.response?.data || error.message
       );
 
+      setDashboardStats(null);
+
       return null;
     } finally {
       setDashboardLoading(false);
+    }
+  }, [user]);
+
+  // ===================================================
+  // GET ALL ACHIEVEMENTS
+  // ===================================================
+
+  const refreshAchievements = useCallback(async () => {
+    try {
+      // No logged-in user
+      if (!user) {
+        setAchievements([]);
+        return [];
+      }
+
+      // Achievements are only required for students
+      if (user.role !== "student") {
+        setAchievements([]);
+        return [];
+      }
+
+      setAchievementsLoading(true);
+
+      console.log("🏆 Loading all achievements...");
+
+      // IMPORTANT:
+      // /achievements/all returns ALL active achievements
+      // together with unlocked status for this student.
+      const response = await api.get(
+        "/achievements/all"
+      );
+
+      console.log(
+        "🏆 Achievement API response:",
+        response.data
+      );
+
+      if (response.data?.success) {
+        const achievementList = Array.isArray(
+          response.data.achievements
+        )
+          ? response.data.achievements
+          : [];
+
+        setAchievements(achievementList);
+
+        console.log(
+          `✅ ${achievementList.length} achievements loaded`
+        );
+
+        return achievementList;
+      }
+
+      setAchievements([]);
+
+      return [];
+    } catch (error) {
+      console.error(
+        "❌ Achievements error:",
+        error.response?.data || error.message
+      );
+
+      setAchievements([]);
+
+      return [];
+    } finally {
+      setAchievementsLoading(false);
     }
   }, [user]);
 
@@ -116,8 +215,7 @@ export function AuthProvider({ children }) {
         );
 
         const loggedInUser =
-          response.data?.user ||
-          response.data;
+          response.data?.user || response.data;
 
         setUser(loggedInUser);
 
@@ -168,25 +266,36 @@ export function AuthProvider({ children }) {
     } finally {
       setUser(null);
       setDashboardStats(null);
+      setAchievements([]);
     }
   }, []);
 
   // ===================================================
-  // LOAD DASHBOARD AFTER AUTH
+  // LOAD STUDENT DATA AFTER AUTH
   // ===================================================
 
   useEffect(() => {
-    if (!loading && user?.role === "student") {
-      refreshDashboardStats();
+    // Wait until authentication check is complete
+    if (loading) {
+      return;
     }
 
-    if (!loading && user?.role !== "student") {
-      setDashboardStats(null);
+    // Student
+    if (user?.role === "student") {
+      refreshDashboardStats();
+      refreshAchievements();
+
+      return;
     }
+
+    // Instructor / Admin / No user
+    setDashboardStats(null);
+    setAchievements([]);
   }, [
     loading,
     user,
     refreshDashboardStats,
+    refreshAchievements,
   ]);
 
   // ===================================================
@@ -203,21 +312,34 @@ export function AuthProvider({ children }) {
 
   const authValue = useMemo(
     () => ({
-      // User
+      // -------------------------------
+      // USER
+      // -------------------------------
       user,
       setUser,
       updateUser,
 
-      // Auth
+      // -------------------------------
+      // AUTH
+      // -------------------------------
       loading,
       login,
       logout,
       getCurrentUser,
 
-      // Dashboard
+      // -------------------------------
+      // DASHBOARD
+      // -------------------------------
       dashboardStats,
       dashboardLoading,
       refreshDashboardStats,
+
+      // -------------------------------
+      // ACHIEVEMENTS
+      // -------------------------------
+      achievements,
+      achievementsLoading,
+      refreshAchievements,
     }),
     [
       user,
@@ -226,9 +348,14 @@ export function AuthProvider({ children }) {
       logout,
       getCurrentUser,
       updateUser,
+
       dashboardStats,
       dashboardLoading,
       refreshDashboardStats,
+
+      achievements,
+      achievementsLoading,
+      refreshAchievements,
     ]
   );
 
