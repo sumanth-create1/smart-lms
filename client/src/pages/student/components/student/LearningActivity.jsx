@@ -152,11 +152,72 @@ const getHours = (item = {}) => {
 };
 
 // =====================================================
+// FORMAT STUDY TIME
+// =====================================================
+
+const formatStudyTime = (hours) => {
+  const safeHours = Math.max(
+    getSafeNumber(hours),
+    0
+  );
+
+  if (safeHours === 0) {
+    return "0.0h";
+  }
+
+  // Less than 0.1 hour = show minutes
+  if (safeHours < 0.1) {
+    const minutes = Math.max(
+      Math.round(safeHours * 60),
+      1
+    );
+
+    return `${minutes} min`;
+  }
+
+  return `${safeHours.toFixed(1)}h`;
+};
+
+const formatTotalStudyTime = (hours) => {
+  const safeHours = Math.max(
+    getSafeNumber(hours),
+    0
+  );
+
+  if (safeHours === 0) {
+    return {
+      value: "0.0",
+      unit: "hours",
+    };
+  }
+
+  if (safeHours < 0.1) {
+    const minutes = Math.max(
+      Math.round(safeHours * 60),
+      1
+    );
+
+    return {
+      value: String(minutes),
+      unit: minutes === 1 ? "minute" : "minutes",
+    };
+  }
+
+  return {
+    value: safeHours.toFixed(1),
+    unit: "hours",
+  };
+};
+
+// =====================================================
 // NORMALIZE ACTIVITY
 // =====================================================
 
 const normalizeActivity = (activity) => {
-  if (!Array.isArray(activity) || activity.length === 0) {
+  if (
+    !Array.isArray(activity) ||
+    activity.length === 0
+  ) {
     return EMPTY_ACTIVITY;
   }
 
@@ -190,8 +251,6 @@ const ActivityLoading = memo(() => {
         shadow-black/50
       "
     >
-      {/* STATIC BACKGROUND */}
-
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="
@@ -242,8 +301,6 @@ const ActivityLoading = memo(() => {
       </div>
 
       <div className="relative z-10">
-        {/* HEADER */}
-
         <div
           className="
             flex
@@ -264,8 +321,6 @@ const ActivityLoading = memo(() => {
 
           <div className="h-10 w-10 animate-pulse rounded-xl bg-white/10" />
         </div>
-
-        {/* CONTENT */}
 
         <div className="p-5 sm:p-6">
           <div className="mb-7 flex items-end justify-between">
@@ -341,8 +396,6 @@ const EmptyActivity = memo(() => {
         text-center
       "
     >
-      {/* STATIC MOON */}
-
       <div
         className="
           pointer-events-none
@@ -368,8 +421,6 @@ const EmptyActivity = memo(() => {
           "
         />
       </div>
-
-      {/* DECORATIVE ICONS */}
 
       <Flame
         size={20}
@@ -414,8 +465,6 @@ const EmptyActivity = memo(() => {
           text-amber-400/20
         "
       />
-
-      {/* SHIELD */}
 
       <div
         className="
@@ -474,7 +523,10 @@ const ActivityBar = memo(
 
     const height =
       hours > 0
-        ? Math.max((hours / maxHours) * 100, 5)
+        ? Math.max(
+            (hours / maxHours) * 100,
+            5
+          )
         : 2;
 
     const isStrongest =
@@ -495,8 +547,6 @@ const ActivityBar = memo(
           justify-end
         "
       >
-        {/* CROWN */}
-
         <div
           className={`
             mb-1
@@ -506,7 +556,11 @@ const ActivityBar = memo(
             justify-center
             transition-opacity
             duration-300
-            ${isStrongest ? "opacity-100" : "opacity-0"}
+            ${
+              isStrongest
+                ? "opacity-100"
+                : "opacity-0"
+            }
           `}
         >
           <Crown
@@ -523,8 +577,6 @@ const ActivityBar = memo(
           />
         </div>
 
-        {/* HOURS */}
-
         <span
           className="
             mb-2
@@ -537,10 +589,8 @@ const ActivityBar = memo(
             group-hover/bar:text-slate-200
           "
         >
-          {hours.toFixed(1)}h
+          {formatStudyTime(hours)}
         </span>
-
-        {/* BAR */}
 
         <div
           className="
@@ -560,8 +610,6 @@ const ActivityBar = memo(
             group-hover/bar:border-amber-700/40
           "
         >
-          {/* PATTERN */}
-
           <div
             className="
               pointer-events-none
@@ -572,8 +620,6 @@ const ActivityBar = memo(
               [background-size:9px_9px]
             "
           />
-
-          {/* BAR */}
 
           <div
             className="
@@ -592,8 +638,6 @@ const ActivityBar = memo(
               height: `${height}%`,
             }}
           >
-            {/* GOLD EDGE */}
-
             <div
               className="
                 absolute
@@ -604,8 +648,6 @@ const ActivityBar = memo(
                 bg-amber-300/80
               "
             />
-
-            {/* HOVER SHINE */}
 
             <div
               className="
@@ -625,8 +667,6 @@ const ActivityBar = memo(
             />
           </div>
         </div>
-
-        {/* DAY */}
 
         <span
           className="
@@ -708,25 +748,12 @@ const LearningActivity = memo(
           ? totalHours / activeDays
           : 0;
 
-      // =================================================
-      // IMPORTANT:
-      // Check whether there is REAL activity.
-      //
-      // Backend can return 7 days even when every
-      // day has 0 hours.
-      // =================================================
-
-      const hasActivity = normalizedActivity.some(
-        (item) => item.hours > 0
-      );
-
       return {
         totalHours,
         activeDays,
         averageHours,
         strongestDay,
         maxHours,
-        hasActivity,
       };
     }, [normalizedActivity]);
 
@@ -736,8 +763,16 @@ const LearningActivity = memo(
       averageHours,
       strongestDay,
       maxHours,
-      hasActivity,
     } = statistics;
+
+    // =================================================
+    // FORMATTED TOTAL
+    // =================================================
+
+    const totalStudyTime = useMemo(
+      () => formatTotalStudyTime(totalHours),
+      [totalHours]
+    );
 
     // =================================================
     // LOADING
@@ -775,8 +810,6 @@ const LearningActivity = memo(
         ================================================= */}
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          {/* BASE */}
-
           <div
             className="
               absolute
@@ -787,8 +820,6 @@ const LearningActivity = memo(
               to-[#090b0d]
             "
           />
-
-          {/* MOON */}
 
           <div
             className="
@@ -802,8 +833,6 @@ const LearningActivity = memo(
               shadow-[0_0_45px_rgba(186,230,253,0.04)]
             "
           />
-
-          {/* CASTLE */}
 
           <div
             className="
@@ -832,8 +861,6 @@ const LearningActivity = memo(
               "
             />
           </div>
-
-          {/* MOUNTAINS */}
 
           <div
             className="
@@ -864,8 +891,6 @@ const LearningActivity = memo(
             />
           </div>
 
-          {/* STATIC GLOWS */}
-
           <div
             className="
               absolute
@@ -892,8 +917,6 @@ const LearningActivity = memo(
             "
           />
 
-          {/* STONE */}
-
           <div
             className="
               absolute
@@ -903,8 +926,6 @@ const LearningActivity = memo(
               [background-size:25px_25px]
             "
           />
-
-          {/* ONE FOG LAYER */}
 
           <div
             className="
@@ -920,8 +941,6 @@ const LearningActivity = memo(
               blur-2xl
             "
           />
-
-          {/* REDUCED SNOW */}
 
           <span
             className="
@@ -950,8 +969,6 @@ const LearningActivity = memo(
               bg-white/25
             "
           />
-
-          {/* ONE EMBER */}
 
           <span
             className="
@@ -1064,8 +1081,6 @@ const LearningActivity = memo(
             </div>
           </div>
 
-          {/* STATUS */}
-
           <div
             className="
               hidden
@@ -1151,7 +1166,7 @@ const LearningActivity = memo(
                     text-white
                   "
                 >
-                  {totalHours.toFixed(1)}
+                  {totalStudyTime.value}
                 </span>
 
                 <span
@@ -1161,7 +1176,7 @@ const LearningActivity = memo(
                     text-slate-500
                   "
                 >
-                  hours
+                  {totalStudyTime.unit}
                 </span>
               </div>
             </div>
@@ -1223,7 +1238,16 @@ const LearningActivity = memo(
                   <TrendingUp size={13} />
 
                   <span>
-                    {averageHours.toFixed(1)}h/day
+                    {averageHours < 0.1
+                      ? `${Math.max(
+                          Math.round(
+                            averageHours * 60
+                          ),
+                          1
+                        )} min/day`
+                      : `${averageHours.toFixed(
+                          1
+                        )}h/day`}
                   </span>
                 </div>
               )}
@@ -1234,22 +1258,7 @@ const LearningActivity = memo(
               EMPTY / CHART
           ================================================= */}
 
-          {/*
-            IMPORTANT FIX:
-
-            The backend can return 7 days even when
-            every day has 0 hours.
-
-            So checking:
-
-              normalizedActivity.length === 0
-
-            is not enough.
-
-            We now check hasActivity instead.
-          */}
-
-          {!hasActivity ? (
+          {normalizedActivity.length === 0 ? (
             <EmptyActivity />
           ) : (
             <>
@@ -1304,8 +1313,6 @@ const LearningActivity = memo(
                       hover:border-amber-500/30
                     "
                   >
-                    {/* STATIC GLOW */}
-
                     <div
                       className="
                         pointer-events-none
@@ -1320,8 +1327,6 @@ const LearningActivity = memo(
                         blur-xl
                       "
                     />
-
-                    {/* CROWN */}
 
                     <div
                       className="
@@ -1379,8 +1384,10 @@ const LearningActivity = memo(
                         "
                       >
                         Your strongest learning battle —{" "}
-                        {strongestDay.hours.toFixed(1)}{" "}
-                        hours of study.
+                        {formatStudyTime(
+                          strongestDay.hours
+                        )}{" "}
+                        of study.
                       </p>
                     </div>
 
