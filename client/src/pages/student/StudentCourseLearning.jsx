@@ -67,6 +67,8 @@ const StudentCourseLearning = () => {
   const [progress, setProgress] = useState(null);
   const [selectedLecture, setSelectedLecture] = useState(null);
 
+  const [currentWatchSeconds, setCurrentWatchSeconds] = useState(0);
+
   // ---------------------------------------------------
   // MODULES
   // ---------------------------------------------------
@@ -121,6 +123,8 @@ const StudentCourseLearning = () => {
   const lastSeekWarningRef = useRef(0);
   const progressSyncTimerRef = useRef(null);
 
+  const lastProgressUiUpdateRef = useRef(0);
+
   // ---------------------------------------------------
   // KEYBOARD
   // ---------------------------------------------------
@@ -152,7 +156,6 @@ const StudentCourseLearning = () => {
 
   useEffect(() => {
     currentLectureIndexRef.current = currentLectureIndex;
-
     lecturesRef.current = lectures;
   }, [currentLectureIndex, lectures]);
 
@@ -282,7 +285,9 @@ const StudentCourseLearning = () => {
       const response = await api.get(`/course/${courseId}`);
 
       if (!response.data?.success) {
-        throw new Error(response.data?.message || "Unable to load course.");
+        throw new Error(
+          response.data?.message || "Unable to load course.",
+        );
       }
 
       setCourse(response.data?.course || null);
@@ -310,7 +315,9 @@ const StudentCourseLearning = () => {
       const response = await api.get(`/lecture/course/${courseId}`);
 
       if (!response.data?.success) {
-        throw new Error(response.data?.message || "Unable to load lectures.");
+        throw new Error(
+          response.data?.message || "Unable to load lectures.",
+        );
       }
 
       let lectureData = [];
@@ -408,10 +415,12 @@ const StudentCourseLearning = () => {
 
             return [module._id, response.data?.quiz || null];
           } catch (error) {
-            console.error(
-              `Failed to fetch quiz for module ${module._id}:`,
-              error,
-            );
+            if (error.response?.status !== 404) {
+              console.error(
+                `Failed to fetch quiz for module ${module._id}:`,
+                error,
+              );
+            }
 
             return [module._id, null];
           }
@@ -421,6 +430,7 @@ const StudentCourseLearning = () => {
       setModuleQuizzes(Object.fromEntries(quizEntries));
     } catch (error) {
       console.error("FETCH MODULE QUIZZES ERROR:", error);
+
       setModuleQuizzes({});
     }
   };
@@ -439,7 +449,9 @@ const StudentCourseLearning = () => {
       }
 
       setProgress(
-        response.data?.progress || response.data?.courseProgress || null,
+        response.data?.progress ||
+          response.data?.courseProgress ||
+          null,
       );
     } catch (error) {
       if (error.response?.status !== 404) {
@@ -489,7 +501,9 @@ const StudentCourseLearning = () => {
       if (!item?.completed) return;
 
       const lectureId =
-        typeof item?.lecture === "object" ? item?.lecture?._id : item?.lecture;
+        typeof item?.lecture === "object"
+          ? item?.lecture?._id
+          : item?.lecture;
 
       if (lectureId) {
         ids.add(String(lectureId));
@@ -507,7 +521,10 @@ const StudentCourseLearning = () => {
     if (!lectures.length) return 0;
 
     return Math.round(
-      Math.min((completedLectureIds.size / lectures.length) * 100, 100),
+      Math.min(
+        (completedLectureIds.size / lectures.length) * 100,
+        100,
+      ),
     );
   }, [lectures.length, completedLectureIds]);
 
@@ -539,10 +556,12 @@ const StudentCourseLearning = () => {
       lectureMap.get(key).push(lecture);
     });
 
-    return modules.map((module) => {
+    return modules.map((module, moduleIndex) => {
       const moduleLectures = [
         ...(lectureMap.get(String(module?._id)) || []),
-      ].sort((a, b) => Number(a?.order ?? 0) - Number(b?.order ?? 0));
+      ].sort(
+        (a, b) => Number(a?.order ?? 0) - Number(b?.order ?? 0),
+      );
 
       const completedCount = moduleLectures.filter((lecture) =>
         completedLectureIds.has(String(lecture?._id)),
@@ -555,20 +574,65 @@ const StudentCourseLearning = () => {
           ? Math.round((completedCount / totalLectures) * 100)
           : 0;
 
-      const quiz = moduleQuizzes[String(module?._id)] || null;
+      const quiz =
+        moduleQuizzes[String(module?._id)] || null;
+
+      const allLecturesCompleted =
+        totalLectures > 0 &&
+        completedCount === totalLectures;
+
+      /*
+       * TEMPORARY MODULE ACCESS
+       *
+       * Module 1 is unlocked.
+       * Later modules remain locked until we connect
+       * QuizAttempt pass status from the backend.
+       */
+      const isUnlocked = moduleIndex === 0;
+
+      const isLocked = !isUnlocked;
+
+      /*
+       * We do not have the student's QuizAttempt data
+       * in this component yet.
+       */
+      const quizPassed = false;
+
+      const lecturesCompleted = allLecturesCompleted;
+
+      const canTakeQuiz =
+        isUnlocked &&
+        allLecturesCompleted &&
+        !quizPassed;
 
       return {
         ...module,
+
         lectures: moduleLectures,
+
         completedCount,
         totalLectures,
         modulePercentage,
+
         quiz,
-        allLecturesCompleted:
-          totalLectures > 0 && completedCount === totalLectures,
+
+        allLecturesCompleted,
+
+        isUnlocked,
+        isLocked,
+
+        quizPassed,
+
+        lecturesCompleted,
+        canTakeQuiz,
       };
     });
-  }, [modules, lectures, completedLectureIds, moduleQuizzes]);
+  }, [
+    modules,
+    lectures,
+    completedLectureIds,
+    moduleQuizzes,
+  ]);
 
   // =====================================================
   // UNASSIGNED LECTURES
@@ -607,17 +671,23 @@ const StudentCourseLearning = () => {
         const matchingLectures = Array.isArray(module?.lectures)
           ? module.lectures.filter((lecture) => {
               const title = String(
-                lecture?.lectureTitle ?? lecture?.title ?? "",
+                lecture?.lectureTitle ??
+                  lecture?.title ??
+                  "",
               );
 
-              return title.toLowerCase().includes(normalizedSearch);
+              return title
+                .toLowerCase()
+                .includes(normalizedSearch);
             })
           : [];
 
         if (moduleMatches || matchingLectures.length > 0) {
           return {
             ...module,
-            lectures: moduleMatches ? module.lectures : matchingLectures,
+            lectures: moduleMatches
+              ? module.lectures
+              : matchingLectures,
           };
         }
 
@@ -632,9 +702,15 @@ const StudentCourseLearning = () => {
     }
 
     return unassignedLectures.filter((lecture) => {
-      const title = String(lecture?.lectureTitle ?? lecture?.title ?? "");
+      const title = String(
+        lecture?.lectureTitle ??
+          lecture?.title ??
+          "",
+      );
 
-      return title.toLowerCase().includes(normalizedSearch);
+      return title
+        .toLowerCase()
+        .includes(normalizedSearch);
     });
   }, [unassignedLectures, normalizedSearch]);
 
@@ -656,13 +732,17 @@ const StudentCourseLearning = () => {
       try {
         setNotesLoading(true);
 
-        const response = await api.get(`/note/lecture/${lectureId}`);
+        const response = await api.get(
+          `/note/lecture/${lectureId}`,
+        );
 
         if (cancelled) return;
 
         if (response.data?.success) {
           setLectureNotes(
-            Array.isArray(response.data?.notes) ? response.data.notes : [],
+            Array.isArray(response.data?.notes)
+              ? response.data.notes
+              : [],
           );
         } else {
           setLectureNotes([]);
@@ -670,7 +750,10 @@ const StudentCourseLearning = () => {
       } catch (error) {
         if (cancelled) return;
 
-        console.error("Fetch lecture notes error:", error);
+        console.error(
+          "Fetch lecture notes error:",
+          error,
+        );
 
         setLectureNotes([]);
       } finally {
@@ -694,6 +777,9 @@ const StudentCourseLearning = () => {
   useEffect(() => {
     lastAllowedTimeRef.current = 0;
     lastSeekWarningRef.current = 0;
+    lastProgressUiUpdateRef.current = 0;
+
+    setCurrentWatchSeconds(0);
 
     if (progressSyncTimerRef.current) {
       clearInterval(progressSyncTimerRef.current);
@@ -708,37 +794,106 @@ const StudentCourseLearning = () => {
 
   const isLectureCompleted = useCallback(
     (lectureId) => {
-      return Boolean(lectureId) && completedLectureIds.has(String(lectureId));
+      return (
+        Boolean(lectureId) &&
+        completedLectureIds.has(String(lectureId))
+      );
     },
     [completedLectureIds],
+  );
+
+  // =====================================================
+  // GET MODULE FOR LECTURE
+  // =====================================================
+
+  const getModuleForLecture = useCallback(
+    (lecture) => {
+      if (!lecture) return null;
+
+      const moduleId =
+        typeof lecture?.module === "object"
+          ? lecture?.module?._id
+          : lecture?.module;
+
+      if (!moduleId) {
+        return null;
+      }
+
+      return (
+        modulesWithLectures.find(
+          (module) =>
+            String(module?._id) === String(moduleId),
+        ) || null
+      );
+    },
+    [modulesWithLectures],
   );
 
   // =====================================================
   // SELECT LECTURE
   // =====================================================
 
-  const handleSelectLecture = useCallback((lecture) => {
-    if (!lecture?._id) return;
+  const handleSelectLecture = useCallback(
+    (lecture) => {
+      if (!lecture?._id) return;
 
-    setSelectedLecture(lecture);
-    setShowAIMentor(false);
+      const moduleId =
+        typeof lecture?.module === "object"
+          ? lecture?.module?._id
+          : lecture?.module;
 
-    window.scrollTo({
-      top: 0,
-      behavior: "auto",
-    });
-  }, []);
+      if (moduleId) {
+        const module = modulesWithLectures.find(
+          (item) =>
+            String(item?._id) === String(moduleId),
+        );
+
+        if (module?.isLocked) {
+          toast.error(
+            "This module is locked. Complete the previous module and pass its quiz first.",
+          );
+
+          return;
+        }
+      }
+
+      setSelectedLecture(lecture);
+      setShowAIMentor(false);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "auto",
+      });
+    },
+    [modulesWithLectures],
+  );
 
   // =====================================================
   // TOGGLE MODULE
   // =====================================================
 
-  const toggleModule = useCallback((moduleId) => {
-    setExpandedModules((previous) => ({
-      ...previous,
-      [moduleId]: !previous[moduleId],
-    }));
-  }, []);
+  const toggleModule = useCallback(
+    (moduleId) => {
+      const module = modulesWithLectures.find(
+        (item) =>
+          String(item?._id) === String(moduleId),
+      );
+
+      if (module?.isLocked) {
+        toast.error(
+          "This module is locked. Complete the previous module and pass its quiz first.",
+        );
+
+        return;
+      }
+
+      setExpandedModules((previous) => ({
+        ...previous,
+        [moduleId]: !previous[moduleId],
+      }));
+    },
+    [modulesWithLectures],
+  );
 
   // =====================================================
   // OPEN MODULE QUIZ
@@ -748,6 +903,15 @@ const StudentCourseLearning = () => {
     (module) => {
       if (!module?._id) {
         toast.error("Invalid module.");
+
+        return;
+      }
+
+      if (module?.isLocked) {
+        toast.error(
+          "This module is locked. Complete the previous module and pass its quiz first.",
+        );
+
         return;
       }
 
@@ -755,16 +919,22 @@ const StudentCourseLearning = () => {
         toast.info(
           "The instructor has not generated the AI quiz for this module yet.",
         );
+
         return;
       }
 
       if (module.totalLectures === 0) {
-        toast.info("This module does not have any lectures yet.");
+        toast.info(
+          "This module does not have any lectures yet.",
+        );
+
         return;
       }
 
       if (!module.allLecturesCompleted) {
-        const remaining = module.totalLectures - module.completedCount;
+        const remaining =
+          module.totalLectures -
+          module.completedCount;
 
         toast.error(
           `Complete ${remaining} more lecture${
@@ -775,11 +945,22 @@ const StudentCourseLearning = () => {
         return;
       }
 
-      navigate(`/dashboard/modules/${module._id}/quiz`, {
-        state: {
-          courseId,
+      if (module.quizPassed) {
+        toast.info(
+          "You have already passed this module quiz.",
+        );
+
+        return;
+      }
+
+      navigate(
+        `/dashboard/modules/${module._id}/quiz`,
+        {
+          state: {
+            courseId,
+          },
         },
-      });
+      );
     },
     [courseId, navigate],
   );
@@ -790,7 +971,9 @@ const StudentCourseLearning = () => {
 
   const handleOpenAIMentor = useCallback(() => {
     if (!selectedLecture) {
-      toast.error("Select a lecture before asking the AI Mentor.");
+      toast.error(
+        "Select a lecture before asking the AI Mentor.",
+      );
 
       return;
     }
@@ -802,13 +985,19 @@ const StudentCourseLearning = () => {
   // ACHIEVEMENT
   // =====================================================
 
-  const showAchievementCelebration = useCallback((newAchievements = []) => {
-    if (!Array.isArray(newAchievements) || newAchievements.length === 0) {
-      return;
-    }
+  const showAchievementCelebration = useCallback(
+    (newAchievements = []) => {
+      if (
+        !Array.isArray(newAchievements) ||
+        newAchievements.length === 0
+      ) {
+        return;
+      }
 
-    setUnlockedAchievements(newAchievements);
-  }, []);
+      setUnlockedAchievements(newAchievements);
+    },
+    [],
+  );
 
   // =====================================================
   // VIDEO HELPERS
@@ -818,15 +1007,26 @@ const StudentCourseLearning = () => {
     return Number(lecture?.videoDuration || 0);
   };
 
-  const clearSavedVideoPosition = (currentCourseId, lectureId) => {
+  const clearSavedVideoPosition = (
+    currentCourseId,
+    lectureId,
+  ) => {
     if (!currentCourseId || !lectureId) {
       return;
     }
 
     try {
-      localStorage.removeItem(getVideoStorageKey(currentCourseId, lectureId));
+      localStorage.removeItem(
+        getVideoStorageKey(
+          currentCourseId,
+          lectureId,
+        ),
+      );
     } catch (error) {
-      console.error("Unable to clear video position:", error);
+      console.error(
+        "Unable to clear video position:",
+        error,
+      );
     }
   };
 
@@ -839,27 +1039,42 @@ const StudentCourseLearning = () => {
 
     if (!lectureId) {
       toast.error("No lecture selected.");
+
       return;
     }
 
     if (isLectureCompleted(lectureId)) {
-      toast.info("This lecture is already completed.");
+      toast.info(
+        "This lecture is already completed.",
+      );
+
       return;
     }
 
     try {
       setProgressLoading(true);
 
-      const lectureProgress = getLectureProgress(lectureId);
+      const lectureProgress =
+        getLectureProgress(lectureId);
 
-      const watchedSeconds = Number(lectureProgress?.watchedSeconds || 0);
+      const watchedSeconds = Math.max(
+        Number(
+          lectureProgress?.watchedSeconds || 0,
+        ),
+        Number(currentWatchSeconds || 0),
+      );
 
-      const duration = getLectureDuration(selectedLecture);
+      const duration =
+        getLectureDuration(selectedLecture);
 
       if (duration > 0) {
-        const watchedPercentage = (watchedSeconds / duration) * 100;
+        const watchedPercentage =
+          (watchedSeconds / duration) * 100;
 
-        if (watchedPercentage < COMPLETION_PERCENTAGE) {
+        if (
+          watchedPercentage <
+          COMPLETION_PERCENTAGE
+        ) {
           toast.error(
             `Watch at least ${COMPLETION_PERCENTAGE}% before completing this lecture.`,
           );
@@ -868,10 +1083,15 @@ const StudentCourseLearning = () => {
         }
       }
 
-      const response = await api.patch(`/progress/complete/${lectureId}`);
+      const response = await api.patch(
+        `/progress/complete/${lectureId}`,
+      );
 
       if (!response.data?.success) {
-        toast.error(response.data?.message || "Unable to complete lecture.");
+        toast.error(
+          response.data?.message ||
+            "Unable to complete lecture.",
+        );
 
         return;
       }
@@ -880,13 +1100,24 @@ const StudentCourseLearning = () => {
         setProgress(response.data.progress);
       }
 
-      clearSavedVideoPosition(courseId, lectureId);
+      clearSavedVideoPosition(
+        courseId,
+        lectureId,
+      );
 
-      toast.success(response.data?.message || "Lecture completed!");
+      toast.success(
+        response.data?.message ||
+          "Lecture completed!",
+      );
 
-      showAchievementCelebration(response.data?.newlyUnlocked || []);
+      showAchievementCelebration(
+        response.data?.newlyUnlocked || [],
+      );
     } catch (error) {
-      console.error("Mark lecture complete error:", error);
+      console.error(
+        "Mark lecture complete error:",
+        error,
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -907,21 +1138,30 @@ const StudentCourseLearning = () => {
 
     if (!lectureId) {
       toast.error("No lecture selected.");
+
       return;
     }
 
     if (!isLectureCompleted(lectureId)) {
-      toast.info("This lecture is already incomplete.");
+      toast.info(
+        "This lecture is already incomplete.",
+      );
+
       return;
     }
 
     try {
       setProgressLoading(true);
 
-      const response = await api.patch(`/progress/uncomplete/${lectureId}`);
+      const response = await api.patch(
+        `/progress/uncomplete/${lectureId}`,
+      );
 
       if (!response.data?.success) {
-        toast.error(response.data?.message || "Unable to update lecture.");
+        toast.error(
+          response.data?.message ||
+            "Unable to update lecture.",
+        );
 
         return;
       }
@@ -930,9 +1170,15 @@ const StudentCourseLearning = () => {
         setProgress(response.data.progress);
       }
 
-      toast.success(response.data?.message || "Lecture marked incomplete.");
+      toast.success(
+        response.data?.message ||
+          "Lecture marked incomplete.",
+      );
     } catch (error) {
-      console.error("Unmark lecture error:", error);
+      console.error(
+        "Unmark lecture error:",
+        error,
+      );
 
       toast.error(
         error.response?.data?.message ||
@@ -953,8 +1199,14 @@ const StudentCourseLearning = () => {
       return;
     }
 
-    handleSelectLecture(lectures[currentLectureIndex - 1]);
-  }, [currentLectureIndex, lectures, handleSelectLecture]);
+    handleSelectLecture(
+      lectures[currentLectureIndex - 1],
+    );
+  }, [
+    currentLectureIndex,
+    lectures,
+    handleSelectLecture,
+  ]);
 
   const handleNextLecture = useCallback(() => {
     if (
@@ -964,83 +1216,175 @@ const StudentCourseLearning = () => {
       return;
     }
 
-    handleSelectLecture(lectures[currentLectureIndex + 1]);
-  }, [currentLectureIndex, lectures, handleSelectLecture]);
+    handleSelectLecture(
+      lectures[currentLectureIndex + 1],
+    );
+  }, [
+    currentLectureIndex,
+    lectures,
+    handleSelectLecture,
+  ]);
+
+  // =====================================================
+  // CURRENT LECTURE PERCENTAGE
+  // =====================================================
+
+  const currentLecturePercentage = useMemo(() => {
+    const duration = Number(
+      selectedLecture?.videoDuration || 0,
+    );
+
+    if (!duration || duration <= 0) {
+      return 0;
+    }
+
+    return Math.min(
+      Math.round(
+        (currentWatchSeconds / duration) * 100,
+      ),
+      100,
+    );
+  }, [
+    selectedLecture?.videoDuration,
+    currentWatchSeconds,
+  ]);
 
   // =====================================================
   // VIDEO LOADED
   // =====================================================
 
-  const handleVideoLoadedMetadata = () => {
-    const video = videoRef.current;
+  const handleVideoLoadedMetadata =
+    useCallback(() => {
+      const video = videoRef.current;
 
-    if (!video || !selectedLecture) {
-      return;
-    }
+      if (!video || !selectedLecture) {
+        return;
+      }
 
-    let savedTime = 0;
+      let savedTime = 0;
 
-    try {
-      savedTime = Number(
-        localStorage.getItem(
-          getVideoStorageKey(courseId, selectedLecture._id),
-        ) || 0,
+      try {
+        savedTime = Number(
+          localStorage.getItem(
+            getVideoStorageKey(
+              courseId,
+              selectedLecture._id,
+            ),
+          ) || 0,
+        );
+      } catch {
+        savedTime = 0;
+      }
+
+      const lectureProgress =
+        getLectureProgress(
+          selectedLecture._id,
+        );
+
+      const serverTime = Number(
+        lectureProgress?.watchedSeconds || 0,
       );
-    } catch {
-      savedTime = 0;
-    }
 
-    const lectureProgress = getLectureProgress(selectedLecture._id);
+      const resumeTime = Math.max(
+        savedTime,
+        serverTime,
+      );
 
-    const serverTime = Number(lectureProgress?.watchedSeconds || 0);
+      const safeResumeTime = Number.isFinite(
+        video.duration,
+      )
+        ? Math.min(
+            resumeTime,
+            Math.max(
+              video.duration - 0.5,
+              0,
+            ),
+          )
+        : resumeTime;
 
-    const resumeTime = Math.max(savedTime, serverTime);
+      if (
+        safeResumeTime > 0 &&
+        safeResumeTime < video.duration
+      ) {
+        video.currentTime = safeResumeTime;
+      }
 
-    const safeResumeTime = Number.isFinite(video.duration)
-      ? Math.min(resumeTime, Math.max(video.duration - 0.5, 0))
-      : resumeTime;
+      lastAllowedTimeRef.current =
+        safeResumeTime;
 
-    if (safeResumeTime > 0 && safeResumeTime < video.duration) {
-      video.currentTime = safeResumeTime;
-    }
+      lastProgressUiUpdateRef.current =
+        safeResumeTime;
 
-    lastAllowedTimeRef.current = safeResumeTime;
-  };
+      setCurrentWatchSeconds(
+        safeResumeTime,
+      );
+    }, [
+      courseId,
+      selectedLecture,
+      getLectureProgress,
+    ]);
 
   // =====================================================
   // VIDEO TIME UPDATE
   // =====================================================
 
-  const handleVideoTimeUpdate = () => {
-    const video = videoRef.current;
+  const handleVideoTimeUpdate =
+    useCallback(() => {
+      const video = videoRef.current;
 
-    if (!video || !selectedLecture) {
-      return;
-    }
-
-    const currentTime = video.currentTime;
-
-    const lastAllowed = lastAllowedTimeRef.current;
-
-    // Prevent large forward seeking
-    if (currentTime > lastAllowed + MAX_FORWARD_SEEK) {
-      video.currentTime = lastAllowed;
-
-      const now = Date.now();
-
-      if (now - lastSeekWarningRef.current > 2500) {
-        lastSeekWarningRef.current = now;
-
-        toast.error(`You can only seek ${MAX_FORWARD_SEEK} seconds forward.`);
+      if (!video || !selectedLecture) {
+        return;
       }
 
-      return;
-    }
+      const currentTime = Number(
+        video.currentTime || 0,
+      );
 
-    if (currentTime > lastAllowed) {
-      lastAllowedTimeRef.current = currentTime;
-    }
-  };
+      const lastAllowed =
+        lastAllowedTimeRef.current;
+
+      if (
+        currentTime >
+        lastAllowed + MAX_FORWARD_SEEK
+      ) {
+        video.currentTime = lastAllowed;
+
+        const now = Date.now();
+
+        if (
+          now -
+            lastSeekWarningRef.current >
+          2500
+        ) {
+          lastSeekWarningRef.current =
+            now;
+
+          toast.error(
+            `You can only seek ${MAX_FORWARD_SEEK} seconds forward.`,
+          );
+        }
+
+        return;
+      }
+
+      if (currentTime > lastAllowed) {
+        lastAllowedTimeRef.current =
+          currentTime;
+      }
+
+      if (
+        currentTime -
+          lastProgressUiUpdateRef.current >=
+        0.5
+      ) {
+        lastProgressUiUpdateRef.current =
+          currentTime;
+
+        setCurrentWatchSeconds(
+          currentTime,
+        );
+      }
+    }, [selectedLecture]);
 
   // =====================================================
   // VIDEO PROGRESS SYNC
@@ -1051,7 +1395,8 @@ const StudentCourseLearning = () => {
       return;
     }
 
-    const lectureId = selectedLecture._id;
+    const lectureId =
+      selectedLecture._id;
 
     const saveProgress = async () => {
       const video = videoRef.current;
@@ -1060,149 +1405,208 @@ const StudentCourseLearning = () => {
         return;
       }
 
-      const currentTime = Math.floor(video.currentTime || 0);
+      const currentTime = Math.floor(
+        video.currentTime || 0,
+      );
 
       if (currentTime <= 0) {
         return;
       }
 
-      // Save locally
       try {
         localStorage.setItem(
-          getVideoStorageKey(courseId, lectureId),
+          getVideoStorageKey(
+            courseId,
+            lectureId,
+          ),
           String(currentTime),
         );
       } catch (error) {
-        console.error("Local video save error:", error);
+        console.error(
+          "Local video save error:",
+          error,
+        );
       }
 
-      // Save on server
       try {
-        await api.patch(`/progress/${lectureId}`, {
-          watchedSeconds: currentTime,
-        });
+        await api.patch(
+          `/progress/${lectureId}`,
+          {
+            watchedSeconds:
+              currentTime,
+          },
+        );
       } catch (error) {
-        console.error("Video progress sync error:", error);
+        console.error(
+          "Video progress sync error:",
+          error,
+        );
       }
     };
 
-    progressSyncTimerRef.current = window.setInterval(
-      saveProgress,
-      PROGRESS_SYNC_INTERVAL,
-    );
+    progressSyncTimerRef.current =
+      window.setInterval(
+        saveProgress,
+        PROGRESS_SYNC_INTERVAL,
+      );
 
     return () => {
-      if (progressSyncTimerRef.current) {
-        window.clearInterval(progressSyncTimerRef.current);
+      if (
+        progressSyncTimerRef.current
+      ) {
+        window.clearInterval(
+          progressSyncTimerRef.current,
+        );
 
-        progressSyncTimerRef.current = null;
+        progressSyncTimerRef.current =
+          null;
       }
     };
-  }, [courseId, selectedLecture?._id]);
+  }, [
+    courseId,
+    selectedLecture?._id,
+  ]);
 
   // =====================================================
   // VIDEO ENDED
   // =====================================================
 
-  const handleVideoEnded = async () => {
-    if (!selectedLecture?._id) {
-      return;
-    }
-
-    const duration = getLectureDuration(selectedLecture);
-
-    if (duration > 0) {
-      try {
-        await api.patch(`/progress/${selectedLecture._id}`, {
-          watchedSeconds: Math.floor(duration),
-        });
-      } catch (error) {
-        console.error("Final video sync error:", error);
+  const handleVideoEnded =
+    useCallback(async () => {
+      if (!selectedLecture?._id) {
+        return;
       }
+
+      const duration =
+        getLectureDuration(
+          selectedLecture,
+        );
+
+      if (duration <= 0) {
+        return;
+      }
+
+      const finalTime = Math.floor(
+        duration,
+      );
+
+      lastAllowedTimeRef.current =
+        duration;
+
+      lastProgressUiUpdateRef.current =
+        duration;
+
+      setCurrentWatchSeconds(
+        duration,
+      );
 
       try {
         localStorage.setItem(
-          getVideoStorageKey(courseId, selectedLecture._id),
-          String(Math.floor(duration)),
+          getVideoStorageKey(
+            courseId,
+            selectedLecture._id,
+          ),
+          String(finalTime),
         );
       } catch {
         // Ignore localStorage errors.
       }
-    }
 
-    lastAllowedTimeRef.current = duration;
-  };
+      try {
+        await api.patch(
+          `/progress/${selectedLecture._id}`,
+          {
+            watchedSeconds:
+              finalTime,
+          },
+        );
+      } catch (error) {
+        console.error(
+          "Final video sync error:",
+          error,
+        );
+      }
+    }, [
+      courseId,
+      selectedLecture,
+    ]);
 
   // =====================================================
   // DOWNLOAD NOTE
   // =====================================================
 
-  const handleDownloadNote = useCallback(async (note) => {
-    const downloadUrl = note?.downloadUrl || note?.fileUrl;
+  const handleDownloadNote =
+    useCallback(async (note) => {
+      const downloadUrl =
+        note?.downloadUrl ||
+        note?.fileUrl;
 
-    if (!downloadUrl) {
-      toast.error("Download link is not available.");
-      return;
-    }
+      if (!downloadUrl) {
+        toast.error(
+          "Download link is not available.",
+        );
 
-    try {
-      // Axios baseURL already contains /api/v1.
-      // Example:
-      // /api/v1/note/download/123
-      // becomes:
-      // /note/download/123
-      const cleanUrl = downloadUrl
-        .replace(/^https?:\/\/[^/]+/i, "")
-        .replace(/^\/api\/v1/, "");
-
-      console.log("NOTE DOWNLOAD URL:", cleanUrl);
-
-      const response = await api.get(cleanUrl, {
-        responseType: "blob",
-      });
-
-      const blob = response.data;
-
-      if (!blob || blob.size === 0) {
-        throw new Error("The downloaded file is empty.");
+        return;
       }
 
-      const blobUrl = window.URL.createObjectURL(blob);
+      try {
+        const response = await api.get(
+          downloadUrl,
+          {
+            responseType: "blob",
+          },
+        );
 
-      const link = document.createElement("a");
+        const blob = response.data;
 
-      link.href = blobUrl;
+        if (!blob || blob.size === 0) {
+          throw new Error(
+            "The downloaded file is empty.",
+          );
+        }
 
-      link.download =
-        note?.fileName ||
-        note?.originalName ||
-        note?.noteTitle ||
-        "lecture-note";
+        const blobUrl =
+          window.URL.createObjectURL(
+            blob,
+          );
 
-      document.body.appendChild(link);
+        const link =
+          document.createElement("a");
 
-      link.click();
+        link.href = blobUrl;
 
-      link.remove();
+        link.download =
+          note?.fileName ||
+          note?.originalName ||
+          note?.noteTitle ||
+          "lecture-note";
 
-      // Give the browser time to start the download
-      setTimeout(() => {
-        window.URL.revokeObjectURL(blobUrl);
-      }, 1000);
-    } catch (error) {
-      console.error("Note download error:", error);
+        document.body.appendChild(
+          link,
+        );
 
-      console.error("Download URL:", downloadUrl);
+        link.click();
 
-      console.error("Response status:", error.response?.status);
+        link.remove();
 
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Unable to download the note.",
-      );
-    }
-  }, []);
+        window.URL.revokeObjectURL(
+          blobUrl,
+        );
+      } catch (error) {
+        console.error(
+          "Note download error:",
+          error,
+        );
+
+        toast.error(
+          error.response?.data
+            ?.message ||
+            error.message ||
+            "Unable to download the note.",
+        );
+      }
+    }, []);
+
   // =====================================================
   // KEYBOARD SHORTCUTS
   // =====================================================
@@ -1212,16 +1616,19 @@ const StudentCourseLearning = () => {
       const target = event.target;
 
       if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement
+        target instanceof
+          HTMLInputElement ||
+        target instanceof
+          HTMLTextAreaElement ||
+        target instanceof
+          HTMLSelectElement
       ) {
         return;
       }
 
-      const video = videoRef.current;
+      const video =
+        videoRef.current;
 
-      // Play / pause
       if (event.code === "Space") {
         event.preventDefault();
 
@@ -1236,59 +1643,85 @@ const StudentCourseLearning = () => {
         return;
       }
 
-      // Forward
       if (event.key === "ArrowRight") {
         if (!video) return;
 
         video.currentTime = Math.min(
           video.currentTime + 5,
-          video.duration || video.currentTime,
+          video.duration ||
+            video.currentTime,
         );
 
         return;
       }
 
-      // Backward
       if (event.key === "ArrowLeft") {
         if (!video) return;
 
-        video.currentTime = Math.max(video.currentTime - 5, 0);
+        video.currentTime = Math.max(
+          video.currentTime - 5,
+          0,
+        );
 
         return;
       }
 
-      const index = currentLectureIndexRef.current;
+      const index =
+        currentLectureIndexRef.current;
 
-      const lectureList = lecturesRef.current;
+      const lectureList =
+        lecturesRef.current;
 
-      // Next
-      if (event.key === "n" || event.key === "N") {
-        if (index >= 0 && index < lectureList.length - 1) {
-          handleSelectLecture(lectureList[index + 1]);
+      if (
+        event.key === "n" ||
+        event.key === "N"
+      ) {
+        if (
+          index >= 0 &&
+          index <
+            lectureList.length - 1
+        ) {
+          handleSelectLecture(
+            lectureList[index + 1],
+          );
         }
 
         return;
       }
 
-      // Previous
-      if (event.key === "p" || event.key === "P") {
+      if (
+        event.key === "p" ||
+        event.key === "P"
+      ) {
         if (index > 0) {
-          handleSelectLecture(lectureList[index - 1]);
+          handleSelectLecture(
+            lectureList[index - 1],
+          );
         }
 
         return;
       }
 
-      // Theater
-      if (event.key === "t" || event.key === "T") {
-        setTheaterMode((previous) => !previous);
+      if (
+        event.key === "t" ||
+        event.key === "T"
+      ) {
+        setTheaterMode(
+          (previous) => !previous,
+        );
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
     };
   }, [handleSelectLecture]);
 
@@ -1296,11 +1729,18 @@ const StudentCourseLearning = () => {
   // LOADING
   // =====================================================
 
-  if (authLoading || loading || enrollmentLoading) {
+  if (
+    authLoading ||
+    loading ||
+    enrollmentLoading
+  ) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#050607] text-amber-400">
         <div className="flex flex-col items-center gap-4">
-          <LoaderCircle size={40} className="animate-spin" />
+          <LoaderCircle
+            size={40}
+            className="animate-spin"
+          />
 
           <p className="text-xs font-black uppercase tracking-[0.3em]">
             Entering the Realm...
@@ -1328,7 +1768,11 @@ const StudentCourseLearning = () => {
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-3 lg:px-6">
           <button
             type="button"
-            onClick={() => navigate(`/courses/${courseId}`)}
+            onClick={() =>
+              navigate(
+                `/courses/${courseId}`,
+              )
+            }
             className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-amber-400"
           >
             <ArrowLeft size={16} />
@@ -1346,7 +1790,12 @@ const StudentCourseLearning = () => {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setShowShortcuts((previous) => !previous)}
+              onClick={() =>
+                setShowShortcuts(
+                  (previous) =>
+                    !previous,
+                )
+              }
               className="rounded-xl border border-slate-800 bg-slate-950 p-2 text-slate-400 transition-colors hover:border-amber-700/40 hover:text-amber-400"
               title="Keyboard shortcuts"
             >
@@ -1355,11 +1804,20 @@ const StudentCourseLearning = () => {
 
             <button
               type="button"
-              onClick={() => setTheaterMode((previous) => !previous)}
+              onClick={() =>
+                setTheaterMode(
+                  (previous) =>
+                    !previous,
+                )
+              }
               className="rounded-xl border border-slate-800 bg-slate-950 p-2 text-slate-400 transition-colors hover:border-amber-700/40 hover:text-amber-400"
               title="Theater mode"
             >
-              {theaterMode ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+              {theaterMode ? (
+                <Minimize2 size={17} />
+              ) : (
+                <Maximize2 size={17} />
+              )}
             </button>
           </div>
         </div>
@@ -1373,7 +1831,10 @@ const StudentCourseLearning = () => {
         <div className="fixed right-4 top-20 z-[60] w-72 rounded-2xl border border-amber-900/40 bg-[#0c0f11] p-5 shadow-2xl">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Keyboard size={17} className="text-amber-400" />
+              <Keyboard
+                size={17}
+                className="text-amber-400"
+              />
 
               <h3 className="text-xs font-black uppercase tracking-widest">
                 Shortcuts
@@ -1382,7 +1843,9 @@ const StudentCourseLearning = () => {
 
             <button
               type="button"
-              onClick={() => setShowShortcuts(false)}
+              onClick={() =>
+                setShowShortcuts(false)
+              }
               className="text-slate-500 transition-colors hover:text-white"
             >
               <X size={16} />
@@ -1390,17 +1853,35 @@ const StudentCourseLearning = () => {
           </div>
 
           <div className="space-y-2 text-xs text-slate-400">
-            <ShortcutRow label="Play / Pause" shortcut="Space" />
+            <ShortcutRow
+              label="Play / Pause"
+              shortcut="Space"
+            />
 
-            <ShortcutRow label="Forward" shortcut="→" />
+            <ShortcutRow
+              label="Forward"
+              shortcut="→"
+            />
 
-            <ShortcutRow label="Backward" shortcut="←" />
+            <ShortcutRow
+              label="Backward"
+              shortcut="←"
+            />
 
-            <ShortcutRow label="Next lecture" shortcut="N" />
+            <ShortcutRow
+              label="Next lecture"
+              shortcut="N"
+            />
 
-            <ShortcutRow label="Previous lecture" shortcut="P" />
+            <ShortcutRow
+              label="Previous lecture"
+              shortcut="P"
+            />
 
-            <ShortcutRow label="Theater mode" shortcut="T" />
+            <ShortcutRow
+              label="Theater mode"
+              shortcut="T"
+            />
           </div>
         </div>
       )}
@@ -1411,7 +1892,9 @@ const StudentCourseLearning = () => {
 
       <main
         className={`mx-auto px-4 py-5 lg:px-6 ${
-          theaterMode ? "max-w-[1900px]" : "max-w-[1600px]"
+          theaterMode
+            ? "max-w-[1900px]"
+            : "max-w-[1600px]"
         }`}
       >
         {/* =================================================
@@ -1470,9 +1953,13 @@ const StudentCourseLearning = () => {
 
             <div className="min-w-[220px] rounded-2xl border border-amber-900/30 bg-black/30 p-4">
               <div className="mb-2 flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                <span className="text-slate-500">Course Progress</span>
+                <span className="text-slate-500">
+                  Course Progress
+                </span>
 
-                <span className="text-amber-400">{progressPercentage}%</span>
+                <span className="text-amber-400">
+                  {progressPercentage}%
+                </span>
               </div>
 
               <div className="h-2 overflow-hidden rounded-full bg-slate-900">
@@ -1493,11 +1980,18 @@ const StudentCourseLearning = () => {
 
         {!theaterMode && (
           <div className="mb-5 flex items-center gap-3 rounded-2xl border border-slate-800 bg-[#0b0e10] px-4 py-3">
-            <Search size={17} className="shrink-0 text-slate-600" />
+            <Search
+              size={17}
+              className="shrink-0 text-slate-600"
+            />
 
             <input
               value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+              onChange={(event) =>
+                setSearchTerm(
+                  event.target.value,
+                )
+              }
               placeholder="Search modules or lectures..."
               className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-700"
             />
@@ -1505,7 +1999,9 @@ const StudentCourseLearning = () => {
             {searchTerm && (
               <button
                 type="button"
-                onClick={() => setSearchTerm("")}
+                onClick={() =>
+                  setSearchTerm("")
+                }
                 className="text-slate-600 transition-colors hover:text-amber-400"
               >
                 <X size={16} />
@@ -1516,7 +2012,9 @@ const StudentCourseLearning = () => {
 
         <div
           className={`grid gap-6 ${
-            theaterMode ? "grid-cols-1" : "lg:grid-cols-[minmax(0,1fr)_380px]"
+            theaterMode
+              ? "grid-cols-1"
+              : "lg:grid-cols-[minmax(0,1fr)_380px]"
           }`}
         >
           {/* =================================================
@@ -1530,54 +2028,22 @@ const StudentCourseLearning = () => {
                   <video
                     key={selectedLecture?._id}
                     ref={videoRef}
-                    src={selectedLecture?.videoUrl}
+                    src={
+                      selectedLecture.videoUrl
+                    }
                     controls
                     playsInline
                     preload="metadata"
-                    className="h-full w-full object-contain bg-black"
-                    onLoadStart={() => {
-                      console.log("VIDEO LOAD START");
-                      console.log("VIDEO URL:", selectedLecture?.videoUrl);
-                    }}
-                    onLoadedMetadata={(event) => {
-                      const video = event.currentTarget;
-
-                      console.log("VIDEO METADATA LOADED");
-                      console.log("Duration:", video.duration);
-                      console.log("Ready state:", video.readyState);
-                      console.log("Network state:", video.networkState);
-
-                      handleVideoLoadedMetadata();
-                    }}
-                    onLoadedData={() => {
-                      console.log("VIDEO DATA LOADED");
-                    }}
-                    onCanPlay={() => {
-                      console.log("VIDEO CAN PLAY");
-                    }}
-                    onCanPlayThrough={() => {
-                      console.log("VIDEO CAN PLAY THROUGH");
-                    }}
-                    onWaiting={() => {
-                      console.warn("VIDEO WAITING / BUFFERING");
-                    }}
-                    onStalled={() => {
-                      console.warn("VIDEO STALLED");
-                    }}
-                    onError={(event) => {
-                      const video = event.currentTarget;
-
-                      console.error("VIDEO ERROR");
-                      console.error("URL:", video.currentSrc);
-                      console.error("Error object:", video.error);
-
-                      if (video.error) {
-                        console.error("Error code:", video.error.code);
-                        console.error("Error message:", video.error.message);
-                      }
-                    }}
-                    onTimeUpdate={handleVideoTimeUpdate}
-                    onEnded={handleVideoEnded}
+                    className="h-full w-full object-contain"
+                    onLoadedMetadata={
+                      handleVideoLoadedMetadata
+                    }
+                    onTimeUpdate={
+                      handleVideoTimeUpdate
+                    }
+                    onEnded={
+                      handleVideoEnded
+                    }
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center">
@@ -1596,6 +2062,29 @@ const StudentCourseLearning = () => {
               </div>
             </div>
 
+            {selectedLecture?.videoUrl && (
+              <div className="border-x border-b border-amber-900/30 bg-[#080b0d] px-4 py-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">
+                    Lecture Progress
+                  </span>
+
+                  <span className="text-[10px] font-black text-amber-400">
+                    {currentLecturePercentage}%
+                  </span>
+                </div>
+
+                <div className="h-1.5 overflow-hidden rounded-full bg-slate-900">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-orange-700 via-amber-500 to-yellow-300 transition-[width] duration-300 ease-out"
+                    style={{
+                      width: `${currentLecturePercentage}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* =================================================
                 CURRENT LECTURE
             ================================================= */}
@@ -1606,26 +2095,35 @@ const StudentCourseLearning = () => {
                   <div>
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-500">
-                        Lecture {currentLectureIndex + 1}
+                        Lecture{" "}
+                        {currentLectureIndex + 1}
                       </span>
 
-                      {isLectureCompleted(selectedLecture._id) && (
+                      {isLectureCompleted(
+                        selectedLecture._id,
+                      ) && (
                         <span className="flex items-center gap-1 rounded-full border border-emerald-800/40 bg-emerald-950/30 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-400">
-                          <CheckCircle2 size={12} />
+                          <CheckCircle2
+                            size={12}
+                          />
                           Completed
                         </span>
                       )}
                     </div>
 
                     <h2 className="text-xl font-black text-white">
-                      {selectedLecture.lectureTitle}
+                      {
+                        selectedLecture.lectureTitle
+                      }
                     </h2>
                   </div>
 
                   <button
                     type="button"
                     onClick={
-                      isLectureCompleted(selectedLecture._id)
+                      isLectureCompleted(
+                        selectedLecture._id,
+                      )
                         ? handleUnmarkComplete
                         : handleMarkComplete
                     }
@@ -1633,12 +2131,19 @@ const StudentCourseLearning = () => {
                     className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-amber-700/40 bg-amber-950/20 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-amber-400 transition-colors hover:bg-amber-900/30 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {progressLoading ? (
-                      <LoaderCircle size={15} className="animate-spin" />
+                      <LoaderCircle
+                        size={15}
+                        className="animate-spin"
+                      />
                     ) : (
-                      <CheckCircle2 size={15} />
+                      <CheckCircle2
+                        size={15}
+                      />
                     )}
 
-                    {isLectureCompleted(selectedLecture._id)
+                    {isLectureCompleted(
+                      selectedLecture._id,
+                    )
                       ? "Mark Incomplete"
                       : "Mark Complete"}
                   </button>
@@ -1655,7 +2160,9 @@ const StudentCourseLearning = () => {
                     </div>
 
                     <div className="whitespace-pre-wrap text-sm leading-7 text-slate-400">
-                      {selectedLecture.lectureContent}
+                      {
+                        selectedLecture.lectureContent
+                      }
                     </div>
                   </div>
                 )}
@@ -1663,10 +2170,14 @@ const StudentCourseLearning = () => {
                 <div className="mt-6 flex flex-wrap gap-3">
                   <button
                     type="button"
-                    onClick={handleOpenAIMentor}
+                    onClick={
+                      handleOpenAIMentor
+                    }
                     className="flex items-center gap-2 rounded-xl border border-amber-700/40 bg-gradient-to-r from-orange-900/30 to-amber-900/20 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-amber-400 transition-colors hover:border-amber-500/50"
                   >
-                    <Sparkles size={15} />
+                    <Sparkles
+                      size={15}
+                    />
                     Ask AI Mentor
                   </button>
                 </div>
@@ -1680,7 +2191,9 @@ const StudentCourseLearning = () => {
             <LectureNotes
               notes={lectureNotes}
               loading={notesLoading}
-              onDownload={handleDownloadNote}
+              onDownload={
+                handleDownloadNote
+              }
             />
 
             {/* =================================================
@@ -1688,30 +2201,43 @@ const StudentCourseLearning = () => {
             ================================================= */}
 
             <LectureNavigation
-              currentLectureIndex={currentLectureIndex}
-              totalLectures={lectures.length}
-              onPrevious={handlePreviousLecture}
-              onNext={handleNextLecture}
+              currentLectureIndex={
+                currentLectureIndex
+              }
+              totalLectures={
+                lectures.length
+              }
+              onPrevious={
+                handlePreviousLecture
+              }
+              onNext={
+                handleNextLecture
+              }
             />
 
             {/* =================================================
                 MODULE QUIZ
             ================================================= */}
 
-            {progressPercentage === 100 && modules.length > 0 && (
+            {modules.length > 0 && (
               <ModuleQuizRequirement
-                modules={modulesWithLectures}
-                onOpenQuiz={handleOpenModuleQuiz}
+                modules={
+                  modulesWithLectures
+                }
+                onOpenQuiz={
+                  handleOpenModuleQuiz
+                }
               />
             )}
 
             {/* =================================================
-                LEGACY COMPLETION
+                LEGACY COURSE COMPLETION
             ================================================= */}
 
-            {progressPercentage === 100 && modules.length === 0 && (
-              <LegacyCourseCompleted />
-            )}
+            {progressPercentage === 100 &&
+              modules.length === 0 && (
+                <LegacyCourseCompleted />
+              )}
           </section>
 
           {/* =================================================
@@ -1725,7 +2251,10 @@ const StudentCourseLearning = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <Layers3 size={17} className="text-amber-400" />
+                        <Layers3
+                          size={17}
+                          className="text-amber-400"
+                        />
 
                         <h2 className="text-xs font-black uppercase tracking-[0.18em] text-white">
                           Course Curriculum
@@ -1733,7 +2262,8 @@ const StudentCourseLearning = () => {
                       </div>
 
                       <p className="mt-1 text-[10px] text-slate-600">
-                        {lectures.length} lectures
+                        {lectures.length}{" "}
+                        lectures
                       </p>
                     </div>
 
@@ -1744,55 +2274,96 @@ const StudentCourseLearning = () => {
                 </div>
 
                 <div className="max-h-[calc(100vh-180px)] overflow-y-auto p-3">
-                  {modulesLoading && modules.length === 0 && (
-                    <div className="flex justify-center py-10">
-                      <LoaderCircle
-                        size={25}
-                        className="animate-spin text-amber-400"
+                  {modulesLoading &&
+                    modules.length === 0 && (
+                      <div className="flex justify-center py-10">
+                        <LoaderCircle
+                          size={25}
+                          className="animate-spin text-amber-400"
+                        />
+                      </div>
+                    )}
+
+                  {filteredModules.map(
+                    (module) => (
+                      <CurriculumModule
+                        key={module._id}
+                        module={module}
+                        expanded={Boolean(
+                          expandedModules[
+                            module._id
+                          ],
+                        )}
+                        selectedLecture={
+                          selectedLecture
+                        }
+                        onToggle={
+                          toggleModule
+                        }
+                        onSelectLecture={
+                          handleSelectLecture
+                        }
+                        isLectureCompleted={
+                          isLectureCompleted
+                        }
+                        onOpenQuiz={
+                          handleOpenModuleQuiz
+                        }
                       />
-                    </div>
+                    ),
                   )}
 
-                  {filteredModules.map((module) => (
-                    <CurriculumModule
-                      key={module._id}
-                      module={module}
-                      expanded={Boolean(expandedModules[module._id])}
-                      selectedLecture={selectedLecture}
-                      onToggle={toggleModule}
-                      onSelectLecture={handleSelectLecture}
-                      isLectureCompleted={isLectureCompleted}
-                      onOpenQuiz={handleOpenModuleQuiz}
-                    />
-                  ))}
-
-                  {filteredUnassignedLectures.length > 0 && (
+                  {filteredUnassignedLectures.length >
+                    0 && (
                     <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-950/40 p-3">
                       <div className="mb-2 flex items-center gap-2 px-2">
-                        <BookOpen size={14} className="text-slate-500" />
+                        <BookOpen
+                          size={14}
+                          className="text-slate-500"
+                        />
 
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
-                          Additional Lectures
+                          Additional
+                          Lectures
                         </span>
                       </div>
 
-                      {filteredUnassignedLectures.map((lecture) => (
-                        <LectureItem
-                          key={lecture._id}
-                          lecture={lecture}
-                          selected={
-                            String(selectedLecture?._id) === String(lecture._id)
-                          }
-                          completed={isLectureCompleted(lecture._id)}
-                          onClick={() => handleSelectLecture(lecture)}
-                        />
-                      ))}
+                      {filteredUnassignedLectures.map(
+                        (lecture) => (
+                          <LectureItem
+                            key={
+                              lecture._id
+                            }
+                            lecture={
+                              lecture
+                            }
+                            selected={
+                              String(
+                                selectedLecture?._id,
+                              ) ===
+                              String(
+                                lecture._id,
+                              )
+                            }
+                            completed={isLectureCompleted(
+                              lecture._id,
+                            )}
+                            onClick={() =>
+                              handleSelectLecture(
+                                lecture,
+                              )
+                            }
+                          />
+                        ),
+                      )}
                     </div>
                   )}
 
                   {!modulesLoading &&
-                    filteredModules.length === 0 &&
-                    filteredUnassignedLectures.length === 0 && (
+                    filteredModules.length ===
+                      0 &&
+                    filteredUnassignedLectures.length ===
+                      0 && (
                       <div className="px-4 py-10 text-center">
                         <Search
                           size={28}
@@ -1800,7 +2371,8 @@ const StudentCourseLearning = () => {
                         />
 
                         <p className="text-xs font-bold text-slate-600">
-                          No lectures found
+                          No lectures
+                          found
                         </p>
                       </div>
                     )}
@@ -1815,10 +2387,17 @@ const StudentCourseLearning = () => {
           ACHIEVEMENT
       ================================================= */}
 
-      {unlockedAchievements.length > 0 && (
+      {unlockedAchievements.length >
+        0 && (
         <AchievementUnlockCelebration
-          achievements={unlockedAchievements}
-          onClose={() => setUnlockedAchievements([])}
+          achievements={
+            unlockedAchievements
+          }
+          onClose={() =>
+            setUnlockedAchievements(
+              [],
+            )
+          }
         />
       )}
 
@@ -1826,14 +2405,17 @@ const StudentCourseLearning = () => {
           AI MENTOR
       ================================================= */}
 
-      {showAIMentor && selectedLecture && (
-        <AIMentor
-          course={course}
-          lecture={selectedLecture}
-          user={user}
-          onClose={() => setShowAIMentor(false)}
-        />
-      )}
+      {showAIMentor &&
+        selectedLecture && (
+          <AIMentor
+            course={course}
+            lecture={selectedLecture}
+            user={user}
+            onClose={() =>
+              setShowAIMentor(false)
+            }
+          />
+        )}
     </div>
   );
 };
@@ -1842,137 +2424,201 @@ const StudentCourseLearning = () => {
 // LECTURE NOTES
 // =====================================================
 
-const LectureNotes = memo(({ notes = [], loading, onDownload }) => {
-  return (
-    <section className="relative mt-6 overflow-hidden rounded-2xl border border-amber-900/40 bg-[#0d1012]">
-      <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-amber-600/10 blur-[50px]" />
+const LectureNotes = memo(
+  ({
+    notes = [],
+    loading,
+    onDownload,
+  }) => {
+    return (
+      <section className="relative mt-6 overflow-hidden rounded-2xl border border-amber-900/40 bg-[#0d1012]">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-amber-600/10 blur-[50px]" />
 
-      <div className="relative">
-        <div className="flex flex-col gap-4 border-b border-slate-800/80 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-700/40 bg-amber-950/30 text-amber-400">
-              <NotebookPen size={20} />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-black uppercase tracking-[0.15em] text-slate-100">
-                  Maester's Notes
-                </h2>
-
-                {notes.length > 0 && (
-                  <span className="rounded-full border border-amber-800/40 bg-amber-950/30 px-2 py-0.5 text-[9px] font-bold text-amber-400">
-                    {notes.length}
-                  </span>
-                )}
+        <div className="relative">
+          <div className="flex flex-col gap-4 border-b border-slate-800/80 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-700/40 bg-amber-950/30 text-amber-400">
+                <NotebookPen size={20} />
               </div>
 
-              <p className="mt-1 text-[10px] text-slate-600">
-                Knowledge scrolls and resources for this lecture
-              </p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-black uppercase tracking-[0.15em] text-slate-100">
+                    Maester's Notes
+                  </h2>
+
+                  {notes.length >
+                    0 && (
+                    <span className="rounded-full border border-amber-800/40 bg-amber-950/30 px-2 py-0.5 text-[9px] font-bold text-amber-400">
+                      {
+                        notes.length
+                      }
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-1 text-[10px] text-slate-600">
+                  Knowledge scrolls
+                  and resources for
+                  this lecture
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="p-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <LoaderCircle size={24} className="animate-spin text-amber-400" />
-            </div>
-          ) : notes.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-800 bg-black/20 px-5 py-8 text-center">
-              <NotebookPen size={28} className="mx-auto mb-3 text-slate-800" />
+          <div className="p-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <LoaderCircle
+                  size={24}
+                  className="animate-spin text-amber-400"
+                />
+              </div>
+            ) : notes.length ===
+              0 ? (
+              <div className="rounded-xl border border-dashed border-slate-800 bg-black/20 px-5 py-8 text-center">
+                <NotebookPen
+                  size={28}
+                  className="mx-auto mb-3 text-slate-800"
+                />
 
-              <p className="text-xs font-bold text-slate-600">
-                No notes available for this lecture.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {notes.map((note, index) => (
-                <div
-                  key={note?._id || note?.id || index}
-                  className="group rounded-2xl border border-slate-800 bg-black/20 p-4 transition-colors hover:border-amber-800/50 hover:bg-amber-950/5"
-                >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-900/30 bg-amber-950/20 text-amber-400">
-                          {note?.fileUrl ? (
-                            <Paperclip size={16} />
-                          ) : (
-                            <FileText size={16} />
-                          )}
-                        </div>
-
+                <p className="text-xs font-bold text-slate-600">
+                  No notes
+                  available for
+                  this lecture.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {notes.map(
+                  (
+                    note,
+                    index,
+                  ) => (
+                    <div
+                      key={
+                        note?._id ||
+                        note?.id ||
+                        index
+                      }
+                      className="group rounded-2xl border border-slate-800 bg-black/20 p-4 transition-colors hover:border-amber-800/50 hover:bg-amber-950/5"
+                    >
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
-                          <h3 className="truncate text-sm font-black text-slate-100">
-                            {String(note?.noteTitle || "Untitled Note")}
-                          </h3>
-
-                          {note?.noteContent && (
-                            <p className="mt-1 whitespace-pre-wrap text-xs leading-6 text-slate-500">
-                              {String(note.noteContent)}
-                            </p>
-                          )}
-
-                          {note?.fileName && (
-                            <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-slate-600">
-                              <span className="truncate">
-                                {String(note.fileName)}
-                              </span>
-
-                              {Number(note.fileSize) > 0 && (
-                                <>
-                                  <span>•</span>
-
-                                  <span>{formatFileSize(note.fileSize)}</span>
-                                </>
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-900/30 bg-amber-950/20 text-amber-400">
+                              {note?.fileUrl ? (
+                                <Paperclip
+                                  size={
+                                    16
+                                  }
+                                />
+                              ) : (
+                                <FileText
+                                  size={
+                                    16
+                                  }
+                                />
                               )}
                             </div>
-                          )}
+
+                            <div className="min-w-0">
+                              <h3 className="truncate text-sm font-black text-slate-100">
+                                {String(
+                                  note?.noteTitle ||
+                                    "Untitled Note",
+                                )}
+                              </h3>
+
+                              {note?.noteContent && (
+                                <p className="mt-1 whitespace-pre-wrap text-xs leading-6 text-slate-500">
+                                  {String(
+                                    note.noteContent,
+                                  )}
+                                </p>
+                              )}
+
+                              {note?.fileName && (
+                                <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-slate-600">
+                                  <span className="truncate">
+                                    {String(
+                                      note.fileName,
+                                    )}
+                                  </span>
+
+                                  {Number(
+                                    note.fileSize,
+                                  ) >
+                                    0 && (
+                                    <>
+                                      <span>
+                                        •
+                                      </span>
+
+                                      <span>
+                                        {formatFileSize(
+                                          note.fileSize,
+                                        )}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
+
+                        {note?.fileUrl && (
+                          <div className="flex shrink-0 items-center gap-2">
+                            <a
+                              href={
+                                note.fileUrl
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:border-amber-700/50 hover:text-amber-400"
+                            >
+                              <ExternalLink
+                                size={
+                                  13
+                                }
+                              />
+                              View
+                            </a>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onDownload(
+                                  note,
+                                )
+                              }
+                              className="flex items-center gap-2 rounded-lg border border-amber-800/40 bg-amber-950/20 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-amber-400 transition-colors hover:bg-amber-900/30"
+                            >
+                              <Download
+                                size={
+                                  13
+                                }
+                              />
+                              Download
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    {note?.fileUrl && (
-                      <div className="flex shrink-0 items-center gap-2">
-                        {/* VIEW */}
-
-                        <a
-                          href={note.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:border-amber-700/50 hover:text-amber-400"
-                        >
-                          <ExternalLink size={13} />
-                          View
-                        </a>
-
-                        {/* DOWNLOAD */}
-
-                        <button
-                          type="button"
-                          onClick={() => onDownload(note)}
-                          className="flex items-center gap-2 rounded-lg border border-amber-800/40 bg-amber-950/20 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-amber-400 transition-colors hover:bg-amber-900/30"
-                        >
-                          <Download size={13} />
-                          Download
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                  ),
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </section>
-  );
-});
+      </section>
+    );
+  },
+);
 
-LectureNotes.displayName = "LectureNotes";
+LectureNotes.displayName =
+  "LectureNotes";
 
 // =====================================================
 // CURRICULUM MODULE
@@ -1988,31 +2634,91 @@ const CurriculumModule = memo(
     isLectureCompleted,
     onOpenQuiz,
   }) => {
+    const isLocked = Boolean(
+      module?.isLocked,
+    );
+
+    const quizPassed = Boolean(
+      module?.quizPassed,
+    );
+
+    const quizReady =
+      Boolean(
+        module?.allLecturesCompleted,
+      ) &&
+      !quizPassed &&
+      !isLocked;
+
     return (
-      <div className="mb-2 overflow-hidden rounded-2xl border border-slate-800 bg-black/20">
+      <div
+        className={`mb-2 overflow-hidden rounded-2xl border ${
+          isLocked
+            ? "border-slate-900 bg-black/30"
+            : "border-slate-800 bg-black/20"
+        }`}
+      >
+        {/* MODULE HEADER */}
+
         <button
           type="button"
-          onClick={() => onToggle(module._id)}
-          className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-amber-950/10"
+          onClick={() =>
+            onToggle(module._id)
+          }
+          className={`flex w-full items-center gap-3 p-4 text-left transition-colors ${
+            isLocked
+              ? "cursor-pointer hover:bg-slate-950"
+              : "hover:bg-amber-950/10"
+          }`}
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-900/30 bg-amber-950/20 text-amber-400">
-            <Layers3 size={15} />
+          <div
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+              isLocked
+                ? "border border-slate-800 bg-slate-950 text-slate-700"
+                : "border border-amber-900/30 bg-amber-950/20 text-amber-400"
+            }`}
+          >
+            {isLocked ? (
+              <Lock size={15} />
+            ) : (
+              <Layers3 size={15} />
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3">
-              <h3 className="truncate text-xs font-black text-slate-200">
-                {String(module?.moduleTitle ?? "Untitled Module")}
+              <h3
+                className={`truncate text-xs font-black ${
+                  isLocked
+                    ? "text-slate-600"
+                    : "text-slate-200"
+                }`}
+              >
+                {String(
+                  module?.moduleTitle ??
+                    "Untitled Module",
+                )}
               </h3>
 
-              <span className="shrink-0 text-[9px] font-black text-amber-500">
-                {module?.modulePercentage}%
+              <span
+                className={`shrink-0 text-[9px] font-black ${
+                  isLocked
+                    ? "text-slate-700"
+                    : "text-amber-500"
+                }`}
+              >
+                {isLocked
+                  ? "LOCKED"
+                  : `${module?.modulePercentage}%`}
               </span>
             </div>
 
             <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-900">
               <div
-                className="h-full rounded-full bg-amber-500 transition-[width] duration-300"
+                className={`h-full rounded-full transition-[width] duration-300 ${
+                  isLocked
+                    ? "bg-slate-800"
+                    : "bg-amber-500"
+                }`}
                 style={{
                   width: `${module?.modulePercentage || 0}%`,
                 }}
@@ -2020,51 +2726,177 @@ const CurriculumModule = memo(
             </div>
           </div>
 
-          {expanded ? (
-            <ChevronDown size={16} className="shrink-0 text-slate-600" />
+          {isLocked ? (
+            <Lock
+              size={15}
+              className="shrink-0 text-slate-700"
+            />
+          ) : expanded ? (
+            <ChevronDown
+              size={16}
+              className="shrink-0 text-slate-600"
+            />
           ) : (
-            <ChevronRight size={16} className="shrink-0 text-slate-600" />
+            <ChevronRight
+              size={16}
+              className="shrink-0 text-slate-600"
+            />
           )}
         </button>
 
-        {expanded && (
+        {/* LOCKED MESSAGE */}
+
+        {isLocked && (
+          <div className="border-t border-slate-900/80 px-4 py-4">
+            <div className="flex items-center gap-3">
+              <Lock
+                size={15}
+                className="shrink-0 text-slate-700"
+              />
+
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                  Module Locked
+                </p>
+
+                <p className="mt-1 text-[9px] leading-5 text-slate-700">
+                  Complete the
+                  previous module
+                  and pass its quiz
+                  to unlock this
+                  module.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* UNLOCKED CONTENT */}
+
+        {expanded && !isLocked && (
           <div className="border-t border-slate-800/80 p-2">
-            {Array.isArray(module?.lectures) &&
-              module.lectures.map((lecture) => (
-                <LectureItem
-                  key={lecture?._id}
-                  lecture={lecture}
-                  selected={
-                    String(selectedLecture?._id) === String(lecture?._id)
-                  }
-                  completed={isLectureCompleted(lecture?._id)}
-                  onClick={() => onSelectLecture(lecture)}
-                />
-              ))}
+            {Array.isArray(
+              module?.lectures,
+            ) &&
+              module.lectures.map(
+                (lecture) => (
+                  <LectureItem
+                    key={lecture?._id}
+                    lecture={lecture}
+                    selected={
+                      String(
+                        selectedLecture?._id,
+                      ) ===
+                      String(
+                        lecture?._id,
+                      )
+                    }
+                    completed={isLectureCompleted(
+                      lecture?._id,
+                    )}
+                    onClick={() =>
+                      onSelectLecture(
+                        lecture,
+                      )
+                    }
+                  />
+                ),
+              )}
+
+            {/* MODULE QUIZ */}
 
             {module?.quiz && (
               <button
                 type="button"
-                onClick={() => onOpenQuiz(module)}
-                className="mt-2 flex w-full items-center gap-3 rounded-xl border border-amber-900/30 bg-amber-950/10 p-3 text-left transition-colors hover:border-amber-700/50 hover:bg-amber-950/20"
+                disabled={
+                  !quizReady &&
+                  !quizPassed
+                }
+                onClick={() =>
+                  onOpenQuiz(module)
+                }
+                className={`mt-2 flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
+                  quizPassed
+                    ? "border-emerald-900/30 bg-emerald-950/10"
+                    : quizReady
+                      ? "border-amber-900/30 bg-amber-950/10 hover:border-amber-700/50 hover:bg-amber-950/20"
+                      : "cursor-not-allowed border-slate-800 bg-slate-950/40 opacity-60"
+                }`}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
-                  <ClipboardCheck size={15} />
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                    quizPassed
+                      ? "bg-emerald-500/10 text-emerald-400"
+                      : "bg-amber-500/10 text-amber-400"
+                  }`}
+                >
+                  {quizPassed ? (
+                    <CheckCircle2
+                      size={15}
+                    />
+                  ) : quizReady ? (
+                    <ClipboardCheck
+                      size={15}
+                    />
+                  ) : (
+                    <Lock
+                      size={15}
+                    />
+                  )}
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-amber-400">
+                  <p
+                    className={`text-[10px] font-black uppercase tracking-wider ${
+                      quizPassed
+                        ? "text-emerald-400"
+                        : "text-amber-400"
+                    }`}
+                  >
                     Module Quiz
                   </p>
 
                   <p className="mt-1 text-[9px] text-slate-600">
-                    Complete all lectures to unlock
+                    {quizPassed
+                      ? "Quiz passed"
+                      : quizReady
+                        ? "Ready to take quiz"
+                        : "Complete all lectures to unlock"}
                   </p>
                 </div>
 
-                <ChevronRight size={15} className="text-slate-700" />
+                {!quizPassed &&
+                  quizReady && (
+                    <ChevronRight
+                      size={15}
+                      className="text-amber-500"
+                    />
+                  )}
               </button>
             )}
+
+            {/* NO QUIZ */}
+
+            {!module?.quiz &&
+              module?.allLecturesCompleted && (
+                <div className="mt-2 flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                  <ClipboardCheck
+                    size={15}
+                    className="text-slate-700"
+                  />
+
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">
+                      Module Quiz
+                    </p>
+
+                    <p className="mt-1 text-[9px] text-slate-700">
+                      Quiz not
+                      generated yet
+                    </p>
+                  </div>
+                </div>
+              )}
           </div>
         )}
       </div>
@@ -2072,75 +2904,98 @@ const CurriculumModule = memo(
   },
 );
 
-CurriculumModule.displayName = "CurriculumModule";
+CurriculumModule.displayName =
+  "CurriculumModule";
 
 // =====================================================
 // LECTURE ITEM
 // =====================================================
 
-const LectureItem = memo(({ lecture, selected, completed, onClick }) => {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
-        selected
-          ? "border border-amber-800/40 bg-amber-950/20"
-          : "border border-transparent hover:bg-slate-900/70"
-      }`}
-    >
-      <div
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-          completed
-            ? "bg-emerald-950/30 text-emerald-400"
-            : selected
-              ? "bg-amber-500/10 text-amber-400"
-              : "bg-slate-900 text-slate-600"
+const LectureItem = memo(
+  ({
+    lecture,
+    selected,
+    completed,
+    onClick,
+  }) => {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`group flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
+          selected
+            ? "border border-amber-800/40 bg-amber-950/20"
+            : "border border-transparent hover:bg-slate-900/70"
         }`}
       >
-        {completed ? <CheckCircle2 size={15} /> : <PlayCircle size={15} />}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p
-          className={`truncate text-[11px] font-bold ${
-            selected
-              ? "text-amber-300"
-              : "text-slate-400 group-hover:text-slate-200"
+        <div
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+            completed
+              ? "bg-emerald-950/30 text-emerald-400"
+              : selected
+                ? "bg-amber-500/10 text-amber-400"
+                : "bg-slate-900 text-slate-600"
           }`}
         >
-          {String(
-            lecture?.lectureTitle || lecture?.title || "Untitled Lecture",
+          {completed ? (
+            <CheckCircle2 size={15} />
+          ) : (
+            <PlayCircle size={15} />
           )}
-        </p>
+        </div>
 
-        <p className="mt-1 text-[9px] text-slate-700">
-          Lecture {lecture?.order || ""}
-        </p>
-      </div>
+        <div className="min-w-0 flex-1">
+          <p
+            className={`truncate text-[11px] font-bold ${
+              selected
+                ? "text-amber-300"
+                : "text-slate-400 group-hover:text-slate-200"
+            }`}
+          >
+            {String(
+              lecture?.lectureTitle ||
+                lecture?.title ||
+                "Untitled Lecture",
+            )}
+          </p>
 
-      {lecture?.isPreviewFree && (
-        <span className="rounded-full border border-emerald-900/30 bg-emerald-950/20 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-emerald-500">
-          Preview
-        </span>
-      )}
-    </button>
-  );
-});
+          <p className="mt-1 text-[9px] text-slate-700">
+            Lecture{" "}
+            {lecture?.order || ""}
+          </p>
+        </div>
 
-LectureItem.displayName = "LectureItem";
+        {lecture?.isPreviewFree && (
+          <span className="rounded-full border border-emerald-900/30 bg-emerald-950/20 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-emerald-500">
+            Preview
+          </span>
+        )}
+      </button>
+    );
+  },
+);
+
+LectureItem.displayName =
+  "LectureItem";
 
 // =====================================================
 // NAVIGATION
 // =====================================================
 
 const LectureNavigation = memo(
-  ({ currentLectureIndex, totalLectures, onPrevious, onNext }) => {
+  ({
+    currentLectureIndex,
+    totalLectures,
+    onPrevious,
+    onNext,
+  }) => {
     return (
       <div className="mt-5 grid grid-cols-2 gap-3">
         <button
           type="button"
-          disabled={currentLectureIndex <= 0}
+          disabled={
+            currentLectureIndex <= 0
+          }
           onClick={onPrevious}
           className="flex items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-[#0b0e10] px-4 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:border-amber-800/40 hover:text-amber-400 disabled:cursor-not-allowed disabled:opacity-30"
         >
@@ -2151,8 +3006,10 @@ const LectureNavigation = memo(
         <button
           type="button"
           disabled={
-            currentLectureIndex === -1 ||
-            currentLectureIndex >= totalLectures - 1
+            currentLectureIndex ===
+              -1 ||
+            currentLectureIndex >=
+              totalLectures - 1
           }
           onClick={onNext}
           className="flex items-center justify-center gap-2 rounded-2xl border border-amber-900/30 bg-amber-950/10 px-4 py-4 text-[10px] font-black uppercase tracking-widest text-amber-400 transition-colors hover:bg-amber-950/20 disabled:cursor-not-allowed disabled:opacity-30"
@@ -2165,116 +3022,256 @@ const LectureNavigation = memo(
   },
 );
 
-LectureNavigation.displayName = "LectureNavigation";
+LectureNavigation.displayName =
+  "LectureNavigation";
 
 // =====================================================
 // MODULE QUIZ
 // =====================================================
 
-const ModuleQuizRequirement = memo(({ modules, onOpenQuiz }) => {
-  const incompleteModules = modules.filter(
-    (module) => module?.totalLectures > 0 && !module?.allLecturesCompleted,
-  );
+const ModuleQuizRequirement = memo(
+  ({ modules, onOpenQuiz }) => {
+    const quizReadyModules =
+      modules.filter(
+        (module) =>
+          module?.totalLectures >
+            0 &&
+          module?.allLecturesCompleted &&
+          !module?.quizPassed &&
+          !module?.isLocked,
+      );
 
-  const completedModules = modules.filter(
-    (module) => module?.totalLectures > 0 && module?.allLecturesCompleted,
-  );
+    const passedModules =
+      modules.filter(
+        (module) =>
+          module?.totalLectures >
+            0 &&
+          module?.quizPassed,
+      );
 
-  return (
-    <section className="mt-6 overflow-hidden rounded-3xl border border-amber-900/40 bg-gradient-to-br from-amber-950/20 via-[#0d1012] to-[#08090a] p-5">
-      <div className="flex items-start gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-700/40 bg-amber-950/30 text-amber-400">
-          <Trophy size={20} />
-        </div>
+    const incompleteModules =
+      modules.filter(
+        (module) =>
+          module?.totalLectures >
+            0 &&
+          !module?.allLecturesCompleted &&
+          !module?.isLocked,
+      );
 
-        <div>
-          <h3 className="text-sm font-black uppercase tracking-widest text-white">
-            Module Trials
-          </h3>
+    const lockedModules =
+      modules.filter(
+        (module) =>
+          module?.totalLectures >
+            0 &&
+          module?.isLocked,
+      );
 
-          <p className="mt-1 text-xs leading-6 text-slate-500">
-            Complete each module's lectures and pass its quiz to continue your
-            journey.
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-5 space-y-2">
-        {completedModules.map((module) => (
-          <button
-            key={module._id}
-            type="button"
-            onClick={() => onOpenQuiz(module)}
-            className="flex w-full items-center gap-3 rounded-xl border border-emerald-900/30 bg-emerald-950/10 p-3 text-left transition-colors hover:bg-emerald-950/20"
-          >
-            <CheckCircle2 size={17} className="text-emerald-400" />
-
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-black text-slate-200">
-                {String(module?.moduleTitle || "Untitled Module")}
-              </p>
-
-              <p className="mt-1 text-[9px] uppercase tracking-widest text-emerald-500">
-                Ready for quiz
-              </p>
-            </div>
-
-            <ChevronRight size={16} className="text-emerald-500" />
-          </button>
-        ))}
-
-        {incompleteModules.map((module) => (
-          <div
-            key={module._id}
-            className="flex items-center gap-3 rounded-xl border border-slate-800 bg-black/20 p-3"
-          >
-            <Lock size={17} className="text-slate-700" />
-
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-black text-slate-500">
-                {String(module?.moduleTitle || "Untitled Module")}
-              </p>
-
-              <p className="mt-1 text-[9px] uppercase tracking-widest text-slate-700">
-                {module?.completedCount}/{module?.totalLectures} completed
-              </p>
-            </div>
+    return (
+      <section className="mt-6 overflow-hidden rounded-3xl border border-amber-900/40 bg-gradient-to-br from-amber-950/20 via-[#0d1012] to-[#08090a] p-5">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-700/40 bg-amber-950/30 text-amber-400">
+            <Trophy size={20} />
           </div>
-        ))}
-      </div>
-    </section>
-  );
-});
 
-ModuleQuizRequirement.displayName = "ModuleQuizRequirement";
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-widest text-white">
+              Module Trials
+            </h3>
+
+            <p className="mt-1 text-xs leading-6 text-slate-500">
+              Complete each
+              module's lectures
+              and pass its quiz
+              to unlock the
+              next module.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-2">
+          {/* QUIZ READY */}
+
+          {quizReadyModules.map(
+            (module) => (
+              <button
+                key={module._id}
+                type="button"
+                onClick={() =>
+                  onOpenQuiz(module)
+                }
+                className="flex w-full items-center gap-3 rounded-xl border border-amber-900/30 bg-amber-950/10 p-3 text-left transition-colors hover:border-amber-700/50 hover:bg-amber-950/20"
+              >
+                <ClipboardCheck
+                  size={17}
+                  className="text-amber-400"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-black text-slate-200">
+                    {String(
+                      module?.moduleTitle ||
+                        "Untitled Module",
+                    )}
+                  </p>
+
+                  <p className="mt-1 text-[9px] uppercase tracking-widest text-amber-500">
+                    Lectures complete
+                    — take quiz
+                  </p>
+                </div>
+
+                <ChevronRight
+                  size={16}
+                  className="text-amber-500"
+                />
+              </button>
+            ),
+          )}
+
+          {/* PASSED */}
+
+          {passedModules.map(
+            (module) => (
+              <div
+                key={module._id}
+                className="flex w-full items-center gap-3 rounded-xl border border-emerald-900/30 bg-emerald-950/10 p-3"
+              >
+                <CheckCircle2
+                  size={17}
+                  className="text-emerald-400"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-black text-slate-200">
+                    {String(
+                      module?.moduleTitle ||
+                        "Untitled Module",
+                    )}
+                  </p>
+
+                  <p className="mt-1 text-[9px] uppercase tracking-widest text-emerald-500">
+                    Quiz passed
+                  </p>
+                </div>
+
+                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">
+                  Complete
+                </span>
+              </div>
+            ),
+          )}
+
+          {/* INCOMPLETE */}
+
+          {incompleteModules.map(
+            (module) => (
+              <div
+                key={module._id}
+                className="flex items-center gap-3 rounded-xl border border-slate-800 bg-black/20 p-3"
+              >
+                <Lock
+                  size={17}
+                  className="text-slate-700"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-black text-slate-500">
+                    {String(
+                      module?.moduleTitle ||
+                        "Untitled Module",
+                    )}
+                  </p>
+
+                  <p className="mt-1 text-[9px] uppercase tracking-widest text-slate-700">
+                    {
+                      module?.completedCount
+                    }
+                    /
+                    {
+                      module?.totalLectures
+                    }{" "}
+                    completed
+                  </p>
+                </div>
+              </div>
+            ),
+          )}
+
+          {/* LOCKED */}
+
+          {lockedModules.map(
+            (module) => (
+              <div
+                key={module._id}
+                className="flex items-center gap-3 rounded-xl border border-slate-900 bg-black/30 p-3"
+              >
+                <Lock
+                  size={17}
+                  className="text-slate-800"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-black text-slate-700">
+                    {String(
+                      module?.moduleTitle ||
+                        "Untitled Module",
+                    )}
+                  </p>
+
+                  <p className="mt-1 text-[9px] uppercase tracking-widest text-slate-800">
+                    Complete previous
+                    module + pass
+                    quiz
+                  </p>
+                </div>
+
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-800">
+                  Locked
+                </span>
+              </div>
+            ),
+          )}
+        </div>
+      </section>
+    );
+  },
+);
+
+ModuleQuizRequirement.displayName =
+  "ModuleQuizRequirement";
 
 // =====================================================
 // LEGACY COMPLETION
 // =====================================================
 
-const LegacyCourseCompleted = memo(() => {
-  return (
-    <section className="mt-6 rounded-3xl border border-emerald-900/30 bg-emerald-950/10 p-6">
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-950/30 text-emerald-400">
-          <Trophy size={22} />
+const LegacyCourseCompleted = memo(
+  () => {
+    return (
+      <section className="mt-6 rounded-3xl border border-emerald-900/30 bg-emerald-950/10 p-6">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-950/30 text-emerald-400">
+            <Trophy size={22} />
+          </div>
+
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-widest text-emerald-300">
+              Course Completed
+            </h3>
+
+            <p className="mt-1 text-xs text-slate-500">
+              You have completed
+              every lecture in
+              this course.
+            </p>
+          </div>
         </div>
+      </section>
+    );
+  },
+);
 
-        <div>
-          <h3 className="text-sm font-black uppercase tracking-widest text-emerald-300">
-            Course Completed
-          </h3>
-
-          <p className="mt-1 text-xs text-slate-500">
-            You have completed every lecture in this course.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-});
-
-LegacyCourseCompleted.displayName = "LegacyCourseCompleted";
+LegacyCourseCompleted.displayName =
+  "LegacyCourseCompleted";
 
 // =====================================================
 // SMALL COMPONENTS
@@ -2286,7 +3283,8 @@ const CrownIcon = memo(() => (
   </div>
 ));
 
-CrownIcon.displayName = "CrownIcon";
+CrownIcon.displayName =
+  "CrownIcon";
 
 const ScrollIcon = memo(() => (
   <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-900/30 bg-amber-950/20 text-amber-500">
@@ -2294,35 +3292,46 @@ const ScrollIcon = memo(() => (
   </div>
 ));
 
-ScrollIcon.displayName = "ScrollIcon";
+ScrollIcon.displayName =
+  "ScrollIcon";
 
-const ShortcutRow = memo(({ label, shortcut }) => (
-  <div className="flex items-center justify-between">
-    <span>{label}</span>
+const ShortcutRow = memo(
+  ({ label, shortcut }) => (
+    <div className="flex items-center justify-between">
+      <span>{label}</span>
 
-    <kbd className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[9px] font-black text-slate-400">
-      {shortcut}
-    </kbd>
-  </div>
-));
-
-ShortcutRow.displayName = "ShortcutRow";
-
-const StatBadge = memo(({ icon, value, label }) => (
-  <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-black/20 px-3 py-2">
-    <span className="text-amber-500">{icon}</span>
-
-    <div>
-      <p className="text-xs font-black text-slate-200">{value}</p>
-
-      <p className="text-[8px] font-bold uppercase tracking-widest text-slate-700">
-        {label}
-      </p>
+      <kbd className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[9px] font-black text-slate-400">
+        {shortcut}
+      </kbd>
     </div>
-  </div>
-));
+  ),
+);
 
-StatBadge.displayName = "StatBadge";
+ShortcutRow.displayName =
+  "ShortcutRow";
+
+const StatBadge = memo(
+  ({ icon, value, label }) => (
+    <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-black/20 px-3 py-2">
+      <span className="text-amber-500">
+        {icon}
+      </span>
+
+      <div>
+        <p className="text-xs font-black text-slate-200">
+          {value}
+        </p>
+
+        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-700">
+          {label}
+        </p>
+      </div>
+    </div>
+  ),
+);
+
+StatBadge.displayName =
+  "StatBadge";
 
 // =====================================================
 // FILE SIZE
@@ -2335,14 +3344,25 @@ const formatFileSize = (bytes) => {
     return "0 B";
   }
 
-  const units = ["B", "KB", "MB", "GB"];
+  const units = [
+    "B",
+    "KB",
+    "MB",
+    "GB",
+  ];
 
   const index = Math.min(
-    Math.floor(Math.log(value) / Math.log(1024)),
+    Math.floor(
+      Math.log(value) /
+        Math.log(1024),
+    ),
     units.length - 1,
   );
 
-  return `${(value / Math.pow(1024, index)).toFixed(
+  return `${(
+    value /
+    Math.pow(1024, index)
+  ).toFixed(
     index === 0 ? 0 : 1,
   )} ${units[index]}`;
 };

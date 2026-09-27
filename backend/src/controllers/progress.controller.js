@@ -3,6 +3,8 @@ import Lecture from "../models/lecture.model.js";
 import StudySession from "../models/studysession.model.js";
 import Activity from "../models/activity.model.js";
 import Enrollment from "../models/enrollment.model.js";
+import QuizAttempt from "../models/quizAttempt.model.js";
+import Module from "../models/module.model.js";
 
 import { checkAndUnlockAchievements } from "../services/achievement.service.js";
 
@@ -1362,4 +1364,368 @@ const saveStudySession = async ({
   session.endedAt = now;
 
   await session.save();
+};
+
+// =====================================================
+// HELPER: CHECK MODULE COMPLETION
+// =====================================================
+
+const checkModuleCompletion = async ({
+  moduleId,
+  studentId,
+}) => {
+  // -------------------------------------------------
+  // Find module
+  // -------------------------------------------------
+
+  const module = await Module.findById(moduleId).lean();
+
+  if (!module) {
+    return {
+      exists: false,
+      completed: false,
+      lecturesCompleted: false,
+      quizPassed: false,
+    };
+  }
+
+  // -------------------------------------------------
+  // Find module lectures
+  // -------------------------------------------------
+
+  const lectures = await Lecture.find({
+    module: moduleId,
+  })
+    .select("_id")
+    .lean();
+
+  // -------------------------------------------------
+  // No lectures
+  // -------------------------------------------------
+
+  if (lectures.length === 0) {
+    return {
+      exists: true,
+      completed: false,
+      lecturesCompleted: false,
+      quizPassed: false,
+      totalLectures: 0,
+      completedLectures: 0,
+    };
+  }
+
+  // -------------------------------------------------
+  // Find course progress
+  // -------------------------------------------------
+
+  const courseProgress =
+    await CourseProgress.findOne({
+      student: studentId,
+      course: module.course,
+    }).lean();
+
+  const lectureProgress =
+    courseProgress?.lectures || [];
+
+  // -------------------------------------------------
+  // Count completed lectures
+  // -------------------------------------------------
+
+  const completedLectures =
+    lectures.filter((lecture) =>
+      lectureProgress.some(
+        (progress) =>
+          String(progress.lecture) ===
+            String(lecture._id) &&
+          progress.completed === true,
+      ),
+    ).length;
+
+  const lecturesCompleted =
+    completedLectures === lectures.length;
+
+  // -------------------------------------------------
+  // Find latest passed quiz attempt
+  // -------------------------------------------------
+
+  const passedQuiz =
+    await QuizAttempt.findOne({
+      student: studentId,
+      module: moduleId,
+      passed: true,
+    })
+      .sort({
+        createdAt: -1,
+      })
+      .lean();
+
+  const quizPassed = Boolean(passedQuiz);
+
+  // -------------------------------------------------
+  // Module completion
+  // -------------------------------------------------
+
+  const completed =
+    lecturesCompleted &&
+    quizPassed;
+
+  return {
+    exists: true,
+    completed,
+    lecturesCompleted,
+    quizPassed,
+    totalLectures: lectures.length,
+    completedLectures,
+  };
+};
+
+// =====================================================
+// GET MODULE ACCESS
+// GET /api/v1/module/:moduleId/access
+// =====================================================
+
+export const getModuleAccess = async (req, res) => {
+  try {
+    const { moduleId } = req.params;
+    const studentId = req.user._id;
+
+    // -------------------------------------------------
+    // Find current module
+    // -------------------------------------------------
+
+    const currentModule =
+      await Module.findById(moduleId).lean();
+
+    if (!currentModule) {
+      return res.status(404).json({
+        success: false,
+        message: "Module not found.",
+      });
+    }
+
+    // -------------------------------------------------
+    // Get all course modules
+    // -------------------------------------------------
+
+    const modules =
+      await Module.find({
+        course: currentModule.course,
+      })
+        .sort({
+          order: 1,
+        })
+        .lean();
+
+    // -------------------------------------------------
+    // Find current module index
+    // -------------------------------------------------
+
+    const currentIndex =
+      modules.findIndex(
+        (module) =>
+          String(module._id) ===
+          String(moduleId),
+      );
+
+    if (currentIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Module not found in course.",
+      });
+    }
+
+    // -------------------------------------------------
+    // FIRST MODULE
+    // -------------------------------------------------
+
+    if (currentIndex === 0) {
+      return res.status(200).json({
+        success: true,
+
+        access: {
+          isLocked: false,
+          isCompleted: false,
+          reason: null,
+          previousModule: null,
+        },
+      });
+    }
+
+    // -------------------------------------------------
+    // PREVIOUS MODULE
+    // -------------------------------------------------
+
+    const previousModule =
+      modules[currentIndex - 1];
+
+    const previousStatus =
+      await checkModuleCompletion({
+        moduleId:
+          previousModule._id,
+        studentId,
+      });
+
+    // -------------------------------------------------
+    // ACCESS RESULT
+    // -------------------------------------------------
+
+    const isLocked =
+      !previousStatus.completed;
+
+    return res.status(200).json({
+      success: true,
+
+      access: {
+        isLocked,
+
+        isCompleted: false,
+
+        reason: isLocked
+          ? `Complete ${previousModule.moduleTitle} before entering this module.`
+          : null,
+
+        previousModule: {
+          _id: previousModule._id,
+          moduleTitle:
+            previousModule.moduleTitle,
+          order: previousModule.order,
+          completed:
+            previousStatus.completed,
+          lecturesCompleted:
+            previousStatus.lecturesCompleted,
+          quizPassed:
+            previousStatus.quizPassed,
+        },
+      },
+    });
+  } catch (error) {
+    console.error(
+      "GET MODULE ACCESS ERROR:",
+      error,
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Unable to check module access.",
+    });
+  }
+};
+
+// =====================================================
+// GET COURSE MODULE ACCESS
+// GET /api/v1/module/course/:courseId/access
+// =====================================================
+
+export const getCourseModuleAccess = async (
+  req,
+  res,
+) => {
+  try {
+    const { courseId } = req.params;
+    const studentId = req.user._id;
+
+    // -------------------------------------------------
+    // Get modules
+    // -------------------------------------------------
+
+    const modules =
+      await Module.find({
+        course: courseId,
+      })
+        .sort({
+          order: 1,
+        })
+        .lean();
+
+    // -------------------------------------------------
+    // No modules
+    // -------------------------------------------------
+
+    if (!modules.length) {
+      return res.status(200).json({
+        success: true,
+        modules: [],
+      });
+    }
+
+    // -------------------------------------------------
+    // Calculate module statuses
+    // -------------------------------------------------
+
+    const moduleStatuses = [];
+
+    for (let index = 0; index < modules.length; index++) {
+      const module = modules[index];
+
+      const status =
+        await checkModuleCompletion({
+          moduleId: module._id,
+          studentId,
+        });
+
+      const isFirstModule = index === 0;
+
+      const previousModule =
+        !isFirstModule
+          ? moduleStatuses[index - 1]
+          : null;
+
+      const isLocked =
+        !isFirstModule &&
+        !previousModule.completed;
+
+      moduleStatuses.push({
+        moduleId: module._id,
+
+        order: module.order,
+
+        moduleTitle:
+          module.moduleTitle,
+
+        isLocked,
+
+        isCompleted:
+          status.completed,
+
+        lecturesCompleted:
+          status.lecturesCompleted,
+
+        quizPassed:
+          status.quizPassed,
+
+        totalLectures:
+          status.totalLectures || 0,
+
+        completedLectures:
+          status.completedLectures || 0,
+
+        lockReason: isLocked
+          ? `Complete ${
+              previousModule.moduleTitle
+            } first.`
+          : null,
+      });
+    }
+
+    // -------------------------------------------------
+    // Response
+    // -------------------------------------------------
+
+    return res.status(200).json({
+      success: true,
+      modules: moduleStatuses,
+    });
+  } catch (error) {
+    console.error(
+      "GET COURSE MODULE ACCESS ERROR:",
+      error,
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Unable to fetch module access.",
+    });
+  }
 };

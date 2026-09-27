@@ -135,216 +135,217 @@ export const createQuiz = async (req, res) => {
   }
 };
 
-// =====================================================
-// GENERATE AI QUIZ
-// POST /api/v1/module/:moduleId/quiz/generate
-// =====================================================
-
 export const generateAIQuiz = async (req, res) => {
   try {
     const { moduleId } = req.params;
+    const { questionCount = 10 } = req.body;
 
-    const { numberOfQuestions = 10 } = req.body;
+    console.log("=================================");
+    console.log("🤖 GENERATING AI QUIZ");
+    console.log("📦 Module ID:", moduleId);
+    console.log("❓ Questions:", questionCount);
+    console.log("=================================");
 
-    // -------------------------------------------------
-    // Validate question count
-    // -------------------------------------------------
-
-    const questionCount = Number(numberOfQuestions);
+    // --------------------------------------------------
+    // 1. Validate question count
+    // --------------------------------------------------
+    const parsedQuestionCount = Number(questionCount);
 
     if (
-      !Number.isInteger(questionCount) ||
-      questionCount < 5 ||
-      questionCount > 20
+      !Number.isInteger(parsedQuestionCount) ||
+      parsedQuestionCount < 5 ||
+      parsedQuestionCount > 20
     ) {
       return res.status(400).json({
         success: false,
-        message: "Number of questions must be between 5 and 20",
+        message: "Question count must be between 5 and 20.",
       });
     }
 
-    // -------------------------------------------------
-    // Find module
-    // -------------------------------------------------
-
+    // --------------------------------------------------
+    // 2. Find module
+    // --------------------------------------------------
     const module = await Module.findById(moduleId);
 
     if (!module) {
       return res.status(404).json({
         success: false,
-        message: "Module not found",
+        message: "Module not found.",
       });
     }
 
-    // -------------------------------------------------
-    // Find course
-    // -------------------------------------------------
-
+    // --------------------------------------------------
+    // 3. Find course
+    // --------------------------------------------------
     const course = await Course.findById(module.course);
 
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: "Course not found",
+        message: "Course not found.",
       });
     }
 
-    // -------------------------------------------------
-    // Check instructor ownership
-    // -------------------------------------------------
-
+    // --------------------------------------------------
+    // 4. Check instructor ownership
+    // --------------------------------------------------
     if (
       course.instructor &&
       course.instructor.toString() !== req.user._id.toString()
     ) {
       return res.status(403).json({
         success: false,
-        message: "You are not authorized to generate a quiz for this course",
+        message: "You are not authorized to generate a quiz for this course.",
       });
     }
 
-    // -------------------------------------------------
-    // Check existing quiz
-    // -------------------------------------------------
-
+    // --------------------------------------------------
+    // 5. Check if quiz already exists
+    // --------------------------------------------------
     const existingQuiz = await Quiz.findOne({
       module: moduleId,
     });
 
     if (existingQuiz) {
-      return res.status(409).json({
+      return res.status(400).json({
         success: false,
-        message: "A quiz already exists for this module",
+        message: "A quiz already exists for this module.",
         quizId: existingQuiz._id,
       });
     }
 
-    // -------------------------------------------------
-    // Get module lectures
-    // -------------------------------------------------
-
+    // --------------------------------------------------
+    // 6. Get lectures belonging to this module
+    // --------------------------------------------------
     const lectures = await Lecture.find({
-      course: module.course,
       module: moduleId,
-    }).sort({ order: 1 });
+    })
+      .select(
+        "lectureTitle lectureContent videoDuration order"
+      )
+      .sort({ order: 1 });
 
     if (!lectures || lectures.length === 0) {
       return res.status(400).json({
         success: false,
-        message:
-          "This module does not contain any lectures. Add lectures before generating the quiz.",
+        message: "No lectures found for this module.",
       });
     }
 
-    // -------------------------------------------------
-    // Prepare lecture content for Gemini
-    // -------------------------------------------------
-
+    // --------------------------------------------------
+    // 7. Prepare lecture data for AI
+    // --------------------------------------------------
     const lectureData = lectures.map((lecture) => ({
-      lectureTitle: lecture.lectureTitle || lecture.title || "Untitled Lecture",
-
-      lectureContent:
-        lecture.lectureContent || lecture.content || lecture.description || "",
+      title: lecture.lectureTitle || "",
+      content: lecture.lectureContent || "",
+      duration: lecture.videoDuration || 0,
+      order: lecture.order || 0,
     }));
-
-    // -------------------------------------------------
-    // Generate quiz using Gemini
-    // -------------------------------------------------
 
     console.log("=================================");
     console.log("🤖 GENERATING AI QUIZ");
-    console.log("📚 Course:", course.title || course.courseTitle);
+    console.log("📚 Course:", course.courseTitle);
     console.log("📖 Module:", module.moduleTitle);
-    console.log("📝 Lectures:", lectures.length);
-    console.log("❓ Questions:", questionCount);
+    console.log("📝 Lectures:", lectureData.length);
+    console.log("❓ Questions:", parsedQuestionCount);
     console.log("=================================");
 
-    const generatedQuestions = await generateModuleQuiz({
-      courseTitle: course.title || course.courseTitle || "Course",
-
-      courseCategory: course.category || "",
-
-      courseLevel: course.level || "",
-
+    // --------------------------------------------------
+    // 8. Generate quiz using Gemini
+    // --------------------------------------------------
+    const generatedQuiz = await generateModuleQuiz({
       moduleTitle: module.moduleTitle || "Module",
-
       moduleDescription: module.description || "",
-
       lectures: lectureData,
-
-      numberOfQuestions: questionCount,
+      questionCount: parsedQuestionCount,
+      passingScore: 70,
     });
 
-    // -------------------------------------------------
-    // Validate AI response
-    // -------------------------------------------------
+    console.log("=================================");
+    console.log("🤖 AI QUIZ RESULT");
+    console.log("Title:", generatedQuiz?.title);
+    console.log(
+      "Questions:",
+      generatedQuiz?.questions?.length
+    );
+    console.log("=================================");
 
+    // --------------------------------------------------
+    // 9. Validate AI response
+    // --------------------------------------------------
     if (
-      !Array.isArray(generatedQuestions) ||
-      generatedQuestions.length !== questionCount
+      !generatedQuiz ||
+      !Array.isArray(generatedQuiz.questions) ||
+      generatedQuiz.questions.length !== parsedQuestionCount
     ) {
+      console.error(
+        "❌ Invalid AI quiz response:",
+        generatedQuiz
+      );
+
       return res.status(500).json({
         success: false,
-        message: "AI generated an invalid quiz. Please try again.",
+        message:
+          "AI generated an invalid quiz. Please try again.",
       });
     }
 
-    // -------------------------------------------------
-    // Create quiz in MongoDB
-    // -------------------------------------------------
-
+    // --------------------------------------------------
+    // 10. Save quiz to MongoDB
+    // --------------------------------------------------
     const quiz = await Quiz.create({
       course: module.course,
       module: moduleId,
-      title: `${module.moduleTitle} - AI Quiz`,
-      questions: generatedQuestions,
-      passingScore: 70,
+
+      title:
+        generatedQuiz.title ||
+        `${module.moduleTitle} - AI Quiz`,
+
+      description:
+        generatedQuiz.description ||
+        `AI-generated quiz for ${module.moduleTitle}`,
+
+      questions: generatedQuiz.questions,
+
+      passingScore:
+        generatedQuiz.passingScore || 70,
+
       generatedByAI: true,
+
       generatedAt: new Date(),
     });
 
-    // -------------------------------------------------
-    // Return safe response
-    // -------------------------------------------------
-
+    // --------------------------------------------------
+    // 11. Return response
+    // --------------------------------------------------
     return res.status(201).json({
       success: true,
-      message: "AI quiz generated successfully",
+      message: "AI quiz generated successfully.",
+
       quiz: {
         _id: quiz._id,
-        title: quiz.title,
-        module: quiz.module,
         course: quiz.course,
-        questionCount: quiz.questions.length,
+        module: quiz.module,
+        title: quiz.title,
+        description: quiz.description,
         passingScore: quiz.passingScore,
+        totalQuestions: quiz.questions.length,
         generatedByAI: quiz.generatedByAI,
         generatedAt: quiz.generatedAt,
       },
     });
   } catch (error) {
     console.error("=================================");
-    console.error("❌ GENERATE AI QUIZ ERROR");
+    console.error("❌ AI QUIZ GENERATION ERROR");
     console.error("Message:", error.message);
+    console.error("Stack:", error.stack);
     console.error("=================================");
-
-    // -------------------------------------------------
-    // Gemini quota error
-    // -------------------------------------------------
-
-    if (
-      error.message === "AI_QUOTA_EXCEEDED" ||
-      error.code === "AI_QUOTA_EXCEEDED"
-    ) {
-      return res.status(429).json({
-        success: false,
-        message: "AI quiz generation limit reached. Please try again later.",
-      });
-    }
 
     return res.status(500).json({
       success: false,
-      message: "Failed to generate AI quiz",
-      error: error.message,
+      message:
+        error.message ||
+        "Failed to generate AI quiz.",
     });
   }
 };
