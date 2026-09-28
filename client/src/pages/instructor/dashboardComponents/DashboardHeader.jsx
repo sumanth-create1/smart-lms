@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Crown,
   Flame,
+  Loader2,
   LogOut,
   Plus,
   Settings,
@@ -17,15 +18,26 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
+import api from "../../../services/api";
+
+/* ============================================================
+   DASHBOARD HEADER
+============================================================ */
+
 function DashboardHeader({ user }) {
   const navigate = useNavigate();
 
   const [openMenu, setOpenMenu] = useState(null);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+
   const headerRef = useRef(null);
 
   const firstName = user?.name?.split(" ")[0] || "Instructor";
 
-  /* Close menus */
+  /* ==========================================================
+     CLOSE MENUS
+  ========================================================== */
+
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (
@@ -46,22 +58,59 @@ function DashboardHeader({ user }) {
     document.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
     };
   }, []);
 
+  /* ==========================================================
+     MENU HELPERS
+  ========================================================== */
+
   const toggleMenu = (menu) => {
-    setOpenMenu((current) => (current === menu ? null : menu));
+    setOpenMenu((current) =>
+      current === menu ? null : menu
+    );
   };
 
   const closeMenu = () => {
     setOpenMenu(null);
   };
 
-  const handleLogout = () => {
-    closeMenu();
-    navigate("/login");
+  /* ==========================================================
+     LOGOUT
+  ========================================================== */
+
+  const handleLogout = async () => {
+    if (logoutLoading) return;
+
+    try {
+      setLogoutLoading(true);
+      closeMenu();
+
+      await api.post("/auth/logout");
+
+      navigate("/login", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+
+      // Even if logout request fails,
+      // don't keep the user on the dashboard.
+      navigate("/login", {
+        replace: true,
+      });
+    } finally {
+      setLogoutLoading(false);
+    }
   };
 
   return (
@@ -71,10 +120,15 @@ function DashboardHeader({ user }) {
     >
       <div className="relative overflow-visible rounded-[26px] border border-orange-500/10 bg-[#0b0806]/95 shadow-[0_20px_70px_rgba(0,0,0,.55)] backdrop-blur-2xl">
 
-        {/* Ambient background */}
+        {/* ======================================================
+            AMBIENT BACKGROUND
+        ====================================================== */}
+
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[26px]">
           <div className="absolute -left-32 -top-40 h-[400px] w-[400px] rounded-full bg-orange-600/[0.07] blur-[110px]" />
+
           <div className="absolute -right-32 -top-32 h-[400px] w-[400px] rounded-full bg-red-950/20 blur-[120px]" />
+
           <div className="absolute bottom-[-120px] left-1/2 h-[220px] w-[600px] -translate-x-1/2 rounded-full bg-orange-500/[0.04] blur-[100px]" />
 
           <div
@@ -92,13 +146,18 @@ function DashboardHeader({ user }) {
           <Ember className="bottom-[25%] right-[10%]" />
         </div>
 
-        {/* Main row */}
+        {/* ======================================================
+            MAIN ROW
+        ====================================================== */}
+
         <div className="relative z-20 flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
 
-          {/* Brand */}
+          {/* BRAND */}
+
           <div className="flex min-w-0 items-center gap-4">
             <div className="relative hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-500/20 bg-orange-500/[0.08] text-orange-300 sm:flex">
-              <div className="absolute inset-1 rounded-xl border border-orange-400/[0.08] animate-pulse" />
+              <div className="absolute inset-1 animate-pulse rounded-xl border border-orange-400/[0.08]" />
+
               <Crown size={21} />
             </div>
 
@@ -118,6 +177,7 @@ function DashboardHeader({ user }) {
               <div className="mt-1 flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400/50" />
+
                   <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
                 </span>
 
@@ -128,10 +188,14 @@ function DashboardHeader({ user }) {
             </div>
           </div>
 
-          {/* Actions */}
+          {/* ACTIONS */}
+
           <div className="flex items-center gap-2">
 
-            {/* Quick actions */}
+            {/* ==================================================
+                QUICK ACTIONS
+            ================================================== */}
+
             <div className="relative hidden sm:block">
               <HeaderButton
                 icon={<Zap size={15} />}
@@ -145,6 +209,14 @@ function DashboardHeader({ user }) {
                   <DropdownTitle
                     title="Command Actions"
                     subtitle="Navigate the realm"
+                  />
+
+                  <QuickAction
+                    to="/instructor/dashboard"
+                    icon={<Swords size={16} />}
+                    title="Dashboard"
+                    description="Open command center"
+                    onClick={closeMenu}
                   />
 
                   <QuickAction
@@ -170,11 +242,22 @@ function DashboardHeader({ user }) {
                     description="View your students"
                     onClick={closeMenu}
                   />
+
+                  <QuickAction
+                    to="/instructor/analytics"
+                    icon={<Sparkles size={16} />}
+                    title="Analytics"
+                    description="View course performance"
+                    onClick={closeMenu}
+                  />
                 </Dropdown>
               )}
             </div>
 
-            {/* Create course */}
+            {/* ==================================================
+                CREATE COURSE
+            ================================================== */}
+
             <Link
               to="/instructor/create-course"
               className="group hidden h-11 items-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/[0.07] px-4 text-orange-300 transition hover:-translate-y-0.5 hover:border-orange-400/40 hover:bg-orange-500/[0.12] md:flex"
@@ -189,13 +272,19 @@ function DashboardHeader({ user }) {
               </span>
             </Link>
 
-            {/* Notifications */}
+            {/* ==================================================
+                NOTIFICATIONS
+            ================================================== */}
+
             <div className="relative">
               <IconButton
                 icon={<Bell size={17} />}
                 badge
                 label="Notifications"
-                onClick={() => toggleMenu("notifications")}
+                active={openMenu === "notifications"}
+                onClick={() =>
+                  toggleMenu("notifications")
+                }
               />
 
               {openMenu === "notifications" && (
@@ -215,6 +304,7 @@ function DashboardHeader({ user }) {
                       type="button"
                       onClick={closeMenu}
                       className="text-stone-600 transition hover:text-orange-300"
+                      aria-label="Close notifications"
                     >
                       <X size={15} />
                     </button>
@@ -243,12 +333,17 @@ function DashboardHeader({ user }) {
               )}
             </div>
 
-            {/* Profile */}
+            {/* ==================================================
+                PROFILE
+            ================================================== */}
+
             <div className="relative">
               <button
                 type="button"
                 onClick={() => toggleMenu("profile")}
                 className="group flex h-11 items-center gap-2 rounded-xl border border-stone-800 bg-white/[0.025] px-2 pr-3 transition hover:border-orange-500/25 hover:bg-orange-500/[0.05]"
+                aria-label="Open profile menu"
+                aria-expanded={openMenu === "profile"}
               >
                 <Avatar user={user} />
 
@@ -265,16 +360,24 @@ function DashboardHeader({ user }) {
                 <ChevronDown
                   size={13}
                   className={`text-stone-600 transition-transform ${
-                    openMenu === "profile" ? "rotate-180" : ""
+                    openMenu === "profile"
+                      ? "rotate-180"
+                      : ""
                   }`}
                 />
               </button>
 
               {openMenu === "profile" && (
                 <Dropdown className="w-60">
+
+                  {/* USER INFO */}
+
                   <div className="mb-2 rounded-xl border border-stone-800/70 bg-white/[0.02] p-3">
                     <div className="flex items-center gap-3">
-                      <Avatar user={user} size="large" />
+                      <Avatar
+                        user={user}
+                        size="large"
+                      />
 
                       <div className="min-w-0">
                         <p className="truncate text-xs font-bold text-stone-200">
@@ -282,7 +385,8 @@ function DashboardHeader({ user }) {
                         </p>
 
                         <p className="truncate text-[9px] text-stone-600">
-                          {user?.email || "Instructor account"}
+                          {user?.email ||
+                            "Instructor account"}
                         </p>
                       </div>
                     </div>
@@ -304,15 +408,31 @@ function DashboardHeader({ user }) {
 
                   <div className="my-2 h-px bg-stone-800/70" />
 
+                  {/* LOGOUT */}
+
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-red-400/70 transition hover:bg-red-500/[0.06] hover:text-red-300"
+                    disabled={logoutLoading}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
+                      logoutLoading
+                        ? "cursor-not-allowed bg-red-500/[0.04] text-red-400/50"
+                        : "text-red-400/70 hover:bg-red-500/[0.06] hover:text-red-300"
+                    }`}
                   >
-                    <LogOut size={15} />
+                    {logoutLoading ? (
+                      <Loader2
+                        size={15}
+                        className="animate-spin"
+                      />
+                    ) : (
+                      <LogOut size={15} />
+                    )}
 
                     <span className="text-[10px] font-bold uppercase tracking-[0.12em]">
-                      Leave the Realm
+                      {logoutLoading
+                        ? "Leaving..."
+                        : "Leave the Realm"}
                     </span>
                   </button>
                 </Dropdown>
@@ -321,7 +441,10 @@ function DashboardHeader({ user }) {
           </div>
         </div>
 
-        {/* Bottom status */}
+        {/* ======================================================
+            BOTTOM STATUS
+        ====================================================== */}
+
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-t border-stone-800/70 px-5 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <StatusIndicator />
@@ -329,7 +452,10 @@ function DashboardHeader({ user }) {
             <span className="hidden h-3 w-px bg-stone-800 sm:block" />
 
             <div className="hidden items-center gap-2 sm:flex">
-              <Swords size={12} className="text-orange-500/50" />
+              <Swords
+                size={12}
+                className="text-orange-500/50"
+              />
 
               <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-stone-700">
                 The Realm Awaits
@@ -338,7 +464,10 @@ function DashboardHeader({ user }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <Sparkles size={12} className="text-orange-400/70" />
+            <Sparkles
+              size={12}
+              className="text-orange-400/70"
+            />
 
             <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-stone-700">
               Build Your Legacy
@@ -353,7 +482,7 @@ function DashboardHeader({ user }) {
 }
 
 /* ============================================================
-   SMALL COMPONENTS
+   EMBER
 ============================================================ */
 
 function Ember({ className = "" }) {
@@ -363,6 +492,10 @@ function Ember({ className = "" }) {
     />
   );
 }
+
+/* ============================================================
+   HEADER BUTTON
+============================================================ */
 
 function HeaderButton({
   icon,
@@ -379,6 +512,7 @@ function HeaderButton({
           ? "border-orange-500/30 bg-orange-500/[0.08] text-orange-300"
           : "border-stone-800 bg-white/[0.025] text-stone-500 hover:border-orange-500/25 hover:bg-orange-500/[0.05] hover:text-orange-300"
       }`}
+      aria-expanded={active}
     >
       <span className="text-orange-400 transition-transform group-hover:scale-110">
         {icon}
@@ -398,18 +532,28 @@ function HeaderButton({
   );
 }
 
+/* ============================================================
+   ICON BUTTON
+============================================================ */
+
 function IconButton({
   icon,
   badge = false,
   label,
+  active = false,
   onClick,
 }) {
   return (
     <button
       type="button"
       aria-label={label}
+      aria-expanded={active}
       onClick={onClick}
-      className="group relative flex h-11 w-11 items-center justify-center rounded-xl border border-stone-800 bg-white/[0.025] text-stone-500 transition hover:border-orange-500/25 hover:bg-orange-500/[0.05] hover:text-orange-300"
+      className={`group relative flex h-11 w-11 items-center justify-center rounded-xl border transition ${
+        active
+          ? "border-orange-500/30 bg-orange-500/[0.08] text-orange-300"
+          : "border-stone-800 bg-white/[0.025] text-stone-500 hover:border-orange-500/25 hover:bg-orange-500/[0.05] hover:text-orange-300"
+      }`}
     >
       {icon}
 
@@ -420,7 +564,14 @@ function IconButton({
   );
 }
 
-function Dropdown({ children, className = "" }) {
+/* ============================================================
+   DROPDOWN
+============================================================ */
+
+function Dropdown({
+  children,
+  className = "",
+}) {
   return (
     <div
       className={`absolute right-0 top-[calc(100%+10px)] overflow-hidden rounded-2xl border border-orange-500/15 bg-[#100b08]/98 shadow-[0_25px_80px_rgba(0,0,0,.7)] backdrop-blur-2xl ${className}`}
@@ -430,7 +581,14 @@ function Dropdown({ children, className = "" }) {
   );
 }
 
-function DropdownTitle({ title, subtitle }) {
+/* ============================================================
+   DROPDOWN TITLE
+============================================================ */
+
+function DropdownTitle({
+  title,
+  subtitle,
+}) {
   return (
     <div className="border-b border-stone-800/70 px-4 py-4">
       <p className="text-xs font-bold text-stone-200">
@@ -446,7 +604,14 @@ function DropdownTitle({ title, subtitle }) {
   );
 }
 
-function Avatar({ user, size = "normal" }) {
+/* ============================================================
+   AVATAR
+============================================================ */
+
+function Avatar({
+  user,
+  size = "normal",
+}) {
   const sizeClass =
     size === "large"
       ? "h-10 w-10 rounded-xl"
@@ -469,11 +634,16 @@ function Avatar({ user, size = "normal" }) {
   );
 }
 
+/* ============================================================
+   STATUS INDICATOR
+============================================================ */
+
 function StatusIndicator() {
   return (
     <div className="flex items-center gap-2">
       <span className="relative flex h-2 w-2">
         <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400/40" />
+
         <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
       </span>
 
@@ -483,6 +653,10 @@ function StatusIndicator() {
     </div>
   );
 }
+
+/* ============================================================
+   QUICK ACTION
+============================================================ */
 
 function QuickAction({
   to,
@@ -514,6 +688,10 @@ function QuickAction({
   );
 }
 
+/* ============================================================
+   NOTIFICATION ITEM
+============================================================ */
+
 function NotificationItem({
   icon,
   title,
@@ -537,6 +715,10 @@ function NotificationItem({
     </div>
   );
 }
+
+/* ============================================================
+   PROFILE MENU ITEM
+============================================================ */
 
 function ProfileMenuItem({
   to,

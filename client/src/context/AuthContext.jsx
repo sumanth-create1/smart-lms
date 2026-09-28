@@ -44,27 +44,39 @@ export function AuthProvider({ children }) {
 
       const response = await api.get("/auth/me");
 
-      const currentUser =
-        response.data?.user || response.data;
+      const currentUser = response.data?.user;
 
-      console.log(
-        "✅ Current user:",
-        currentUser
-      );
+      if (!currentUser) {
+        console.warn(
+          "⚠️ /auth/me succeeded but no user data was returned."
+        );
+
+        setUser(null);
+        setDashboardStats(null);
+        setAchievements([]);
+
+        return null;
+      }
+
+      console.log("✅ Current user:", currentUser);
 
       setUser(currentUser);
 
       return currentUser;
     } catch (error) {
-      console.error(
-        "❌ Get current user error:",
-        error.response?.data || error.message
-      );
+      // 401 simply means the user is not logged in.
+      // Avoid treating it as an application error.
+      if (error.response?.status !== 401) {
+        console.error(
+          "❌ Get current user error:",
+          error.response?.data || error.message
+        );
+      }
 
       setUser(null);
       setDashboardStats(null);
       setAchievements([]);
-      
+
       return null;
     } finally {
       setLoading(false);
@@ -93,9 +105,7 @@ export function AuthProvider({ children }) {
 
       console.log("📊 Loading dashboard stats...");
 
-      const response = await api.get(
-        "/dashboard/student"
-      );
+      const response = await api.get("/dashboard/student");
 
       if (response.data?.success) {
         const stats = response.data.stats || {};
@@ -109,6 +119,8 @@ export function AuthProvider({ children }) {
 
         return stats;
       }
+
+      setDashboardStats(null);
 
       return null;
     } catch (error) {
@@ -147,12 +159,9 @@ export function AuthProvider({ children }) {
 
       console.log("🏆 Loading all achievements...");
 
-      // IMPORTANT:
-      // /achievements/all returns ALL active achievements
+      // /achievements/all returns all active achievements
       // together with unlocked status for this student.
-      const response = await api.get(
-        "/achievements/all"
-      );
+      const response = await api.get("/achievements/all");
 
       console.log(
         "🏆 Achievement API response:",
@@ -214,8 +223,18 @@ export function AuthProvider({ children }) {
           }
         );
 
-        const loggedInUser =
-          response.data?.user || response.data;
+        const loggedInUser = response.data?.user;
+
+        if (!loggedInUser) {
+          throw new Error(
+            "Login succeeded but user data was not returned."
+          );
+        }
+
+        console.log(
+          "✅ Login successful:",
+          loggedInUser
+        );
 
         setUser(loggedInUser);
 
@@ -223,7 +242,7 @@ export function AuthProvider({ children }) {
       } catch (error) {
         console.error(
           "❌ Login error:",
-          error
+          error.response?.data || error.message
         );
 
         throw error;
@@ -236,20 +255,17 @@ export function AuthProvider({ children }) {
   // UPDATE USER
   // ===================================================
 
-  const updateUser = useCallback(
-    (updatedUser) => {
-      if (!updatedUser) {
-        console.warn(
-          "⚠️ updateUser called without user data"
-        );
+  const updateUser = useCallback((updatedUser) => {
+    if (!updatedUser) {
+      console.warn(
+        "⚠️ updateUser called without user data"
+      );
 
-        return;
-      }
+      return;
+    }
 
-      setUser(updatedUser);
-    },
-    []
-  );
+    setUser(updatedUser);
+  }, []);
 
   // ===================================================
   // LOGOUT
@@ -261,7 +277,7 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error(
         "❌ Logout error:",
-        error
+        error.response?.data || error.message
       );
     } finally {
       setUser(null);
