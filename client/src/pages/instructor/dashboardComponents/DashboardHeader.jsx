@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
-import api from "../../../services/api";
+import { useAuth } from "../../../context/AuthContext";
 
 /* ============================================================
    DASHBOARD HEADER
@@ -26,6 +26,7 @@ import api from "../../../services/api";
 
 function DashboardHeader({ user }) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const [openMenu, setOpenMenu] = useState(null);
   const [logoutLoading, setLogoutLoading] = useState(false);
@@ -95,7 +96,7 @@ function DashboardHeader({ user }) {
       setLogoutLoading(true);
       closeMenu();
 
-      await api.post("/auth/logout");
+      await logout?.();
 
       navigate("/login", {
         replace: true,
@@ -103,8 +104,8 @@ function DashboardHeader({ user }) {
     } catch (error) {
       console.error("Logout error:", error);
 
-      // Even if logout request fails,
-      // don't keep the user on the dashboard.
+      // Even if logout fails,
+      // don't keep the instructor on the dashboard.
       navigate("/login", {
         replace: true,
       });
